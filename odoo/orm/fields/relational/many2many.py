@@ -297,6 +297,7 @@ class Many2many(_RelationalMulti):
         *,
         store: bool,
         created: bool = False,
+        stored_pairs: AbstractSet[tuple[IdType, IdType]] = frozenset(),
     ) -> None:
         self._update_cache_relation(
             records, comodel, new_relation, store=store, created=created
@@ -317,14 +318,16 @@ class Many2many(_RelationalMulti):
             field=self.name,
             records=len(records),
             linked=len(pairs),
+            linked_by_create=len(stored_pairs),
             unlinked=len(unlink_pairs),
             store=store,
         )
         modified_corecord_ids: set[IdType] = set()
         if pairs:
-            if store:
+            unstored_pairs = [pair for pair in pairs if pair not in stored_pairs]
+            if store and unstored_pairs:
                 records.env.backend.link_m2m_pairs(
-                    records, *self._get_relation_triple(), pairs
+                    records, *self._get_relation_triple(), unstored_pairs
                 )
             modified_corecord_ids |= self._update_inverse_cache_linked(
                 records, comodel, pairs
@@ -442,7 +445,8 @@ class Many2many(_RelationalMulti):
 
     def _with_owner_link(
         self, records: BaseModel, vals_list: list[ValuesType]
-    ) -> list[ValuesType]:
+    ) -> tuple[list[ValuesType], list[bool]]:
+        unlinked = [False] * len(vals_list)
         field: Field[typing.Any] = self
         owners = records
         while field.related:
@@ -452,14 +456,14 @@ class Many2many(_RelationalMulti):
             field = owners._fields[fname]
         owner_ids = [id_ for id_ in owners._ids if isinstance(id_, int)]
         if not owner_ids or len(owner_ids) != len(owners._ids):
-            return vals_list
+            return vals_list, unlinked
         inverse_names = [
             invf.name
             for invf in records.pool.field_inverses[field]
             if invf.is_many2many
         ]
         if not inverse_names:
-            return vals_list
+            return vals_list, unlinked
         _debug.logic(
             "field.many2many.owner_linked",
             model=self.model_name,
@@ -471,6 +475,9 @@ class Many2many(_RelationalMulti):
         return [
             {**vals, **{name: links for name in inverse_names if name not in vals}}
             for vals in vals_list
+        ], [
+            field is self and any(name not in vals for name in inverse_names)
+            for vals in vals_list
         ]
 
     def _write_real_apply_commands(
@@ -479,6 +486,7 @@ class Many2many(_RelationalMulti):
         comodel: BaseModel,
         old_relation: Relation,
         new_relation: Relation,
+        stored_pairs: set[tuple[IdType, IdType]],
     ) -> None:
         for recs, commands in records_commands_list:
             delta = CommandDelta.fold(commands)
@@ -500,9 +508,16 @@ class Many2many(_RelationalMulti):
                     comodel.browse((line_id,)).with_prefetch(prefetch_ids).write(vals)
             created_ids: tuple[IdType, ...] = ()
             if delta.created:
-                created_ids = comodel.create(
-                    self._with_owner_link(recs, [vals for _ref, vals in delta.created])
-                )._ids
+                vals_list, linked = self._with_owner_link(
+                    recs, [vals for _ref, vals in delta.created]
+                )
+                created_ids = comodel.create(vals_list)._ids
+                stored_pairs.update(
+                    (x, y)
+                    for y, owner_linked in zip(created_ids, linked, strict=True)
+                    if owner_linked
+                    for x in recs._ids
+                )
             for x in recs._ids:
                 new_relation[x] = delta.get_final_ids(new_relation[x], created_ids)
             if delta.deleted:
@@ -558,9 +573,10 @@ class Many2many(_RelationalMulti):
             for record in records.with_context(active_test=False)
         }
         new_relation = {x: OrderedSet(ys) for x, ys in old_relation.items()}
+        stored_pairs: set[tuple[IdType, IdType]] = set()
 
         self._write_real_apply_commands(
-            records_commands_list, comodel, old_relation, new_relation
+            records_commands_list, comodel, old_relation, new_relation, stored_pairs
         )
 
         if self.store and not model.env.su:
@@ -580,6 +596,7 @@ class Many2many(_RelationalMulti):
             new_relation,
             store=self.store,
             created=create,
+            stored_pairs=stored_pairs,
         )
 
     def _read_missing_with_batch(

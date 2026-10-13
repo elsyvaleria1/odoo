@@ -205,6 +205,10 @@ class EventTrack(models.Model):
         store=True,
         readonly=False,
     )
+    event_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="event_id.country_id",
+    )
     location_id = fields.Many2one(comodel_name="event.track.location")
     date = fields.Datetime(
         string="Track Date",

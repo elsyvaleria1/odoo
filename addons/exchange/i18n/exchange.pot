@@ -6,14 +6,45 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-13 00:59+0000\n"
-"PO-Revision-Date: 2026-10-13 00:59+0000\n"
+"POT-Creation-Date: 2026-10-13 01:28+0000\n"
+"PO-Revision-Date: 2026-10-13 01:28+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"%(cause)s Gave up after %(attempts)s attempts. Check with the counterparty "
+"whether it holds the document before sending it again."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"%(cause)s It cannot be asked what became of the document, and sending the "
+"document again is not safe. Check with the counterparty whether it holds the"
+" document before sending it again."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"%(cause)s It is not sent again: its outcome is read back from the "
+"counterparty."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid "%(cause)s It is sent again, which the counterparty takes only once."
+msgstr ""
 
 #. module: exchange
 #. odoo-python
@@ -54,6 +85,11 @@ msgstr ""
 #. odoo-python
 #: code:addons/exchange/models/exchange_channel.py:0
 msgid "A reconciliation window cannot be negative."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.constraint,message:exchange.constraint_exchange_transmission_dispatch_generation_uniq
+msgid "A transmission is handed to its counterparty once per dispatch."
 msgstr ""
 
 #. module: exchange
@@ -365,6 +401,11 @@ msgid "Date Created"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__date_dispatched
+msgid "Date Dispatched"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__date_last_inbox
 msgid "Date Last Inbox"
 msgstr ""
@@ -440,9 +481,15 @@ msgid "Description of what this channel does"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__dispatch_count
+msgid "Dispatch Count"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__display_name
 #: model:ir.model.fields,field_description:exchange.field_exchange_protocol__display_name
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__display_name
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__display_name
 #: model:ir.model.fields,field_description:exchange.field_integration_service__display_name
 #: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__display_name
 msgid "Display Name"
@@ -555,6 +602,11 @@ msgid "Exchange Transmission"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model,name:exchange.model_exchange_transmission_dispatch
+msgid "Exchange Transmission Dispatch"
+msgstr ""
+
+#. module: exchange
 #: model:ir.actions.server,name:exchange.cron_read_inboxes_ir_actions_server
 msgid "Exchange: read the inboxes"
 msgstr ""
@@ -586,12 +638,8 @@ msgid "Gave up after %(attempts)s attempts. Last error: %(message)s"
 msgstr ""
 
 #. module: exchange
-#. odoo-python
-#: code:addons/exchange/models/exchange_transmission.py:0
-msgid ""
-"Gave up after %(attempts)s attempts: the counterparty's last answer did not "
-"name this document. Check with the counterparty whether it holds the "
-"document before sending it again."
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__generation
+msgid "Generation"
 msgstr ""
 
 #. module: exchange
@@ -647,6 +695,14 @@ msgid ""
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__dispatch_count
+msgid ""
+"How many times the document was handed to the counterparty with the outcome "
+"recorded. A hand-off logged beyond it never had its answer recorded: the "
+"document is not sent again, its outcome is unknown."
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_channel__name
 msgid "Human-readable name for this channel"
 msgstr ""
@@ -655,6 +711,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__id
 #: model:ir.model.fields,field_description:exchange.field_exchange_protocol__id
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__id
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__id
 #: model:ir.model.fields,field_description:exchange.field_integration_service__id
 #: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__id
 msgid "ID"
@@ -1031,9 +1088,10 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_transmission__date_reconcile_deadline
 msgid ""
-"Set when the counterparty answered without naming this transmission, so "
-"whether it was received is unknown. Until then its verdict is read back from"
-" the counterparty; after it, the transmission expires."
+"Set when whether the counterparty received this transmission is unknown: it "
+"answered without naming it, or the call carrying it failed after it may have"
+" arrived. Until then its verdict is read back from the counterparty; after "
+"it, the transmission expires."
 msgstr ""
 
 #. module: exchange
@@ -1097,9 +1155,8 @@ msgstr ""
 #. odoo-python
 #: code:addons/exchange/models/exchange_transmission.py:0
 msgid ""
-"The counterparty answered without naming this document, so whether it was "
-"received is unknown. It is not sent again: its outcome is read back from the"
-" counterparty."
+"The call carrying this document failed after it may have reached the "
+"counterparty (%(error)s), so whether it was received is unknown."
 msgstr ""
 
 #. module: exchange
@@ -1107,18 +1164,24 @@ msgstr ""
 #: code:addons/exchange/models/exchange_transmission.py:0
 msgid ""
 "The counterparty answered without naming this document, so whether it was "
-"received is unknown. It is sent again, which the counterparty takes only "
-"once."
+"received is unknown."
 msgstr ""
 
 #. module: exchange
 #. odoo-python
 #: code:addons/exchange/models/exchange_transmission.py:0
 msgid ""
-"The counterparty answered without naming this document. It cannot be asked "
-"what became of the document, and sending the document again is not safe. "
-"Check with the counterparty whether it holds the document before sending it "
-"again."
+"The counterparty answered, but its answer could not be recorded (%(error)s),"
+" so whether it was received is unknown."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The counterparty could not be asked what became of this document before the "
+"time allowed to find it ran out. Check with the counterparty whether it "
+"holds the document before sending it again."
 msgstr ""
 
 #. module: exchange
@@ -1154,6 +1217,22 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_transmission__message
 msgid "The counterparty's own words. Never paraphrased."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission_dispatch__generation
+msgid ""
+"The dispatch count this hand-off brings its transmission to. While it is "
+"ahead of the transmission's own count, the answer to the hand-off was never "
+"recorded."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The document was handed to the counterparty, but its answer was never "
+"recorded, so whether it was received is unknown."
 msgstr ""
 
 #. module: exchange
@@ -1217,6 +1296,7 @@ msgstr ""
 
 #. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__transmission_ids
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__transmission_id
 #: model:ir.model.fields,field_description:exchange.field_mixin_exchange_subject__transmission_ids
 msgid "Transmission"
 msgstr ""

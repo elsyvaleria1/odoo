@@ -941,6 +941,64 @@ class TestPartnerCompanyDependentSync(TransactionCase):
                 "bounding the sweep must not stop a real value from propagating",
             )
 
+    @contextmanager
+    def _barcode_as_a_commercial_field(self):
+        Partner = self.env["res.partner"]
+        commercial_fields = Partner._commercial_fields()
+        with (
+            patch.object(
+                Partner.__class__,
+                "_commercial_fields",
+                lambda self: commercial_fields + ["barcode"],
+            ),
+            patch.object(Partner.__class__, "_check_fields"),
+        ):
+            yield
+
+    def test_contacts_under_distinct_parents_take_their_own_parent_value(self):
+        Partner = self.env["res.partner"]
+        other = self.env["res.company"].create({"name": "Distinct Co"})
+        parents = Partner.create(
+            [{"name": f"Distinct Parent {i}", "is_company": True} for i in range(3)]
+        )
+        for index, parent in enumerate(parents):
+            parent.with_company(other).barcode = f"DIST-{index}"
+        self.env.flush_all()
+        with self._barcode_as_a_commercial_field():
+            contacts = Partner.create(
+                [
+                    {"name": f"Distinct Child {i}", "parent_id": parent.id}
+                    for i, parent in enumerate(parents)
+                ]
+            )
+        self.assertEqual(
+            contacts.with_company(other).mapped("barcode"),
+            ["DIST-0", "DIST-1", "DIST-2"],
+        )
+        self.assertEqual(contacts.mapped("barcode"), [False] * 3)
+
+    def test_contacts_under_distinct_parents_cost_no_query_per_row(self):
+        Partner = self.env["res.partner"]
+        other = self.env["res.company"].create({"name": "Rows Co"})
+
+        def create_contacts(count):
+            parents = Partner.create(
+                [
+                    {"name": f"Rows Parent {count}.{i}", "is_company": True}
+                    for i in range(count)
+                ]
+            )
+            parents.with_company(other).barcode = "ROWS-1"
+            Partner.create(
+                [
+                    {"name": f"Rows Child {count}.{i}", "parent_id": parent.id}
+                    for i, parent in enumerate(parents)
+                ]
+            )
+
+        with self._barcode_as_a_commercial_field():
+            self.assertQueriesConstant(create_contacts, small=5, large=10)
+
 
 @tagged("res_partner")
 class TestPartnerDuplicateIdentifiers(TransactionCase):
@@ -2899,6 +2957,24 @@ class TestPartnerCategory(TransactionCase):
         self.assertEqual(b.display_name, "A / B")
         a.name = "A2"
         self.assertEqual(b.display_name, "A2 / B")
+
+    def test_a_tag_created_from_a_partner_is_linked_once(self):
+        Category = self.env["res.partner.tag"]
+        partner = self.env["res.partner"].create({"name": "Tagged"})
+        relation = partner._fields["tag_ids"].relation
+        with self.capturedQueries() as queries:
+            partner.write({"tag_ids": [Command.create({"name": "Written Tag"})]})
+            created = self.env["res.partner"].create(
+                {"name": "Born Tagged", "tag_ids": [Command.create({"name": "Born"})]}
+            )
+        link_inserts = [q for q in queries if f'INSERT INTO "{relation}"' in q]
+        self.assertEqual(len(link_inserts), 2, "\n".join(link_inserts))
+        self.assertEqual(partner.tag_ids.name, "Written Tag")
+        self.assertEqual(created.tag_ids.name, "Born")
+        self.assertEqual(partner.tag_ids.partner_ids, partner)
+        self.assertEqual(
+            Category.search([("partner_ids", "=", created.id)]).name, "Born"
+        )
 
     def test_search_display_name_child_of(self):
         Category = self.env["res.partner.tag"]

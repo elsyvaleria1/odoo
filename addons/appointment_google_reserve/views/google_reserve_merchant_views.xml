@@ -24,7 +24,10 @@
                     <group>
                         <field name="name" />
                         <field name="business_category" placeholder="e.g Restaurant" />
-                        <field name="phone_ids" widget="many2many_tags" />
+                        <field
+                            name="phone_ids"
+                            widget="many2many_tags"
+                            context="{'default_country_id': location_country_id}" />
                         <field name="website_url" />
                         <field name="location_id" context="{'show_address': True}" />
                     </group>

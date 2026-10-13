@@ -3,10 +3,12 @@ from unittest.mock import patch
 
 import odoo.tests
 from odoo import Command
+from odoo.http import request
 
 from odoo.addons.http_routing.tests.common import MockRequest
 from odoo.addons.point_of_sale.tests.common import archive_products
 from odoo.addons.point_of_sale.tests.test_frontend import TestPointOfSaleHttpCommon
+from odoo.addons.pos_urban_piper.controllers.main import PosUrbanPiperController
 from odoo.addons.pos_urban_piper.models.pos_urban_piper_request import UrbanPiperClient
 
 
@@ -533,3 +535,40 @@ class TestFrontend(TestPosUrbanPiperCommon):
         self.assertEqual(order.lines[0].price_subtotal, 100.0)
         self.assertEqual(order.amount_total, 100.0)
         self.assertEqual(order.amount_tax, 0.0)
+
+
+class TestWebhookCustomer(TestPosUrbanPiperCommon):
+    def test_a_new_customers_number_is_read_in_the_stores_country(self):
+        belgium = self.env.ref("base.be")
+        self.urban_piper_config.company_id.country_id = belgium
+        elsewhere = self.env["res.company"].create(
+            {"name": "Elsewhere", "country_id": self.env.ref("base.us").id}
+        )
+        self.urban_piper_config.open_ui()
+        provider = self.env.ref("pos_urban_piper.pos_delivery_provider_justeat")
+        payload = self.env[
+            "wizard.pos.config.simulate.urbanpiper.order"
+        ].test_order_json(
+            {
+                "config_id": self.urban_piper_config,
+                "product_id": self.product_1,
+                "quantity": 1,
+                "discount_amount": 0,
+                "packaging_charge": 0,
+                "delivery_charge": 0,
+                "delivery_instruction": False,
+                "delivery_provider_id": provider,
+                "delivery_identifier": str(uuid.uuid4()),
+                "options_to_add": [],
+            }
+        )
+        payload["customer"].update({"name": "Lotte Peeters", "phone": "0478 12 34 56"})
+
+        with MockRequest(self.env, context={"allowed_company_ids": elsewhere.ids}):
+            self.assertEqual(request.env.company, elsewhere)
+            PosUrbanPiperController()._create_order(payload)
+
+        customer = self.env["res.partner"].search([("name", "=", "Lotte Peeters")])
+        self.assertEqual(customer.phone_ids.sanitized, "+32478123456")
+        self.assertEqual(customer.phone_ids.country_id, belgium)
+        self.assertEqual(customer.country_id, belgium)

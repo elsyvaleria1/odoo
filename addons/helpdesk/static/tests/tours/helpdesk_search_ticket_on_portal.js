@@ -1,27 +1,33 @@
-import HelpdeskSearchTicketSteps from "@helpdesk/../tests/tours/helpdesk_search_ticket_steps";
 import { registry } from "@web/core/registry";
-
-const helpdeskSearchTicketSteps = new HelpdeskSearchTicketSteps();
 
 registry.category("web_tour.tours").add("helpdesk_search_ticket_on_portal_tour", {
     url: "/my/tickets",
     steps: () => [
         {
-            trigger: ".border-end",
+            trigger: ".o_portal_search_panel .dropdown-toggle",
             content: "click on dropdown.",
             run: "click",
         },
         {
-            trigger: '.dropdown-menu a:contains("Search Tickets")',
+            trigger:
+                '.o_portal_search_panel .dropdown-menu a:contains("Search Tickets")',
             content: "select Search Tickets.",
             run: "click",
         },
         {
             content: "Type name of ticket",
-            trigger: 'form input[name="search"]',
+            trigger: '.o_portal_search_panel input[name="search"]',
             run: "edit lamp stand",
         },
-        helpdeskSearchTicketSteps._searchTickets(),
+        {
+            content: "search Ticket",
+            trigger: ".o_portal_search_panel button[type=submit]",
+            run: "click",
+        },
+        {
+            content: "the search results replace the list in place",
+            trigger: '.o_portal_search_panel input[name="search"][value="lamp stand"]',
+        },
         {
             trigger: "table > tbody > tr a:has(span:contains(lamp stand))",
             content: "click on ticket.",

@@ -63,6 +63,10 @@ class FrontdeskVisitor(models.Model):
         index=True,
         required=True,
     )
+    station_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="station_id.company_id.country_id",
+    )
     visitor_properties = fields.Properties(
         definition="station_id.visitor_properties_definition",
         string="Properties",
@@ -71,7 +75,10 @@ class FrontdeskVisitor(models.Model):
     served = fields.Boolean(string="Drink Served")
     company_id = fields.Many2one(
         comodel_name="res.company",
-        default=lambda self: self.env.company,
+        compute="_compute_company_id",
+        precompute=True,
+        store=True,
+        readonly=False,
         required=True,
     )
 
@@ -91,6 +98,11 @@ class FrontdeskVisitor(models.Model):
             vals["check_out"] = fields.Datetime.now()
             vals["served"] = True
         return super().write(vals)
+
+    @api.depends("station_id")
+    def _compute_company_id(self) -> None:
+        for visitor in self:
+            visitor.company_id = visitor.station_id.company_id
 
     @api.depends("check_in", "check_out")
     def _compute_duration(self):
@@ -235,7 +247,7 @@ class FrontdeskVisitor(models.Model):
             return []
         start = check_in.replace(tzinfo=UTC)
         stop = start + timedelta(minutes=1)
-        calendar = self.env.company.resource_calendar_id
+        calendar = self.company_id.resource_calendar_id
         leaves = calendar._leave_intervals_batch(start, stop, resources=resources)
         return [resource.id for resource in resources if leaves[resource.id]._items]
 
@@ -244,7 +256,7 @@ class FrontdeskVisitor(models.Model):
         odoobot = self.env.ref("base.partner_root")
         author = self.station_id.company_id.partner_id
         for visitor in self:
-            resources_on_leave = self._check_resources_leave(
+            resources_on_leave = visitor._check_resources_leave(
                 resources, visitor.check_in
             )
             hosts_on_leave = visitor.host_ids.filtered_domain(

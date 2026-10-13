@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Collection, Iterator, Sequence
+from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Literal, Protocol, Self, overload
 
 if TYPE_CHECKING:
@@ -354,6 +355,10 @@ class IrModuleModuleProtocol(RecordsetProtocol, Protocol):
 
 
 class IrFieldsConverterProtocol(RecordsetProtocol, Protocol):
+    def _import_session(
+        self, flush: Callable[..., bool]
+    ) -> AbstractContextManager[Any]: ...
+
     def _get_converter_record(self, model: Any) -> Any: ...
 
     def _prefetch_name_references(self, model: Any, records: Any) -> None: ...

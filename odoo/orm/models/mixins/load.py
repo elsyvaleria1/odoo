@@ -13,7 +13,6 @@ from odoo.db import schema as sql
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import ConcurrencyError, UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.lru import LRU
 
 from ... import decorators as api
 from ..._typing import ValuesType
@@ -272,21 +271,20 @@ class LoadMixin(_ModelStubs):
             self._load_data_list(data_list, mode == "update", messages, ids)
             return True
 
-        flush_recordset = self.with_context(import_flush=flush, import_cache=LRU(65536))
-
         limit = self.env.context.get("_import_limit")
         if limit is None:
             limit = float("inf")
 
         savepoint = cr.savepoint()
         try:
-            extracted = flush_recordset._extract_records(
-                field_paths, data, log=messages.append, limit=limit
-            )
-            converted = flush_recordset._convert_records(extracted, log=messages.append)
-            info = self._collect_load_batch(
-                converted, current_module, batch, batch_xml_ids, batch_tokens
-            )
+            with self.env["ir.fields.converter"]._import_session(flush):
+                extracted = self._extract_records(
+                    field_paths, data, log=messages.append, limit=limit
+                )
+                converted = self._convert_records(extracted, log=messages.append)
+                info = self._collect_load_batch(
+                    converted, current_module, batch, batch_xml_ids, batch_tokens
+                )
             flush()
             if any(message["type"] == "error" for message in messages):
                 _debug.logic("load.rolled_back", model=self._name, errors=len(messages))

@@ -32,6 +32,7 @@
                             <field
                                 name="phone_ids"
                                 widget="many2many_tags"
+                                context="{'default_country_id': phone_country_id}"
                                 class="o_force_ltr" />
                             <field
                                 name="company_id"

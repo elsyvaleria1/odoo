@@ -26,5 +26,12 @@ class PosOrder(models.Model):
                 }
             )
         )
-        self.phone_ids = [Command.create({"number": phone, "type": "mobile"})]
+        self.phone_ids = [
+            Command.link(
+                self.env["phone.number"]
+                .with_context(default_country_id=self.phone_country_id.id)
+                .create({"number": phone, "type": "mobile"})
+                .id
+            )
+        ]
         sms_composer.action_send_sms()

@@ -1,10 +1,16 @@
-from odoo import api, models
+from odoo import api, fields, models
 
 from odoo.addons.snailmail.country_utils import SNAILMAIL_COUNTRIES
 
 
 class ResPartner(models.Model):
     _inherit = "res.partner"
+
+    snailmail_unsent_letter_ids = fields.One2many(
+        comodel_name="snailmail.letter",
+        inverse_name="partner_id",
+        domain=[("state", "not in", ["sent", "canceled"])],
+    )
 
     def write(self, vals):
         letter_address_vals = {}
@@ -14,13 +20,7 @@ class ResPartner(models.Model):
                 letter_address_vals[field] = vals[field]
 
         if letter_address_vals:
-            letters = self.env["snailmail.letter"].search(
-                [
-                    ("state", "not in", ["sent", "canceled"]),
-                    ("partner_id", "in", self.ids),
-                ]
-            )
-            letters.write(letter_address_vals)
+            self.snailmail_unsent_letter_ids.write(letter_address_vals)
 
         return super().write(vals)
 

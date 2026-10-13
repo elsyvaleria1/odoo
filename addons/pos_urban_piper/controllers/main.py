@@ -237,12 +237,15 @@ class PosUrbanPiperController(http.Controller):
             )
         )
         if not customer_sudo:
+            store_country = pos_config_sudo.company_id.country_id
             customer_sudo = (
                 request.env["res.partner"]
                 .sudo()
+                .with_context(default_country_id=store_country.id)
                 .create(
                     {
                         "name": customer["name"],
+                        "country_id": store_country.id,
                         "phone_ids": [
                             Command.create(
                                 {"number": customer["phone"], "type": "mobile"}

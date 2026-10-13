@@ -273,6 +273,7 @@
                                     <field
                                         name="contact_phone_ids"
                                         widget="many2many_tags"
+                                        context="{'default_country_id': event_country_id}"
                                         readonly="partner_id"
                                         class="o_force_ltr" />
                                 </group>

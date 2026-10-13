@@ -11,7 +11,9 @@ from urllib.parse import urlparse
 
 import requests
 from requests.auth import HTTPDigestAuth
-from urllib3.exceptions import ReadTimeoutError
+from urllib3.exceptions import ConnectTimeoutError, ReadTimeoutError
+from urllib3.exceptions import ProxyError as URLLibProxyError
+from urllib3.exceptions import SSLError as URLLibSSLError
 from urllib3.util.retry import Retry
 
 from odoo import fields
@@ -121,6 +123,30 @@ def _is_exhausted_read_timeout(exc) -> bool:
     return isinstance(reason, ReadTimeoutError)
 
 
+_UNSENT_REQUEST_ERRORS = (
+    requests.exceptions.ConnectTimeout,
+    requests.exceptions.SSLError,
+    requests.exceptions.ProxyError,
+    requests.exceptions.InvalidURL,
+    requests.exceptions.InvalidSchema,
+    requests.exceptions.MissingSchema,
+    requests.exceptions.InvalidHeader,
+    requests.exceptions.InvalidJSONError,
+    requests.exceptions.URLRequired,
+)
+
+_UNSENT_CONNECTION_REASONS = (ConnectTimeoutError, URLLibSSLError, URLLibProxyError)
+
+
+def _is_unsent(exc: requests.exceptions.RequestException) -> bool:
+    if isinstance(exc, _UNSENT_REQUEST_ERRORS):
+        return True
+    if not isinstance(exc, requests.exceptions.ConnectionError) or not exc.args:
+        return False
+    reason = getattr(exc.args[0], "reason", exc.args[0])
+    return isinstance(reason, _UNSENT_CONNECTION_REASONS)
+
+
 def _masked_cause(exc: BaseException) -> BaseException:
     masked = tuple(
         redact.mask_text(arg) if isinstance(arg, str) else arg for arg in exc.args
@@ -177,6 +203,7 @@ class OutboundAPIClient:
         if not self.service:
             raise CommError(
                 self.env._("API service '%s' not found or inactive") % endpoint_code,
+                is_delivered=False,
             )
 
         connections = env["integration.connection"]
@@ -193,15 +220,20 @@ class OutboundAPIClient:
                         "service '%(service)s'",
                         connection=connection_id,
                         service=endpoint_code,
-                    )
+                    ),
+                    is_delivered=False,
                 )
             self.credential = self.connection.credential_id
             if self.credential and not self.credential.active:
-                raise CommError(self.env._("Invalid or inactive credential"))
+                raise CommError(
+                    self.env._("Invalid or inactive credential"), is_delivered=False
+                )
         elif credential_id:
             self.credential = env["credential.credential"].sudo().browse(credential_id)
             if not self.credential.exists() or not self.credential.active:
-                raise CommError(self.env._("Invalid or inactive credential"))
+                raise CommError(
+                    self.env._("Invalid or inactive credential"), is_delivered=False
+                )
             self.connection = connections._for_credential(self.service, self.credential)
         else:
             self.connection = connections._resolve(
@@ -217,6 +249,7 @@ class OutboundAPIClient:
                         "the call must name one",
                         endpoint_code,
                     ),
+                    is_delivered=False,
                 )
             raise CommError(
                 self.env._(
@@ -226,12 +259,14 @@ class OutboundAPIClient:
                     company=self.company_id,
                     environment=self.service.environment,
                 ),
+                is_delivered=False,
             )
 
         if self.credential.is_expired:
             raise CommError(
                 self.env._("Credentials have expired on %s")
                 % self.credential.date_expiration,
+                is_delivered=False,
             )
 
         if not self.connection:
@@ -360,7 +395,10 @@ class OutboundAPIClient:
         skip_logging = kwargs.pop("skip_logging", False)
         raise_for_status = kwargs.pop("raise_for_status", True)
 
-        url = self._get_url(endpoint)
+        try:
+            url = self._get_url(endpoint)
+        except ValueError as error:
+            raise CommError(str(error), is_delivered=False) from error
 
         if (
             method == "GET"
@@ -413,7 +451,8 @@ class OutboundAPIClient:
                 method, url, kwargs, trace_id, skip_logging, error, "timeout"
             )
             raise CommTimeoutError(
-                self.env._("Request timed out: %s") % redact.mask_url(url)
+                self.env._("Request timed out: %s") % redact.mask_url(url),
+                is_delivered=not _is_unsent(e),
             ) from _masked_cause(e)
 
         except requests.exceptions.HTTPError as e:
@@ -461,7 +500,8 @@ class OutboundAPIClient:
                 method, url, kwargs, trace_id, skip_logging, error, "network"
             )
             raise CommError(
-                self.env._("Request failed: %s") % error
+                self.env._("Request failed: %s") % error,
+                is_delivered=not _is_unsent(e),
             ) from _masked_cause(e)
 
         except CommError:
@@ -907,7 +947,7 @@ class OutboundAPIClient:
         try:
             return self.connection._admit_call(expected_seconds)
         except BudgetSpent as error:
-            raise RateLimitError(str(error)) from error
+            raise RateLimitError(str(error), is_delivered=False) from error
         except CircuitOpen as error:
             raise CircuitOpenError(str(error)) from error
 

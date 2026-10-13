@@ -1,12 +1,15 @@
 from datetime import timedelta
 
+from psycopg.errors import UniqueViolation
+
 from odoo import fields
 from odoo.exceptions import UserError, ValidationError
+from odoo.modules.module import get_module_path, load_script
 from odoo.tests.common import tagged
 from odoo.tools import mute_logger
 
 from .common import ExchangeCase
-from odoo.addons.exchange.tools import Verdict
+from odoo.addons.exchange.tools import DeliveryUnknown, NotDelivered, Verdict
 
 
 @tagged("post_install", "-at_install")
@@ -69,9 +72,24 @@ class TestExchangeTransmission(ExchangeCase):
         transmission.action_read_verdict()
         self.assertEqual(transmission.state, "sent")
 
+    def _failing_send(self, transmission, error):
+        with self.assertLogs(
+            "odoo.addons.exchange.models.exchange_transmission", "ERROR"
+        ) as logs:
+            self._send(transmission, error)
+        self.assertEqual(
+            [record.getMessage() for record in logs.records],
+            [
+                (
+                    f"Sending transmission {transmission.id} over "
+                    f"{self.channel.display_name} failed"
+                ),
+            ],
+        )
+
     def test_a_transport_failure_is_retried_with_the_channels_backoff(self):
         transmission = self._add_transmission()
-        self._send(transmission, ConnectionError("no route to host"))
+        self._failing_send(transmission, NotDelivered("no route to host"))
         self.assertEqual(transmission.state, "queued")
         self.assertEqual(transmission.retry_count, 1)
         self.assertTrue(transmission.date_next_retry)
@@ -81,11 +99,11 @@ class TestExchangeTransmission(ExchangeCase):
         self.channel.retry_max_attempts = 2
         transmission = self._add_transmission()
 
-        self._send(transmission, ConnectionError("still down"))
+        self._failing_send(transmission, NotDelivered("still down"))
         self.assertEqual(transmission.state, "queued")
         self.assertEqual(transmission.retry_count, 1)
 
-        self._send(transmission, ConnectionError("still down"))
+        self._failing_send(transmission, NotDelivered("still down"))
         self.assertEqual(
             transmission.state,
             "rejected",
@@ -97,9 +115,84 @@ class TestExchangeTransmission(ExchangeCase):
     def test_a_channel_with_retries_off_settles_on_the_first_failure(self):
         self.channel.retry_enabled = False
         transmission = self._add_transmission()
-        self._send(transmission, ConnectionError("down"))
+        self._failing_send(transmission, NotDelivered("down"))
         self.assertEqual(transmission.state, "rejected")
         self.assertEqual(transmission.retry_count, 0)
+
+    def _unresolved_log(self):
+        unresolved = []
+        self.patch(
+            type(self.subject),
+            "_on_transmission_unresolved",
+            lambda subject, transmission: unresolved.append((subject, transmission)),
+        )
+        return unresolved
+
+    def test_a_call_that_may_have_arrived_is_not_sent_again(self):
+        unresolved = self._unresolved_log()
+        transmission = self._add_transmission()
+        self._failing_send(transmission, DeliveryUnknown("read timed out"))
+        self.assertEqual(
+            transmission.state,
+            "expired",
+            "the counterparty may hold the document: a second send is a second "
+            "submission, and nothing can ask what became of the first",
+        )
+        self.assertEqual(transmission.retry_count, 0)
+        self.assertTrue(transmission.date_sent)
+        self.assertIn("read timed out", transmission.message)
+        self.assertIn("Check with the counterparty", transmission.message)
+        self.assertEqual(unresolved, [(transmission.subject_id, transmission)])
+
+    def test_a_call_that_may_have_arrived_is_reconciled_where_it_can_be(self):
+        self.patch(type(self.env["exchange.protocol.demo"]), "_is_reconcilable", True)
+        transmission = self._add_transmission()
+        self._failing_send(transmission, DeliveryUnknown("502 Bad Gateway"))
+        self.assertEqual(transmission.state, "sent")
+        self.assertEqual(transmission.retry_count, 0)
+        self.assertTrue(transmission.date_reconcile_deadline)
+        self.assertIn("502 Bad Gateway", transmission.message)
+
+        self._read_verdicts(demo_poll=self._accepted("FOUND-1"))
+        self.assertEqual(transmission.state, "accepted")
+        self.assertEqual(transmission.reference, "FOUND-1")
+
+    def test_a_call_that_may_have_arrived_is_resent_where_it_is_deduplicated(self):
+        self.patch(
+            type(self.env["exchange.protocol.demo"]), "_is_resend_idempotent", True
+        )
+        transmission = self._add_transmission()
+        self._failing_send(transmission, DeliveryUnknown("connection dropped"))
+        self.assertEqual(transmission.state, "queued")
+        self.assertEqual(transmission.retry_count, 1)
+        self.assertIn("sent again", transmission.message)
+
+    def test_an_untyped_failure_is_taken_as_a_call_that_may_have_arrived(self):
+        unresolved = self._unresolved_log()
+        transmission = self._add_transmission()
+        self._failing_send(transmission, ConnectionError("connection reset"))
+        self.assertEqual(
+            transmission.state,
+            "expired",
+            "a protocol that does not say whether its call reached the "
+            "counterparty is not trusted to be resent",
+        )
+        self.assertEqual(transmission.retry_count, 0)
+        self.assertEqual(len(unresolved), 1)
+
+    def test_a_failure_before_the_call_is_retried_whatever_its_type(self):
+        protocol = type(self.env["exchange.protocol.demo"])
+
+        def prepare(protocol, transmission):
+            raise ValueError("the template is broken")
+
+        self.patch(protocol, "_prepare_message", prepare)
+        transmission = self._add_transmission()
+        self._failing_send(transmission, self._accepted())
+        self.assertEqual(transmission.state, "queued")
+        self.assertEqual(transmission.retry_count, 1)
+        self.assertFalse(transmission.date_sent)
+        self.assertIn("the template is broken", transmission.message)
 
     def test_a_settled_transmission_is_not_sent_again(self):
         transmission = self._add_transmission()
@@ -254,7 +347,7 @@ class TestExchangeTransmission(ExchangeCase):
         protocol = type(self.env["exchange.protocol.demo"])
 
         def fail(protocol, transmission, document):
-            raise ConnectionError("no route to host")
+            raise NotDelivered("no route to host")
 
         self.patch(protocol, "_send_message", fail)
         with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
@@ -301,7 +394,7 @@ class TestExchangeTransmission(ExchangeCase):
         failed = self._add_transmission()
         self.env["ir.job"].search([]).unlink()
         with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
-            self._send(failed, ConnectionError("down"))
+            self._send(failed, NotDelivered("down"))
         self.assertEqual(failed.state, "queued")
 
         self._add_transmission(
@@ -545,6 +638,75 @@ class TestExchangeTransmission(ExchangeCase):
         self._send(transmission, self._accepted())
         self.assertEqual(transmission.state, "accepted")
 
+    def test_a_reference_is_unique_where_the_protocol_names_no_document_kind(self):
+        first = self._add_transmission()
+        self._send(first, self._accepted("ONCE"))
+        second = self._add_transmission(
+            subject=self.env["res.partner"].create({"name": "Second"})
+        )
+
+        with (
+            self.assertRaises(UniqueViolation),
+            mute_logger("odoo.db.cursor"),
+            self.env.cr.savepoint(),
+        ):
+            second.write({"reference": "ONCE", "state": "accepted"})
+            second.flush_recordset()
+
+    def _reference_holders(self, rows):
+        self.env.invalidate_all()
+        return [(row.state, row.intent, row.reference) for row in rows]
+
+    def test_the_upgrade_leaves_each_reference_on_one_transmission(self):
+        self.env.cr.execute("DROP INDEX exchange_transmission_reference_uniq")
+        subjects = self.env["res.partner"].create(
+            [{"name": f"Holder {index}"} for index in range(6)]
+        )
+        rows = self.env["exchange.transmission"].union(
+            *(self._add_transmission(subject=subject) for subject in subjects)
+        )
+        invoice = self._add_transmission(kind="invoice")
+        rows[0].write({"reference": "DUP-A", "state": "rejected"})
+        rows[1].write({"reference": "DUP-A", "state": "accepted"})
+        rows[2].write({"reference": "DUP-A", "state": "sent"})
+        rows[3].write({"reference": "DUP-B", "state": "accepted"})
+        rows[4].write({"reference": "DUP-B", "state": "accepted"})
+        rows[5].write(
+            {
+                "reference": "DUP-A",
+                "state": "accepted",
+                "intent": "annul",
+                "parent_id": rows[1].id,
+            }
+        )
+        invoice.write({"reference": "DUP-A", "state": "accepted"})
+        self.env.flush_all()
+        name = "odoo.addons.exchange.migrations.pre_migrate_1_0_2"
+        script = load_script(
+            f"{get_module_path('exchange')}/migrations/1.0.2/pre-migrate.py", name
+        )
+
+        with self.assertLogs(name, "WARNING") as logs:
+            script.migrate(self.env.cr, "19.0.1.0.1")
+
+        self.assertEqual(
+            self._reference_holders(rows | invoice),
+            [
+                ("rejected", "issue", False),
+                ("accepted", "issue", "DUP-A"),
+                ("sent", "issue", False),
+                ("accepted", "issue", "DUP-B"),
+                ("accepted", "issue", False),
+                ("accepted", "annul", "DUP-A"),
+                ("accepted", "issue", "DUP-A"),
+            ],
+            "the accepted one keeps the reference, else the oldest; another ask "
+            "or another document kind is no duplicate",
+        )
+        self.assertEqual(len(logs.records), 1)
+        self.assertIn(str(rows[2].id), logs.output[0])
+        self.assertIn(str(rows[4].id), logs.output[0])
+
 
 @tagged("post_install", "-at_install")
 class TestExchangeBatch(ExchangeCase):
@@ -567,7 +729,7 @@ class TestExchangeBatch(ExchangeCase):
     def test_a_protocol_that_takes_one_at_a_time_sends_one_call_each(self):
         transmissions = self._three()
         batches = []
-        self._batched(transmissions, {0: self._accepted("R")}, batches)
+        self._batched(transmissions, {0: Verdict(state="accepted")}, batches)
         self.assertEqual(batches, [1, 1, 1])
 
     def test_a_batching_protocol_sends_one_call_for_the_group(self):
@@ -582,7 +744,7 @@ class TestExchangeBatch(ExchangeCase):
     def test_a_batch_is_chunked_to_what_the_counterparty_takes(self):
         transmissions = self._three()
         batches = []
-        script = {index: self._accepted(f"C-{index}") for index in range(3)}
+        script = {index: Verdict(state="accepted") for index in range(2)}
         self._batched(transmissions, script, batches, size=2)
         self.assertEqual(batches, [2, 1])
 
@@ -604,9 +766,20 @@ class TestExchangeBatch(ExchangeCase):
     def test_a_batch_that_fails_retries_every_member(self):
         transmissions = self._three()
         with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
-            self._batched(transmissions, ConnectionError("gateway down"), [], size=10)
+            self._batched(
+                transmissions, NotDelivered("connection refused"), [], size=10
+            )
         self.assertEqual(set(transmissions.mapped("state")), {"queued"})
         self.assertEqual(set(transmissions.mapped("retry_count")), {1})
+
+    def test_a_batch_whose_call_may_have_arrived_reconciles_every_member(self):
+        self.patch(type(self.env["exchange.protocol.demo"]), "_is_reconcilable", True)
+        transmissions = self._three()
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            self._batched(transmissions, DeliveryUnknown("read timed out"), [], size=10)
+        self.assertEqual(set(transmissions.mapped("state")), {"sent"})
+        self.assertEqual(set(transmissions.mapped("retry_count")), {0})
+        self.assertTrue(all(transmissions.mapped("date_reconcile_deadline")))
 
     def _capable(self, reconcilable=False, idempotent=False):
         protocol = type(self.env["exchange.protocol.demo"])
@@ -761,6 +934,73 @@ class TestExchangeBatch(ExchangeCase):
         self.assertIn("Check with the counterparty", unnamed.message)
         self.assertEqual(unresolved, [(unnamed.subject_id, unnamed)])
 
+    def _call_log(self, failing=(), unprepared=()):
+        calls = []
+        protocol = type(self.env["exchange.protocol.demo"])
+        prepare_message = protocol._prepare_message
+
+        def prepare(protocol, transmission):
+            if transmission.subject_id.name in unprepared:
+                raise ValueError(f"{transmission.subject_id.name} has no lines")
+            return prepare_message(protocol, transmission)
+
+        def send_message(protocol, transmission, document):
+            calls.append(transmission.subject_id.name)
+            if transmission.subject_id.name in failing:
+                raise NotDelivered("connection refused")
+            return self._accepted(f"OK-{transmission.subject_id.name}")
+
+        self.patch(protocol, "_prepare_message", prepare)
+        self.patch(protocol, "_send_message", send_message)
+        self.patch(protocol, "_batch_size", 10)
+        return calls
+
+    def test_a_member_whose_call_fails_keeps_the_others_verdicts(self):
+        transmissions = self._three()
+        calls = self._call_log(failing={"B"})
+
+        with self.assertLogs(
+            "odoo.addons.exchange.models.exchange_transmission", "ERROR"
+        ) as logs:
+            transmissions._send_many()
+
+        self.assertEqual(calls, ["Subject Co", "B", "C"])
+        self.assertEqual(
+            transmissions.mapped("state"),
+            ["accepted", "queued", "accepted"],
+            "the counterparty answered the first and the third; a retry of the "
+            "whole call would hand them those documents again",
+        )
+        self.assertEqual(
+            transmissions.mapped("reference"), ["OK-Subject Co", False, "OK-C"]
+        )
+        self.assertEqual(transmissions.mapped("retry_count"), [0, 1, 0])
+        self.assertIn("connection refused", transmissions[1].message)
+        self.assertEqual(
+            [record.getMessage() for record in logs.records],
+            [
+                (
+                    f"Sending transmission {transmissions[1].id} over "
+                    f"{self.channel.display_name} failed"
+                ),
+            ],
+        )
+
+    def test_a_member_that_fails_before_its_call_is_not_sent(self):
+        transmissions = self._three()
+        calls = self._call_log(unprepared={"B"})
+
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            transmissions._send_many()
+
+        self.assertEqual(calls, ["Subject Co", "C"])
+        self.assertEqual(
+            transmissions.mapped("state"), ["accepted", "queued", "accepted"]
+        )
+        self.assertEqual(transmissions[1].retry_count, 1)
+        self.assertFalse(transmissions[1].attachment_id)
+        self.assertIn("has no lines", transmissions[1].message)
+
     def test_two_channels_do_not_share_a_call(self):
         other_endpoint = self.endpoint.copy({"code": "demo_second"})
         other_channel = self.channel.copy(
@@ -812,14 +1052,29 @@ class TestExchangeClaim(ExchangeCase):
 
     def test_the_cron_leaves_held_transmissions_queued(self):
         transmission = self._add_transmission()
-        batches = []
+        self.env["ir.job"].search([]).unlink()
+        sent = []
+
+        def send_message(protocol, transmission, document):
+            sent.append(transmission.id)
+            return Verdict(state="accepted")
+
+        self.patch(
+            type(self.env["exchange.protocol.demo"]), "_send_message", send_message
+        )
         self._held_elsewhere()
 
-        self.env["exchange.transmission"].with_context(
-            exchange_demo_batch={0: Verdict(state="accepted")}, demo_batches=batches
-        )._cron_send_queued()
+        self.env["exchange.transmission"]._cron_send_queued()
+        job = self.env["ir.job"].search(
+            [("identity_key", "=", f"exchange.send:{self.channel.id}")]
+        )
+        self.assertEqual(len(job), 1, "the sweep hands the queued transmission over")
+        job.action_run_now()
 
-        self.assertEqual(batches, [])
+        self.assertEqual(
+            sent, [], "the job the sweep enqueued leaves a held transmission alone"
+        )
+        self.assertEqual(job.state, "done")
         self.assertEqual(transmission.state, "queued")
 
     def test_an_unheld_transmission_still_goes_out(self):
@@ -832,3 +1087,161 @@ class TestExchangeClaim(ExchangeCase):
 
         self.assertEqual(batches, [1], "the lock must not stop an ordinary send")
         self.assertEqual(transmission.state, "accepted")
+
+
+class TestExchangeReaction(ExchangeCase):
+    _LOGGER = "odoo.addons.exchange.models.exchange_transmission"
+
+    def setUp(self):
+        super().setUp()
+        self.env["ir.job"].search([]).unlink()
+        self.sent = []
+
+        def send_message(protocol, transmission, document):
+            self.sent.append(transmission.id)
+            return Verdict(state="accepted", reference=f"ONCE-{transmission.id}")
+
+        self.patch(
+            type(self.env["exchange.protocol.demo"]), "_send_message", send_message
+        )
+
+    def _fail_hook(self, hook):
+        def react(subject, transmission):
+            raise RuntimeError(f"{subject.display_name} is locked")
+
+        self.patch(type(self.subject), hook, react)
+
+    def _hook_log(self, hook):
+        reactions = []
+        self.patch(
+            type(self.subject),
+            hook,
+            lambda subject, transmission: reactions.append((subject, transmission)),
+        )
+        return reactions
+
+    def _reaction_job(self, transmission, event):
+        return self.env["ir.job"].search(
+            [("identity_key", "=", f"exchange.react:{transmission.id}:{event}")]
+        )
+
+    def test_a_subject_that_fails_to_react_does_not_send_its_document_again(self):
+        transmission = self._add_transmission()
+        self._fail_hook("_on_transmission_settled")
+
+        with self.assertLogs(self._LOGGER, "ERROR"):
+            self.channel._job_send_queued()
+        self.channel._job_send_queued()
+
+        self.assertEqual(
+            self.sent,
+            [transmission.id],
+            "the counterparty took the document; its subject failing to react "
+            "is no reason to submit it a second time",
+        )
+        self.assertEqual(transmission.state, "accepted")
+        self.assertEqual(transmission.reference, f"ONCE-{transmission.id}")
+
+    def test_a_reaction_that_failed_is_run_again_as_its_own_job(self):
+        transmission = self._add_transmission()
+        self._fail_hook("_on_transmission_settled")
+        with self.assertLogs(self._LOGGER, "ERROR") as logs:
+            self.channel._job_send_queued()
+        self.assertIn(f"transmission {transmission.id}", logs.records[0].getMessage())
+
+        job = self._reaction_job(transmission, "settled")
+        self.assertEqual(len(job), 1, "the failed reaction is not lost")
+        self.assertEqual(job.state, "pending")
+        self.assertEqual(job.method_name, "_job_react_subject")
+
+        reactions = self._hook_log("_on_transmission_settled")
+        job.action_run_now()
+
+        self.assertEqual(reactions, [(self.subject, transmission)])
+        self.assertEqual(job.state, "done")
+        self.assertEqual(self.sent, [transmission.id])
+
+    def test_a_reaction_that_keeps_failing_fails_its_own_job(self):
+        transmission = self._add_transmission()
+        self._fail_hook("_on_transmission_settled")
+        with self.assertLogs(self._LOGGER, "ERROR"):
+            self.channel._job_send_queued()
+        job = self._reaction_job(transmission, "settled")
+
+        with self.assertRaises(RuntimeError):
+            job.action_run_now()
+
+        self.assertEqual(transmission.state, "accepted")
+        self.assertEqual(self.sent, [transmission.id])
+
+    def test_a_subject_that_fails_to_hear_of_an_expiry_still_sees_it_expire(self):
+        protocol = type(self.env["exchange.protocol.demo"])
+        transmission = self._add_transmission()
+        self.patch(protocol, "_batch_size", 10)
+        self._fail_hook("_on_transmission_unresolved")
+        settled = self._hook_log("_on_transmission_settled")
+
+        with self.assertLogs(self._LOGGER, "WARNING"):
+            transmission.with_context(
+                exchange_demo_batch={}, demo_batches=[]
+            )._send_many()
+
+        self.assertEqual(transmission.state, "expired")
+        self.assertEqual(settled, [(self.subject, transmission)])
+        self.assertEqual(len(self._reaction_job(transmission, "unresolved")), 1)
+        self.assertFalse(self._reaction_job(transmission, "settled"))
+
+    def test_a_verdict_read_back_is_kept_when_its_subject_fails_to_react(self):
+        transmission = self._add_transmission()
+        transmission.state = "sent"
+        self._fail_hook("_on_transmission_settled")
+
+        with self.assertLogs(self._LOGGER, "ERROR"):
+            self._read_verdicts(demo_poll=self._accepted("ACK-3"))
+
+        self.assertEqual(transmission.state, "accepted")
+        self.assertEqual(len(self._reaction_job(transmission, "settled")), 1)
+
+    def test_a_member_whose_answer_cannot_be_recorded_is_not_sent_again(self):
+        protocol = type(self.env["exchange.protocol.demo"])
+        self.patch(protocol, "_batch_size", 10)
+        self.patch(protocol, "_is_reconcilable", True)
+        taken = self._add_transmission(
+            subject=self.env["res.partner"].create({"name": "Taken"}), kind="invoice"
+        )
+        taken.write({"reference": "DUP", "state": "accepted"})
+        members = self.env["exchange.transmission"].union(
+            *(
+                self._add_transmission(
+                    subject=self.env["res.partner"].create({"name": name}),
+                    kind="invoice",
+                )
+                for name in ("A", "B", "C")
+            )
+        )
+        script = {
+            0: self._accepted("OK-0"),
+            1: self._accepted("DUP"),
+            2: self._accepted("OK-2"),
+        }
+
+        with (
+            self.assertLogs(self._LOGGER, "ERROR") as logs,
+            mute_logger("odoo.db.cursor"),
+        ):
+            members.with_context(
+                exchange_demo_batch=script, demo_batches=[]
+            )._send_many()
+
+        self.assertIn(f"transmission {members[1].id}", logs.records[0].getMessage())
+        self.assertEqual(members.mapped("state"), ["accepted", "sent", "accepted"])
+        self.assertEqual(members.mapped("reference"), ["OK-0", False, "OK-2"])
+        self.assertTrue(members[1].date_sent)
+        self.assertTrue(members[1].date_reconcile_deadline)
+        self.assertIn("could not be recorded", members[1].message)
+
+        batches = []
+        self.channel.with_context(
+            exchange_demo_batch={0: self._accepted("AGAIN")}, demo_batches=batches
+        )._job_send_queued()
+        self.assertEqual(batches, [], "what the counterparty took is never resent")

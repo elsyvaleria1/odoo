@@ -19,6 +19,7 @@ from . import test_gate_mixin_boundary
 from . import test_mail_independence
 from . import test_rate_limit_scoping
 from . import test_error_status_code
+from . import test_delivery_outcome
 from . import test_user_credential_scope
 from . import test_private_host
 from . import test_webhook_action_endpoint

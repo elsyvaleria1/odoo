@@ -59,6 +59,10 @@ class GoogleReserveMerchant(models.Model):
         required=True,
         help="Used by Google to try to match your physical address to your business.",
     )
+    location_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="location_id.country_id",
+    )
 
     @api.constrains("location_id")
     def _check_location(self) -> None:

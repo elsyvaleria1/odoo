@@ -1713,12 +1713,16 @@ class ResPartner(models.Model):
         return ["vat"]
 
     def _sync_commercial_fields_from_company(self, *, keep_own_values: bool) -> None:
+        synced = self.browse()
+        stale_by_values: dict[str, ResPartner] = {}
+        sync_vals_by_key: dict[str, dict[str, Any]] = {}
         for commercial_partner, partners in self.grouped(
             "commercial_partner_id"
         ).items():
             partners -= commercial_partner
             if not partners:
                 continue
+            synced |= partners
             sync_vals = (
                 commercial_partner._prepare_commercial_vals()
                 if keep_own_values
@@ -1733,12 +1737,21 @@ class ResPartner(models.Model):
                 fields=list(sync_vals),
             )
             if sync_vals:
-                partners.write(sync_vals)
-                partners._sync_commercial_fields_to_descendants(list(sync_vals))
-            partners._sync_company_dependent_commercial_fields()
+                key = repr(sorted(sync_vals.items()))
+                sync_vals_by_key[key] = sync_vals
+                stale_by_values[key] = (
+                    stale_by_values.get(key, self.browse()) | partners
+                )
+        for key, partners in stale_by_values.items():
+            sync_vals = sync_vals_by_key[key]
+            partners.write(sync_vals)
+            partners._sync_commercial_fields_to_descendants(list(sync_vals))
+        synced._sync_company_dependent_commercial_fields()
 
     def _sync_company_dependent_commercial_fields(self) -> None:
-        if not (fields_to_sync := self._company_dependent_commercial_fields()):
+        if not self or not (
+            fields_to_sync := self._company_dependent_commercial_fields()
+        ):
             return
 
         if not (company_ids := self._get_stored_company_ids(fields_to_sync)):
@@ -1756,25 +1769,37 @@ class ResPartner(models.Model):
         )
         for company_sudo in other_companies:
             self_in_company = self.with_company(company_sudo)
-            commercial_in_company = self_in_company.commercial_partner_id
-            stale_fields = [
-                fname
-                for fname in fields_to_sync
-                if any(
-                    partner[fname] != commercial_in_company[fname]
-                    for partner in self_in_company
+            stale_by_values: dict[str, ResPartner] = {}
+            sync_vals_by_key: dict[str, dict[str, Any]] = {}
+            for commercial_in_company, partners in self_in_company.grouped(
+                "commercial_partner_id"
+            ).items():
+                stale_fields = [
+                    fname
+                    for fname in fields_to_sync
+                    if any(
+                        partner[fname] != commercial_in_company[fname]
+                        for partner in partners
+                    )
+                ]
+                if not stale_fields:
+                    continue
+                sync_vals = commercial_in_company._convert_fields_to_values(
+                    stale_fields
                 )
-            ]
-            if stale_fields:
+                key = repr(sorted(sync_vals.items()))
+                sync_vals_by_key[key] = sync_vals
+                stale_by_values[key] = (
+                    stale_by_values.get(key, self_in_company.browse()) | partners
+                )
+            for key, partners in stale_by_values.items():
                 _debug.pipeline(
                     "commercial_fields_synced_in_company",
-                    partners=self.ids,
+                    partners=partners.ids,
                     company=company_sudo.id,
-                    fields=stale_fields,
+                    fields=list(sync_vals_by_key[key]),
                 )
-                self_in_company.write(
-                    commercial_in_company._convert_fields_to_values(stale_fields)
-                )
+                partners.write(sync_vals_by_key[key])
 
     def _sync_commercial_fields_to_descendants(
         self, fields_to_sync: list[str] | None = None, *, new: bool = False

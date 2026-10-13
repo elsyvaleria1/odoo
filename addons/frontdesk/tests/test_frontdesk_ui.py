@@ -65,3 +65,34 @@ class TestFrontDeskURL(HttpCase):
             self.call_jsonrpc(f"/frontdesk/{station.id}/{wrong}/get_frontdesk_data")
 
         self.assertEqual(refused.exception.code, 404)
+
+    def test_a_number_given_at_the_kiosk_takes_its_stations_country(self):
+        self.env.ref("base.main_company").country_id = self.env.ref("base.fr")
+        us = self.env.ref("base.us")
+        office = self.env["res.company"].create({"name": "Office", "country_id": us.id})
+        station = self.env["frontdesk.frontdesk"].create(
+            {"name": "Lobby", "company_id": office.id, "self_check_in": True}
+        )
+
+        result = self.call_jsonrpc(
+            f"/frontdesk/{station.id}/{station.access_token}/prepare_visitor_data",
+            {"name": "Guest", "phone": "202 555 0700", "host_ids": []},
+        )
+
+        visitor = self.env["frontdesk.visitor"].browse(result["visitor_id"])
+        self.assertEqual(visitor.phone_ids.country_id, us)
+
+    def test_a_visitor_checked_in_at_the_kiosk_belongs_to_its_stations_company(self):
+        office = self.env["res.company"].create({"name": "Office"})
+        station = self.env["frontdesk.frontdesk"].create(
+            {"name": "Lobby", "company_id": office.id, "self_check_in": True}
+        )
+        self.assertNotEqual(self.env.ref("base.public_user").company_id, office)
+
+        result = self.call_jsonrpc(
+            f"/frontdesk/{station.id}/{station.access_token}/prepare_visitor_data",
+            {"name": "Guest", "host_ids": []},
+        )
+
+        visitor = self.env["frontdesk.visitor"].browse(result["visitor_id"])
+        self.assertEqual(visitor.company_id, office)

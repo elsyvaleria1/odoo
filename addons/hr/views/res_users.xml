@@ -73,6 +73,7 @@
                             string="Work Phone"
                             placeholder="Work Phone"
                             widget="many2many_tags"
+                            context="{'default_country_id': country_id}"
                             class="w-75" />
                     </h5>
                 </xpath>

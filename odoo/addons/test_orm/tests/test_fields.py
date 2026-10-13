@@ -478,6 +478,18 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
             self.assertFalse(record.with_context(bozo=1).context_dependent_name)
         self.assertEqual(record.with_context(bozo=1).context_dependent_name, "root")
 
+    def test_11_protected_miss_in_another_context_reads_on_a_recordset(self):
+        container = self.env["test_orm.compute.container"].create({"name": "box"})
+        members = (
+            self.env["test_orm.compute.member"]
+            .create([{"name": "box"}, {"name": "box"}])
+            .with_user(self.user_demo)
+        )
+        field = members._fields["container_context_id"]
+        with self.env.protecting([field], members):
+            self.assertFalse(members.container_context_id)
+        self.assertEqual(members.container_context_id, container)
+
     def test_11_computed_access(self):
         User = self.env["res.users"]
         user1 = User.create({"name": "Aaaah", "login": "a"})

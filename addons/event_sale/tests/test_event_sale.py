@@ -1,6 +1,6 @@
 from odoo import Command
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 from odoo.tests.common import users
 
 from odoo.addons.event_sale.tests.common import TestEventSaleCommon
@@ -733,3 +733,42 @@ class TestEventSale(TestEventSaleCommon):
         )
         registration.sale_order_id.action_confirm()
         self.assertEqual(registration.sale_status, "sold")
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnAttendeeEditor(TestEventSaleCommon):
+    def test_a_number_typed_for_an_attendee_takes_the_customers_or_events_country(
+        self,
+    ):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us, mexico = self.env.ref("base.us"), self.env.ref("base.mx")
+        self.event_0.address_id = self.env["res.partner"].create(
+            {"name": "Venue", "country_id": mexico.id}
+        )
+        Partner = self.env["res.partner"]
+        Phone = self.env["phone.number"]
+        for line, (customer, country) in enumerate(
+            [
+                (Partner.create({"name": "Booker", "country_id": us.id}), us),
+                (Partner.create({"name": "Countryless booker"}), mexico),
+            ]
+        ):
+            with self.subTest(customer=customer.name):
+                order = self.env["sale.order"].create({"partner_id": customer.id})
+                editor = self.env["wizard.sale.order.update.attendee"].create(
+                    {
+                        "sale_order_id": order.id,
+                        "event_registration_ids": [
+                            Command.create({"event_id": self.event_0.id, "name": "A"})
+                        ],
+                    }
+                )
+                context = (
+                    Form(editor, view="event_sale.view_event_registration_editor_form")
+                    .event_registration_ids.edit(0)
+                    ._get_context("phone_ids")
+                )
+                phone_id, _ = Phone.with_context(context).name_create(
+                    f"202 555 07{line:02d}"
+                )
+                self.assertEqual(Phone.browse(phone_id).country_id, country)

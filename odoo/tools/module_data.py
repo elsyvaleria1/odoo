@@ -823,6 +823,25 @@ def _repoint_references(
 
 UNDECLARED_REFERENCES: tuple[tuple[str, str, str], ...] = (
     ("approval_observation", "res_id", "model_name"),
+    ("automation_rule", "trg_field_ref", "trg_field_ref_model_name"),
+    ("automation_runtime", "res_id", "res_model"),
+    ("card_card", "res_id", "campaign_id->card_campaign.res_model"),
+    ("credit_event", "res_id", "res_model"),
+    (
+        "data_cleaning_record",
+        "res_id",
+        "cleaning_model_id->data_cleaning_model.res_model_id",
+    ),
+    (
+        "data_merge_record",
+        "res_id",
+        "group_id->data_merge_group.model_id->data_merge_model.res_model_id",
+    ),
+    (
+        "data_recycle_record",
+        "res_id",
+        "recycle_model_id->data_recycle_model.res_model_id",
+    ),
     ("integration_exchange", "origin_record_id", "origin_model"),
     ("ir_act_window", "res_id", "res_model"),
     ("ir_embedded_actions", "parent_res_id", "parent_res_model"),
@@ -833,8 +852,13 @@ UNDECLARED_REFERENCES: tuple[tuple[str, str, str], ...] = (
     ),
     ("mail_alias", "alias_force_thread_id", "alias_model_id"),
     ("mail_alias", "alias_parent_thread_id", "alias_parent_model_id"),
+    ("rating_rating", "parent_res_id", "parent_res_model"),
     ("res_users_settings_embedded_action", "res_id", "res_model"),
     ("snailmail_letter", "res_id", "model"),
+    ("test_orm_attachment", "res_id", "res_model"),
+    ("test_orm_creativework_edition", "res_id", "res_model"),
+    ("timer_timer", "parent_res_id", "parent_res_model"),
+    ("timer_timer", "res_id", "res_model"),
 )
 
 
@@ -919,28 +943,12 @@ def rekey_records(
             continue
         rekeyed.add(target[:2])
         _rekey_column(cr, *target[:2], olds, news, target[2])
-    for referencing, id_column, model_column in UNDECLARED_REFERENCES:
+    for referencing, id_column, model_path in UNDECLARED_REFERENCES:
         if not column_exists(cr, referencing, id_column):
             continue
-        if "->" in model_column:
-            link, link_target = model_column.split("->")
-            target_table, target_column = link_target.split(".")
-            if not column_exists(cr, referencing, link) or not column_exists(
-                cr, target_table, target_column
-            ):
-                continue
-            condition = SQL(
-                " AND %s IN (SELECT id FROM %s WHERE %s = ANY(%s))",
-                SQL.identifier(link),
-                SQL.identifier(target_table),
-                SQL.identifier(target_column),
-                models,
-            )
-        elif column_exists(cr, referencing, model_column):
-            condition = _model_condition(cr, referencing, model_column, models)
-        else:
-            continue
-        _rekey_column(cr, referencing, id_column, olds, news, condition)
+        condition = _model_path_condition(cr, referencing, model_path, models)
+        if condition is not None:
+            _rekey_column(cr, referencing, id_column, olds, news, condition)
     if table_exists(cr, "mail_tracking_value"):
         tracked = SQL(
             " AND field_id IN (SELECT id FROM ir_model_fields "
@@ -1209,14 +1217,38 @@ def _foreign_keys_into_tree(cr: BaseCursor, table: str) -> list[tuple[str, str, 
 def _model_column_of(
     cr: BaseCursor, table: str, res_column: str
 ) -> tuple[str, bool] | None:
-    prefix = res_column.removesuffix("res_id")
+    if res_column.endswith("res_id"):
+        prefix = res_column.removesuffix("res_id")
+        bases: tuple[str, ...] = (f"{prefix}res_model", f"{prefix}model")
+    else:
+        bases = (f"{res_column.removesuffix('id')}model",)
     columns = get_table_columns(cr, table)
-    for base in (f"{prefix}res_model", f"{prefix}model"):
+    for base in bases:
         for candidate, is_id in ((base, False), (f"{base}_id", True)):
             column = columns.get(candidate)
             if column and (column["udt_name"] == "int4") == is_id:
                 return candidate, is_id
     return None
+
+
+def _model_path_condition(
+    cr: BaseCursor, table: str, path: str, models: list[str]
+) -> SQL | None:
+    column, link, rest = path.partition("->")
+    if not column_exists(cr, table, column):
+        return None
+    if not link:
+        return _model_condition(cr, table, column, models)
+    target_table, __, target_path = rest.partition(".")
+    inner = _model_path_condition(cr, target_table, target_path, models)
+    if inner is None:
+        return None
+    return SQL(
+        " AND %s IN (SELECT id FROM %s WHERE TRUE%s)",
+        SQL.identifier(column),
+        SQL.identifier(target_table),
+        inner,
+    )
 
 
 def _model_condition_of(

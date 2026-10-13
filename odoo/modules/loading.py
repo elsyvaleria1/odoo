@@ -1140,6 +1140,10 @@ class _PackageLoader:
             return
         if not self.operation:
             self.registry.setup_models(self.cr, [], skip_if_clean=True)
+        if self.models_to_check:
+            _reinit_models_to_check(self.registry, self.cr, self.models_to_check)
+            self.env.flush_all()
+            self.cr.commit()
         self.registry.check_null_constraints(self.cr)
         tests_t0, tests_q0 = time.time(), odoo.db.sql_counter
         _debug.pipeline(
@@ -1383,11 +1387,31 @@ def _warn_invalid_module_names(cr: BaseCursor, module_names: Iterable[str]) -> N
             )
 
 
+def _reinit_models_to_check(
+    registry: Registry, cr: Cursor, models_to_check: Collection[str]
+) -> None:
+    if not models_to_check:
+        return
+    models = [model for model in models_to_check if model in registry]
+    with _debug.perf(
+        "modules.reinit_models_to_check",
+        cr=cr,
+        models=len(models),
+        unknown=len(models_to_check) - len(models),
+    ):
+        registry.init_models(
+            cr,
+            models,
+            {"models_to_check": True, "update_custom_fields": True},
+        )
+
+
 def _run_deferred_at_install_tests(
     registry: Registry,
     cr: Cursor,
     env: Environment,
     report: OdooTestResult | None,
+    models_to_check: Collection[str],
 ) -> None:
     names = registry.deferred_at_install_modules
     if not names:
@@ -1395,6 +1419,7 @@ def _run_deferred_at_install_tests(
     from odoo.tests import loader
 
     _debug.pipeline("modules.deferred_tests.begin", modules=len(names))
+    _reinit_models_to_check(registry, cr, models_to_check)
     registry.check_null_constraints(cr)
     env.flush_all()
     cr.commit()
@@ -1917,7 +1942,11 @@ class _ModuleLoader:
 
     def run_deferred_at_install_tests(self) -> None:
         _run_deferred_at_install_tests(
-            self.registry, self.cr, self._get_env(), self.report
+            self.registry,
+            self.cr,
+            self._get_env(),
+            self.report,
+            self.models_to_check,
         )
 
     def log_modules_that_never_loaded(self) -> None:
@@ -2195,20 +2224,7 @@ class _ModuleLoader:
             )
 
     def reinit_models_to_check(self) -> None:
-        if not self.models_to_check:
-            return
-        models = [model for model in self.models_to_check if model in self.registry]
-        with _debug.perf(
-            "modules.reinit_models_to_check",
-            cr=self.cr,
-            models=len(models),
-            unknown=len(self.models_to_check) - len(models),
-        ):
-            self.registry.init_models(
-                self.cr,
-                models,
-                {"models_to_check": True, "update_custom_fields": True},
-            )
+        _reinit_models_to_check(self.registry, self.cr, self.models_to_check)
 
     def check_loaded_templates(self) -> None:
         if not self.update_module:

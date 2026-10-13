@@ -178,6 +178,7 @@ class ResUsers(models.Model):
             "auth_client_ids",
             "api_key_ids",
             "phone_ids",
+            "country_id",
             "display_name",
         ]
 

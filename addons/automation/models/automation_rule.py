@@ -312,6 +312,7 @@ class AutomationRule(models.Model):
     trg_field_ref_model_name = fields.Char(
         string="Trigger Field Model",
         compute="_compute_trg_field_ref_model_name",
+        store=True,
     )
     trg_field_ref = fields.Many2oneReference(
         model_field="trg_field_ref_model_name",
@@ -845,7 +846,7 @@ class AutomationRule(models.Model):
     def _compute_trg_field_ref(self) -> None:
         self.trg_field_ref = False
 
-    @api.depends("trigger", "trg_field_ref")
+    @api.depends("model_id", "trigger", "trg_field_ref")
     def _compute_trg_field_ref_model_name(self) -> None:
         to_compute = self.filtered(
             lambda a: (

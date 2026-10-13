@@ -1,5 +1,6 @@
 import contextlib
 import unittest
+from collections.abc import Hashable
 from unittest.mock import patch
 
 import psycopg
@@ -7,7 +8,6 @@ import psycopg
 from odoo import Command
 from odoo.exceptions import AccessError, UserError
 from odoo.libs.json import dumps as json_dumps
-from odoo.libs.lru import LRU
 from odoo.tests import TransactionCase, can_import, loaded_demo_data, tagged
 from odoo.tools.misc import file_open
 
@@ -210,7 +210,7 @@ class TestFieldConverters(TransactionCase):
         fld = self.env["res.partner"]._fields["type"]
         nested = self.converter.with_context(
             import_file=True,
-            parent_fields_hierarchy=["child_ids"],
+            parent_fields_hierarchy=("child_ids",),
             import_skip_records=["child_ids/type"],
         )
         value, warnings = nested._str_to_selection(fld, "not_a_real_type")
@@ -219,7 +219,7 @@ class TestFieldConverters(TransactionCase):
 
         bare = self.converter.with_context(
             import_file=True,
-            parent_fields_hierarchy=["child_ids"],
+            parent_fields_hierarchy=("child_ids",),
             import_skip_records=["type"],
         )
         with self.assertRaises(ValueError):
@@ -779,15 +779,76 @@ class TestFieldConverters(TransactionCase):
         converter = self.converter.with_context(
             import_file=True,
             import_set_empty_fields=["parent_id"],
-            import_cache=LRU(1024),
         )
-        first, _w = converter._get_db_id(self.flds["m2o"], None, "IFLD29b Target")
-        self.assertIsNone(first, "the record does not exist yet")
-        target = self.env["res.partner"].create({"name": "IFLD29b Target"})
-        self.env.flush_all()
-        second, _w = converter._get_db_id(self.flds["m2o"], None, "IFLD29b Target")
+        with converter._import_session(lambda **selector: False):
+            first, _w = converter._get_db_id(self.flds["m2o"], None, "IFLD29b Target")
+            self.assertIsNone(first, "the record does not exist yet")
+            target = self.env["res.partner"].create({"name": "IFLD29b Target"})
+            self.env.flush_all()
+            second, _w = converter._get_db_id(self.flds["m2o"], None, "IFLD29b Target")
         self.assertEqual(
             second, target.id, "a cached miss would still report 'not found'"
+        )
+
+    def test_load_context_holds_no_unhashable_import_state(self):
+        Partner = self.env["res.partner"]
+        parents = Partner.create([{"name": f"IFLD29d Parent {i}"} for i in range(3)])
+        self.env.flush_all()
+        converter_cls = type(self.converter)
+        get_db_id = converter_cls._get_db_id
+        contexts = []
+
+        def spy(converter, field, subfield, value):
+            contexts.append(converter.env.context)
+            return get_db_id(converter, field, subfield, value)
+
+        with patch.object(converter_cls, "_get_db_id", spy):
+            result = Partner.load(
+                ["name", "parent_id"],
+                [[f"IFLD29d Child {i}", parents[i].name] for i in range(3)],
+            )
+        self.assertEqual(len(result["ids"]), 3, result["messages"])
+        self.assertEqual(len(contexts), 3)
+        for context in contexts:
+            self.assertEqual(
+                [
+                    key
+                    for key, value in context.items()
+                    if not isinstance(value, Hashable)
+                ],
+                [],
+                "an unhashable context value is re-frozen on every environment "
+                "lookup, so a per-row context switch costs O(its size)",
+            )
+
+    def test_nested_load_context_holds_no_unhashable_import_state(self):
+        self.env["res.partner.tag"].create({"name": "IFLD29e Tag"})
+        self.env.flush_all()
+        converter_cls = type(self.converter)
+        get_db_id = converter_cls._get_db_id
+        contexts = []
+
+        def spy(converter, field, subfield, value):
+            contexts.append(converter.env.context)
+            return get_db_id(converter, field, subfield, value)
+
+        with patch.object(converter_cls, "_get_db_id", spy):
+            result = self.env["res.partner"].load(
+                ["name", "child_ids/name", "child_ids/tag_ids"],
+                [["IFLD29e Parent", "IFLD29e Child", "IFLD29e Tag"]],
+            )
+        self.assertEqual(len(result["ids"]), 1, result["messages"])
+        self.assertEqual(
+            [context.get("parent_fields_hierarchy") for context in contexts],
+            [("child_ids",)],
+        )
+        self.assertEqual(
+            [
+                key
+                for key, value in contexts[0].items()
+                if not isinstance(value, Hashable)
+            ],
+            [],
         )
 
     def test_reference_cache_does_not_outlive_one_load(self):
@@ -878,7 +939,7 @@ class TestFieldConverters(TransactionCase):
             self.converter._get_field_path_for_error("value", [{None: "somename"}]),
             ["value"],
         )
-        nested = self.converter.with_context(parent_fields_hierarchy=["child_ids"])
+        nested = self.converter.with_context(parent_fields_hierarchy=("child_ids",))
         self.assertEqual(
             nested._get_field_path_for_error("type", "bad"), ["child_ids", "type"]
         )

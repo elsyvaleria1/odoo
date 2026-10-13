@@ -1,4 +1,4 @@
-from odoo import Command, fields, models
+from odoo import Command, api, fields, models
 
 
 class WizardSaleOrderUpdateAttendeeLine(models.TransientModel):
@@ -24,7 +24,19 @@ class WizardSaleOrderUpdateAttendeeLine(models.TransientModel):
     event_ticket_id = fields.Many2one(comodel_name="event.event.ticket")
     email = fields.Char()
     phone_ids = fields.Many2many(comodel_name="phone.number")
+    phone_country_id = fields.Many2one(
+        comodel_name="res.country",
+        compute="_compute_phone_country_id",
+    )
     name = fields.Char()
+
+    @api.depends("editor_id.sale_order_id.partner_id.country_id", "event_id.country_id")
+    def _compute_phone_country_id(self) -> None:
+        for line in self:
+            line.phone_country_id = (
+                line.editor_id.sale_order_id.partner_id.country_id
+                or line.event_id.country_id
+            )
 
     def _prepare_registration_data(self, include_event_values=False):
         self.check_singleton()

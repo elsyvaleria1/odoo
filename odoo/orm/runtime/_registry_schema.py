@@ -139,10 +139,25 @@ class _RegistrySchemaMixin(_RegistryStubs):
                         elif warn:
                             _schema.warning("Missing not-null constraint on %s", field)
 
+    @staticmethod
+    def _get_index_opclass(field: Field[typing.Any], index: str | None) -> str | None:
+        if index == "trigram":
+            return "gin_trgm_ops"
+        if field.translate:
+            return "jsonb_path_ops"
+        return None
+
+    @classmethod
+    def _get_index_storage(cls, field: Field[typing.Any], index: str | None) -> str:
+        if cls._get_index_opclass(field, index) == "jsonb_path_ops":
+            return "fastupdate = off"
+        return ""
+
     def _get_index_expression(
         self, field: Field[typing.Any], index: str | None
     ) -> tuple[str, str, str]:
         column_expression = f'"{field.name}"'
+        opclass = self._get_index_opclass(field, index)
         if index == "trigram":
             if field.translate:
                 column_expression = (
@@ -156,7 +171,11 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     "therefore trigram indexes may not be effective.",
                     stacklevel=1,
                 )
-            expression = f"{column_expression} gin_trgm_ops"
+            expression = f"{column_expression} {opclass}"
+            method = "gin"
+            where = ""
+        elif opclass:
+            expression = f"{column_expression} {opclass}"
             method = "gin"
             where = ""
         elif index == "btree_not_null" and field.company_dependent:
@@ -183,6 +202,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
         where: str,
         stale: bool,
         unique: bool = False,
+        storage: str = "",
     ) -> None:
         try:
             with cr.savepoint(flush=False):
@@ -202,6 +222,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     where,
                     unique=unique,
                     check_exists=False,
+                    storage=storage,
                 )
         except psycopg.DatabaseError:
             _schema.error("Unable to add index %r for %s", indexname, self)
@@ -241,19 +262,27 @@ class _RegistrySchemaMixin(_RegistryStubs):
             """
             SELECT idx.relname, tbl.relname, am.amname,
                    ix.indpred IS NOT NULL AS has_predicate,
-                   ix.indisunique
+                   ix.indisunique, opc.opcname
               FROM pg_index ix
               JOIN pg_class idx ON idx.oid = ix.indexrelid
               JOIN pg_class tbl ON tbl.oid = ix.indrelid
               JOIN pg_am am ON am.oid = idx.relam
+              LEFT JOIN pg_opclass opc ON opc.oid = ix.indclass[0]
              WHERE idx.relname = ANY(%s)
                AND idx.relnamespace = current_schema::regnamespace
             """,
             [[row[0] for row in expected]],
         )
         existing = {
-            indexname: (tablename, method, has_predicate, is_unique)
-            for indexname, tablename, method, has_predicate, is_unique in cr.fetchall()
+            indexname: (tablename, method, has_predicate, is_unique, opclass)
+            for (
+                indexname,
+                tablename,
+                method,
+                has_predicate,
+                is_unique,
+                opclass,
+            ) in cr.fetchall()
         }
         _debug.pipeline(
             "registry.check_indexes",
@@ -270,26 +299,35 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     f"'btree', 'btree_not_null', 'unique', 'trigram', True, False, None"
                 )
 
-            if index and field.translate and index != "trigram":
+            if field.translate and index == "unique":
                 _schema.warning(
-                    f"Index attribute on {field!r} ignored, only trigram index is supported for translated fields"
+                    f"Index attribute on {field!r} ignored, a unique index is not supported for translated fields"
                 )
                 continue
 
-            will_index = bool(index) and (
-                (not field.translate and index != "trigram")
-                or (index == "trigram" and self.has_trigram)
-            )
+            will_index = bool(index) and (index != "trigram" or self.has_trigram)
             if indexname in existing:
-                expected_method = "gin" if index == "trigram" else "btree"
-                expected_predicate = index in ("btree_not_null", "unique")
-                _table, actual_method, actual_predicate, actual_unique = existing[
-                    indexname
-                ]
+                expected_opclass = self._get_index_opclass(field, index)
+                expected_method = "gin" if expected_opclass else "btree"
+                expected_predicate = not field.translate and index in (
+                    "btree_not_null",
+                    "unique",
+                )
+                (
+                    _table,
+                    actual_method,
+                    actual_predicate,
+                    actual_unique,
+                    actual_opclass,
+                ) = existing[indexname]
                 stale = (
                     actual_method != expected_method
                     or bool(actual_predicate) != expected_predicate
                     or bool(actual_unique) != (index == "unique")
+                    or (
+                        expected_opclass is not None
+                        and actual_opclass != expected_opclass
+                    )
                 )
                 will_index = will_index and stale
             else:
@@ -306,12 +344,10 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     where,
                     stale,
                     unique=index == "unique",
+                    storage=self._get_index_storage(field, index),
                 )
 
-            elif (
-                not index
-                and tablename == existing.get(indexname, (None, None, None, None))[0]
-            ):
+            elif not index and tablename == existing.get(indexname, (None,))[0]:
                 _schema.info(
                     "Keep unexpected index %s on table %s", indexname, tablename
                 )

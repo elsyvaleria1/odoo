@@ -181,3 +181,35 @@ class TestPosOrderPayload(TestPoSCommon):
             sorted(f for f in listed if f.startswith("message_") or f == "has_message"),
             [],
         )
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnOrderForm(TestPoSCommon):
+    def test_a_number_typed_on_an_order_takes_its_customers_country(self):
+        self.config = self.basic_config
+        self.open_new_session()
+        us = self.env.ref("base.us")
+        self.env.company.country_id = self.env.ref("base.fr")
+        customer = self.env["res.partner"].create(
+            {"name": "Tourist", "country_id": us.id}
+        )
+        order = self.env["pos.order"].create(
+            {
+                "session_id": self.pos_session.id,
+                "partner_id": customer.id,
+                "amount_tax": 0,
+                "amount_total": 0,
+                "amount_paid": 0,
+                "amount_return": 0,
+            }
+        )
+
+        context = Form(order, view="point_of_sale.view_pos_pos_form")._get_context(
+            "phone_ids"
+        )
+
+        Phone = self.env["phone.number"]
+        phone_id, _ = Phone.with_context(context).name_create("202 555 0700")
+        self.assertEqual(Phone.browse(phone_id).country_id, us)
+        order.partner_id = False
+        self.assertEqual(order.phone_country_id, order.company_id.country_id)

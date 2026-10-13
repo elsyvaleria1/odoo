@@ -1,6 +1,6 @@
 {
     "name": "Document Exchange Framework",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "oldest_upgradable_version": "19.0.1.0.1",
     "category": "Hidden",
     "sequence": 6,

@@ -1132,6 +1132,7 @@ def create_index(
     comment: str | None = None,
     unique: bool = False,
     check_exists: bool = True,
+    storage: str = "",
 ) -> None:
     if not expressions:
         _debug.logic(
@@ -1162,11 +1163,12 @@ def create_index(
         )
         return
     definition = SQL(
-        "USING %s (%s)%s",
+        "USING %s (%s)%s%s",
         SQL(method),
         SQL(", ").join(
             SQL(expression.replace("%", "%%")) for expression in expressions
         ),
+        (SQL(" WITH (%s)", SQL(storage.replace("%", "%%"))) if storage else SQL()),
         (SQL(" WHERE %s", SQL(where.replace("%", "%%"))) if where else SQL()),
     )
     add_index(cr, indexname, tablename, definition, unique=unique, comment=comment)

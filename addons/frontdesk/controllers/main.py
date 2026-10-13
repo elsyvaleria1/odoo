@@ -230,7 +230,14 @@ class Frontdesk(http.Controller):
                     "station_id": frontdesk.id,
                     "name": kwargs.get("name"),
                     "phone_ids": [
-                        Command.create({"number": kwargs["phone"], "type": "mobile"})
+                        Command.set(
+                            frontdesk.env["phone.number"]
+                            .with_context(
+                                default_country_id=frontdesk.company_id.country_id.id
+                            )
+                            .create({"number": kwargs["phone"], "type": "mobile"})
+                            .ids
+                        )
                     ]
                     if kwargs.get("phone")
                     else False,

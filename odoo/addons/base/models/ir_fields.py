@@ -1,10 +1,11 @@
 import contextlib
+import contextvars
 import functools
 import itertools
 import logging
 import math
 from collections import defaultdict
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterator, Sequence
 from datetime import datetime
 from enum import StrEnum
 from typing import Any, NamedTuple
@@ -18,6 +19,7 @@ from odoo.fields import Domain
 from odoo.libs.datetime import localize_standard, utc
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import loads as json_loads
+from odoo.libs.lru import LRU
 from odoo.tools import OrderedSet
 from odoo.tools.misc import DATE_LENGTH
 from odoo.tools.translate import LazyTranslate, code_translations
@@ -89,6 +91,24 @@ class PropertyField(NamedTuple):
 type ConvertibleField = fields.Field | PropertyField
 type Converter = Callable[[Any], tuple[Any, list]]
 type RecordConverter = Callable[[dict, Callable], dict | None]
+type ImportFlush = Callable[..., bool]
+
+IMPORT_CACHE_SIZE = 65536
+
+
+class ImportSession(NamedTuple):
+    cache: LRU[Any, Any]
+    flush: ImportFlush
+
+
+_IMPORT_SESSION: contextvars.ContextVar[ImportSession | None] = contextvars.ContextVar(
+    "ir_fields_import_session", default=None
+)
+
+
+def _import_cache() -> LRU[Any, Any] | None:
+    session = _IMPORT_SESSION.get()
+    return None if session is None else session.cache
 
 
 class RefLookup(NamedTuple):
@@ -111,6 +131,16 @@ class IrFieldsConverter(models.AbstractModel):
     _description = "Fields Converter"
 
     @api.model
+    @contextlib.contextmanager
+    def _import_session(self, flush: ImportFlush) -> Iterator[ImportSession]:
+        session = ImportSession(LRU(IMPORT_CACHE_SIZE), flush)
+        token = _IMPORT_SESSION.set(session)
+        try:
+            yield session
+        finally:
+            _IMPORT_SESSION.reset(token)
+
+    @api.model
     def _prepare_import_error(
         self,
         error_type: type[Exception],
@@ -125,7 +155,7 @@ class IrFieldsConverter(models.AbstractModel):
     @api.model
     def _get_field_path(self, field: ConvertibleField) -> str:
         return "/".join(
-            self.env.context.get("parent_fields_hierarchy", []) + [field.name]
+            (*self.env.context.get("parent_fields_hierarchy", ()), field.name)
         )
 
     @api.model
@@ -943,7 +973,7 @@ class IrFieldsConverter(models.AbstractModel):
     def _get_cache_and_key(
         self, field: ConvertibleField, subfield: str | None, value: Any
     ) -> tuple[Any, tuple | None]:
-        cache = self.env.context.get("import_cache")
+        cache = _import_cache()
         if cache is None or not isinstance(value, str):
             return None, None
         return cache, (field.comodel_name, subfield, value)
@@ -1008,8 +1038,8 @@ class IrFieldsConverter(models.AbstractModel):
 
     @api.model
     def _flush_import(self, **selector: Any) -> bool:
-        flush = self.env.context.get("import_flush")
-        return flush is not None and bool(flush(**selector))
+        session = _IMPORT_SESSION.get()
+        return session is not None and bool(session.flush(**selector))
 
     @api.model
     def _get_ref_from_dbid(self, field: ConvertibleField, value: str) -> RefLookup:
@@ -1143,7 +1173,7 @@ class IrFieldsConverter(models.AbstractModel):
     def _prefetch_name_references(
         self, model: models.BaseModel, records: Sequence[dict]
     ) -> None:
-        cache = self.env.context.get("import_cache")
+        cache = _import_cache()
         if cache is None:
             return
         wanted: dict[tuple[str, str | None], OrderedSet] = defaultdict(OrderedSet)
@@ -1526,15 +1556,15 @@ class IrFieldsConverter(models.AbstractModel):
 
     @api.model
     def _get_converter_nested(
-        self, field: ConvertibleField, hierarchy: list[str]
+        self, field: ConvertibleField, hierarchy: tuple[str, ...]
     ) -> RecordConverter:
-        cache = self.env.context.get("import_cache")
+        cache = _import_cache()
         converters = None
         if cache is not None:
             converters = cache.get("nested_converters")
             if converters is None:
                 converters = cache["nested_converters"] = {}
-        key = (tuple(hierarchy), field.comodel_name)
+        key = (hierarchy, field.comodel_name)
         if converters is not None and (cached := converters.get(key)) is not None:
             return cached
 
@@ -1545,7 +1575,7 @@ class IrFieldsConverter(models.AbstractModel):
             depth=len(hierarchy),
         )
         convert = self.with_context(
-            parent_fields_hierarchy=list(hierarchy)
+            parent_fields_hierarchy=hierarchy
         )._get_converter_record(self.env[field.comodel_name])
         if converters is not None:
             converters[key] = convert
@@ -1585,9 +1615,10 @@ class IrFieldsConverter(models.AbstractModel):
     ) -> tuple[Any, list]:
         commands: list = []
         warnings: list = []
-        parent_fields_hierarchy = self.env.context.get(
-            "parent_fields_hierarchy", []
-        ) + [field.name]
+        parent_fields_hierarchy = (
+            *self.env.context.get("parent_fields_hierarchy", ()),
+            field.name,
+        )
 
         comodel_fields = self.env[field.comodel_name]._fields
 

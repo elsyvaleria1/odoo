@@ -4,6 +4,7 @@ from unittest.mock import patch
 from freezegun import freeze_time
 
 from odoo import Command, fields
+from odoo.tests import Form
 from odoo.tests.common import tagged, users
 
 from odoo.addons.website.models.website_visitor import WebsiteVisitor
@@ -360,3 +361,24 @@ class TestTrackSuggestions(TestEventOnlineCommon):
                 track_suggestion in [track_2, track_3, track_4, track_5, track_6],
                 "Returned track should the a random one (but not the one we're trying to get suggestion for)",
             )
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnTrackForm(TestEventOnlineCommon):
+    def test_a_contact_number_typed_without_a_partner_takes_the_events_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        mexico = self.env.ref("base.mx")
+        self.event_0.address_id = self.env["res.partner"].create(
+            {"name": "Venue", "country_id": mexico.id}
+        )
+        track = self.env["event.track"].create(
+            {"name": "Proposal", "event_id": self.event_0.id}
+        )
+
+        context = Form(
+            track, view="website_event_track.view_event_track_form"
+        )._get_context("contact_phone_ids")
+
+        Phone = self.env["phone.number"]
+        phone_id, _ = Phone.with_context(context).name_create("81 1234 5678")
+        self.assertEqual(Phone.browse(phone_id).country_id, mexico)

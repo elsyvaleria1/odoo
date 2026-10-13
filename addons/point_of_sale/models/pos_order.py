@@ -315,6 +315,10 @@ class PosOrder(models.Model):
         store=True,
         readonly=False,
     )
+    phone_country_id = fields.Many2one(
+        comodel_name="res.country",
+        compute="_compute_phone_country_id",
+    )
     is_edited = fields.Boolean(
         string="Edited",
         compute="_compute_is_edited",
@@ -444,6 +448,7 @@ class PosOrder(models.Model):
             "partner_id",
             "payment_ids",
             "phone_ids",
+            "phone_country_id",
             "picking_count",
             "picking_ids",
             "picking_type_id",
@@ -1082,6 +1087,13 @@ class PosOrder(models.Model):
         for order in self:
             order.email = order.partner_id.email or ""
             order.phone_ids = order.partner_id.phone_ids
+
+    @api.depends("partner_id.country_id", "company_id.country_id")
+    def _compute_phone_country_id(self) -> None:
+        for order in self:
+            order.phone_country_id = (
+                order.partner_id.country_id or order.company_id.country_id
+            )
 
     def _inverse_phone_ids(self) -> None:
         for order in self.filtered("partner_id"):

@@ -3,6 +3,9 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from odoo import api, models
+from odoo.db.errors import PG_RETRY_EXCEPTIONS
+
+from ..tools import NotDelivered
 
 if TYPE_CHECKING:
     from odoo.libs.documents import Document
@@ -112,15 +115,32 @@ class ExchangeProtocol(models.AbstractModel):
             f"{self._name} must hand its document to the counterparty",
         )
 
-    def _send_batch(self, transmissions) -> dict[int, Verdict]:
-        verdicts = {}
+    def _send_batch(self, transmissions) -> dict[int, Verdict | Exception]:
+        outcomes: dict[int, Verdict | Exception] = {}
         for transmission in transmissions:
+            try:
+                with self.env.cr.savepoint():
+                    document = self._prepare_sealed_message(transmission)
+                    outcomes[transmission.id] = self._send_message(
+                        transmission, document
+                    )
+            except PG_RETRY_EXCEPTIONS:
+                raise
+            except Exception as error:
+                outcomes[transmission.id] = error
+        return outcomes
+
+    def _prepare_sealed_message(self, transmission) -> Document:
+        try:
             document = self._seal_message(
                 transmission, self._prepare_message(transmission)
             )
             transmission._add_attachment(document)
-            verdicts[transmission.id] = self._send_message(transmission, document)
-        return verdicts
+        except PG_RETRY_EXCEPTIONS:
+            raise
+        except Exception as error:
+            raise NotDelivered(str(error)) from error
+        return document
 
     def _read_verdict(self, transmission) -> Verdict | None:
         return None

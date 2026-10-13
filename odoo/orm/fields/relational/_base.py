@@ -198,8 +198,11 @@ class _Relational(Field["BaseModel"]):
                 remaining.env = env
                 remaining._ids = (record_id,)
                 remaining._prefetch_ids = records._prefetch_ids
-                super().__get__(remaining, owner)
+                value = super().__get__(remaining, owner)
                 field_cache = self._get_cache(env)
+                if record_id not in field_cache:
+                    _append(self.convert_to_cache(value, remaining, validate=False))
+                    continue
             _append(field_cache[record_id])
 
         return self.convert_to_record_multi(vals, records)

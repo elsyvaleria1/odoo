@@ -41,7 +41,7 @@ table's, not the loader's; the order is pinned against a real load by
 | Left out | Why |
 |---|---|
 | `log_modules_that_never_loaded`, `log_pending_module_states`, `warn_code_ahead_of_database`, `log_unresolved_access_domains`, `log_assertion_report`, `mark_database_partially_updated`, `collect_models_with_manual_fields`, `collect_models_with_unreflected_fields` | reporting and bookkeeping — they cross no view; the two `collect_*` only queue models for phase 15 |
-| `register_model_hooks`, `check_null_constraints`, `warn_invalid_custom_views`, `run_post_update_model_checks`, `run_deferred_at_install_tests` | real work, selected out of *this* thread rather than out of the loader. Three of the five appear in [`runtime.md`](runtime.md#registry-build)'s sketch; the fourth sweeps the records the load made obsolete, which phase 13 waits for; the fifth runs the `at_install` suites the loader held back until their installed dependents had loaded |
+| `register_model_hooks`, `check_null_constraints`, `warn_invalid_custom_views`, `run_post_update_model_checks`, `run_deferred_at_install_tests` | real work, selected out of *this* thread rather than out of the loader. Three of the five appear in [`runtime.md`](runtime.md#registry-build)'s sketch; the fourth sweeps the records the load made obsolete, which phase 13 waits for; the fifth runs the `at_install` suites the loader held back until their installed dependents had loaded, after re-initialising the models already queued for phase 15 — an unchanged module that extends a model an upgraded one re-initialised is loaded but not yet applied to the schema |
 
 Four things this ordering encodes that no other view states:
 

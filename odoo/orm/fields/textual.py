@@ -1,3 +1,4 @@
+import json
 import typing
 from collections.abc import Callable, Iterable, MutableMapping
 from difflib import unified_diff
@@ -502,6 +503,28 @@ class BaseString(Field[str | typing.Literal[False]]):
             if len(patterns) > 1:
                 prefilter = SQL("(%s)", prefilter)
             return SQL("(%s AND %s)", prefilter, base_condition)
+
+        if (
+            self.translate
+            and operator == "in"
+            and self.index in (True, "btree", "btree_not_null")
+            and value
+            and isinstance(value, COLLECTION_TYPES)
+            and all(isinstance(v, str) and v for v in value)
+        ):
+            langs = self.get_translation_fallback_langs(model.env)
+            probes = [json.dumps({lang: v}) for v in value for lang in langs]
+            _debug.logic(
+                "field.translate.containment_condition",
+                model=model._name,
+                field=self.name,
+                values=len(value),
+                probes=len(probes),
+            )
+            raw_sql_field = self.to_sql(model.with_context(prefetch_langs=True), alias)
+            return SQL(
+                "(%s @> ANY(%s::jsonb[]) AND %s)", raw_sql_field, probes, base_condition
+            )
         return base_condition
 
 

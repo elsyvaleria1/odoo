@@ -632,6 +632,25 @@ class TestUsers2(UsersCommonCase):
             UserForm.name = "Raoulette Poiluchette"
         self.assertEqual(my_user.name, "Raoulette Poiluchette")
 
+    @users("user_internal")
+    def test_a_number_typed_in_preferences_takes_the_users_country(self):
+        us = self.env.ref("base.us")
+        self.user_internal.partner_id.country_id = us
+        self.patch(
+            self.env.registry["res.users"]._fields["country_id"],
+            "groups",
+            "base.group_system",
+        )
+        me = self.env["res.users"].browse(self.env.uid)
+
+        context = Form(me, view="base.view_users_form_simple_modif")._get_context(
+            "phone_ids"
+        )
+
+        Phone = self.env["phone.number"]
+        phone_id, _ = Phone.with_context(context).name_create("202 555 0700")
+        self.assertEqual(Phone.browse(phone_id).country_id, us)
+
     @warmup
     def test_write_group_ids_performance(self):
         contact_creation_group = self.env.ref("base.group_partner_manager")

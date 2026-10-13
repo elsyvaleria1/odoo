@@ -6,11 +6,16 @@ from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools import frozendict
 
-from ..tools import SETTLED_STATES, Verdict
+from ..tools import SETTLED_STATES, NotDelivered, Verdict
 
 _logger = logging.getLogger(__name__)
 
 _OPEN_STATES = ("draft", "queued", "sent")
+
+_SUBJECT_HOOKS = {
+    "settled": "_on_transmission_settled",
+    "unresolved": "_on_transmission_unresolved",
+}
 
 
 class ExchangeTransmission(models.Model):
@@ -140,6 +145,13 @@ class ExchangeTransmission(models.Model):
         default=0,
         readonly=True,
     )
+    dispatch_count = fields.Integer(
+        default=0,
+        readonly=True,
+        help="How many times the document was handed to the counterparty with "
+        "the outcome recorded. A hand-off logged beyond it never had its answer "
+        "recorded: the document is not sent again, its outcome is unknown.",
+    )
     date_next_retry = fields.Datetime(
         index=True,
         readonly=True,
@@ -152,10 +164,10 @@ class ExchangeTransmission(models.Model):
     )
     date_reconcile_deadline = fields.Datetime(
         readonly=True,
-        help="Set when the counterparty answered without naming this "
-        "transmission, so whether it was received is unknown. Until then its "
-        "verdict is read back from the counterparty; after it, the "
-        "transmission expires.",
+        help="Set when whether the counterparty received this transmission "
+        "is unknown: it answered without naming it, or the call carrying it "
+        "failed after it may have arrived. Until then its verdict is read "
+        "back from the counterparty; after it, the transmission expires.",
     )
 
     event_log_id = fields.Many2one(
@@ -170,9 +182,11 @@ class ExchangeTransmission(models.Model):
     display_name = fields.Char(compute="_compute_display_name")
 
     _queue_idx = models.Index("(state, date_next_retry)")
+    _poll_idx = models.Index("(state, date_last_polled ASC NULLS FIRST, id)")
     _subject_idx = models.Index("(subject_id, intent)")
     _reference_uniq = models.UniqueIndex(
-        "(channel_id, reference, intent, document_kind) WHERE reference IS NOT NULL",
+        "(channel_id, reference, intent, document_kind) NULLS NOT DISTINCT "
+        "WHERE reference IS NOT NULL",
         "A counterparty issues one reference per ask.",
     )
 
@@ -314,7 +328,7 @@ class ExchangeTransmission(models.Model):
         self._send_many()
 
     def _claim(self):
-        claimed = self.try_lock_for_update()
+        claimed = self.try_lock_for_update(allow_referencing=True)
         if len(claimed) < len(self):
             _logger.info(
                 "Left %s transmission(s) to the sender already holding them",
@@ -324,7 +338,18 @@ class ExchangeTransmission(models.Model):
 
     def _send_many(self) -> None:
         ready = self.browse()
-        for transmission in self._claim():
+        claimed = self._claim()
+        unanswered = self.env["exchange.transmission.dispatch"]._get_unanswered(
+            claimed.ids
+        )
+        for transmission in claimed:
+            if transmission.id in unanswered:
+                _logger.info(
+                    "Left transmission %s, whose last hand-off to the counterparty "
+                    "has no recorded answer, to the sweep",
+                    transmission.id,
+                )
+                continue
             if transmission.is_settled:
                 raise UserError(
                     self.env._(
@@ -357,43 +382,126 @@ class ExchangeTransmission(models.Model):
                 group[start : start + size]._send_chunk(protocol)
 
     def _send_chunk(self, protocol) -> None:
+        dispatched = self._claim_dispatch()
+        if not dispatched:
+            return
         try:
-            verdicts = protocol._send_batch(self)
+            outcomes = protocol._send_batch(dispatched)
+        except PG_RETRY_EXCEPTIONS:
+            raise
         except Exception as error:
             _logger.exception(
                 "Sending %s transmission(s) over %s failed",
-                len(self),
-                self.channel_id.display_name,
+                len(dispatched),
+                dispatched.channel_id.display_name,
             )
-            for transmission in self:
-                transmission._schedule_retry(str(error))
+            now = fields.Datetime.now()
+            for transmission in dispatched:
+                transmission.dispatch_count += 1
+                transmission._record_failure(protocol, error, now)
             return
 
         now = fields.Datetime.now()
-        for transmission in self:
-            transmission.date_sent = now
-            verdict = verdicts.get(transmission.id)
-            if verdict is None:
+        for transmission in dispatched:
+            transmission.dispatch_count += 1
+            outcome = outcomes.get(transmission.id)
+            if isinstance(outcome, Exception):
+                _logger.error(
+                    "Sending transmission %s over %s failed",
+                    transmission.id,
+                    transmission.channel_id.display_name,
+                    exc_info=outcome,
+                )
+                transmission._record_failure(protocol, outcome, now)
+                continue
+            if outcome is None:
                 _logger.warning(
                     "%s returned no verdict for transmission %s in a batch of %s",
                     protocol._name,
                     transmission.id,
-                    len(self),
+                    len(dispatched),
                 )
-                transmission._update_unknown_outcome(protocol)
-            else:
-                transmission._apply(verdict)
+            transmission._record_answer(protocol, outcome, now)
 
-    def _update_unknown_outcome(self, protocol) -> None:
+    def _claim_dispatch(self):
+        self.flush_recordset()
+        with self.env.registry.cursor() as cr:
+            cr.use_read_committed()
+            claimed, unseen = self.env(cr=cr)[
+                "exchange.transmission.dispatch"
+            ]._insert_claims(
+                {transmission.id: transmission.dispatch_count for transmission in self}
+            )
+        held = self.filtered(
+            lambda transmission: (
+                transmission.id not in claimed and transmission.id not in unseen
+            )
+        )
+        if held:
+            _logger.info(
+                "Left %s transmission(s) another sender handed to the counterparty",
+                len(held),
+            )
+        return self - held
+
+    def _record_answer(self, protocol, verdict: Verdict | None, date_sent) -> None:
+        self.check_singleton()
+        try:
+            with self.env.cr.savepoint():
+                self.date_sent = date_sent
+                if verdict is None:
+                    self._update_unknown_outcome(
+                        protocol,
+                        self.env._(
+                            "The counterparty answered without naming this "
+                            "document, so whether it was received is unknown."
+                        ),
+                    )
+                else:
+                    self._apply(verdict)
+        except PG_RETRY_EXCEPTIONS:
+            raise
+        except Exception as error:
+            _logger.exception(
+                "Recording the counterparty's answer to transmission %s failed",
+                self.id,
+            )
+            self.date_sent = date_sent
+            self._update_unknown_outcome(
+                protocol,
+                self.env._(
+                    "The counterparty answered, but its answer could not be "
+                    "recorded (%(error)s), so whether it was received is unknown.",
+                    error=error,
+                ),
+            )
+
+    def _record_failure(self, protocol, error: Exception, date_sent) -> None:
+        self.check_singleton()
+        if isinstance(error, NotDelivered):
+            self._schedule_retry(str(error))
+            return
+        self.date_sent = date_sent
+        self._update_unknown_outcome(
+            protocol,
+            self.env._(
+                "The call carrying this document failed after it may have "
+                "reached the counterparty (%(error)s), so whether it was "
+                "received is unknown.",
+                error=error,
+            ),
+        )
+
+    def _update_unknown_outcome(self, protocol, cause: str) -> None:
         self.check_singleton()
         if protocol._is_reconcilable:
             self.write(
                 {
                     "state": "sent",
                     "message": self.env._(
-                        "The counterparty answered without naming this document, "
-                        "so whether it was received is unknown. It is not sent "
-                        "again: its outcome is read back from the counterparty."
+                        "%(cause)s It is not sent again: its outcome is read "
+                        "back from the counterparty.",
+                        cause=cause,
                     ),
                     "date_next_retry": False,
                     "date_reconcile_deadline": fields.Datetime.now()
@@ -406,35 +514,36 @@ class ExchangeTransmission(models.Model):
             if self.channel_id.is_retry_required(attempt):
                 self._schedule_retry(
                     self.env._(
-                        "The counterparty answered without naming this document, "
-                        "so whether it was received is unknown. It is sent again, "
-                        "which the counterparty takes only once."
+                        "%(cause)s It is sent again, which the counterparty takes "
+                        "only once.",
+                        cause=cause,
                     ),
                 )
             else:
                 self._settle_unresolved(
                     self.env._(
-                        "Gave up after %(attempts)s attempts: the counterparty's "
-                        "last answer did not name this document. Check with the "
-                        "counterparty whether it holds the document before "
+                        "%(cause)s Gave up after %(attempts)s attempts. Check with "
+                        "the counterparty whether it holds the document before "
                         "sending it again.",
+                        cause=cause,
                         attempts=attempt,
                     ),
                 )
             return
         self._settle_unresolved(
             self.env._(
-                "The counterparty answered without naming this document. It "
-                "cannot be asked what became of the document, and sending the "
-                "document again is not safe. Check with the counterparty whether "
-                "it holds the document before sending it again."
+                "%(cause)s It cannot be asked what became of the document, and "
+                "sending the document again is not safe. Check with the "
+                "counterparty whether it holds the document before sending it "
+                "again.",
+                cause=cause,
             ),
         )
 
     def _settle_unresolved(self, message: str) -> None:
         self.check_singleton()
         self._settle(Verdict(state="expired", message=message))
-        self.subject_id._on_transmission_unresolved(self)
+        self._react_subject("unresolved")
 
     def _read_verdict(self) -> None:
         self.check_singleton()
@@ -496,7 +605,33 @@ class ExchangeTransmission(models.Model):
             values["message"] = verdict.message
         self.write(values)
         self._add_response(verdict)
-        self.subject_id._on_transmission_settled(self)
+        self._react_subject("settled")
+
+    def _react_subject(self, event: str) -> None:
+        self.check_singleton()
+        try:
+            with self.env.cr.savepoint():
+                self._get_subject_hook(event)(self)
+        except Exception:
+            _logger.exception(
+                "The subject of transmission %s failed to react to it being %s; "
+                "the reaction is retried as a job of its own",
+                self.id,
+                event,
+            )
+            self.delayed(
+                identity_key=f"exchange.react:{self.id}:{event}",
+                channel=f"exchange.{self.protocol}",
+                name=f"React to transmission {self.id} being {event}",
+            )._job_react_subject(event)
+
+    @api.job(channel="exchange")
+    def _job_react_subject(self, event: str) -> None:
+        self.check_singleton()
+        self._get_subject_hook(event)(self)
+
+    def _get_subject_hook(self, event: str):
+        return getattr(self.subject_id, _SUBJECT_HOOKS[event])
 
     def _schedule_retry(self, message: str) -> None:
         self.check_singleton()
@@ -565,8 +700,43 @@ class ExchangeTransmission(models.Model):
             ("date_next_retry", "<=", fields.Datetime.now()),
         ]
 
+    def _update_lost_dispatch(self, generation: int, date_dispatched) -> None:
+        self.check_singleton()
+        if self.state not in ("draft", "queued"):
+            self.dispatch_count = generation
+            return
+        self.write({"dispatch_count": generation, "date_sent": date_dispatched})
+        self._update_unknown_outcome(
+            self._get_protocol(),
+            self.env._(
+                "The document was handed to the counterparty, but its answer was "
+                "never recorded, so whether it was received is unknown."
+            ),
+        )
+
+    @api.model
+    def _update_lost_dispatches(self) -> None:
+        dispatches = self.env["exchange.transmission.dispatch"]
+        unanswered = dispatches._get_unanswered()
+        for transmission in self.browse(unanswered).try_lock_for_update(
+            allow_referencing=True
+        ):
+            generation, date_dispatched = unanswered[transmission.id]
+            try:
+                with self.env.cr.savepoint():
+                    transmission._update_lost_dispatch(generation, date_dispatched)
+            except PG_RETRY_EXCEPTIONS:
+                raise
+            except Exception:
+                _logger.exception(
+                    "Settling the lost hand-off of transmission %s failed",
+                    transmission.id,
+                )
+        dispatches._gc_answered()
+
     @api.model
     def _cron_send_queued(self) -> None:
+        self._update_lost_dispatches()
         self.env["exchange.channel"].union(
             *(
                 channel

@@ -1234,6 +1234,7 @@ class TestPhoneTypedOnEmployeeForms(TransactionCase):
             (employee, "hr.view_employee_form", "emergency_phone_ids"),
             (request, "hr.hr_employee_change_request_view_form", "private_phone_ids"),
             (request, "hr.hr_employee_change_request_view_form", "emergency_phone_ids"),
+            (user, "hr.res_users_view_form_preferences", "phone_ids"),
             (user, "hr.res_users_view_form_preferences", "private_phone_ids"),
             (user, "hr.res_users_view_form_preferences", "emergency_phone_ids"),
         ]

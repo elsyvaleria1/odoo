@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5723 methods, 1085 classes, 208 files)
+# All base tests (5736 methods, 1086 classes, 208 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -130,7 +130,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_framework_contracts.py` | `post_install`, `-at_install` | 1 | 5 | TransactionCase |
 | `test_groups.py` | `at_install`, `groups`, `post_install`, `-at_install` | 8 | 43 | BaseCase, TransactionCase |
 | `test_http_case.py` | `-at_install`, `post_install` | 10 | 29 | HttpCase, TestRequestRemainingCommon, TestChromeBrowser |
-| `test_import_files.py` | `post_install`, `-at_install` | 4 | 112 | TransactionCase |
+| `test_import_files.py` | `post_install`, `-at_install` | 4 | 114 | TransactionCase |
 | `test_ir_access_audit.py` | `post_install`, `-at_install` | 4 | 37 | TransactionCase |
 | `test_ir_access_changeset.py` | `post_install`, `-at_install` | 1 | 22 | TransactionCase |
 | `test_ir_access_console.py` | `post_install`, `-at_install` | 1 | 8 | TransactionCase |
@@ -172,7 +172,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_login_cooldown_rpc.py` | `post_install`, `-at_install` | 2 | 18 | TransactionCase |
 | `test_mixin_merge.py` | `post_install`, `-at_install` | 2 | 9 | TransactionCase |
 | `test_mixin_recurrence_rule.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
-| `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 6 | 19 | TransactionCase |
+| `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 6 | 22 | TransactionCase |
 | `test_module_data_rename_field.py` | `post_install`, `-at_install` | 7 | 16 | TransactionCase |
 | `test_module_data_rename_model.py` | `post_install`, `-at_install` | 5 | 19 | TransactionCase |
 | `test_module_data_rename_module.py` | `post_install`, `-at_install` | 1 | 14 | TransactionCase |
@@ -195,12 +195,12 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_res_config.py` | `post_install`, `-at_install` | 3 | 12 | TransactionCase |
 | `test_res_config_install.py` | `post_install`, `-at_install` | 1 | 3 | TransactionCase |
 | `test_res_country.py` | `-at_install`, `post_install` | 2 | 4 | TransactionCase |
-| `test_res_partner.py` | `res_partner`, `res_partner_address`, `post_install`, `-at_install` | 18 | 122 | TransactionCaseWithUserDemo, TransactionCase |
+| `test_res_partner.py` | `res_partner`, `res_partner_address`, `post_install`, `-at_install` | 18 | 125 | TransactionCaseWithUserDemo, TransactionCase |
 | `test_res_partner_identifier.py` | `post_install`, `-at_install` | 1 | 13 | TransactionCase |
 | `test_res_partner_main_channels.py` | `post_install`, `-at_install` | 1 | 15 | TransactionCase |
 | `test_res_partner_merge.py` | `post_install`, `-at_install`, `res_partner_merge` | 14 | 65 | TransactionCase |
 | `test_res_partner_sync.py` | `res_partner`, `res_partner_sync` | 1 | 17 | TransactionCase |
-| `test_res_users.py` | `post_install`, `-at_install`, `groups` | 30 | 117 | UsersCommonCase, TransactionCase, HttpCase |
+| `test_res_users.py` | `post_install`, `-at_install`, `groups` | 30 | 118 | UsersCommonCase, TransactionCase, HttpCase |
 | `test_res_users_apikeys.py` | `post_install`, `-at_install` | 1 | 26 | TransactionCase |
 | `test_res_users_apikeys_scope.py` | `post_install`, `-at_install` | 8 | 50 | ScopeCase, TransactionCase |
 | `test_res_users_eligibility.py` | `post_install`, `-at_install` | 1 | 9 | TransactionCase |
@@ -325,8 +325,8 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 208 |
-| Total test classes | 1085 |
-| Total test methods | 5723 |
+| Total test classes | 1086 |
+| Total test methods | 5736 |
 | Files with @tagged | 137 (66%) |
 | Files without @tagged | 71 (34%) |
 | Classes using post_install | 437 |

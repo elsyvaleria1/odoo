@@ -1,7 +1,11 @@
+from unittest.mock import patch
+
 from odoo.tests.common import TransactionCase, tagged
+from odoo.tools import module_data
 from odoo.tools.module_data import (
     UNDECLARED_REFERENCES,
     _model_column_of,
+    _model_path_condition,
     clear_dangling_references,
     lift_columns,
     merge_model,
@@ -214,22 +218,95 @@ class TestRekeyRecordsReadsEveryModelColumn(TransactionCase):
                         self.assertIn((model._table, field.name), listed)
 
     def test_every_stored_model_and_id_pair_is_the_one_it_reads(self):
+        listed = {(table, column) for table, column, __ in UNDECLARED_REFERENCES}
         for name, model in self.env.registry.items():
             if model._abstract or not model._auto:
                 continue
             for field in model._fields.values():
-                if field.type == "many2one_reference" and field.store:
-                    model_field = model._fields[field.model_field]
-                    expected = (
-                        (model_field.name, False)
-                        if model_field.store
-                        else (model_field.related.removesuffix(".model"), True)
-                    )
-                    with self.subTest(model=name, field=field.name):
-                        self.assertEqual(
-                            _model_column_of(self.env.cr, model._table, field.name),
-                            expected,
-                        )
+                if field.type != "many2one_reference" or not field.store:
+                    continue
+                model_field = model._fields[field.model_field]
+                link, __, target = (model_field.related or "").partition(".")
+                found = _model_column_of(self.env.cr, model._table, field.name)
+                with self.subTest(model=name, field=field.name):
+                    if (model._table, field.name) in listed:
+                        self.assertIsNone(found)
+                    elif model_field.store:
+                        self.assertEqual(found, (model_field.name, False))
+                    else:
+                        self.assertEqual(target, "model")
+                        self.assertEqual(found, (link, True))
+
+    def test_every_listed_model_path_reads_a_model_column(self):
+        tables = {model._table for model in self.env.registry.values()}
+        for table, column, path in UNDECLARED_REFERENCES:
+            if table not in tables:
+                continue
+            with self.subTest(table=table, column=column):
+                self.assertIsNotNone(
+                    _model_path_condition(self.env.cr, table, path, ["res.partner"])
+                )
+
+    def _create_probe_box(self):
+        self.env.cr.execute("""
+            CREATE TABLE probe_box (id serial PRIMARY KEY);
+            INSERT INTO probe_box (id) VALUES (1), (2);
+            INSERT INTO ir_model (model, name, "order", state)
+                 VALUES ('probe.box', '{"en_US": "probe"}', 'id', 'base');
+        """)
+
+    def _rows(self, query):
+        self.env.cr.execute(query)
+        return self.env.cr.fetchall()
+
+    def test_an_id_named_after_its_model_column_follows(self):
+        self._create_probe_box()
+        self.env.cr.execute("""
+            CREATE TABLE probe_history (
+                id serial PRIMARY KEY, order_model varchar, order_id int
+            );
+            INSERT INTO probe_history (order_model, order_id) VALUES
+                ('probe.box', 1), ('res.partner', 1);
+            INSERT INTO ir_model (model, name, "order", state)
+                 VALUES ('probe.history', '{"en_US": "probe"}', 'id', 'base');
+            INSERT INTO ir_model_fields (model_id, model, name, ttype, state,
+                                         field_description, store)
+                 SELECT id, 'probe.history', 'order_id', 'many2one_reference', 'base',
+                        '{"en_US": "probe"}', true
+                   FROM ir_model WHERE model = 'probe.history';
+        """)
+        rekey_records(self.env.cr, ["probe.box"], "probe_box", {1: 7})
+        self.assertEqual(
+            self._rows("SELECT order_model, order_id FROM probe_history ORDER BY id"),
+            [("probe.box", 7), ("res.partner", 1)],
+        )
+
+    def test_an_id_whose_model_is_two_links_away_follows(self):
+        self._create_probe_box()
+        self.env.cr.execute("""
+            CREATE TABLE probe_kind (id serial PRIMARY KEY, res_model_id int);
+            CREATE TABLE probe_group (id serial PRIMARY KEY, kind_id int);
+            CREATE TABLE probe_entry (id serial PRIMARY KEY, group_id int, res_id int);
+            INSERT INTO probe_kind (id, res_model_id)
+                 SELECT 1, id FROM ir_model WHERE model = 'probe.box'
+                 UNION ALL
+                 SELECT 2, id FROM ir_model WHERE model = 'res.partner';
+            INSERT INTO probe_group (id, kind_id) VALUES (1, 1), (2, 2);
+            INSERT INTO probe_entry (group_id, res_id) VALUES (1, 2), (2, 2);
+        """)
+        entry = (
+            "probe_entry",
+            "res_id",
+            "group_id->probe_group.kind_id->probe_kind.res_model_id",
+        )
+        with patch.object(
+            module_data, "UNDECLARED_REFERENCES", (*UNDECLARED_REFERENCES, entry)
+        ):
+            rekey_records(self.env.cr, ["probe.box"], "probe_box", {2: 9})
+        self.assertEqual(
+            self._rows("SELECT group_id, res_id FROM probe_entry ORDER BY id"),
+            [(1, 9), (2, 2)],
+        )
 
 
 @tagged("post_install", "-at_install")

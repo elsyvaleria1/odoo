@@ -4,9 +4,11 @@ from unittest.mock import patch
 from psycopg.errors import UniqueViolation
 
 from odoo.api import Environment
+from odoo.db import schema as sql
 from odoo.exceptions import ConcurrencyError, UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.colors import TAG_COLORS
+from odoo.libs.sql import get_index_name
 from odoo.modules.registry import Registry
 from odoo.service.transaction import retrying
 from odoo.tests.common import (
@@ -15,7 +17,7 @@ from odoo.tests.common import (
     TransactionCase,
     get_db_name,
 )
-from odoo.tools import mute_logger
+from odoo.tools import SQL, mute_logger
 
 
 class TestTagTag(TransactionCase):
@@ -183,6 +185,74 @@ class TestTagTag(TransactionCase):
         self.assertIn(self.leaf.id, found_ids)
         self.assertNotIn(self.root.id, found_ids)
         self.assertNotIn(self.other.id, found_ids)
+
+
+class TestTagNameIndex(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env["res.lang"]._activate_lang("es_MX")
+        Tag = cls.env["res.partner.tag"]
+        cls.translated = Tag.create({"name": "Idx Alpha"})
+        cls.translated.with_context(lang="es_MX").name = "Idx Alfa"
+        cls.untranslated = Tag.create({"name": "Idx Beta"})
+
+    def _index_of(self, table):
+        self.cr.execute(
+            """
+            SELECT am.amname, opc.opcname, idx.reloptions
+              FROM pg_index ix
+              JOIN pg_class idx ON idx.oid = ix.indexrelid
+              JOIN pg_am am ON am.oid = idx.relam
+              JOIN pg_opclass opc ON opc.oid = ix.indclass[0]
+             WHERE idx.relname = %s
+            """,
+            [get_index_name(table, "name")],
+        )
+        return self.cr.fetchone()
+
+    def _ids(self, lang, name):
+        Tag = self.env["res.partner.tag"].with_context(lang=lang)
+        return [tag_id for tag_id, _name in Tag.name_search(name, operator="=")]
+
+    def test_the_translated_name_has_a_containment_index(self):
+        for table in ("res_partner_tag", "tag_tag"):
+            with self.subTest(table=table):
+                self.assertEqual(
+                    self._index_of(table),
+                    ("gin", "jsonb_path_ops", ["fastupdate=off"]),
+                )
+
+    def test_an_equality_lookup_keeps_the_language_fallback(self):
+        self.assertEqual(self._ids("en_US", "Idx Alpha"), self.translated.ids)
+        self.assertEqual(self._ids("es_MX", "Idx Alfa"), self.translated.ids)
+        self.assertEqual(self._ids("es_MX", "Idx Alpha"), [])
+        self.assertEqual(self._ids("en_US", "Idx Alfa"), [])
+        self.assertEqual(self._ids("es_MX", "Idx Beta"), self.untranslated.ids)
+
+    def test_an_equality_lookup_is_served_by_the_index_in_every_language(self):
+        indexname = get_index_name("res_partner_tag", "name")
+        self.cr.execute("SET LOCAL enable_seqscan = off")
+        for lang in ("en_US", "es_MX"):
+            Tag = self.env["res.partner.tag"].with_context(lang=lang)
+            query = Tag._search([("name", "in", ["Idx Alfa", "Idx Beta"])])
+            self.cr.execute(SQL("EXPLAIN %s", query.select()))
+            plan = "\n".join(row[0] for row in self.cr.fetchall())
+            with self.subTest(lang=lang):
+                self.assertIn(f"Bitmap Index Scan on {indexname}", plan)
+
+    def test_check_indexes_rebuilds_a_name_index_of_another_kind(self):
+        indexname = get_index_name("res_partner_tag", "name")
+        sql.drop_index(self.cr, indexname, "res_partner_tag")
+        sql.create_index(self.cr, indexname, "res_partner_tag", ['"name"'], "gin")
+        self.assertEqual(self._index_of("res_partner_tag")[1], "jsonb_ops")
+
+        self.registry.check_indexes(self.cr, ["res.partner.tag"])
+
+        self.assertEqual(
+            self._index_of("res_partner_tag"),
+            ("gin", "jsonb_path_ops", ["fastupdate=off"]),
+        )
 
 
 class TestTagCode(TransactionCase):

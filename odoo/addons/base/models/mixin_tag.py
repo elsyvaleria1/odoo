@@ -20,7 +20,10 @@ class MixinTag(models.AbstractModel):
     _description = "Tag (coloured label with a stable code)"
     _order = "name, id"
 
-    name = fields.Char(string="Tag Name")
+    name = fields.Char(
+        string="Tag Name",
+        index=True,
+    )
     active = fields.Boolean(help="Archive a tag to hide it without deleting it.")
     color = fields.Integer(
         default=lambda self: self._default_color(),

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from odoo import Command
 from odoo.modules import Manifest
+from odoo.tests import Form
 from odoo.tests.common import TransactionCase, tagged
 
 from odoo.addons.mail.tests.common import MailCase
@@ -345,4 +346,81 @@ class TestFrontdeskGroupReferences(TransactionCase):
         self.assertTrue(
             [ref for ref in self._referenced_groups() if user.has_group(ref)],
             "no group the check-out route gates on admits a frontdesk user",
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnVisitorForm(TransactionCase):
+    def test_a_number_typed_on_a_visitor_takes_its_stations_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us = self.env.ref("base.us")
+        office = self.env["res.company"].create({"name": "Office", "country_id": us.id})
+        station = self.env["frontdesk.frontdesk"].create(
+            {"name": "Lobby", "company_id": office.id}
+        )
+        visitor = self.env["frontdesk.visitor"].create(
+            {"name": "Guest", "station_id": station.id, "company_id": office.id}
+        )
+
+        context = Form(
+            visitor, view="frontdesk.frontdesk_visitor_view_form"
+        )._get_context("phone_ids")
+
+        Phone = self.env["phone.number"]
+        phone_id, _ = Phone.with_context(context).name_create("202 555 0700")
+        self.assertEqual(Phone.browse(phone_id).country_id, us)
+
+
+@tagged("post_install", "-at_install")
+class TestVisitorStationCompany(TransactionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.office = cls.env["res.company"].create({"name": "Office"})
+        cls.station = cls.env["frontdesk.frontdesk"].create(
+            {"name": "Lobby", "company_id": cls.office.id, "ask_email": "required"}
+        )
+        cls.host = cls.env["hr.employee"].create(
+            {
+                "name": "Host",
+                "company_id": cls.office.id,
+                "work_email": "host@example.com",
+            }
+        )
+
+    def test_a_visitor_belongs_to_its_stations_company(self):
+        self.assertNotEqual(self.env.company, self.office)
+
+        visitor = self.env["frontdesk.visitor"].create(
+            {"name": "Guest", "station_id": self.station.id}
+        )
+
+        self.assertEqual(visitor.company_id, self.office)
+
+    def test_a_host_is_on_leave_on_the_stations_company_holiday(self):
+        self.assertNotEqual(
+            self.env.company.resource_calendar_id, self.office.resource_calendar_id
+        )
+        check_in = datetime.now()
+        self.env["resource.schedule.exception"].create(
+            {
+                "name": "Office Holiday",
+                "date_from": check_in - timedelta(hours=1),
+                "date_to": check_in + timedelta(hours=1),
+                "calendar_id": self.office.resource_calendar_id.id,
+            }
+        )
+
+        visitor = self.env["frontdesk.visitor"].create(
+            {
+                "name": "Guest",
+                "email": "guest@example.com",
+                "station_id": self.station.id,
+                "host_ids": [Command.link(self.host.id)],
+                "check_in": check_in,
+            }
+        )
+
+        self.assertIn(
+            "Your host isn't available", visitor.message_ids.mapped("subject")
         )

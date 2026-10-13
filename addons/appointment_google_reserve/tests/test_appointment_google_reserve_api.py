@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 from freezegun import freeze_time
 
-from odoo.tests import tagged
+from odoo.tests import Form, tagged
 
 from odoo.addons.appointment_google_reserve.tests.common import GoogleReserveCommon
 
@@ -492,3 +492,18 @@ class AppointmentGoogleReserveAPITest(GoogleReserveCommon):
             self.assertEqual(args[2], start)
         if stop is not None:
             self.assertEqual(args[3], stop)
+
+
+@tagged("appointment_google_reserve", "post_install", "-at_install")
+class TestPhoneTypedOnMerchantForm(GoogleReserveCommon):
+    def test_a_number_typed_on_a_merchant_takes_its_locations_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+
+        context = Form(
+            self.google_reserve_merchant,
+            view="appointment_google_reserve.google_reserve_merchant_view_form",
+        )._get_context("phone_ids")
+
+        Phone = self.env["phone.number"]
+        phone_id, _ = Phone.with_context(context).name_create("0478 12 34 56")
+        self.assertEqual(Phone.browse(phone_id).country_id, self.env.ref("base.be"))

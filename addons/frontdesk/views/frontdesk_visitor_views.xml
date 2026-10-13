@@ -134,6 +134,7 @@
                             <field
                                 name="phone_ids"
                                 widget="many2many_tags"
+                                context="{'default_country_id': station_country_id}"
                                 readonly="state == 'canceled'" />
                             <field
                                 name="email"
