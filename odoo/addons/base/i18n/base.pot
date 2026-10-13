@@ -1981,7 +1981,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_device_voip
+#: model:ir.module.module,description:base.module_voip_device
 msgid ""
 "A call the phone system reports names the extension that answered it: the "
 "extension's user answers for it, and a call the softphone already filed is "
@@ -2844,7 +2844,7 @@ msgid "AI Livechat Lead Attribution"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_esg_csrd_ai
+#: model:ir.module.module,shortdesc:base.module_ai_esg_csrd
 msgid "AI Materiality Suggestions"
 msgstr ""
 
@@ -2854,7 +2854,7 @@ msgid "AI Model Gateway"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sign_ai
+#: model:ir.module.module,shortdesc:base.module_ai_sign
 msgid "AI Signature Email Drafts"
 msgstr ""
 
@@ -3801,7 +3801,7 @@ msgid "Add ABA routing details and validation to US bank accounts"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_hr_recruitment_ai
+#: model:ir.module.module,summary:base.module_ai_hr_recruitment
 msgid "Add AI assistance to applicant refusal messages"
 msgstr ""
 
@@ -4577,7 +4577,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_studio_ai_fields
+#: model:ir.module.module,description:base.module_ai_fields_web_studio
 msgid ""
 "Adds AI field options and editor components to Studio. Field generation uses"
 " the configured AI service and the computation behavior supplied by the AI "
@@ -5755,7 +5755,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_esg_csrd_ai
+#: model:ir.module.module,description:base.module_ai_esg_csrd
 msgid ""
 "Adds a wizard that requests metric suggestions from an AI service and lets "
 "users select which suggestions to create. Requires a configured provider and"
@@ -8397,7 +8397,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_sign_ai
+#: model:ir.module.module,description:base.module_ai_sign
 msgid ""
 "Adds the AI text-draft interface to the signature request composer. Requires"
 " the configured AI generation service."
@@ -16932,7 +16932,7 @@ msgid "Configure AI agents, topics and composer rules through the backend"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_web_studio_ai_fields
+#: model:ir.module.module,summary:base.module_ai_fields_web_studio
 msgid "Configure AI-computed fields in Studio"
 msgstr ""
 
@@ -23405,7 +23405,7 @@ msgid "Empty view mode in view_mode: “%s”"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sign_ai
+#: model:ir.module.module,summary:base.module_ai_sign
 msgid "Enable AI drafting in signature-request emails"
 msgstr ""
 
@@ -25636,7 +25636,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_hr_recruitment_ai
+#: model:ir.module.module,description:base.module_ai_hr_recruitment
 msgid ""
 "Extend the applicant refusal wizard view with AI message assistance. Uses "
 "the AI and recruitment features declared by the module."
@@ -31935,7 +31935,7 @@ msgid "Jobs of this channel waiting to be claimed."
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_device_voip
+#: model:ir.module.module,summary:base.module_voip_device
 msgid ""
 "Join what a phone system reports to the softphone's own calls, and provision"
 " a handset's softphone"
@@ -38976,7 +38976,7 @@ msgid "Phone SMS Actions"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_device_voip
+#: model:ir.module.module,shortdesc:base.module_voip_device
 msgid "Phone System Calls in the Softphone"
 msgstr ""
 
@@ -42879,7 +42879,7 @@ msgid "Recruitment"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_hr_recruitment_ai
+#: model:ir.module.module,shortdesc:base.module_ai_hr_recruitment
 msgid "Recruitment AI Refusal Assistance"
 msgstr ""
 
@@ -49842,7 +49842,7 @@ msgid "Studio"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_web_studio_ai_fields
+#: model:ir.module.module,shortdesc:base.module_ai_fields_web_studio
 msgid "Studio AI Field Configuration"
 msgstr ""
 
@@ -50244,7 +50244,7 @@ msgid "Suggest expense products from previous expense descriptions"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_esg_csrd_ai
+#: model:ir.module.module,summary:base.module_ai_esg_csrd
 msgid "Suggest sustainability metrics from company information"
 msgstr ""
 

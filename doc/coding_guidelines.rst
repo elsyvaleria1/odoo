@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.90
+:Version: 7.91
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -852,11 +852,8 @@ and about its dependencies, and nothing checks either claim.
   without depending on it, and is the one name left open.
 * **Renames pending**
   (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
-  ``sign_ai``, ``hr_recruitment_ai``, ``esg_csrd_ai``, ``web_studio_ai_fields``
-  → ``ai_sign``, ``ai_hr_recruitment``, ``ai_esg_csrd``,
-  ``ai_fields_web_studio``;
-  ``device_voip`` → ``voip_device``; ``document_l10n_<cc>_hr_payroll``
-  (``be``, ``ch``, ``hk``, ``ke``) → ``l10n_<cc>_hr_payroll_document``;
+  ``document_l10n_<cc>_hr_payroll`` (``be``, ``ch``, ``hk``, ``ke``) →
+  ``l10n_<cc>_hr_payroll_document``;
   ``document_l10n_mx_edi``, ``approval_account_l10n_mx_edi``,
   ``approval_account_l10n_mx_edi_telegram`` → ``l10n_mx_edi_document``,
   ``l10n_mx_edi_approval_account``, ``l10n_mx_edi_approval_account_telegram``;
@@ -6395,6 +6392,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.91
+     - 2026-10-13
+     - §1.5: ``sign_ai``, ``hr_recruitment_ai``, ``esg_csrd_ai``,
+       ``web_studio_ai_fields`` and ``device_voip`` are ``ai_sign``,
+       ``ai_hr_recruitment``, ``ai_esg_csrd``, ``ai_fields_web_studio`` and
+       ``voip_device`` (base 1.156) and leave the pending-renames list.
    * - 7.90
      - 2026-10-13
      - §1.5: ``voice``, ``voice_ai``, ``mail_voice``, ``stock_voice`` and

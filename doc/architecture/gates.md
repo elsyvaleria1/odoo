@@ -383,8 +383,8 @@ and the outbound-integration families, one database each: `integration`;
 `address_autocomplete_google` and `website_sale_autocomplete`.
 The receivers that run as a service principal under named privileges, one
 database each: `device`, `device_transport`, `device_gps`, `device_mobile`,
-`device_voip`, `device_access_control`, `device_dav_sync`, `device_phone_call`,
-`conversation_phone_call`, `device_phone_call` with `device_voip` and
+`voip_device`, `device_access_control`, `device_dav_sync`, `device_phone_call`,
+`conversation_phone_call`, `device_phone_call` with `voip_device` and
 `conversation_phone_call` (the only database where a phone's recordings reach
 a conversation), `conversation`, `conversation_meeting`, `test_speech`,
 `agent_runner`, `agent_runner_github`, `error_incident_autofix`,

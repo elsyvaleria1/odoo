@@ -25150,7 +25150,7 @@ msgid "AI"
 msgstr "AI"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_esg_csrd_ai
+#: model:ir.module.module,shortdesc:base.module_ai_esg_csrd
 msgid "AI - ESG CSRD"
 msgstr ""
 
@@ -25222,7 +25222,7 @@ msgid "AI crm livechat"
 msgstr "AI CRMライブチャット"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_esg_csrd_ai
+#: model:ir.module.module,summary:base.module_ai_esg_csrd
 msgid "AI integration with ESG CSRD"
 msgstr ""
 
@@ -36575,7 +36575,7 @@ msgid "Empty view mode in view_mode: “%s”"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_studio_ai_fields
+#: model:ir.module.module,description:base.module_ai_fields_web_studio
 msgid "Enable Ai fields configuration in studio"
 msgstr "スタジオでAI計算フィールドの作成を有効化"
 
@@ -36602,7 +36602,7 @@ msgstr ""
 "きます。"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_web_studio_ai_fields
+#: model:ir.module.module,summary:base.module_ai_fields_web_studio
 msgid "Enable creating AI computed fields in studio"
 msgstr "スタジオでAI計算フィールドの作成を有効化"
 
@@ -53768,7 +53768,7 @@ msgid "Recruitment Reporting"
 msgstr "採用レポート"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_hr_recruitment_ai
+#: model:ir.module.module,shortdesc:base.module_ai_hr_recruitment
 msgid "Recruitment With AI"
 msgstr ""
 
@@ -56293,12 +56293,12 @@ msgid "Sign"
 msgstr "署名"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sign_ai
+#: model:ir.module.module,shortdesc:base.module_ai_sign
 msgid "Sign AI Integration"
 msgstr "署名AI 連携"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sign_ai
+#: model:ir.module.module,summary:base.module_ai_sign
 msgid "Sign AI integration"
 msgstr "署名AI 連携"
 
@@ -64868,9 +64868,9 @@ msgid "value"
 msgstr "値"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_web_studio_ai_fields
-msgid "web_studio_ai_fields"
-msgstr "web_studio_ai_fields"
+#: model:ir.module.module,shortdesc:base.module_ai_fields_web_studio
+msgid "ai_fields_web_studio"
+msgstr "ai_fields_web_studio"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_website_helpdesk_sale_loyalty

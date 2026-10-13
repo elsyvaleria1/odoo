@@ -24964,7 +24964,7 @@ msgid "AI"
 msgstr "AI"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_esg_csrd_ai
+#: model:ir.module.module,shortdesc:base.module_ai_esg_csrd
 msgid "AI - ESG CSRD"
 msgstr ""
 
@@ -25036,7 +25036,7 @@ msgid "AI crm livechat"
 msgstr "AI CRM 실시간 채팅"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_esg_csrd_ai
+#: model:ir.module.module,summary:base.module_ai_esg_csrd
 msgid "AI integration with ESG CSRD"
 msgstr ""
 
@@ -36365,7 +36365,7 @@ msgid "Empty view mode in view_mode: “%s”"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_studio_ai_fields
+#: model:ir.module.module,description:base.module_ai_fields_web_studio
 msgid "Enable Ai fields configuration in studio"
 msgstr "스튜디오에서 AI 필드 환경설정 활성화"
 
@@ -36392,7 +36392,7 @@ msgstr ""
 "니다."
 
 #. module: base
-#: model:ir.module.module,summary:base.module_web_studio_ai_fields
+#: model:ir.module.module,summary:base.module_ai_fields_web_studio
 msgid "Enable creating AI computed fields in studio"
 msgstr "스튜디오에서 AI 계산 필드 생성 기능 활성화"
 
@@ -53624,7 +53624,7 @@ msgid "Recruitment Reporting"
 msgstr "채용 보고서"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_hr_recruitment_ai
+#: model:ir.module.module,shortdesc:base.module_ai_hr_recruitment
 msgid "Recruitment With AI"
 msgstr ""
 
@@ -56137,12 +56137,12 @@ msgid "Sign"
 msgstr "서명"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sign_ai
+#: model:ir.module.module,shortdesc:base.module_ai_sign
 msgid "Sign AI Integration"
 msgstr "서명 AI 통합"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sign_ai
+#: model:ir.module.module,summary:base.module_ai_sign
 msgid "Sign AI integration"
 msgstr "서명 AI 통합"
 
@@ -64658,9 +64658,9 @@ msgid "value"
 msgstr "값"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_web_studio_ai_fields
-msgid "web_studio_ai_fields"
-msgstr "web_studio_ai_fields"
+#: model:ir.module.module,shortdesc:base.module_ai_fields_web_studio
+msgid "ai_fields_web_studio"
+msgstr "ai_fields_web_studio"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_website_helpdesk_sale_loyalty

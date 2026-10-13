@@ -23922,7 +23922,7 @@ msgid "AI"
 msgstr "IA"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_esg_csrd_ai
+#: model:ir.module.module,shortdesc:base.module_ai_esg_csrd
 msgid "AI - ESG CSRD"
 msgstr "IA - ESG CSRD"
 
@@ -23994,7 +23994,7 @@ msgid "AI crm livechat"
 msgstr "IA, CRM, Chat en vivo"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_esg_csrd_ai
+#: model:ir.module.module,summary:base.module_ai_esg_csrd
 msgid "AI integration with ESG CSRD"
 msgstr "Integración de IA con ESG CSRD"
 
@@ -35443,7 +35443,7 @@ msgid "Empty view mode in view_mode: “%s”"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_studio_ai_fields
+#: model:ir.module.module,description:base.module_ai_fields_web_studio
 msgid "Enable Ai fields configuration in studio"
 msgstr "Habilitar la configuración de campos de IA en Studio"
 
@@ -35471,7 +35471,7 @@ msgstr ""
 "Calendar para proporcionárselo a sus clientes antes de una cita."
 
 #. module: base
-#: model:ir.module.module,summary:base.module_web_studio_ai_fields
+#: model:ir.module.module,summary:base.module_ai_fields_web_studio
 msgid "Enable creating AI computed fields in studio"
 msgstr "Habilitar la creación de campos calculados con IA en Studio"
 
@@ -52546,7 +52546,7 @@ msgid "Recruitment Reporting"
 msgstr "Reporte de reclutamiento"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_hr_recruitment_ai
+#: model:ir.module.module,shortdesc:base.module_ai_hr_recruitment
 msgid "Recruitment With AI"
 msgstr "Reclutamiento con IA"
 
@@ -55092,12 +55092,12 @@ msgid "Sign"
 msgstr "Firma"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sign_ai
+#: model:ir.module.module,shortdesc:base.module_ai_sign
 msgid "Sign AI Integration"
 msgstr "Integración entre Firma electrónica e IA"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sign_ai
+#: model:ir.module.module,summary:base.module_ai_sign
 msgid "Sign AI integration"
 msgstr "Integración entre IA y Firma electrónica"
 
@@ -63739,9 +63739,9 @@ msgid "value"
 msgstr "valor"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_web_studio_ai_fields
-msgid "web_studio_ai_fields"
-msgstr "web_studio_ai_fields"
+#: model:ir.module.module,shortdesc:base.module_ai_fields_web_studio
+msgid "ai_fields_web_studio"
+msgstr "ai_fields_web_studio"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_website_helpdesk_sale_loyalty

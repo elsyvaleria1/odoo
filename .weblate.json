@@ -3097,9 +3097,9 @@
                 "new_base": "addons/web_studio/i18n/web_studio.pot"
             },
             {
-                "name": "web_studio_ai_fields",
-                "filemask": "addons/web_studio_ai_fields/i18n/*.po",
-                "new_base": "addons/web_studio_ai_fields/i18n/web_studio_ai_fields.pot"
+                "name": "ai_fields_web_studio",
+                "filemask": "addons/ai_fields_web_studio/i18n/*.po",
+                "new_base": "addons/ai_fields_web_studio/i18n/ai_fields_web_studio.pot"
             },
             {
                 "name": "web_tour",

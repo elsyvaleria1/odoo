@@ -25616,7 +25616,7 @@ msgid "AI"
 msgstr "KI"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_esg_csrd_ai
+#: model:ir.module.module,shortdesc:base.module_ai_esg_csrd
 msgid "AI - ESG CSRD"
 msgstr ""
 
@@ -25688,7 +25688,7 @@ msgid "AI crm livechat"
 msgstr "KI, CRM & Livechat"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_esg_csrd_ai
+#: model:ir.module.module,summary:base.module_ai_esg_csrd
 msgid "AI integration with ESG CSRD"
 msgstr ""
 
@@ -37172,7 +37172,7 @@ msgid "Empty view mode in view_mode: “%s”"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_web_studio_ai_fields
+#: model:ir.module.module,description:base.module_ai_fields_web_studio
 msgid "Enable Ai fields configuration in studio"
 msgstr "Aktivieren Sie die Konfiguration für KI-Felder in Studio"
 
@@ -37201,7 +37201,7 @@ msgstr ""
 "Sie Ihren Kunden für einen Termin geben können."
 
 #. module: base
-#: model:ir.module.module,summary:base.module_web_studio_ai_fields
+#: model:ir.module.module,summary:base.module_ai_fields_web_studio
 msgid "Enable creating AI computed fields in studio"
 msgstr "Aktivierung der Erstellung von KI-berechneten Feldern in Studio"
 
@@ -54695,7 +54695,7 @@ msgid "Recruitment Reporting"
 msgstr "Personalbeschaffung Berichtswesen"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_hr_recruitment_ai
+#: model:ir.module.module,shortdesc:base.module_ai_hr_recruitment
 msgid "Recruitment With AI"
 msgstr ""
 
@@ -57247,12 +57247,12 @@ msgid "Sign"
 msgstr "E-Signatur"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_sign_ai
+#: model:ir.module.module,shortdesc:base.module_ai_sign
 msgid "Sign AI Integration"
 msgstr "Integration von E-Sigantur & KI"
 
 #. module: base
-#: model:ir.module.module,summary:base.module_sign_ai
+#: model:ir.module.module,summary:base.module_ai_sign
 msgid "Sign AI integration"
 msgstr "Integration von E-Sigantur & KI"
 
@@ -65932,9 +65932,9 @@ msgid "value"
 msgstr "Wert"
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_web_studio_ai_fields
-msgid "web_studio_ai_fields"
-msgstr "web_studio_ai_fields"
+#: model:ir.module.module,shortdesc:base.module_ai_fields_web_studio
+msgid "ai_fields_web_studio"
+msgstr "ai_fields_web_studio"
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_website_helpdesk_sale_loyalty

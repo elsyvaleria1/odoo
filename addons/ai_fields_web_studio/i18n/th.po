@@ -1,0 +1,255 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * ai_fields_web_studio
+#
+# "Tiffany Chang (tic)" <tic@odoo.com>, 2025.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server saas~18.4+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-30 18:48+0000\n"
+"PO-Revision-Date: 2025-09-16 22:58+0000\n"
+"Last-Translator: \"Tiffany Chang (tic)\" <tic@odoo.com>\n"
+"Language-Team: Thai <https://translate.odoo.com/projects/odoo-19/"
+"ai_fields_web_studio/th/>\n"
+"Language: th\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.12.2\n"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/properties/field_properties/field_properties.xml:0
+msgid "AI"
+msgstr "AI"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/interactive_editor.js:0
+msgid "AI Field"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Add Field"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Add Values"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Add an AI Field"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Checkbox"
+msgstr "กล่องกาเครื่องหมาย"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Date"
+msgstr "วันที่"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Datetime"
+msgstr "วันเวลา"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Decimal"
+msgstr "ทศนิยม"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Discard"
+msgstr "ละทิ้ง"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Edit Values"
+msgstr "แก้ไขค่า"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Field Type"
+msgstr "ประเภทฟิลด์"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "HTML"
+msgstr "HTML"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Integer"
+msgstr "ตัวเลขจำนวนเต็ม"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Many2one"
+msgstr "Many2one"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Monetary"
+msgstr "การเงิน"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Multiline Text"
+msgstr "ข้อความหลายบรรทัด"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI CheckBox"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Date"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Datetime"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Decimal"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI HTML"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Integer"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Many2One"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Monetary"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Multiline Text"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Selection"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Tags"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "New AI Text"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/properties/field_properties/field_properties.xml:0
+msgid "Prompt"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Relation"
+msgstr "ความสัมพันธ์"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Selection"
+msgstr "การเลือก"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Selection Values"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Tags"
+msgstr "แท็ก"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.js:0
+msgid "Text"
+msgstr "ข้อความ"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "Write a prompt, use '/field' to insert dynamic values"
+msgstr "เขียนคำเตือน ใช้ '/field' เพื่อแทรกค่าไดนามิก"
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "ai icon"
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "button to run your prompt."
+msgstr ""
+
+#. module: ai_fields_web_studio
+#. odoo-javascript
+#: code:addons/ai_fields_web_studio/static/src/client_action/view_editor/interactive_editor/field_configuration/ai_field_configuration_dialog.xml:0
+msgid "fields won't update automatically - Click the"
+msgstr ""
