@@ -1,0 +1,6 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_voice_sentence_system,voice.sentence system,model_voice_sentence,base.group_system,permission,rd,,,
+access_voice_sentence_privilege_record,A shared sentence is kept for whoever said it,model_voice_sentence,privilege_record_sentence,permission,c,,,
+access_speech_vocabulary_form_privilege_learn,A reading a user chose is kept as a learned spoken form,speech.model_speech_vocabulary_form,privilege_learn_term,permission,cu,,,"[('source', '=', 'learned')]"
+access_speech_vocabulary_privilege_learn,A learned spoken form adds the word it means when there is none,speech.model_speech_vocabulary,privilege_learn_term,permission,c,,,
+access_english_pass_parameter,The English second pass switch is read for the voice client,base.model_ir_config_parameter,privilege_read_english_pass,permission,r,,,"[('key', '=', 'voice_command.english_second_pass')]"

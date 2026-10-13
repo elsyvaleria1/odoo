@@ -2864,7 +2864,7 @@ msgid "AI Tool Call Approvals"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_voice_ai
+#: model:ir.module.module,shortdesc:base.module_voice_command_ml
 msgid "AI Voice Intent Interpretation"
 msgstr ""
 
@@ -4449,7 +4449,7 @@ msgid "Add selected event booths to the website sales checkout"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_stock_voice
+#: model:ir.module.module,summary:base.module_stock_voice_command
 msgid "Add spoken aliases for the transfer Validate buttons"
 msgstr ""
 
@@ -5706,7 +5706,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_voice_ai
+#: model:ir.module.module,description:base.module_voice_command_ml
 msgid ""
 "Adds a voice-command fallback that sends the sentence and offered action "
 "choices through the machine-learning gateway under the voice.intent purpose."
@@ -6426,7 +6426,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_voice
+#: model:ir.module.module,description:base.module_voice_command
 msgid ""
 "Adds command interpretation, voice UI controls, screen integration hooks, "
 "form-field dictation and spoken feedback through browser synthesis. A "
@@ -6679,7 +6679,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_stock_voice
+#: model:ir.module.module,description:base.module_stock_voice_command
 msgid ""
 "Adds delivery, transfer and receipt completion phrases to the stock transfer"
 " form validation buttons. Recognition and command execution come from the "
@@ -8774,7 +8774,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_mail_voice
+#: model:ir.module.module,description:base.module_mail_voice_command
 msgid ""
 "Adds voice executors that open the note or message composer on a saved "
 "record and append recognized text. Requires an available chatter and voice "
@@ -13323,7 +13323,7 @@ msgid "Barcode Transfer Quality Checks"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_stock_barcode_voice
+#: model:ir.module.module,shortdesc:base.module_stock_barcode_voice_command
 msgid "Barcode Voice Quantities"
 msgstr ""
 
@@ -22732,7 +22732,7 @@ msgid "Draft Knowledge text and use articles as AI agent sources"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_mail_voice
+#: model:ir.module.module,summary:base.module_mail_voice_command
 msgid "Draft chatter notes and messages from recognized voice commands"
 msgstr ""
 
@@ -26250,7 +26250,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_stock_barcode_voice
+#: model:ir.module.module,description:base.module_stock_barcode_voice_command
 msgid ""
 "Extends the barcode interface with quantity commands, readback and undo, "
 "including inventory-count usage. Transfer validation uses an explicit "
@@ -31143,13 +31143,13 @@ msgid "Internet of Things (IoT)"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_voice
+#: model:ir.module.module,summary:base.module_voice_command
 msgid ""
 "Interpret spoken or typed commands for navigation, search and form actions"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_voice_ai
+#: model:ir.module.module,summary:base.module_voice_command_ml
 msgid "Interpret unmatched voice commands using configured language models"
 msgstr ""
 
@@ -31425,7 +31425,7 @@ msgid "Inventory Valuation and Accounting"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_stock_voice
+#: model:ir.module.module,shortdesc:base.module_stock_voice_command
 msgid "Inventory Voice Button Phrases"
 msgstr ""
 
@@ -48359,7 +48359,7 @@ msgid "Set as Todo"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_stock_barcode_voice
+#: model:ir.module.module,summary:base.module_stock_barcode_voice_command
 msgid "Set barcode-line quantities by voice and read selected lines aloud"
 msgstr ""
 
@@ -56074,7 +56074,7 @@ msgid "VoIP CRM Navigation"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_mail_voice
+#: model:ir.module.module,shortdesc:base.module_mail_voice_command
 msgid "Voice Chatter Composition"
 msgstr ""
 
@@ -56200,7 +56200,7 @@ msgid "Web Client"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_voice
+#: model:ir.module.module,shortdesc:base.module_voice_command
 msgid "Web Client Voice Commands"
 msgstr ""
 

@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.89
+:Version: 7.90
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -852,12 +852,9 @@ and about its dependencies, and nothing checks either claim.
   without depending on it, and is the one name left open.
 * **Renames pending**
   (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
-  ``voice``, ``voice_ai``, ``mail_voice``, ``stock_voice``,
-  ``stock_barcode_voice`` → ``voice_command``, ``voice_command_ml``,
-  ``mail_voice_command``, ``stock_voice_command``,
-  ``stock_barcode_voice_command``; ``sign_ai``, ``hr_recruitment_ai``,
-  ``esg_csrd_ai``, ``web_studio_ai_fields`` → ``ai_sign``,
-  ``ai_hr_recruitment``, ``ai_esg_csrd``, ``ai_fields_web_studio``;
+  ``sign_ai``, ``hr_recruitment_ai``, ``esg_csrd_ai``, ``web_studio_ai_fields``
+  → ``ai_sign``, ``ai_hr_recruitment``, ``ai_esg_csrd``,
+  ``ai_fields_web_studio``;
   ``device_voip`` → ``voip_device``; ``document_l10n_<cc>_hr_payroll``
   (``be``, ``ch``, ``hk``, ``ke``) → ``l10n_<cc>_hr_payroll_document``;
   ``document_l10n_mx_edi``, ``approval_account_l10n_mx_edi``,
@@ -6398,6 +6395,13 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.90
+     - 2026-10-13
+     - §1.5: ``voice``, ``voice_ai``, ``mail_voice``, ``stock_voice`` and
+       ``stock_barcode_voice`` are ``voice_command``, ``voice_command_ml``,
+       ``mail_voice_command``, ``stock_voice_command`` and
+       ``stock_barcode_voice_command`` (base 1.155) and leave the
+       pending-renames list.
    * - 7.89
      - 2026-10-13
      - §1.5: one word order for a bridge of a cross-cutting family
