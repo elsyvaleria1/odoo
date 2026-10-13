@@ -20,7 +20,7 @@ def _get_trace_targets():
         (Registry, "setup_models", "setup_models"),
         (Registry, "init_models", "init_models"),
         (Registry, "finalize_constraints", "finalize_constraints"),
-        (Registry, "check_null_constraints", "check_null_constraints"),
+        (Registry, "update_not_null_cache", "update_not_null_cache"),
         (MigrationManager, "migrate_module", "migrate_module"),
     ]
 
@@ -84,7 +84,7 @@ PLAIN_SCHEDULE = [
     "load_module_graph",
     "setup_models",
     "finalize_constraints",
-    "check_null_constraints",
+    "update_not_null_cache",
 ]
 
 UPDATE_SCHEDULE = [
@@ -96,7 +96,7 @@ UPDATE_SCHEDULE = [
     "setup_models",
     "migrate_module(end)",
     "finalize_constraints",
-    "check_null_constraints",
+    "update_not_null_cache",
 ]
 
 
@@ -121,7 +121,7 @@ def test_constraints_are_finalized_before_the_null_check(base_db):
     for kwargs in ({}, {"update_module": True}):
         trace = _load(base_db, **kwargs)
         assert trace.index("finalize_constraints") < trace.index(
-            "check_null_constraints"
+            "update_not_null_cache"
         ), trace
 
 

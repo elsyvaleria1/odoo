@@ -20,7 +20,7 @@ Python source.**
               ▼                          ▼                        ▼
    ┌────────────────────┐   ┌─────────────────────┐   ┌────────────────────────┐
    │  FILESTORE         │   │  the running        │   │  every other worker's  │
-   │  <data_dir>/       │   │  Registry           │   │  check_signaling()     │
+   │  <data_dir>/       │   │  Registry           │   │  refresh_signaling_and_get_registry()     │
    │   filestore/<db>/  │   │  (in memory, per    │   │                        │
    │   b3/<2>/<digest>  │   │   process, per db)  │   │                        │
    └────────────────────┘   └─────────────────────┘   └────────────────────────┘
@@ -83,7 +83,7 @@ CREATE TABLE orm_signaling_<name> (id SERIAL PRIMARY KEY, date TIMESTAMP DEFAULT
 number.** To invalidate, a worker inserts a row and keeps the id PostgreSQL
 assigned; every other worker compares the serial's last value (one sequence read
 per table, not a `max(id)` scan) against the one it last saw, on its next
-`check_signaling()`, and rebuilds its registry or clears the named caches
+`refresh_signaling_and_get_registry()`, and rebuilds its registry or clears the named caches
 accordingly. A serial moves even when the inserting transaction rolls back, so a
 rolled-back registry change costs the other workers one spare reload — rare, and
 cheaper than planning one subselect per table on every request. A cursor of the

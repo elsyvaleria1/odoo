@@ -614,13 +614,13 @@ class Registry(
                 )
                 self.drain_post_init()
 
-                self.check_indexes(cr, model_names)
-                self.check_foreign_keys(cr)
+                self.update_declared_field_indexes(cr, model_names)
+                self.update_declared_foreign_keys(cr)
 
                 env.flush_all()
 
-                self.check_tables_exist(cr)
-                self.check_view_depends(cr, model_names)
+                self.create_missing_model_tables(cr)
+                self.warn_undeclared_view_dependencies(cr, model_names)
 
         self.__dict__.pop("_paths_in_database", None)
 
@@ -636,7 +636,7 @@ class Registry(
             self._create_missing_signaling_tables(cr)
             self._load_sequences(cr)
 
-    def check_signaling(self, cr: BaseCursor | None = None) -> Registry:
+    def refresh_signaling_and_get_registry(self, cr: BaseCursor | None = None) -> Registry:
         own_cursor = cr is None
         try:
             with (
@@ -654,7 +654,7 @@ class Registry(
                         sequence=old_sequence,
                         db_sequence=db_registry_sequence,
                     )
-                    self = self._reload_after_signaling(db_registry_sequence)
+                    self = self._get_or_reload_registry_for_sequence(db_registry_sequence)
                     sig_cr.invalidate_cached_plans()
                     if _logger.isEnabledFor(logging.DEBUG):
                         changes += (
@@ -689,7 +689,7 @@ class Registry(
             raise
         return self
 
-    def _reload_after_signaling(self, db_registry_sequence: int) -> Registry:
+    def _get_or_reload_registry_for_sequence(self, db_registry_sequence: int) -> Registry:
         if (
             published := self._get_published_successor(db_registry_sequence)
         ) is not None:

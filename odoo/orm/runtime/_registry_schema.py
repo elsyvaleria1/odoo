@@ -36,6 +36,14 @@ _schema = logging.getLogger("odoo.schema")
 _debug = DebugLog(__name__)
 
 
+class _FieldIndexSpec(typing.NamedTuple):
+    table_name: str
+    method: str
+    has_predicate: bool
+    is_unique: bool
+    opclass: str | None
+
+
 class _RegistrySchemaMixin(_RegistryStubs):
     _ordinary_tables: dict[str, bool]
     _constraint_queue: dict[typing.Any, Callable[[BaseCursor], None]]
@@ -106,7 +114,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
                 _schema.warning("%s", e)
         self._constraint_queue.clear()
 
-    def check_null_constraints(self, cr: Cursor) -> None:
+    def update_not_null_cache(self, cr: Cursor) -> None:
         cr.execute("""
             SELECT c.relname, a.attname
             FROM pg_attribute a
@@ -192,7 +200,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
             )
         return expression, method, where
 
-    def _apply_index(
+    def _create_or_replace_index(
         self,
         cr: Cursor,
         indexname: str,
@@ -227,7 +235,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
         except psycopg.DatabaseError:
             _schema.error("Unable to add index %r for %s", indexname, self)
 
-    def check_indexes(self, cr: Cursor, model_names: Iterable[str]) -> None:
+    def update_declared_field_indexes(self, cr: Cursor, model_names: Iterable[str]) -> None:
         model_names = list(model_names)
         expected = [
             (get_index_name(Model._table, field.name), Model._table, field)
@@ -274,7 +282,9 @@ class _RegistrySchemaMixin(_RegistryStubs):
             [[row[0] for row in expected]],
         )
         existing = {
-            indexname: (tablename, method, has_predicate, is_unique, opclass)
+            indexname: _FieldIndexSpec(
+                tablename, method, has_predicate, is_unique, opclass
+            )
             for (
                 indexname,
                 tablename,
@@ -292,65 +302,72 @@ class _RegistrySchemaMixin(_RegistryStubs):
         )
 
         for indexname, tablename, field in expected:
-            index = field.index
-            if index not in INDEX_KINDS:
-                raise ValueError(
-                    f"Invalid index value {index!r} on {field}; allowed values: "
-                    f"'btree', 'btree_not_null', 'unique', 'trigram', True, False, None"
-                )
+            self._update_declared_field_index(
+                cr, indexname, tablename, field, existing.get(indexname)
+            )
 
-            if field.translate and index == "unique":
-                _schema.warning(
-                    f"Index attribute on {field!r} ignored, a unique index is not supported for translated fields"
-                )
-                continue
+    def _update_declared_field_index(
+        self,
+        cr: Cursor,
+        indexname: str,
+        tablename: str,
+        field: Field[typing.Any],
+        existing: _FieldIndexSpec | None,
+    ) -> None:
+        index = field.index
+        if index not in INDEX_KINDS:
+            raise ValueError(
+                f"Invalid index value {index!r} on {field}; allowed values: "
+                f"'btree', 'btree_not_null', 'unique', 'trigram', True, False, None"
+            )
 
-            will_index = bool(index) and (index != "trigram" or self.has_trigram)
-            if indexname in existing:
-                expected_opclass = self._get_index_opclass(field, index)
-                expected_method = "gin" if expected_opclass else "btree"
-                expected_predicate = not field.translate and index in (
-                    "btree_not_null",
-                    "unique",
-                )
-                (
-                    _table,
-                    actual_method,
-                    actual_predicate,
-                    actual_unique,
-                    actual_opclass,
-                ) = existing[indexname]
-                stale = (
-                    actual_method != expected_method
-                    or bool(actual_predicate) != expected_predicate
-                    or bool(actual_unique) != (index == "unique")
-                    or (
-                        expected_opclass is not None
-                        and actual_opclass != expected_opclass
-                    )
-                )
-                will_index = will_index and stale
-            else:
-                stale = False
+        if field.translate and index == "unique":
+            _schema.warning(
+                f"Index attribute on {field!r} ignored, a unique index is not supported for translated fields"
+            )
+            return
 
-            if will_index:
-                expression, method, where = self._get_index_expression(field, index)
-                self._apply_index(
-                    cr,
-                    indexname,
-                    tablename,
-                    expression,
-                    method,
-                    where,
-                    stale,
-                    unique=index == "unique",
-                    storage=self._get_index_storage(field, index),
+        will_index = bool(index) and (index != "trigram" or self.has_trigram)
+        if existing is not None:
+            expected_opclass = self._get_index_opclass(field, index)
+            expected_method = "gin" if expected_opclass else "btree"
+            expected_predicate = not field.translate and index in (
+                "btree_not_null",
+                "unique",
+            )
+            stale = (
+                existing.method != expected_method
+                or bool(existing.has_predicate) != expected_predicate
+                or bool(existing.is_unique) != (index == "unique")
+                or (
+                    expected_opclass is not None
+                    and existing.opclass != expected_opclass
                 )
+            )
+            will_index = will_index and stale
+        else:
+            stale = False
 
-            elif not index and tablename == existing.get(indexname, (None,))[0]:
-                _schema.info(
-                    "Keep unexpected index %s on table %s", indexname, tablename
-                )
+        if will_index:
+            expression, method, where = self._get_index_expression(field, index)
+            self._create_or_replace_index(
+                cr,
+                indexname,
+                tablename,
+                expression,
+                method,
+                where,
+                stale,
+                unique=index == "unique",
+                storage=self._get_index_storage(field, index),
+            )
+
+        elif not index and tablename == (
+            None if existing is None else existing.table_name
+        ):
+            _schema.info(
+                "Keep unexpected index %s on table %s", indexname, tablename
+            )
 
     def add_foreign_key(
         self,
@@ -371,7 +388,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
         else:
             foreign_keys.setdefault(key, val)
 
-    def check_foreign_keys(self, cr: Cursor) -> None:
+    def update_declared_foreign_keys(self, cr: Cursor) -> None:
         foreign_keys = self.init_phase.foreign_keys
         if not foreign_keys:
             return
@@ -417,7 +434,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
                 model, conname, "f", None, module
             )
 
-    def check_tables_exist(self, cr: Cursor) -> None:
+    def create_missing_model_tables(self, cr: Cursor) -> None:
         from .environment import Environment
 
         env = Environment(cr, SUPERUSER_ID, {})
@@ -447,8 +464,8 @@ class _RegistrySchemaMixin(_RegistryStubs):
                     env[name].init()
                 self._queue_foreign_keys_into(env, missing_tables)
                 self.init_phase.drain_post_init()
-                self.check_indexes(cr, missing)
-                self.check_foreign_keys(cr)
+                self.update_declared_field_indexes(cr, missing)
+                self.update_declared_foreign_keys(cr)
                 env.flush_all()
             missing_tables = set(table2model).difference(
                 sql.get_tables_existing(cr, table2model)
@@ -583,7 +600,7 @@ class _RegistrySchemaMixin(_RegistryStubs):
         )
         return undeclared
 
-    def check_view_depends(self, cr: Cursor, model_names: Iterable[str]) -> None:
+    def warn_undeclared_view_dependencies(self, cr: Cursor, model_names: Iterable[str]) -> None:
         for name, missing in self.get_undeclared_view_reads(cr, model_names).items():
             _schema.warning(
                 "SQL view model %s reads %s without naming them in _depends, "

@@ -314,7 +314,7 @@ class TestProcessSpawnChecksSignallingOncePerCycle:
     def test_signalling_is_checked_once_no_matter_how_many_workers_spawn(self, prefork):
         checks = []
         registry = MagicMock()
-        registry.check_signaling.side_effect = checks.append
+        registry.refresh_signaling_and_get_registry.side_effect = checks.append
         cfg = {
             "http_enable": True,
             "max_cron_threads": 2,
@@ -327,7 +327,7 @@ class TestProcessSpawnChecksSignallingOncePerCycle:
 
         assert len(spawned) == 9, spawned
         assert len(checks) == 1, (
-            f"check_signaling ran {len(checks)} times for one spawn cycle that "
+            f"refresh_signaling_and_get_registry ran {len(checks)} times for one spawn cycle that "
             f"forked {len(spawned)} workers; it must run once, before the first "
             "fork, so no child inherits a stale registry and none pays for a "
             "redundant round trip"

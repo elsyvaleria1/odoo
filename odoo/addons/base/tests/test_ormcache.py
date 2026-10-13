@@ -183,12 +183,12 @@ class TestOrmCache(TransactionCase):
                 )
 
         with self.assertNoLogs(None, None):
-            registry.check_signaling()
+            registry.refresh_signaling_and_get_registry()
 
         registry.cache_sequences.update(old_sequences)
 
         with self.assertLogs("odoo.registry") as logs:
-            registry.check_signaling()
+            registry.refresh_signaling_and_get_registry()
         self.assertEqual(
             logs.output,
             [
@@ -231,12 +231,12 @@ class TestOrmCache(TransactionCase):
                 )
 
         with self.assertNoLogs(None, None):
-            registry.check_signaling()
+            registry.refresh_signaling_and_get_registry()
 
         registry.cache_sequences.update(old_sequences)
 
         with self.assertLogs("odoo.registry") as logs:
-            registry.check_signaling()
+            registry.refresh_signaling_and_get_registry()
         self.assertEqual(
             logs.output,
             [

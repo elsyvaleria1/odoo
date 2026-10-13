@@ -72,7 +72,7 @@ ordinary tables (`orm_signaling_registry`, plus one per cache key in
 | Operation | Mechanism | Why this way |
 |---|---|---|
 | **Publishing** | `Registry.signal_changes()` `INSERT`s a row and reads back **the id the database generated** (`RETURNING id`) | not `local + 1`: concurrent inserts are the normal case, so two workers signalling together take ids N+1 and N+2 while both would record `+= 1` locally, and the loser would see `db > local` and pay a full `Registry.new()` — the most expensive operation in the system — to learn about a change it made itself |
-| **Observing** | `Registry.check_signaling()` reads each table's serial (`pg_sequence_last_value`) against what this process last saw — `get_sequences` does it in one prebuilt `SELECT` of twelve sequence reads (2026-09-13, at eleven: 0.21 ms median on a live request, from 0.40 ms with `max(id)` subselects, which planned per call) | a **registry** sequence ahead means the model classes are stale: adopt an already-published newer registry if one exists, else drain the pool and call `Registry.new()`. A **cache** sequence ahead clears only the LRUs behind that key, which is why eviction costs far less than a rebuild and why the two use separate tables |
+| **Observing** | `Registry.refresh_signaling_and_get_registry()` reads each table's serial (`pg_sequence_last_value`) against what this process last saw — `get_sequences` does it in one prebuilt `SELECT` of twelve sequence reads (2026-09-13, at eleven: 0.21 ms median on a live request, from 0.40 ms with `max(id)` subselects, which planned per call) | a **registry** sequence ahead means the model classes are stale: adopt an already-published newer registry if one exists, else drain the pool and call `Registry.new()`. A **cache** sequence ahead clears only the LRUs behind that key, which is why eviction costs far less than a rebuild and why the two use separate tables |
 | **Tolerating lag** | a sequence *below* the local one is logged and ignored as stale | signaling may be read through a read-only cursor that lands on a replica, and a replica behind the primary must not thrash every worker's registry |
 
 Three consequences for code anywhere in the core:
@@ -121,7 +121,7 @@ Registry.new(db)
    ├─ check_loaded_templates()            update only: compile the QWeb templates the load touched
    ├─ uninstall_removed_modules()         update only; may force one full reload
    ├─ warn_invalid_custom_views()         update only
-   └─ register_model_hooks() · check_null_constraints()
+   └─ register_model_hooks() · update_not_null_cache()
 ```
 
 Sixteen of the 28 `loader.*` calls, in call order; the sketch selects, it does
@@ -162,7 +162,7 @@ install at 58 GB with nine `resource.asset` subtypes.
 ```
 WSGI  →  Application.__call__  →  Request (_post_init: session + db)
       →  _serve_static | _serve_nodb | _serve_db
-            _serve_db: _acquire_registry_cursor → check_signaling → Environment → ir.http._match
+            _serve_db: _acquire_registry_cursor → refresh_signaling_and_get_registry → Environment → ir.http._match
                 match  → service.transaction.retrying(_serve_ir_http):
                              ir.http._authenticate → ir.http._pre_dispatch
                              → Dispatcher.pre_dispatch → Dispatcher.dispatch
@@ -382,7 +382,7 @@ record releases the stale markers of its prefetch batch
 | Event | Flushes | Then |
 |---|---|---|
 | `env.flush_all()`, `flush_model()`, `flush_recordset()` | everything, the model's fields, the records' fields | recompute pending stored computes to a fixpoint, `UPDATE`/`INSERT` the dirty ones through the backend |
-| `env.execute_query(sql)` — every `_search`, `read_group`, fetch and port statement | exactly the fields the statement reads (`SQL.to_flush`), across a table-inheritance tree; on a SQL-view model, the fields its `_depends` names, transitively | so a read never sees a column older than its own cache. A view reading a column its `_depends` omits reads the last flushed value; `Registry.check_view_depends` warns at install, from the columns PostgreSQL records the view reading (`pg_depend`) |
+| `env.execute_query(sql)` — every `_search`, `read_group`, fetch and port statement | exactly the fields the statement reads (`SQL.to_flush`), across a table-inheritance tree; on a SQL-view model, the fields its `_depends` names, transitively | so a read never sees a column older than its own cache. A view reading a column its `_depends` omits reads the last flushed value; `Registry.warn_undeclared_view_dependencies` warns at install, from the columns PostgreSQL records the view reading (`pg_depend`) |
 | `invalidate_model()` / `invalidate_recordset()` with `flush=True` (the default) | the fields being dropped | then drops them; with `flush=False` it refuses a field that is dirty (`_check_no_pending_write`) rather than lose the write |
 | `unlink()` | everything | before the `DELETE`, so no dirty write targets a gone row |
 | a parent-store write | the parent field | before the path recomputation reads it |
@@ -462,7 +462,7 @@ drafts were given, as upstream's does.
 caches exactly as a one2many does, so every flush, scope and tree rule above
 applies to it unchanged; what it adds is a contract on the *inverse*: the
 many2one must declare `index="unique"` (a partial unique btree, `WHERE col IS NOT
-NULL`, kept stale-checked by `Registry.check_indexes`), so the cardinality is a
+NULL`, kept stale-checked by `Registry.update_declared_field_indexes`), so the cardinality is a
 fact of the schema and not of the reader. Writing a record points its inverse
 here; the record that held the seat is released when its inverse is optional and
 refused when it is required, because a one-to-one moves nothing silently. It

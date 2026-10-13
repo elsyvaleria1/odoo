@@ -1145,7 +1145,7 @@ class _PackageLoader:
             _reinit_models_to_check(self.registry, self.cr, self.models_to_check)
             self.env.flush_all()
             self.cr.commit()
-        self.registry.check_null_constraints(self.cr)
+        self.registry.update_not_null_cache(self.cr)
         tests_t0, tests_q0 = time.time(), odoo.db.sql_counter
         _debug.pipeline(
             "modules.package.at_install_tests",
@@ -1421,7 +1421,7 @@ def _run_deferred_at_install_tests(
 
     _debug.pipeline("modules.deferred_tests.begin", modules=len(names))
     _reinit_models_to_check(registry, cr, models_to_check)
-    registry.check_null_constraints(cr)
+    registry.update_not_null_cache(cr)
     env.flush_all()
     cr.commit()
     _debug.lifecycle("modules.deferred_tests.committed", modules=len(names))
@@ -1979,10 +1979,10 @@ class _ModuleLoader:
                 migrations.migrate_module(package, "end")
             migrations.clear_pending_end_migrations(package.name for package in graph)
 
-    def restore_relations_dropped_by_migrations(self) -> None:
+    def restore_missing_model_tables_and_views(self) -> None:
         if not self.registry.updated_modules:
             return
-        self.registry.check_tables_exist(self.cr)
+        self.registry.create_missing_model_tables(self.cr)
         env = self._get_env()
         queried = {
             model._table: name
@@ -2074,10 +2074,10 @@ class _ModuleLoader:
         with _debug.perf("modules.finalize_constraints", cr=self.cr):
             self.registry.finalize_constraints(self.cr)
 
-    def _check_removed_columns(self, models: list[str]) -> None:
+    def _drop_not_null_on_removed_columns(self, models: list[str]) -> None:
         _drop_not_null_on_removed_columns(self._get_env(), self.cr, models)
 
-    def run_post_update_model_checks(self) -> None:
+    def finalize_updated_models(self) -> None:
         if not self.registry.updated_modules:
             return
         env = self._get_env()
@@ -2101,7 +2101,7 @@ class _ModuleLoader:
             models=len(checked_models),
             unloadable=unloadable,
         )
-        self._check_removed_columns(checked_models)
+        self._drop_not_null_on_removed_columns(checked_models)
 
         self._reflect_inherits_across_the_whole_registry()
 
@@ -2284,9 +2284,9 @@ class _ModuleLoader:
                 model._register_hook()
             env.flush_all()
 
-    def check_null_constraints(self) -> None:
+    def update_not_null_cache(self) -> None:
         with _debug.perf("modules.check_null_constraints", cr=self.cr):
-            self.registry.check_null_constraints(self.cr)
+            self.registry.update_not_null_cache(self.cr)
 
     def mark_database_partially_updated(self) -> None:
         if not self.update_module:
@@ -2442,11 +2442,11 @@ def load_modules(
         loader.run_deferred_at_install_tests()
         loader.log_modules_that_never_loaded()
         loader.run_end_migrations()
-        loader.restore_relations_dropped_by_migrations()
+        loader.restore_missing_model_tables_and_views()
         loader.log_pending_module_states()
         loader.warn_code_ahead_of_database()
         loader.finalize_constraints()
-        loader.run_post_update_model_checks()
+        loader.finalize_updated_models()
         loader.check_loaded_templates()
 
         try:
@@ -2468,7 +2468,7 @@ def load_modules(
         loader.log_unresolved_access_domains()
         loader.log_assertion_report()
         loader.register_model_hooks()
-        loader.check_null_constraints()
+        loader.update_not_null_cache()
         loader.mark_database_partially_updated()
         span.set(outcome="loaded", modules=len(graph))
 

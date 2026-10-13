@@ -24,7 +24,7 @@ class TestRecreatedTableSchema(TransactionCase):
         before = self._foreign_keys(table), self._indexes(table)
         self.env.flush_all()
         self.env.cr.execute(SQL("DROP TABLE %s CASCADE", SQL.identifier(table)))
-        self.env.registry.check_tables_exist(self.env.cr)
+        self.env.registry.create_missing_model_tables(self.env.cr)
         return before, (self._foreign_keys(table), self._indexes(table))
 
     def test_a_recreated_table_gets_back_its_foreign_keys_and_indexes(self):

@@ -939,7 +939,7 @@ class Websocket:
         try:
             registry = Registry(self._db)
             sequence = registry.registry_sequence
-            return sequence != registry.check_signaling().registry_sequence
+            return sequence != registry.refresh_signaling_and_get_registry().registry_sequence
         except Exception:
             _logger.debug(
                 "Registry signaling check failed for %s", self._db, exc_info=True
@@ -1192,7 +1192,7 @@ class WebsocketRequest:
         self.session = self._acquire_session()
 
         try:
-            self.registry = Registry(self.db).check_signaling()
+            self.registry = Registry(self.db).refresh_signaling_and_get_registry()
         except (
             AttributeError,
             psycopg.OperationalError,

@@ -285,7 +285,7 @@ def dispatch(dispatch_method: str, params: Sequence[typing.Any]) -> typing.Any:
         model_method=model_method,
     )
     try:
-        registry = Registry(db).check_signaling()
+        registry = Registry(db).refresh_signaling_and_get_registry()
     except psycopg.errors.InvalidCatalogName as exc:
         _logger.debug("RPC %s: database %r does not exist", dispatch_method, db)
         _debug.logic("rpc.dispatch.refused", db=db, reason="db_missing")

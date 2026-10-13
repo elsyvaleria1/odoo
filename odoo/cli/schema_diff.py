@@ -138,7 +138,7 @@ class SchemaDiff(DatabaseCommand):
                     )
                     for name, value in (
                         ("setup_signaling", lambda self: None),
-                        ("check_signaling", lambda self: self),
+                        ("refresh_signaling_and_get_registry", lambda self: self),
                         ("signal_changes", lambda self: None),
                     ):
                         stack.enter_context(patch.object(Registry, name, value))

@@ -84,15 +84,15 @@ def _run_update(dbname: str):
         new_calls.append(db_name)
         return real_new(db_name, *args, **kwargs)
 
-    real_null_check = Registry.check_null_constraints
+    real_null_check = Registry.update_not_null_cache
 
     def traced_null_check(self, cr):
-        tail_calls.append("check_null_constraints")
+        tail_calls.append("update_not_null_cache")
         return real_null_check(self, cr)
 
     with (
         mock.patch.object(Registry, "new", staticmethod(traced_new)),
-        mock.patch.object(Registry, "check_null_constraints", traced_null_check),
+        mock.patch.object(Registry, "update_not_null_cache", traced_null_check),
     ):
         Registry.new(dbname, update_module=True)
     return new_calls, tail_calls
@@ -123,4 +123,4 @@ def test_no_recursion_when_nothing_is_being_removed(db_with_victim):
 def test_the_tail_phases_run_via_the_recursion(db_with_victim):
     _mark_to_remove(db_with_victim)
     _, tail_calls = _run_update(db_with_victim)
-    assert tail_calls == ["check_null_constraints"], tail_calls
+    assert tail_calls == ["update_not_null_cache"], tail_calls

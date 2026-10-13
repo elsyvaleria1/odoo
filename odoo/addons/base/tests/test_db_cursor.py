@@ -2350,7 +2350,7 @@ class TestPoolTimeoutCleanup(BaseCase):
 class TestDroppedDBRecovery(BaseCase):
     DB_NAME = "odoo_test_pool_recovery"
 
-    def test_check_signaling_cleans_up_after_db_drop(self):
+    def test_refresh_signaling_and_get_registry_cleans_up_after_db_drop(self):
         reg = object.__new__(Registry)
         reg.db_name = self.DB_NAME
         Registry.registries[self.DB_NAME] = reg
@@ -2364,11 +2364,11 @@ class TestDroppedDBRecovery(BaseCase):
             ),
         ):
             with self.assertRaises(psycopg.OperationalError):
-                reg.check_signaling()
+                reg.refresh_signaling_and_get_registry()
 
         self.assertNotIn(self.DB_NAME, Registry.registries)
 
-    def test_check_signaling_keeps_registry_on_pool_error(self):
+    def test_refresh_signaling_and_get_registry_keeps_registry_on_pool_error(self):
         reg = object.__new__(Registry)
         reg.db_name = self.DB_NAME
         Registry.registries[self.DB_NAME] = reg
@@ -2380,11 +2380,11 @@ class TestDroppedDBRecovery(BaseCase):
             side_effect=PoolError("couldn't get a connection after 30.00 sec"),
         ):
             with self.assertRaises(PoolError):
-                reg.check_signaling()
+                reg.refresh_signaling_and_get_registry()
 
         self.assertIn(self.DB_NAME, Registry.registries)
 
-    def test_check_signaling_keeps_registry_when_caller_provides_cursor(self):
+    def test_refresh_signaling_and_get_registry_keeps_registry_when_caller_provides_cursor(self):
         reg = object.__new__(Registry)
         reg.db_name = self.DB_NAME
         reg.registry_sequence = -1
@@ -2397,7 +2397,7 @@ class TestDroppedDBRecovery(BaseCase):
         mock_cr.execute.side_effect = psycopg.OperationalError("connection closed")
 
         with self.assertRaises(psycopg.OperationalError):
-            reg.check_signaling(cr=mock_cr)
+            reg.refresh_signaling_and_get_registry(cr=mock_cr)
 
         self.assertIn(self.DB_NAME, Registry.registries)
 
@@ -3281,18 +3281,18 @@ class TestBorrowHonoursItsTimeout(BaseCase):
 class TestCheckSignalingDrains(BaseCase):
     def test_the_reload_branch_still_drains_the_database(self):
         self.assertIn(
-            "_reload_after_signaling",
-            inspect.getsource(Registry.check_signaling),
-            "check_signaling must reach the reload branch to reach the drain",
+            "_get_or_reload_registry_for_sequence",
+            inspect.getsource(Registry.refresh_signaling_and_get_registry),
+            "refresh_signaling_and_get_registry must reach the reload branch to reach the drain",
         )
         self.assertIn(
             "drain_db",
-            inspect.getsource(Registry._reload_after_signaling),
+            inspect.getsource(Registry._get_or_reload_registry_for_sequence),
             "the reload branch must drain_db(self.db_name)",
         )
 
     def test_the_drain_is_skipped_when_another_registry_is_already_current(self):
-        src = inspect.getsource(Registry._reload_after_signaling)
+        src = inspect.getsource(Registry._get_or_reload_registry_for_sequence)
         self.assertLess(
             src.index("_get_published_successor"),
             src.index("drain_db"),
@@ -5508,7 +5508,7 @@ class TestSchemaForeignKeys(BaseCase):
         self.assertEqual(
             self._get_foreign_key_names("CASCADE"),
             [],
-            "check_foreign_keys drops and re-adds on this answer; matching "
+            "update_declared_foreign_keys drops and re-adds on this answer; matching "
             "regardless of ondelete would leave a changed policy unapplied",
         )
 
@@ -5531,7 +5531,7 @@ class TestSchemaForeignKeys(BaseCase):
         self.assertEqual(
             (t1, c1, t2, c2, deltype),
             ("_test_fk_child", "parent_id", "_test_fk_parent", "id", "n"),
-            "check_foreign_keys keys its `existing` map on exactly this shape",
+            "update_declared_foreign_keys keys its `existing` map on exactly this shape",
         )
         sql_schema.drop_constraint(self.cr, "_test_fk_child", name)
         self.assertEqual(

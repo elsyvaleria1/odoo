@@ -28,7 +28,7 @@ on `_ModuleLoader` and run in this order:
 | 8 | `untranslate_dropped_fields()` | data |
 | 9 | `finalize_registry_setup()` | runtime |
 | 10 | `run_end_migrations()` | data |
-| 11 | `restore_relations_dropped_by_migrations()` — re-`init()` any view-backed table a migration took down with it | data (DDL) |
+| 11 | `restore_missing_model_tables_and_views()` — re-`init()` any view-backed table a migration took down with it | data (DDL) |
 | 12 | `finalize_constraints()` — SQL constraints last, once all columns exist | data |
 | 13 | `check_loaded_templates()` — compile every QWeb template the load's data files touched, once each | data |
 | 14 | `uninstall_removed_modules()` | data + module |
@@ -41,7 +41,7 @@ table's, not the loader's; the order is pinned against a real load by
 | Left out | Why |
 |---|---|
 | `log_modules_that_never_loaded`, `log_pending_module_states`, `warn_code_ahead_of_database`, `log_unresolved_access_domains`, `log_assertion_report`, `mark_database_partially_updated`, `collect_models_with_manual_fields`, `collect_models_with_unreflected_fields` | reporting and bookkeeping — they cross no view; the two `collect_*` only queue models for phase 15 |
-| `register_model_hooks`, `check_null_constraints`, `warn_invalid_custom_views`, `run_post_update_model_checks`, `run_deferred_at_install_tests` | real work, selected out of *this* thread rather than out of the loader. Three of the five appear in [`runtime.md`](runtime.md#registry-build)'s sketch; the fourth sweeps the records the load made obsolete, which phase 13 waits for; the fifth runs the `at_install` suites the loader held back until their installed dependents had loaded, after re-initialising the models already queued for phase 15 — an unchanged module that extends a model an upgraded one re-initialised is loaded but not yet applied to the schema |
+| `register_model_hooks`, `update_not_null_cache`, `warn_invalid_custom_views`, `finalize_updated_models`, `run_deferred_at_install_tests` | real work, selected out of *this* thread rather than out of the loader. Three of the five appear in [`runtime.md`](runtime.md#registry-build)'s sketch; the fourth sweeps the records the load made obsolete, which phase 13 waits for; the fifth runs the `at_install` suites the loader held back until their installed dependents had loaded, after re-initialising the models already queued for phase 15 — an unchanged module that extends a model an upgraded one re-initialised is loaded but not yet applied to the schema |
 
 Four things this ordering encodes that no other view states:
 
@@ -58,7 +58,7 @@ to DDL.
 
 **Templates compile once the load is final (13).** A template may call one a
 later data file declares, and an extension its module no longer declares is
-still in the database until `run_post_update_model_checks` sweeps the records
+still in the database until `finalize_updated_models` sweeps the records
 the load made obsolete. So a save during the load only queues the primary
 template it touches (`ir.ui.view._check_qweb_compiles`), and phase 13 compiles
 each queued root once, after the sweep: a template that does not compile, or

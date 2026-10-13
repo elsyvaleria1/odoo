@@ -143,6 +143,6 @@ class TestUndeclaredViewReads(TransactionCase):
             patch.object(self.model_cls, "_depends", frozendict()),
             self.assertLogs("odoo.schema", "WARNING") as logs,
         ):
-            self.registry.check_view_depends(self.env.cr, ["res.users.apikeys"])
+            self.registry.warn_undeclared_view_dependencies(self.env.cr, ["res.users.apikeys"])
         self.assertIn("res.users.apikeys", logs.output[0])
         self.assertIn("res.partner.name", logs.output[0])

@@ -133,7 +133,7 @@ client retries as a lost connection.
 
 **`Request._serve_db`** — handles every non-static request when a database can be
 reached. Opens a registry, manages the request cursor and environment, and
-decides read-only versus read/write: `check_signaling`, `match` and
+decides read-only versus read/write: `refresh_signaling_and_get_registry`, `match` and
 `serve_fallback` share one read-only cursor; `_serve_ir_http` reuses that same
 read-only cursor, or a read/write one. Without a replica the cursor handed out
 for the signaling check is already read/write and is kept: a readonly route

@@ -60,7 +60,7 @@ a reason.
 |---|---|---|
 | **Third-party extensibility** | a module must add fields, override methods and inherit views on a model it does not own, without patching it | `_inherit` registry assembly; the `odoo.api`/`fields`/`models` façades; string-keyed model lookup |
 | **Upgrade safety** | an installed database must survive its addons changing shape | `Registry.new()` phases; `ir_model*` as a meta-schema; the migration hooks in `modules/` |
-| **Multi-tenancy** | N databases per process, isolated | registry per database; `check_signaling` keyed per DB |
+| **Multi-tenancy** | N databases per process, isolated | registry per database; `refresh_signaling_and_get_registry` keyed per DB |
 | **Horizontal scale** | N processes with no shared memory | database-mediated registry/cache signaling |
 | **Write throughput** | a loop that touches 10k records must not issue 10k `UPDATE`s | deferred writes; the flush fixpoint loop; `cr.pipeline()` |
 | **Correctness under contention** | concurrent requests must not corrupt or silently lose writes | `retrying()` on serialization/deadlock; savepoints; the RO→RW promotion |
@@ -108,7 +108,7 @@ flush*](runtime.md#transaction-cache-and-flush).
 
 A registry change is published by `INSERT`ing into a signaling table and keeping
 the id the database generated. Every other worker notices on its next
-`check_signaling()` and rebuilds its registry or clears the named caches. Any
+`refresh_signaling_and_get_registry()` and rebuilds its registry or clears the named caches. Any
 process-lifetime cache must be registered in `CACHES_BY_KEY`. Detail:
 [*Concurrency, and why the process model is
 architectural*](runtime.md#concurrency-and-why-the-process-model-is-architectural).

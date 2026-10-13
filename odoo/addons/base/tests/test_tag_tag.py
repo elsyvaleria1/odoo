@@ -241,13 +241,13 @@ class TestTagNameIndex(TransactionCase):
             with self.subTest(lang=lang):
                 self.assertIn(f"Bitmap Index Scan on {indexname}", plan)
 
-    def test_check_indexes_rebuilds_a_name_index_of_another_kind(self):
+    def test_update_declared_field_indexes_rebuilds_a_name_index_of_another_kind(self):
         indexname = get_index_name("res_partner_tag", "name")
         sql.drop_index(self.cr, indexname, "res_partner_tag")
         sql.create_index(self.cr, indexname, "res_partner_tag", ['"name"'], "gin")
         self.assertEqual(self._index_of("res_partner_tag")[1], "jsonb_ops")
 
-        self.registry.check_indexes(self.cr, ["res.partner.tag"])
+        self.registry.update_declared_field_indexes(self.cr, ["res.partner.tag"])
 
         self.assertEqual(
             self._index_of("res_partner_tag"),

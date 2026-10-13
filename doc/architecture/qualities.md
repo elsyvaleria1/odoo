@@ -369,7 +369,7 @@ grep -c "maximum number of tries reached" <server log>  # budget exhausted
 > `base,web`, loopback, measured **2026-08-28**. Two conditions: eight client
 > threads keeping every worker busy, and no traffic at all.
 > **Response** Every other worker reads the sequence on its next
-> `check_signaling()` and drops the LRUs behind that key, logging one line.
+> `refresh_signaling_and_get_registry()` and drops the LRUs behind that key, logging one line.
 > **Measure** How long that takes, and how many of the other workers it reaches.
 
 | | 8 background clients | no traffic |
@@ -378,7 +378,7 @@ grep -c "maximum number of tries reached" <server log>  # budget exhausted
 | p50 | **1 ms** | — |
 | p95 / max | 3 ms / 3 ms | — |
 
-**The placement is the point.** `check_signaling()` is called from
+**The placement is the point.** `refresh_signaling_and_get_registry()` is called from
 `_acquire_registry_cursor` (`odoo/http/_serve.py`), on the read-only cursor the
 request was already taking, **before the request is dispatched**. So it is a
 poll at request start, not a push — which is why the idle column is empty, and

@@ -379,7 +379,7 @@ class TestDatabaseOperations(BaseCase):
                 res = self.session.get(self.url(PROBE_URL))
             _assert_degrades_gracefully(session, capture, evicts_stored_session=True)
 
-        with self.subTest(msg="Registry.check_signaling() fails"):
+        with self.subTest(msg="Registry.refresh_signaling_and_get_registry() fails"):
             session = _stored_session()
             registries[test_db_name] = registry
             with (
@@ -390,7 +390,7 @@ class TestDatabaseOperations(BaseCase):
                 res = self.session.get(self.url(PROBE_URL))
             _assert_degrades_gracefully(session, capture, evicts_stored_session=True)
 
-        with self.subTest(msg="Registry.check_signaling() fails, database listed"):
+        with self.subTest(msg="Registry.refresh_signaling_and_get_registry() fails, database listed"):
             session = _stored_session()
             registries[test_db_name] = registry
             with (
@@ -399,7 +399,7 @@ class TestDatabaseOperations(BaseCase):
                 patch.object(Registry, "cursor", return_value=cr),
                 patch.object(
                     Registry,
-                    "check_signaling",
+                    "refresh_signaling_and_get_registry",
                     side_effect=psycopg.OperationalError("connection lost"),
                 ),
                 patch("odoo.http._serve.list_dbs", return_value=[test_db_name]),

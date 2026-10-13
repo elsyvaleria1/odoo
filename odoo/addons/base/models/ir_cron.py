@@ -438,7 +438,7 @@ class IrCron(models.Model):
                     "cron_pass_yielded", db=db_name, left=len(job_ids) - index
                 )
                 return True
-            registry = registry.check_signaling()
+            registry = registry.refresh_signaling_and_get_registry()
             IrCronModel = registry[IrCron._name]
             _debug.pipeline(
                 "cron_pass_job", db=db_name, job=job_id, index=index, of=len(job_ids)
@@ -1098,7 +1098,7 @@ class IrCron(models.Model):
         self.check_singleton()
         try:
             registry = self.env.registry
-            if registry is not registry.check_signaling(self.env.cr):
+            if registry is not registry.refresh_signaling_and_get_registry(self.env.cr):
                 _debug.lifecycle("registry_reloaded", cron=cron_name)
                 self.env.transaction.reset()
 

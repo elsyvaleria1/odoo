@@ -1384,7 +1384,7 @@ class TestIrCronAcquireLock(BaseCase):
         current = self.registry
 
         class Superseded:
-            def check_signaling(self, cr=None):
+            def refresh_signaling_and_get_registry(self, cr=None):
                 return current
 
             def signal_changes(self):
@@ -2158,7 +2158,7 @@ class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):
             "and the one that survives must still carry channel and database",
         )
 
-    def test_the_run_loop_does_not_open_a_connection_just_to_check_signaling(self):
+    def test_the_run_loop_does_not_open_a_connection_just_to_refresh_signaling_and_get_registry(self):
         def mocked_run(self):
             self.env["ir.cron"]._commit_progress(processed=1, remaining=0)
 
@@ -2170,7 +2170,7 @@ class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):
             self.registry.cursor() as cr,
         ):
             self.registry["ir.cron"]._run_job(cr, self._acquire(cr))
-            calls = self.registry.check_signaling.call_args_list
+            calls = self.registry.refresh_signaling_and_get_registry.call_args_list
 
             self.assertTrue(calls, "the run loop must still check signaling")
             passed = [call.args[0] if call.args else None for call in calls]

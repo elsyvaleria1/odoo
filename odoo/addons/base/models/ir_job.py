@@ -1133,7 +1133,7 @@ class IrJob(models.Model):
         channels: list[str] | None = None,
         deadline: float | None = None,
     ) -> bool:
-        registry = Registry(db_name).check_signaling()
+        registry = Registry(db_name).refresh_signaling_and_get_registry()
         worker_ident = f"{socket.gethostname()}:{os.getpid()}"
         with registry.cursor() as cr:
             serialise = IrJob._has_declared_channel_capacity(cr, channels)
@@ -1190,7 +1190,7 @@ class IrJob(models.Model):
                         method=job["method_name"],
                         retry=job["retry"],
                     )
-                    if (reloaded := registry.check_signaling()) is not registry:
+                    if (reloaded := registry.refresh_signaling_and_get_registry()) is not registry:
                         _debug.lifecycle("drain.registry_reloaded", db=db_name)
                         registry = reloaded
                         cr.transaction.reset()

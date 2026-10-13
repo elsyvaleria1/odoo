@@ -601,7 +601,7 @@ class PreforkServer(CommonServer):
                 http_enable=self.settings.http_enable,
             )
 
-        def check_registries() -> None:
+        def refresh_registry_signaling_and_close_pools() -> None:
             nonlocal checked
             if checked or not registries:
                 return
@@ -611,7 +611,7 @@ class PreforkServer(CommonServer):
             for db_name, registry in registries.items():
                 try:
                     with registry.cursor() as cr:
-                        registry.check_signaling(cr)
+                        registry.refresh_signaling_and_get_registry(cr)
                 except Exception:
                     _logger.warning(
                         "Could not check signaling for database %r during worker "
@@ -626,30 +626,30 @@ class PreforkServer(CommonServer):
             while len(self.workers_http) - len(
                 self._retiring_workers
             ) < self.population and not self._is_respawn_held(WorkerHTTP.__name__):
-                check_registries()
+                refresh_registry_signaling_and_close_pools()
                 if self.spawn_worker(WorkerHTTP, self.workers_http) is None:
                     return
             if not self.long_polling_pid and not self._is_respawn_held(
                 LONG_POLLING_KIND
             ):
-                check_registries()
+                refresh_registry_signaling_and_close_pools()
                 self.spawn_long_polling_process()
         while len(self.workers_cron) < self.settings.max_cron_threads and not (
             self._is_respawn_held(WorkerCron.__name__)
         ):
-            check_registries()
+            refresh_registry_signaling_and_close_pools()
             if self.spawn_worker(WorkerCron, self.workers_cron) is None:
                 return
         while len(self.workers_job) < self.settings.job_workers and not (
             self._is_respawn_held(WorkerJob.__name__)
         ):
-            check_registries()
+            refresh_registry_signaling_and_close_pools()
             if self.spawn_worker(WorkerJob, self.workers_job) is None:
                 return
         while len(self.workers_stream) < self.settings.stream_workers and not (
             self._is_respawn_held(WorkerStream.__name__)
         ):
-            check_registries()
+            refresh_registry_signaling_and_close_pools()
             if self.spawn_worker(WorkerStream, self.workers_stream) is None:
                 return
 

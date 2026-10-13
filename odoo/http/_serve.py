@@ -228,7 +228,7 @@ class _RequestServeMixin(RequestState):
                         before_replica=self._get_session_binding_updater(registry),
                     )
                 with _debug.perf("http.registry.signaling", cr=cr, db=db):
-                    self.registry = registry.check_signaling(cr)
+                    self.registry = registry.refresh_signaling_and_get_registry(cr)
                 span.set(reloaded=self.registry is not registry)
             _debug.pipeline(
                 "http.registry.acquired",
