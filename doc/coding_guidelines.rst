@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.85
+:Version: 7.86
 :Date: 2026-10-12
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -31,6 +31,8 @@ Label                 Meaning
                       linter of the ruff fork ``requirements-dev.txt`` pins,
                       held to ``test_lint``'s floors by
                       ``odoo/addons/test_lint/lint_ruff_gates.py``.
+                      ``[ruff format]`` is ``ruff format --check``, a hard
+                      zero the same script runs.
 ``[oxlint RULE]``     ``oxlint -c oxlint.config.mjs`` reports it.
 ``[test_lint CODE]``  A ``test_lint`` rule fails on it: a cross-unit
                       ``E85xx`` checker (``E8512``, ``E8517``), an XML rule
@@ -67,8 +69,10 @@ The floors
    * - ruff ``E85`` floors
      - ``python odoo/addons/test_lint/lint_ruff_gates.py``
      - ``floors.json``, exact both directions
-   * - ruff format (tests)
-     - ``ruff format --check tests/``
+   * - ruff format
+     - ``python odoo/addons/test_lint/lint_ruff_gates.py``: ``ruff format
+       --check .`` in this checkout, ``../l10n`` and ``../agromarin``, each
+       under its own ``ruff.toml``
      - hard zero
    * - mypy
      - ``-p odoo.orm -p odoo.db -p odoo.libs -p odoo.http -p odoo.service
@@ -865,8 +869,9 @@ code imports from ``odoo.api``, ``odoo.fields``, ``odoo.models``, never
 ``odoo.orm``. Tests are exempt. Why: the fork restructures ``odoo.orm``
 freely.
 
-**Every Python file is ``ruff format``-clean** ``[review]``; ``tests/`` is
-gated.
+**Every Python file is ``ruff format``-clean** ``[ruff format]``.
+``lint_ruff_gates.py`` fails on any file in this checkout, ``l10n`` or
+``agromarin`` that ``ruff format --check`` would reformat or cannot parse.
 
 * **Lint, format, lint again.** ``# noqa`` binds to a line; a reflow moves the
   finding off it, the finding goes live and the orphan directive reports
@@ -2734,7 +2739,8 @@ The same name may be defined twice with different contracts
 
 **Run ``ruff format`` only on changed files** ``[review]``:
 ``ruff format $(git diff --name-only -- '*.py')``. A directory-wide run in a
-shared checkout also rewrites the files another session is still editing.
+shared checkout also rewrites the files another session is still editing. The
+check is whole-tree (§2.1); only the write stays narrow.
 
 **Never do a whole-file write in a shared checkout** ``[review]``. No
 ``git checkout -- <file>``, no copying a file back from a worktree. Read a
@@ -5110,8 +5116,7 @@ does not apply, with a note.
 #. Company and user come from ``self.env.company`` / ``self.env.user``.
 #. Context is read with ``self.env.context.get()``, not direct indexing.
 #. Comprehensions use at most one ``for`` and one ``if``.
-#. New code matches ``ruff format``'s style without reformatting the rest of the
-   file (§2.1).
+#. Every touched file is ``ruff format``-clean (§2.1).
 
 **Cyclomatic complexity stays at or under 20 (``[lint.mccabe] max-complexity``)**
 ``[ruff C901]``. ``ruff.toml`` currently ignores ``C901`` in the main run; check
@@ -6344,6 +6349,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.86
+     - 2026-10-12
+     - §2.1, §2.4.20, §9: ``ruff format`` is gated -- ``lint_ruff_gates.py`` runs
+       ``ruff format --check`` in this checkout, ``l10n`` and ``agromarin`` as
+       a hard zero, replacing the ``tests/``-only check; the review checklist
+       asks for a format-clean file, not formatted new code.
    * - 7.85
      - 2026-10-12
      - §2.4.20: ``ruff format`` on changed files only keeps its one remaining

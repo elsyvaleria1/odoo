@@ -57,6 +57,27 @@ def findings(ruff: str, root: Path, repo: str, *extra: str) -> list[dict]:
     return json_loads(result.stdout or "[]")
 
 
+def unformatted(ruff: str, root: Path) -> list[tuple[str, str]]:
+    from odoo.libs.json import loads as json_loads
+
+    root = root.resolve()
+    result = subprocess.run(
+        [ruff, "format", "--check", "--no-cache", "--output-format", "json", "."],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if result.returncode > 1 and not result.stdout:
+        sys.exit(f"ruff format failed in {root}:\n{result.stderr}")
+    return sorted(
+        {
+            (Path(row["filename"]).relative_to(root).as_posix(), row["message"])
+            for row in json_loads(result.stdout or "[]")
+        }
+    )
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--ruff", default=str(Path(sys.executable).with_name("ruff")))
@@ -91,6 +112,7 @@ def main() -> int:
 
     counts: collections.Counter[str] = collections.Counter()
     scanned = []
+    unformatted_files = []
     repositories = {
         "odoo": CHECKOUT,
         "l10n": args.workspace / "l10n",
@@ -110,7 +132,11 @@ def main() -> int:
             args.ruff, root, repo, "--select", ",".join(UNSUPPRESSABLE), "--ignore-noqa"
         )
         for row in rows:
-            counts[f"lint_{names[row['code']].replace('-', '_')}_{repo}"] += 1
+            if row["code"] in names:
+                counts[f"lint_{names[row['code']].replace('-', '_')}_{repo}"] += 1
+        unformatted_files += [
+            (repo, path, message) for path, message in unformatted(args.ruff, root)
+        ]
 
     floors = json_loads(FLOORS.read_text())
     gates = {
@@ -129,7 +155,14 @@ def main() -> int:
         ", ".join(scanned),
         len(failed),
     )
-    return 1 if failed else 0
+    for repo, path, message in unformatted_files:
+        _logger.error("ruff format: %s/%s: %s", repo, path, message)
+    _logger.info(
+        "ruff format gate: %d files unformatted over %s",
+        len(unformatted_files),
+        ", ".join(scanned),
+    )
+    return 1 if failed or unformatted_files else 0
 
 
 if __name__ == "__main__":

@@ -138,7 +138,7 @@ Run **both presets** — desktop (`WebSuite`) and mobile (`MobileWebSuite`) sele
 
 **Before writing or modifying any code in this repo, read and follow `doc/coding_guidelines.rst` (repo root).** It is the single authoritative source for AgroMarin coding standards — built on Odoo 19.0 + OCA conventions, authoritative where it speaks; where silent, follow upstream Odoo 19 / OCA. It supersedes any other `coding_guidelines` file.
 
-Each rule names the gate that catches it — `[ruff CODE]` (`E85xx` is the pinned ruff fork's `Odoo` linter), `[oxlint RULE]`, `[test_lint CODE]`, `[fixer NAME]` or `[review]`; see *How rules are enforced* at the top of the guide.
+Each rule names the gate that catches it — `[ruff CODE]` (`E85xx` is the pinned ruff fork's `Odoo` linter), `[ruff format]`, `[oxlint RULE]`, `[test_lint CODE]`, `[fixer NAME]` or `[review]`; see *How rules are enforced* at the top of the guide.
 
 **A marker is not evidence the gate exists.** Of §2.4's (method naming) `[ratchet …]` / `[gate …]` markers, only `[ruff RUF022]` names a tool that exists. `doc/architecture/gates.md` is the list of what runs and no entry of it reads a method name; `test_lint`'s `test_naming.py` checks one property, that no public method takes `ids` or `context`. Read §2.4's naming markers as `[review]`, and **re-derive any figure there before relying on it** — most of its census rows are false, and some cannot be re-derived at all.
 
@@ -153,6 +153,7 @@ System-setting reads follow §10.9: trusted server code uses `env.registry.setti
 Linter and formatter config, with the rationale for every suppression.
 
 - `ruff check .` (the whole checkout, `addons/` included) is a hard zero, and so is `ruff check .` in `../l10n` and `../agromarin` under their own `ruff.toml`.
+- `ruff format --check .` is a hard zero in the same three repositories, each under its own `ruff.toml`; `odoo/addons/test_lint/lint_ruff_gates.py` runs it with the E85 pass and names every file it would reformat. Write with `ruff format` on your changed files only (§2.4.20).
 - `ruff`, `mypy`, `tsc`, `oxlint` and `oxfmt` run on their pinned versions (`requirements-dev.txt`, `package.json`).
 
 ### `oxlint.config.mjs` and `.oxfmtrc.jsonc` (repo root)
@@ -191,7 +192,7 @@ The fuller-install grading is `odoo/addons/test_lint/lint_full_scope.sh`: instal
 
 ### Other gates
 
-There is no runner script and no CI: every gate runs by hand, and `doc/architecture/gates.md` gives each command — that the venv matches `requirements*.txt` (`uv pip install --dry-run …`; a drifted environment runs every suite against unpinned versions), ruff's hard zeros (this checkout and the sibling repos), bare-env mypy, `test_lint`'s tree scans without a database (`odoo/addons/test_lint/lint_source_gates.py`), the ruff fork's E85 rules against `test_lint`'s floors (`odoo/addons/test_lint/lint_ruff_gates.py`), `doc/architecture/factcheck.sh` and every module machine_doc harness (`addons/*`, `odoo/addons/*`, `odoo/tests`), the cargo and JS toolchains, and the addons' query-count pins (`mail`, `test_mail`, `test_mail_full`, `test_mail_sms`, `test_discuss_full`, `test_website_modules` without and with demo, and `test_discuss_full_enterprise`), each on a scratch database installing that suite's module alone — a pin holds only on such a database, so never judge one on a shared install. The Rust checks are the crate workspace's own `cargo` commands. There is no other gate tree.
+There is no runner script and no CI: every gate runs by hand, and `doc/architecture/gates.md` gives each command — that the venv matches `requirements*.txt` (`uv pip install --dry-run …`; a drifted environment runs every suite against unpinned versions), ruff's hard zeros (this checkout and the sibling repos), bare-env mypy, `test_lint`'s tree scans without a database (`odoo/addons/test_lint/lint_source_gates.py`), the ruff fork's E85 rules against `test_lint`'s floors and `ruff format --check` (`odoo/addons/test_lint/lint_ruff_gates.py`), `doc/architecture/factcheck.sh` and every module machine_doc harness (`addons/*`, `odoo/addons/*`, `odoo/tests`), the cargo and JS toolchains, and the addons' query-count pins (`mail`, `test_mail`, `test_mail_full`, `test_mail_sms`, `test_discuss_full`, `test_website_modules` without and with demo, and `test_discuss_full_enterprise`), each on a scratch database installing that suite's module alone — a pin holds only on such a database, so never judge one on a shared install. The Rust checks are the crate workspace's own `cargo` commands. There is no other gate tree.
 
 ### Changing the guidelines
 

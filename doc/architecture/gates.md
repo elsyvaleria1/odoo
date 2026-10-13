@@ -20,7 +20,6 @@ The commands, from the repo root with the venv's tools:
 uv pip install --dry-run -r requirements.txt -r requirements-addons.txt \
     -r requirements-dev.txt                    # the venv is the pinned one: "Would make no changes"
 ruff check . --no-cache                        # the whole checkout, hard zero
-ruff format --check tests/
 (cd ../l10n && ruff check . --no-cache)        # each sibling, under its own ruff.toml
 (cd ../agromarin && ruff check . --no-cache)
 npx oxlint -c oxlint.config.mjs                # whole repo
@@ -33,7 +32,7 @@ npx tsc --project tsconfig.json --noEmit       # whole repo
 (cd ../agromarin && ../odoo/node_modules/.bin/oxfmt --check "**/*.{js,mjs,cjs,scss}")
 (cd ../agromarin && ../odoo/node_modules/.bin/tsc -p tsconfig.json --noEmit)
 python odoo/addons/test_lint/lint_source_gates.py   # test_lint's tree scans, no database
-python odoo/addons/test_lint/lint_ruff_gates.py     # the ruff fork's E85 rules against test_lint's floors
+python odoo/addons/test_lint/lint_ruff_gates.py     # the ruff fork's E85 rules against test_lint's floors; ruff format, hard zero
 python odoo-bin -d <db> -i test_lint --test-enable --stop-after-init
 bash doc/architecture/factcheck.sh                  # this directory's figures
 for h in addons/*/machine_doc_v*/factcheck.sh odoo/addons/*/machine_doc_v*/factcheck.sh \
@@ -281,6 +280,11 @@ repository's own `ruff.toml`, for this checkout and the sibling `l10n` and
 its command line, not in `ruff.toml`: a stock ruff, as an editor bundles, refuses
 an E85 code there. `abolished-method-call` (`E8535`) is counted with every noqa
 ignored; `noqa-rationale` (`E8544`) is never suppressed.
+The same run is the format gate: `ruff format --check` in each repository it
+grades, under that repository's own `ruff.toml`, is a hard zero with no floor
+entry. Every file that would be reformatted, or that does not parse, is logged
+as `ruff format: <repo>/<path>` and fails the run; a sibling absent from the
+workspace is skipped for both passes alike.
 `TestViewDepends` reads the installed registry: every SQL-view model
 (`_auto = False`, or a `_table_query`) must name in `_depends` every stored
 field its SQL reads, as PostgreSQL's view dependencies report them, because a

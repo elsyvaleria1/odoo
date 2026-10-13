@@ -165,7 +165,8 @@ stdlib only, no odoo import, so they are unit-testable without a database.
 The per-file AST rules test_lint ran in Python are native rules of the ruff fork
 `requirements-dev.txt` pins (Agro-Marin/ruff, the `Odoo` linter, prefix `E85`),
 at parity with the checkers they replaced on odoo, l10n and agromarin.
-`lint_ruff_gates.py` holds them to `floors.json`. Their
+`lint_ruff_gates.py` holds them to `floors.json`, and runs `ruff format --check`
+in each repository it grades as a hard zero outside `floors.json`. Their
 fixtures, and the 377 snippets these checkers' unit tests parsed, live in the
 fork (crates/ruff_linter/resources/test/fixtures/odoo, its `lint_cases` corpus).
 A finding is waived with `# noqa: E85xx  <reason>` on the line it starts on: ruff
