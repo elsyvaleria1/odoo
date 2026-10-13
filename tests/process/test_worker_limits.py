@@ -172,6 +172,36 @@ class TestPreforkLimits:
         status, _seconds = _get(srv.port, "/probe/burn/5")
         assert status is None, "a request that is not an operation keeps its CPU limit"
 
+    def test_an_operation_on_limit_time_real_keeps_limit_time_cpu(self, probe):
+        srv = probe(
+            "--workers",
+            "1",
+            "--limit-time-real",
+            "30",
+            "--limit-time-cpu",
+            "2",
+            "--limit-time-real-module-operation",
+            "-1",
+        )
+        assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
+        status, _seconds = _get(srv.port, "/probe/op-burn/6")
+        assert status is None, "-1 lifted the CPU limit to limit_time_real"
+        assert srv.wait_until(lambda: "CPU time limit (2s)" in srv.log_text())
+
+    def test_an_operation_over_its_own_budget_recycles_the_worker(self, probe):
+        srv = probe(
+            "--workers",
+            "1",
+            "--limit-time-real",
+            "3",
+            "--limit-time-real-module-operation",
+            "5",
+        )
+        assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
+        status, seconds = _get(srv.port, "/probe/op-slow/40")
+        assert status is None and seconds < 30, (status, seconds)
+        assert srv.wait_until(lambda: "did not return" in srv.log_text())
+
     def test_memory_soft_limit_recycles_cleanly(self, probe):
         srv = probe("--workers", "1", "--limit-memory-soft", str(256 * 1024 * 1024))
         assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
@@ -241,6 +271,26 @@ class TestThreadedLimits:
         assert out["status"] == 200 and out["seconds"] >= 15, (
             "the reload for the stalled request killed the module operation",
             out,
+        )
+        assert srv.wait_until(lambda: srv.log_text().count("Odoo version") == 2, 60)
+
+    @pytest.mark.parametrize("own_budget", ["5", "-1"], ids=["own", "inherited"])
+    def test_an_operation_over_its_own_budget_reloads_the_process(
+        self, probe, own_budget
+    ):
+        srv = probe(
+            "--workers",
+            "0",
+            "--limit-time-real",
+            "3",
+            "--limit-time-real-module-operation",
+            own_budget,
+        )
+        status, seconds = _get(srv.port, "/probe/op-slow/40")
+        assert status is None and seconds < 30, (
+            "the operation held the reload it was over its own budget for",
+            status,
+            seconds,
         )
         assert srv.wait_until(lambda: srv.log_text().count("Odoo version") == 2, 60)
 

@@ -58,7 +58,7 @@ from ._transport import (
     TransportLimits,
     serve_prefork_connection,
 )
-from .settings import current
+from .settings import INHERIT_FROM_CRON, current
 
 if TYPE_CHECKING:
     from .server import PreforkServer
@@ -152,6 +152,7 @@ class Worker:
         self.ready = False
         self.request_max = multi.limit_request
         self.request_count = 0
+        self.cpu_limit_s: float = 0
         self.logger = _logger.getChild(self.__class__.__name__)
         _debug.lifecycle(
             "worker.created",
@@ -183,7 +184,7 @@ class Worker:
 
     def signal_time_expired_handler(self, sig: int, frame: Any) -> None:
         raise CpuTimeLimitExceeded(
-            f"CPU time limit ({current().limit_time_cpu}s) exceeded"
+            f"CPU time limit ({self._get_cpu_limit_s()}s) exceeded"
         )
 
     @property
@@ -225,6 +226,7 @@ class Worker:
             if hard != resource.RLIM_INFINITY and soft > hard:
                 soft = hard
         resource.setrlimit(resource.RLIMIT_CPU, (soft, hard))
+        self.cpu_limit_s = max(seconds, 0)
         _debug.perf.count(
             "worker.cpu_sampled",
             kind=self.__class__.__name__,
@@ -233,6 +235,9 @@ class Worker:
             soft_limit=soft,
             requests=self.request_count,
         )
+
+    def _get_cpu_limit_s(self) -> float:
+        return self.cpu_limit_s or current().limit_time_cpu
 
     def stop_for(self, reason: str) -> None:
         self.alive = False
@@ -317,7 +322,7 @@ class Worker:
             signal.signal(signal.SIGXCPU, signal.SIG_IGN)
             self.logger.warning(
                 "CPU time limit (%ss) exceeded; recycling worker.",
-                current().limit_time_cpu,
+                self._get_cpu_limit_s(),
             )
             self.stop_for("cpu_limit")
             t.join(timeout=self._CPU_LIMIT_JOIN_GRACE_S)
@@ -372,10 +377,13 @@ class Worker:
 
     def _rearm_cpu_limit(self, *, module_operation: bool) -> None:
         settings = current()
-        if settings.limit_time_cpu <= 0:
+        if (
+            settings.limit_time_cpu <= 0
+            or settings.limit_time_real_module_operation <= INHERIT_FROM_CRON
+        ):
             return
         self._arm_cpu_limit(
-            settings.module_operation_real_time_budget
+            settings.limit_time_real_module_operation
             if module_operation
             else settings.limit_time_cpu
         )

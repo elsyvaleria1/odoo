@@ -98,6 +98,15 @@ def _is_thread_overrun_finished(
     return getattr(thread, "start_time", None) != started
 
 
+def _is_module_operation_within_budget(
+    thread: threading.Thread, budget: float, now: float
+) -> bool:
+    if not is_running_module_operation(thread):
+        return False
+    start_time = getattr(thread, "start_time", None)
+    return budget <= 0 or not start_time or now - start_time <= budget
+
+
 def _get_http_server_metrics(httpd: ThreadedHTTPServer | None) -> dict[str, Any]:
     by_type: dict[str, int] = {}
     for thread in threading.enumerate():
@@ -143,6 +152,7 @@ class ThreadedServer(CommonServer):
         self._cancelled_overruns: dict[threading.Thread, float] = {}
         self._overruns_cancelled = 0
         self.limit_reached_time: float | None = None
+        self._reload_held = False
         self._stop_after_init = False
         self._listener_threads: list[threading.Thread] = []
         self._listener_stop = threading.Event()
@@ -232,6 +242,7 @@ class ThreadedServer(CommonServer):
                 over_limit=len(self.limits_reached_threads),
                 memory_over_limit=memory_over_limit,
             )
+        reload_held = self._is_reload_held_for_module_operation()
         if self.limits_reached_threads or memory_over_limit:
             _debug.logic(
                 "server.limits_reached",
@@ -241,9 +252,21 @@ class ThreadedServer(CommonServer):
                 if not self.limit_reached_time
                 else now - self.limit_reached_time,
             )
-            self.limit_reached_time = self.limit_reached_time or now
+            if self._reload_held and not reload_held:
+                # The limits were reached while the reload was held, so the
+                # grace for the other requests -- the installer's response
+                # among them -- starts only now.
+                _debug.logic(
+                    "server.threaded.reload_hold_released",
+                    held_s=now - (self.limit_reached_time or now),
+                    threads=len(self.limits_reached_threads),
+                )
+                self.limit_reached_time = now
+            else:
+                self.limit_reached_time = self.limit_reached_time or now
         else:
             self.limit_reached_time = None
+        self._reload_held = reload_held
 
     def _enforce_thread_time_limit(
         self,
@@ -321,9 +344,13 @@ class ThreadedServer(CommonServer):
                     pending=len(self.limits_reached_threads),
                 )
 
-    @staticmethod
-    def _is_reload_held_for_module_operation() -> bool:
-        return any(is_running_module_operation(t) for t in threading.enumerate())
+    def _is_reload_held_for_module_operation(self) -> bool:
+        now = time.monotonic()
+        budget = self.settings.module_operation_real_time_budget
+        return any(
+            _is_module_operation_within_budget(thread, budget, now)
+            for thread in threading.enumerate()
+        )
 
     @contextlib.contextmanager
     def _watch_runtime_limits(self) -> Iterator[None]:
@@ -729,10 +756,7 @@ class ThreadedServer(CommonServer):
             while self.quit_signals_received == 0:
                 watchdog.beat()
                 self.enforce_runtime_limits()
-                if (
-                    self.limit_reached_time
-                    and self._is_reload_held_for_module_operation()
-                ):
+                if self.limit_reached_time and self._reload_held:
                     _debug.logic(
                         "server.threaded.reload_held",
                         reason="module_operation",

@@ -145,6 +145,62 @@ class TestTheThreadedWatchdogSparesAModuleOperation:
             assert server._is_reload_held_for_module_operation()
         assert not server._is_reload_held_for_module_operation()
 
+    @pytest.mark.parametrize(
+        "own_budget", [300, server_settings.INHERIT_FROM_CRON], ids=["own", "inherited"]
+    )
+    def test_an_operation_over_its_own_budget_is_reloaded_for(self, server, own_budget):
+        with (
+            server_settings.override(
+                limit_time_real=120, limit_time_real_module_operation=own_budget
+            ),
+            patch.object(_threaded.db, "cancel_queries_of", return_value=0),
+            _Request("install", elapsed=600, module_operation=True) as install,
+        ):
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            assert server.limits_reached_threads == {install}
+            assert server.limit_reached_time
+            assert not server._is_reload_held_for_module_operation(), (
+                "an operation over its own budget held the reload it is the "
+                "cause of, so it was never reloaded for"
+            )
+
+    def test_an_operation_within_its_budget_still_holds_the_reload(self, server):
+        with (
+            server_settings.override(
+                limit_time_real=120, limit_time_real_module_operation=300
+            ),
+            patch.object(_threaded.db, "cancel_queries_of", return_value=0),
+            _Request("install", elapsed=200, module_operation=True),
+            _Request("waiter", elapsed=200),
+        ):
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            assert server._is_reload_held_for_module_operation()
+
+    def test_the_grace_starts_when_the_operation_ends(self, server):
+        install = _Request("install", elapsed=10, module_operation=True)
+        with (
+            server_settings.override(limit_time_real=120),
+            patch.object(_threaded.db, "cancel_queries_of", return_value=0),
+            _Request("waiter", elapsed=200) as waiter,
+        ):
+            with install:
+                server.enforce_runtime_limits()
+                server.enforce_runtime_limits()
+                assert server.limits_reached_threads == {waiter}
+                server.limit_reached_time -= 2 * _threaded.LIMIT_GRACE_PERIOD_S
+                assert server._is_reload_held_for_module_operation()
+            server.enforce_runtime_limits()
+            assert not server._is_reload_held_for_module_operation()
+            assert (
+                time.monotonic() - server.limit_reached_time
+                < _threaded.LIMIT_GRACE_PERIOD_S
+            ), (
+                "the waiters' limit was reached a hold ago, so the reload "
+                "skipped its grace and cut the installer's response"
+            )
+
 
 class TestThreadOverrunEnforcement:
     @pytest.mark.parametrize("kind", ["http", "cron", "job", "stream", "websocket_job"])
@@ -335,4 +391,39 @@ class TestThePreforkWorkerSparesAModuleOperation:
         assert softs == [resource.RLIM_INFINITY, 70], (
             "RLIMIT_CPU kills an install limit_time_cpu seconds of CPU in, "
             "whatever its wall-clock budget"
+        )
+
+    @pytest.mark.parametrize(
+        ("own_budget", "softs"),
+        [
+            (0, [resource.RLIM_INFINITY, 70]),
+            (server_settings.INHERIT_FROM_CRON, []),
+            (300, [310, 70]),
+        ],
+        ids=["unlimited", "inherited", "own"],
+    )
+    def test_the_cpu_limit_follows_the_operation_budget(
+        self, worker_multi, own_budget, softs
+    ):
+        worker = self._worker(worker_multi, budget=2)
+        thread = self._thread(alive_for=3, elapsed=1)
+        marks = iter([True, False, False])
+        type(thread).module_operation = property(lambda self: next(marks, False))
+        res = MagicMock()
+        res.RLIM_INFINITY = resource.RLIM_INFINITY
+        res.getrusage.return_value = MagicMock(ru_utime=10.0, ru_stime=0.0)
+        res.getrlimit.return_value = (70, resource.RLIM_INFINITY)
+        with (
+            server_settings.override(
+                limit_time_real=120,
+                limit_time_cpu=60,
+                limit_time_real_module_operation=own_budget,
+            ),
+            patch.object(_worker, "resource", res),
+            patch("odoo.db.cancel_queries_of"),
+        ):
+            worker._supervise_work_thread(thread)
+        assert [call.args[1][0] for call in res.setrlimit.call_args_list] == softs, (
+            "-1 keeps limit_time_cpu as armed for the request, as before the "
+            "option; a budget of its own bounds the operation's CPU from its start"
         )
