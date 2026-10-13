@@ -44,6 +44,25 @@ class _OriginPrefetch(Reversible[IdType]):
         return reversed(_origin_ids(self._ids))
 
 
+def _declared_privilege_names(
+    env: Environment, names: tuple[str, ...]
+) -> tuple[str, ...]:
+    # A column default evaluated during schema setup runs before its module's
+    # data declares the privilege it names; a name whose module has loaded its
+    # data is a mistake, not an early read.
+    policy = env.registry.access_policy
+    declared = []
+    for name in names:
+        try:
+            policy.privilege_ids(env, (name,))
+        except ValueError:
+            if name.partition(".")[0] in env.registry.loaded_modules:
+                raise
+            continue
+        declared.append(name)
+    return tuple(declared)
+
+
 class EnvironmentMixin(_ModelStubs):
     __slots__ = ()
 
@@ -86,14 +105,15 @@ class EnvironmentMixin(_ModelStubs):
     @api.private
     @override
     def with_privilege(self, *names: str, reason: str | None = None) -> Self:
+        policy = self.env.registry.access_policy
         try:
-            privileges = self.env.registry.access_policy.privilege_ids(self.env, names)
+            privileges = policy.privilege_ids(self.env, names)
         except ValueError:
-            # A column default evaluated during schema setup runs before its
-            # module's data declares the privilege it names.
-            if self.env.su and not self.env.registry.ready:
-                return self
-            raise
+            if not self.env.su or self.env.registry.ready:
+                raise
+            privileges = policy.privilege_ids(
+                self.env, _declared_privilege_names(self.env, names)
+            )
         env = self.env(privileges=self.env.privileges | privileges)
         if reason:
             env = env(context={**env.context, "privilege_reason": reason})

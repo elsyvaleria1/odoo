@@ -88,16 +88,35 @@ class TestModelVerdicts(TransactionCase):
         self.assertVerdict(privileged.env, True)
         self.assertVerdict(env, False)
 
-    def test_a_superuser_needs_no_privilege_while_modules_load(self):
+    def test_a_superuser_needs_no_privilege_its_module_has_not_loaded(self):
         partners = self.env["res.partner"].sudo()
         with patch.object(self.registry, "ready", False):
             self.assertEqual(
-                partners.with_privilege("base.loading_privilege"), partners
+                partners.with_privilege("module_not_loaded.privilege"), partners
+            )
+            kept = partners.with_privilege(
+                "module_not_loaded.privilege", "base.privilege_check_duties"
+            )
+            self.assertEqual(
+                kept.env.privileges,
+                frozenset({self.env.ref("base.privilege_check_duties").id}),
             )
             with self.assertRaisesRegex(ValueError, "names no privilege"):
-                self.principal()["res.partner"].with_privilege("base.loading_privilege")
+                self.principal()["res.partner"].with_privilege(
+                    "module_not_loaded.privilege"
+                )
         with self.assertRaisesRegex(ValueError, "names no privilege"):
-            partners.with_privilege("base.loading_privilege")
+            partners.with_privilege("module_not_loaded.privilege")
+
+    def test_a_misspelled_privilege_of_a_loaded_module_raises_while_modules_load(self):
+        partners = self.env["res.partner"].sudo()
+        with patch.object(self.registry, "ready", False):
+            with self.assertRaisesRegex(ValueError, "names no privilege"):
+                partners.with_privilege("base.privilege_misspelled")
+            with self.assertRaisesRegex(ValueError, "names no privilege"):
+                partners.with_privilege(
+                    "module_not_loaded.privilege", "base.privilege_misspelled"
+                )
 
     def test_a_scoped_grant_follows_the_companies_in_use(self):
         in_a = self.principal(allowed_company_ids=[self.env.company.id])
