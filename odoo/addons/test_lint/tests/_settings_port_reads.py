@@ -163,7 +163,10 @@ def _formatted(path: Path) -> bool:
 
 
 def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser = argparse.ArgumentParser(
+        description="Read a system setting through the registry's settings port, "
+        "not an elevated ir.config_parameter."
+    )
     parser.add_argument("roots", nargs="+")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--skip", action="append", default=[])

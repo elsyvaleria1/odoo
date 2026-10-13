@@ -74,7 +74,9 @@ def drop_dead_nolabels(path: Path, *, dry_run: bool = False) -> int | None:
 
 
 def main(argv: list[str] | None = None) -> None:
-    parser = argparse.ArgumentParser(description=drop_dead_nolabels.__doc__)
+    parser = argparse.ArgumentParser(
+        description="Remove the nolabel= the form compiler never reads."
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("paths", nargs="+")
     args = parser.parse_args(argv)

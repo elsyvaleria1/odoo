@@ -195,7 +195,9 @@ def rewrite(source):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(
+        description="Declare the parameters of every route a program calls."
+    )
     parser.add_argument("paths", nargs="+")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)

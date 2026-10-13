@@ -519,7 +519,8 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description=__doc__,
+        description="Check the requirements files against the versions each "
+        "distribution provides, for the Python version it bundles.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(

@@ -569,7 +569,9 @@ def _collapse_blank_lines(text: str) -> str:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser = argparse.ArgumentParser(
+        description="Inventory, validate and strip the `odoo.libs.debug_log` call sites."
+    )
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--list", action="store_true", help="count sites per package")
     mode.add_argument("--check", action="store_true", help="validate every site")

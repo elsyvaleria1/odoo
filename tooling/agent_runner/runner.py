@@ -428,7 +428,10 @@ def _undumpable() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__.split("\n\n", 1)[0])
+    parser = argparse.ArgumentParser(
+        description="The reference runner for `agent_runner`: claims runs from Odoo, "
+        "keeps each lease alive while it works, reports events and finishes the run."
+    )
     parser.add_argument("--url", required=True, help="the Odoo server")
     parser.add_argument("--poll", type=float, default=5, help="seconds between claims")
     parser.add_argument("--once", action="store_true", help="handle one run, then exit")
