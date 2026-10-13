@@ -1,6 +1,6 @@
 {
     "name": "Accounting Automation Steps",
-    "version": "19.0.1.7.0",
+    "version": "19.0.1.8.0",
     "oldest_upgradable_version": "19.0.1.5.0",
     "category": "Accounting",
     "summary": "Add accounting document and reconciliation helpers to automation workflows",

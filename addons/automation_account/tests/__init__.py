@@ -15,3 +15,4 @@ from . import test_intercompany_collection
 from . import test_typed_steps
 from . import test_source_step
 from . import test_settled_by_workflow
+from . import test_apply_against

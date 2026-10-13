@@ -281,11 +281,14 @@ msgstr ""
 #. module: automation_account
 #: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
 msgid ""
-"Applies the nearest credit note a previous step created to its partner's "
-"open invoices, oldest first."
+"Applies the credit note of the step it acts on, or the only document a "
+"previous step created, to the document of the step it applies against, or "
+"else to its partner's open invoices, oldest first."
 msgstr ""
-"Aplica la nota de crédito más cercana creada por un paso anterior a las "
-"facturas abiertas de su contacto, de la más antigua a la más reciente."
+"Aplica la nota de crédito del paso sobre el que actúa, o el único documento "
+"que creó un paso anterior, al documento del paso contra el que se aplica o, "
+"si no se indica, a las facturas abiertas de su contacto, de la más antigua a "
+"la más reciente."
 
 #. module: automation_account
 #. odoo-python
@@ -691,3 +694,67 @@ msgid ""
 msgstr ""
 "Los flujos de trabajo que esta línea de estado de cuenta ya inició y no se "
 "cancelaron, que no puede volver a iniciar"
+
+#. module: automation_account
+#: model:ir.model.fields,field_description:automation_account.field_ir_actions_server__workflow_target_step_id
+msgid "Apply Against"
+msgstr "Aplicar contra"
+
+#. module: automation_account
+#: model:ir.model.fields,help:automation_account.field_ir_actions_server__workflow_target_step_id
+msgid ""
+"The step whose document the credit note settles, and no other: the vendor "
+"bill this run issued, not an older one of the same partner. Leave it empty "
+"to settle the partner's open invoices, oldest first. It must run before "
+"this step."
+msgstr ""
+"El paso cuyo documento liquida la nota de crédito, y ningún otro: la "
+"factura de proveedor que emitió esta ejecución, no otra más antigua del "
+"mismo contacto. Déjelo vacío para liquidar las facturas abiertas del "
+"contacto, de la más antigua a la más reciente. Debe ejecutarse antes de "
+"este paso."
+
+#. module: automation_account
+#: model_terms:ir.ui.view,arch_db:automation_account.ir_actions_server_view_form_workflow_steps
+msgid "The partner's open invoices, oldest first"
+msgstr "Las facturas abiertas del contacto, de la más antigua a la más reciente"
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"Step '%(step)s' applies against the document of '%(target)s', which makes "
+"none."
+msgstr ""
+"El paso '%(step)s' se aplica contra el documento de '%(target)s', que no "
+"crea ninguno."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"%(credit)s is applied to %(target)s only once it is posted: post it and "
+"retry the run."
+msgstr ""
+"%(credit)s solo se aplica a %(target)s cuando este ya está publicado: "
+"publíquelo y reintente la ejecución."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/ir_actions_server.py:0
+msgid ""
+"%(credit)s cannot be applied to %(target)s: it has nothing open for "
+"%(partner)s on the credit note's account."
+msgstr ""
+"%(credit)s no se puede aplicar a %(target)s: no tiene saldo abierto de "
+"%(partner)s en la cuenta de la nota de crédito."
+
+#. module: automation_account
+#. odoo-python
+#: code:addons/automation_account/models/automation_runtime_line.py:0
+msgid ""
+"'%(step)s' applies against the document of '%(target)s', which made none "
+"in this run."
+msgstr ""
+"'%(step)s' se aplica contra el documento de '%(target)s', que no creó "
+"ninguno en esta ejecución."

@@ -61,6 +61,26 @@ class AutomationRuntimeLine(models.Model):
             )
         return moves
 
+    def _get_target_move(self) -> models.Model:
+        self.check_singleton()
+        target = self.action_id.workflow_target_step_id
+        if not target:
+            return self.env["account.move"]
+        line = self.runtime_id.line_ids.filtered(
+            lambda step: step.action_id == target,
+        )
+        record = line.created_record_ref
+        if not record or record._name != "account.move":
+            raise UserError(
+                self.env._(
+                    "'%(step)s' applies against the document of '%(target)s', "
+                    "which made none in this run.",
+                    step=self.name,
+                    target=target.name,
+                ),
+            )
+        return record
+
     def _get_nearest_moves(self, visited: set[int] | None = None) -> models.Model:
         if self.created_record_ref and self.created_record_ref._name == "account.move":
             return self.created_record_ref

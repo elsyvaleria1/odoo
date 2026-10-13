@@ -126,6 +126,16 @@ class IrActionsServer(models.Model):
         "again. Required when documents are made on more than one branch "
         "before it; it must run before this step.",
     )
+    workflow_target_step_id = fields.Many2one(
+        comodel_name="ir.actions.server",
+        string="Apply Against",
+        domain="[('automation_rule_id', '=', automation_rule_id), ('id', '!=', id)]",
+        ondelete="set null",
+        help="The step whose document the credit note settles, and no other: "
+        "the vendor bill this run issued, not an older one of the same "
+        "partner. Leave it empty to settle the partner's open invoices, "
+        "oldest first. It must run before this step.",
+    )
     workflow_auto_post = fields.Boolean(
         string="Post the Document",
         default=True,
@@ -690,9 +700,18 @@ class IrActionsServer(models.Model):
                 ),
             )
 
-        return self.reconcile_move_with_open_invoices(runtime_line, move)
+        return self.reconcile_move_with_open_invoices(
+            runtime_line,
+            move,
+            target=runtime_line._get_target_move(),
+        )
 
-    def reconcile_move_with_open_invoices(self, runtime_line, move) -> models.Model:
+    def reconcile_move_with_open_invoices(
+        self,
+        runtime_line,
+        move,
+        target=None,
+    ) -> models.Model:
         self.check_singleton()
         runtime_line.check_singleton()
         move.check_singleton()
@@ -725,6 +744,16 @@ class IrActionsServer(models.Model):
             _logger.info("Credit note %s has nothing left to apply", move.name)
             return invoices
 
+        if target and target.state != "posted":
+            raise UserError(
+                self.env._(
+                    "%(credit)s is applied to %(target)s only once it is "
+                    "posted: post it and retry the run.",
+                    credit=move.name,
+                    target=target.display_name,
+                ),
+            )
+
         invoice_type = "out_invoice" if is_customer else "in_invoice"
         invoice_lines = self.env["account.move.line"].search(
             Domain.AND(
@@ -739,11 +768,22 @@ class IrActionsServer(models.Model):
                         ("amount_residual", "!=", 0.0),
                         ("amount_residual_currency", "!=", 0.0),
                     ],
+                    [("move_id", "=", target.id)] if target else [],
                     move._get_outstanding_company_domain(move.company_id),
                 ],
             ),
             order="date, move_name, date_maturity, id",
         )
+        if target and not invoice_lines:
+            raise UserError(
+                self.env._(
+                    "%(credit)s cannot be applied to %(target)s: it has nothing "
+                    "open for %(partner)s on the credit note's account.",
+                    credit=move.name,
+                    target=target.display_name,
+                    partner=move.commercial_partner_id.display_name,
+                ),
+            )
 
         for invoice_line in invoice_lines:
             if all(refund_lines.mapped("reconciled")):
@@ -859,6 +899,7 @@ class IrActionsServer(models.Model):
         *STEP_REFERENCE_DEPENDS,
         "workflow_date_source",
         "workflow_source_step_id",
+        "workflow_target_step_id",
     )
     def _compute_step_reference_warning(self) -> None:
         return super()._compute_step_reference_warning()
@@ -869,6 +910,8 @@ class IrActionsServer(models.Model):
         "state",
         "workflow_source_step_id",
         "workflow_source_step_id.step_key",
+        "workflow_target_step_id",
+        "workflow_target_step_id.step_key",
     )
     def _compute_step_references(self) -> None:
         return super()._compute_step_references()
@@ -877,6 +920,11 @@ class IrActionsServer(models.Model):
         refs = super()._collect_step_references()
         if self.workflow_source_step_id.step_key:
             refs.keys.add(self.workflow_source_step_id.step_key)
+        if (
+            self.state == "workflow_apply_credit_note"
+            and self.workflow_target_step_id.step_key
+        ):
+            refs.keys.add(self.workflow_target_step_id.step_key)
         return refs
 
     def _get_nearest_document_steps(self, seen=None) -> models.Model:
@@ -903,6 +951,20 @@ class IrActionsServer(models.Model):
                     "which makes none.",
                     step=self.name,
                     source=source.name,
+                )
+            )
+        target = self.workflow_target_step_id
+        if (
+            self.state == "workflow_apply_credit_note"
+            and target
+            and target.state not in (*DOCUMENT_STATES, "code")
+        ):
+            problems.append(
+                self.env._(
+                    "Step '%(step)s' applies against the document of "
+                    "'%(target)s', which makes none.",
+                    step=self.name,
+                    target=target.name,
                 )
             )
         if not source:
