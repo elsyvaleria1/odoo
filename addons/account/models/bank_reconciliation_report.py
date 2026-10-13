@@ -145,7 +145,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_common(
-            options, "receipts", current_groupby, True
+            options, "receipts", current_groupby, True, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -161,7 +161,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_common(
-            options, "payments", current_groupby, True
+            options, "payments", current_groupby, True, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -177,7 +177,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_common(
-            options, "receipts", current_groupby, False
+            options, "receipts", current_groupby, False, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -193,7 +193,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_common(
-            options, "payments", current_groupby, False
+            options, "payments", current_groupby, False, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -209,7 +209,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_outstanding_common(
-            options, "receipts", current_groupby
+            options, "receipts", current_groupby, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -225,7 +225,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_outstanding_common(
-            options, "payments", current_groupby
+            options, "payments", current_groupby, offset=offset, limit=limit
         )
 
     @_debug.perf.timed
@@ -294,7 +294,12 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             select_from_groupby=groupby_field_sql,
             table_references=base_query.from_clause,
             search_condition=base_query.where_clause,
-            groupby_sql=SQL("GROUP BY %s", groupby_field_sql)
+            groupby_sql=SQL(
+                "GROUP BY %s ORDER BY %s %s",
+                groupby_field_sql,
+                groupby_field_sql,
+                report._get_engine_query_tail(offset, limit),
+            )
             if groupby_field_sql
             else SQL(),
         )
@@ -367,7 +372,13 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         warnings=None,
     ):
         return self._bank_reconciliation_report_custom_engine_common(
-            options, "all", current_groupby, False, unreconciled=False
+            options,
+            "all",
+            current_groupby,
+            False,
+            unreconciled=False,
+            offset=offset,
+            limit=limit,
         )
 
     @_debug.perf.timed
@@ -378,8 +389,10 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         current_groupby,
         from_last_statement,
         unreconciled=True,
+        offset=0,
+        limit=None,
     ):
-        journal, journal_currency, _company_currency = (
+        journal, journal_currency, company_currency = (
             self._get_bank_journal_and_currencies(options)
         )
         _debug.logic(
@@ -404,14 +417,6 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 foreign_currency = self.env["res.currency"].browse(
                     res["foreign_currency_id"]
                 )
-                rate = 1
-                if foreign_currency:
-                    rate = (
-                        (res["amount"] / res["amount_currency"])
-                        if res["amount_currency"]
-                        else 0
-                    )
-
                 return self._prepare_custom_engine_result(
                     date=res["date"] or None,
                     label=res["payment_ref"] or res["ref"] or "/",
@@ -424,28 +429,23 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                     currency=foreign_currency.display_name
                     if res["foreign_currency_id"]
                     else None,
-                    amount=journal_currency.round(-res["amount_residual"] * rate)
+                    amount=self._get_statement_line_open_amount(
+                        res, journal_currency, company_currency
+                    )
                     if res["amount_residual"]
                     else None,
                     amount_currency_id=journal_currency.id,
                     has_sublines=True,
                 )
             else:
-                amount = 0
-                for res in query_res_lines:
-                    rate = 1
-                    if res["foreign_currency_id"]:
-                        rate = (
-                            (res["amount"] / res["amount_currency"])
-                            if res["amount_currency"]
-                            else 0
-                        )
-                    amount += (
-                        -res.get("amount_residual", 0) * rate
-                        if unreconciled
-                        else res.get("amount", 0)
+                amount = sum(
+                    self._get_statement_line_open_amount(
+                        res, journal_currency, company_currency
                     )
-
+                    if unreconciled
+                    else res["amount"]
+                    for res in query_res_lines
+                )
                 return self._prepare_custom_engine_result(
                     amount=journal_currency.round(amount),
                     amount_currency_id=journal_currency.id,
@@ -503,7 +503,21 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                   st_line.amount,
                   st_line.amount_residual,
                   st_line.amount_currency,
-                  st_line.foreign_currency_id
+                  st_line.foreign_currency_id,
+                  move.checked,
+                  (
+                      SELECT SUM(
+                                 CASE WHEN suspense_account.reconcile
+                                      THEN suspense.amount_residual
+                                      ELSE suspense.balance
+                                 END
+                             )
+                        FROM account_move_line suspense
+                        JOIN account_account suspense_account
+                          ON suspense_account.id = suspense.account_id
+                       WHERE suspense.move_id = st_line.move_id
+                         AND suspense.payment_role = 'suspense'
+                  ) AS suspense_open_balance
              FROM %(table_references)s
              JOIN account_bank_statement_line st_line ON st_line.move_id = account_move_line.move_id
              JOIN account_move move ON move.id = st_line.move_id
@@ -537,12 +551,12 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         )
 
         return self._get_grouped_result(
-            query_res_lines, current_groupby, prepare_result_dict
+            query_res_lines, current_groupby, prepare_result_dict, offset, limit
         )
 
     @_debug.perf.timed
     def _bank_reconciliation_report_custom_engine_outstanding_common(
-        self, options, internal_type, current_groupby
+        self, options, internal_type, current_groupby, offset=0, limit=None
     ):
         journal, journal_currency, company_currency = (
             self._get_bank_journal_and_currencies(options)
@@ -683,7 +697,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         )
 
         return self._get_grouped_result(
-            query_res_lines, current_groupby, prepare_result_dict
+            query_res_lines, current_groupby, prepare_result_dict, offset, limit
         )
 
     @_debug.perf.timed
@@ -700,24 +714,17 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         result = report._report_expand_unfoldable_line_with_groupby(
             line_dict_id, groupby, options, progress, offset, unfold_all_batch_data
         )
-        _markup, model, report_line_id = report._parse_line_id(line_dict_id)[-1]
-        complete = model == "report.formula.line" and not (offset or result["has_more"])
         _debug.logic(
-            "section_expanded",
+            "group_expanded",
             report=report,
             line_dict_id=line_dict_id,
             groupby=groupby,
             offset=offset,
             has_more=result["has_more"],
-            complete=complete,
         )
-        if complete:
+        if not result["has_more"]:
             result["lines"] = self._add_conversion_rounding_line(
-                report,
-                options,
-                self.env["report.formula.line"].browse(report_line_id),
-                line_dict_id,
-                result["lines"],
+                report, options, line_dict_id, groupby, result["lines"]
             )
         return result
 
@@ -729,32 +736,52 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _add_conversion_rounding_line(
-        self, report, options, report_line, section_line_id, lines
+        self, report, options, line_dict_id, groupby, lines
     ):
+        report_line = self.env["report.formula.line"].browse(
+            next(
+                model_id
+                for _markup, model, model_id in reversed(
+                    report._parse_line_id(line_dict_id)
+                )
+                if model == "report.formula.line"
+            )
+        )
         amount_expression = report_line.expression_ids.filtered(
             lambda expression: expression.label == "amount"
         )
-        children = [line for line in lines if line.get("parent_id") == section_line_id]
+        children = [line for line in lines if line.get("parent_id") == line_dict_id]
         if not amount_expression or not children:
             return lines
 
         _journal, journal_currency, _company_currency = (
             self._get_bank_journal_and_currencies(options)
         )
-        section_totals = report._compute_expression_totals_for_each_column_group(
-            amount_expression, options
+        group_options = {
+            **options,
+            "forced_domain": options.get("forced_domain", [])
+            + report._get_domain_audit_line_groupby(line_dict_id),
+        }
+        group_totals = report._compute_expression_totals_for_each_column_group(
+            amount_expression, group_options
+        )
+        sub_group_totals = report._compute_expression_totals_for_each_column_group(
+            amount_expression, group_options, groupby_to_expand=groupby
         )
         columns = []
-        for index, column in enumerate(options["columns"]):
+        for column in options["columns"]:
             rounding = None
             if column["expression_label"] == "amount":
+                column_group_key = column["column_group_key"]
                 rounding = self._get_conversion_rounding(
                     journal_currency,
-                    section_totals[column["column_group_key"]][amount_expression][
-                        "value"
-                    ]
-                    or 0.0,
-                    [child["columns"][index].get("no_format") for child in children],
+                    group_totals[column_group_key][amount_expression]["value"] or 0.0,
+                    [
+                        value
+                        for _grouping_key, value in sub_group_totals[column_group_key][
+                            amount_expression
+                        ]["value"]
+                    ],
                 )
             columns.append(
                 report._prepare_column_dict(
@@ -773,6 +800,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             "conversion_rounding_line",
             report=report,
             report_line=report_line,
+            line_dict_id=line_dict_id,
             children=len(children),
             added=has_rounding,
         )
@@ -785,10 +813,10 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                     None,
                     None,
                     markup="conversion_rounding",
-                    parent_line_id=section_line_id,
+                    parent_line_id=line_dict_id,
                 ),
                 "name": self.env._("Conversion rounding"),
-                "parent_id": section_line_id,
+                "parent_id": line_dict_id,
                 "level": children[-1]["level"],
                 "columns": columns,
                 "unfoldable": False,
@@ -799,23 +827,42 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             },
         ]
 
+    def _get_statement_line_open_amount(self, res, journal_currency, company_currency):
+        if not res["checked"]:
+            return res["amount"]
+        if not res["foreign_currency_id"]:
+            return -res["amount_residual"]
+        if journal_currency == company_currency:
+            return -(res["suspense_open_balance"] or 0.0)
+        if not res["amount_currency"]:
+            return 0.0
+        return journal_currency.round(
+            -res["amount_residual"] * res["amount"] / res["amount_currency"]
+        )
+
     def _get_grouped_result(
-        self, query_res_lines, current_groupby, prepare_result_dict
+        self,
+        query_res_lines,
+        current_groupby,
+        prepare_result_dict,
+        offset=0,
+        limit=None,
     ):
         if not current_groupby:
             return prepare_result_dict(query_res_lines)
-        else:
-            rslt = []
 
-            all_res_per_grouping_key = {}
-            for query_res in query_res_lines:
-                grouping_key = query_res["grouping_key"]
-                all_res_per_grouping_key.setdefault(grouping_key, []).append(query_res)
+        all_res_per_grouping_key = {}
+        for query_res in query_res_lines:
+            grouping_key = query_res["grouping_key"]
+            all_res_per_grouping_key.setdefault(grouping_key, []).append(query_res)
 
-            for grouping_key, grouped_lines in all_res_per_grouping_key.items():
-                rslt.append((grouping_key, prepare_result_dict(grouped_lines)))
-
-            return rslt
+        grouping_keys = sorted(
+            all_res_per_grouping_key, key=lambda key: (key is None, key)
+        )[offset : offset + limit if limit else None]
+        return [
+            (grouping_key, prepare_result_dict(all_res_per_grouping_key[grouping_key]))
+            for grouping_key in grouping_keys
+        ]
 
     @_debug.perf.timed
     def _custom_line_postprocessor(self, report, options, lines):
