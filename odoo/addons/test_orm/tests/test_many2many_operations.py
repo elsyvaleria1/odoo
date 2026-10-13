@@ -143,7 +143,7 @@ class TestMany2manyCommands(TransactionCase):
         return inserts
 
     def test_create_command_inserts_the_owner_link_once(self):
-        disc = self._make_discussion()
+        disc = self._create_discussion()
         inserts = self._relation_inserts(
             lambda: disc.write({"categories": [Command.create({"name": "Once"})]})
         )
@@ -151,7 +151,7 @@ class TestMany2manyCommands(TransactionCase):
         self.assertEqual(self._linked_category_ids(disc), disc.categories.ids)
 
     def test_create_command_links_when_the_created_record_drops_the_owner_link(self):
-        disc = self._make_discussion()
+        disc = self._create_discussion()
         Category = type(self.env["test_orm.category"])
         create = Category.create
 
