@@ -491,7 +491,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
 #: code:addons/ai/static/src/editor/plugins/chatgpt_plugin.js:0
 #: code:addons/ai/static/src/web/systray_action.xml:0
 #: model:ir.model.fields.selection,name:ai.selection__ir_actions_server__state__ai
@@ -567,13 +566,6 @@ msgstr "ແຊັດ AI"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "AI is listening..."
-msgstr "AI ກຳລັງຟັງ..."
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/discuss/typing_patch.js:0
 msgid "AI is thinking..."
 msgstr "AI ກຳລັງຄິດ..."
@@ -646,12 +638,6 @@ msgid "AI: Search"
 msgstr "AI: ຄົ້ນຫາ"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Access error"
-msgstr "ຂໍ້ຜິດພາດໃນການເຂົ້າເຖິງ"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_composer__interface_key
 #: model_terms:ir.ui.view,arch_db:ai.ai_log_action
 msgid "Action"
@@ -698,12 +684,6 @@ msgstr "ເພີ່ມແຫຼ່ງຂໍ້ມູນ"
 #: code:addons/ai/static/src/components/agent_add_source_dialog/agent_add_source_dialog.js:0
 msgid "Add a Link"
 msgstr "ເພີ່ມລິ້ງໃໝ່"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Add notes about your upcoming meeting"
-msgstr "ເພີ່ມບັນທຶກກ່ຽວກັບການປະຊຸມທີ່ຈະມາເຖິງຂອງທ່ານ"
 
 #. module: ai
 #. odoo-javascript
@@ -759,12 +739,6 @@ msgstr "ເຄື່ອງມື AI ສະແດງຄຳເຕືອນ"
 #: model:ir.model.fields,field_description:ai.field_ir_cron__ai_tool_allow_end_message
 msgid "Allow End Message"
 msgstr "ອະນຸຍາດຂໍ້ຄວາມສິ້ນສຸດ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "An error occured"
-msgstr "ເກີດຂໍ້ຜິດພາດຂຶ້ນ"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent__response_style__analytical
@@ -942,12 +916,6 @@ msgstr "ປັບແຕ່ງເພື່ອຄວບຄຸມຄວາມກ່
 #: model:ir.model.fields,field_description:ai.field_ai_topic__description
 msgid "Description"
 msgstr "ຄຳອະທິບາຍ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Dictate text or record a meeting"
-msgstr "ສັ່ງພິມຂໍ້ຄວາມດ້ວຍສຽງ ຫຼື ບັນທຶກການປະຊຸມ"
 
 #. module: ai
 #. odoo-javascript
@@ -1399,13 +1367,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Notes"
-msgstr "ບັນທຶກ"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 msgid "Online"
 msgstr "ອອນລາຍ"
@@ -1453,12 +1414,6 @@ msgstr "ແກ້ໄຂແບບສວຍງາມ"
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent_source__status__processing
 msgid "Processing"
 msgstr "ກຳລັງປະມວນຜົນ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Processing..."
-msgstr "ກຳລັງປະມວນຜົນ..."
 
 #. module: ai
 #. odoo-javascript
@@ -1565,18 +1520,6 @@ msgid "Server Action"
 msgstr "ການກະທຳຂອງເຊີບເວີ"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Share by email"
-msgstr "ແບ່ງປັນຜ່ານອີເມລ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Share transcript summary"
-msgstr "ແບ່ງປັນບົດສະຫຼຸບການຖອດສຽງ"
-
-#. module: ai
 #: model_terms:ir.ui.view,arch_db:ai.ir_actions_server_view_form
 msgid "Short explanation of what this does"
 msgstr "ຄຳອະທິບາຍສັ້ນໆກ່ຽວກັບສິ່ງທີ່ເຄື່ອງມືນີ້ເຮັດ"
@@ -1617,39 +1560,9 @@ msgid "Sources Fully Processed"
 msgstr "ແຫຼ່ງຂໍ້ມູນຖືກປະມວນຜົນຄົບຖ້ວນແລ້ວ"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Start Recording"
-msgstr "ເລີ່ມບັນທຶກ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Start recording to get a real-time transcript of the conversation"
-msgstr "ເລີ່ມບັນທຶກເພື່ອຮັບການຖອດສຽງສົນທະນາແບບສົດໆ"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__status
 msgid "Status"
 msgstr "ສະຖານະ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Stop Recording"
-msgstr "ຢຸດບັນທຶກ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Summary"
-msgstr "ບົດສະຫຼຸບ"
-
-#. module: ai
-#: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__voice_transcription_component
-msgid "Summary Buttons for Voice Transcription Component"
-msgstr "ປຸ່ມສະຫຼຸບສຳລັບອົງປະກອບການຖອດສຽງ"
 
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent__is_system_agent
@@ -1792,13 +1705,6 @@ msgstr "ຫົວຂໍ້"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Transcript"
-msgstr "ຂໍ້ຄວາມຖອດຈາກສຽງ"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 msgid "Tried to switch to %s but the app is no longer in an action window."
 msgstr "ພະຍາຍາມປ່ຽນເປັນ %s ແຕ່ແອັບບໍ່ໄດ້ຢູ່ໃນປ່ອງຢ້ຽມການກະທຳອີກຕໍ່ໄປ."
@@ -1857,12 +1763,6 @@ msgstr "URL %s ສົ່ງຄືນເນື້ອຫາຫວ່າງເປ�
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Unable to start the recording."
-msgstr "ບໍ່ສາມາດເລີ່ມຕົ້ນການບັນທຶກໄດ້."
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 msgid "Unable to switch view"
 msgstr "ບໍ່ສາມາດປ່ຽນມຸມມອງໄດ້"
@@ -1908,28 +1808,9 @@ msgstr "ຜູ້ໃຊ້ມີສິດເຂົ້າເຖິງ"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "User error"
-msgstr "ຂໍ້ຜິດພາດຈາກຜູ້ໃຊ້"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 msgid "User is online"
 msgstr "ຜູ້ໃຊ້ອອນລາຍຢູ່"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Voice Recording"
-msgstr "ການບັນທຶກສຽງ"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Voice Transcript"
-msgstr "ຂໍ້ຄວາມຖອດຈາກສຽງ"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__mail_composer
@@ -1946,15 +1827,6 @@ msgstr "ຂຽນໃນຟິວ HTML"
 #: code:addons/ai/utils/tools_schema/validators.py:0
 msgid "Wrong value %(value)s, should be in: %(enum)s"
 msgstr "ຄ່າ %(value)s ບໍ່ຖືກຕ້ອງ, ຄວນຈະຢູ່ໃນ: %(enum)s"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid ""
-"You must allow the access to your microphone to start the recording. Try "
-"refreshing the page and start again."
-msgstr ""
-"ທ່ານຕ້ອງອະນຸຍາດໃຫ້ເຂົ້າເຖິງໄມໂຄຣໂຟນຂອງທ່ານເພື່ອເລີ່ມຕົ້ນການບັນທຶກ. ລອງໂຫຼດໜ້າຄືນໃໝ່ ແລະ ເລີ່ມອີກຄັ້ງ."
 
 #. module: ai
 #. odoo-javascript

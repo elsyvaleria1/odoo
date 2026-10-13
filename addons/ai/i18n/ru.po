@@ -580,7 +580,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
 #: code:addons/ai/static/src/editor/plugins/chatgpt_plugin.js:0
 #: code:addons/ai/static/src/web/systray_action.xml:0
 #: model:ir.model.fields.selection,name:ai.selection__ir_actions_server__state__ai
@@ -656,13 +655,6 @@ msgstr "ИИ-чат"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "AI is listening..."
-msgstr "ИИ слушает..."
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/discuss/typing_patch.js:0
 msgid "AI is thinking..."
 msgstr "ИИ думает..."
@@ -735,12 +727,6 @@ msgid "AI: Search"
 msgstr "ИИ: Поиск"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Access error"
-msgstr "Ошибка доступа"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_composer__interface_key
 #: model_terms:ir.ui.view,arch_db:ai.ai_log_action
 msgid "Action"
@@ -787,12 +773,6 @@ msgstr "Добавить источники"
 #: code:addons/ai/static/src/components/agent_add_source_dialog/agent_add_source_dialog.js:0
 msgid "Add a Link"
 msgstr "Добавить ссылку"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Add notes about your upcoming meeting"
-msgstr "Добавить заметки о предстоящей встрече"
 
 #. module: ai
 #. odoo-javascript
@@ -849,12 +829,6 @@ msgstr "Инструмент ИИ показывает предупрежден�
 #: model:ir.model.fields,field_description:ai.field_ir_cron__ai_tool_allow_end_message
 msgid "Allow End Message"
 msgstr "Разрешить завершающее сообщение"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "An error occured"
-msgstr "Произошла ошибка"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent__response_style__analytical
@@ -1036,12 +1010,6 @@ msgstr "Настроить параметры релевантности и фо
 #: model:ir.model.fields,field_description:ai.field_ai_topic__description
 msgid "Description"
 msgstr "Описание"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Dictate text or record a meeting"
-msgstr "Продиктовать текст или записать встречу"
 
 #. module: ai
 #. odoo-javascript
@@ -1498,13 +1466,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Notes"
-msgstr "Заметки"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 msgid "Online"
 msgstr "Онлайн"
@@ -1552,12 +1513,6 @@ msgstr ""
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent_source__status__processing
 msgid "Processing"
 msgstr "Обработка"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Processing..."
-msgstr "Обработка..."
 
 #. module: ai
 #. odoo-javascript
@@ -1666,18 +1621,6 @@ msgid "Server Action"
 msgstr "Действие сервера"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Share by email"
-msgstr "Поделиться по e-mail"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Share transcript summary"
-msgstr "Поделиться сводкой диалога"
-
-#. module: ai
 #: model_terms:ir.ui.view,arch_db:ai.ir_actions_server_view_form
 msgid "Short explanation of what this does"
 msgstr "Краткое описание выполняемой функции"
@@ -1719,39 +1662,9 @@ msgid "Sources Fully Processed"
 msgstr "Источники полностью обработаны"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Start Recording"
-msgstr "Начать запись"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Start recording to get a real-time transcript of the conversation"
-msgstr "Начните запись для получения расшифровки разговора в реальном времени"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__status
 msgid "Status"
 msgstr "Статус"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Stop Recording"
-msgstr "Остановить запись"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Summary"
-msgstr "Краткое описание"
-
-#. module: ai
-#: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__voice_transcription_component
-msgid "Summary Buttons for Voice Transcription Component"
-msgstr "Смарт-кнопки управления компонентом голосовой расшифровки"
 
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent__is_system_agent
@@ -1894,13 +1807,6 @@ msgstr "Темы"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Transcript"
-msgstr "Расшифровка"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 msgid "Tried to switch to %s but the app is no longer in an action window."
 msgstr ""
@@ -1968,12 +1874,6 @@ msgstr "URL %s вернул пустое содержимое"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "Unable to start the recording."
-msgstr "Невозможно начать запись."
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 msgid "Unable to switch view"
 msgstr "Не удалось переключить представление"
@@ -2019,28 +1919,9 @@ msgstr "У пользователя есть доступ"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid "User error"
-msgstr "Ошибка пользователя"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 msgid "User is online"
 msgstr "Пользователь в сети"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-msgid "Voice Recording"
-msgstr "Голосовая запись"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-msgid "Voice Transcript"
-msgstr "Расшифровка речи"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__mail_composer
@@ -2057,16 +1938,6 @@ msgstr "Ввести текст в HTML-поле"
 #: code:addons/ai/utils/tools_schema/validators.py:0
 msgid "Wrong value %(value)s, should be in: %(enum)s"
 msgstr "Неверное значение %(value)s, допустимые значения: %(enum)s"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-msgid ""
-"You must allow the access to your microphone to start the recording. Try "
-"refreshing the page and start again."
-msgstr ""
-"Вы должны разрешить доступ к микрофону, чтобы начать запись. Попробуйте "
-"обновить страницу и начать снова."
 
 #. module: ai
 #. odoo-javascript

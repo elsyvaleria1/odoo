@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <templates id="template" xml:space="preserve">
-    <t t-name="ai.ReadonlyVoiceTranscription">
+    <t t-name="ai_speech.ReadonlyVoiceTranscription">
         <details class="transcript-block border border-secondary mb-2" t-att-open="this.state.isOpened">
             <summary class="d-flex bg-secondary-subtle px-2 py-1 fw-bold gap-2 flex-sm-row flex-column align-items-sm-center flex-wrap" t-on-click="() => this.state.isOpened = !this.state.isOpened" t-att-class="{'py-2': !this.state.isOpened}">
                 <t t-if="this.state.isOpened">

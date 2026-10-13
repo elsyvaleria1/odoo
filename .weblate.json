@@ -302,6 +302,11 @@
                 "new_base": "addons/ai_fields/i18n/ai_fields.pot"
             },
             {
+                "name": "ai_fields_web_studio",
+                "filemask": "addons/ai_fields_web_studio/i18n/*.po",
+                "new_base": "addons/ai_fields_web_studio/i18n/ai_fields_web_studio.pot"
+            },
+            {
                 "name": "ai_knowledge",
                 "filemask": "addons/ai_knowledge/i18n/*.po",
                 "new_base": "addons/ai_knowledge/i18n/ai_knowledge.pot"
@@ -315,6 +320,11 @@
                 "name": "ai_server_actions",
                 "filemask": "addons/ai_server_actions/i18n/*.po",
                 "new_base": "addons/ai_server_actions/i18n/ai_server_actions.pot"
+            },
+            {
+                "name": "ai_speech",
+                "filemask": "addons/ai_speech/i18n/*.po",
+                "new_base": "addons/ai_speech/i18n/ai_speech.pot"
             },
             {
                 "name": "ai_website",
@@ -3095,11 +3105,6 @@
                 "name": "web_studio",
                 "filemask": "addons/web_studio/i18n/*.po",
                 "new_base": "addons/web_studio/i18n/web_studio.pot"
-            },
-            {
-                "name": "ai_fields_web_studio",
-                "filemask": "addons/ai_fields_web_studio/i18n/*.po",
-                "new_base": "addons/ai_fields_web_studio/i18n/ai_fields_web_studio.pot"
             },
             {
                 "name": "web_tour",

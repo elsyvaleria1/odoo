@@ -1,0 +1,158 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * ai_speech
+#
+# Translators:
+# Tony Ng, 2025
+# Wil Odoo, 2025
+#
+# "Dylan Kiss (dyki)" <dyki@odoo.com>, 2025.
+# Weblate <noreply-mt-weblate@weblate.org>, 2025.
+# "Tony Ng (ngto)" <ngto@odoo.com>, 2026.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server saas~18.3+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-13 18:42+0000\n"
+"PO-Revision-Date: 2026-05-23 09:35+0000\n"
+"Last-Translator: \"Tony Ng (ngto)\" <ngto@odoo.com>\n"
+"Language-Team: Chinese (Traditional Han script) <https://translate.odoo.com/"
+"projects/odoo-19/ai/zh_Hant/>\n"
+"Language: zh_TW\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Generator: Weblate 5.17\n"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "AI"
+msgstr "AI 人工智能"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "AI is listening..."
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Access error"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Add notes about your upcoming meeting"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "An error occured"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Dictate text or record a meeting"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Notes"
+msgstr "備註"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Processing..."
+msgstr "處理中..."
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Share by email"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Share transcript summary"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Start Recording"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Start recording to get a real-time transcript of the conversation"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Stop Recording"
+msgstr "停止錄制"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Summary"
+msgstr "摘要"
+
+#. module: ai_speech
+#: model:ir.model.fields.selection,name:ai_speech.selection__ai_composer__interface_key__voice_transcription_component
+msgid "Summary Buttons for Voice Transcription Component"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Transcript"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Unable to start the recording."
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "User error"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Voice Recording"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Voice Transcript"
+msgstr ""
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid ""
+"You must allow the access to your microphone to start the recording. Try "
+"refreshing the page and start again."
+msgstr ""

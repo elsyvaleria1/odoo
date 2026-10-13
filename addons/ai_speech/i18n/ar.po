@@ -1,0 +1,155 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# * ai_speech
+#
+# "Tiffany Chang (tic)" <tic@odoo.com>, 2025.
+# "Malaz Siddig Elsayed Abuidris (msea)" <msea@odoo.com>, 2025, 2026.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-02-13 18:42+0000\n"
+"PO-Revision-Date: 2026-03-16 14:31+0000\n"
+"Last-Translator: \"Malaz Siddig Elsayed Abuidris (msea)\" <msea@odoo.com>\n"
+"Language-Team: Arabic <https://translate.odoo.com/projects/odoo-19/ai_speech/ar/>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 ? 4 : 5;\n"
+"X-Generator: Weblate 5.16.2\n"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "AI"
+msgstr "الذكاء الاصطناعي"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "AI is listening..."
+msgstr "الذكاء الاصطناعي يستمع..."
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Access error"
+msgstr "خطأ في الوصول"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Add notes about your upcoming meeting"
+msgstr "أضف ملاحظات حول اجتماعك القادم"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "An error occured"
+msgstr "حدث خطأ ما"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Dictate text or record a meeting"
+msgstr "إملاء نص أو تسجيل اجتماع"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Notes"
+msgstr "الملاحظات"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Processing..."
+msgstr "جاري المعالجة..."
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Share by email"
+msgstr "المشاركة عن طريق البريد الإلكتروني"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Share transcript summary"
+msgstr "مشاركة ملخص النص"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Start Recording"
+msgstr "ابدأ التسجيل"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Start recording to get a real-time transcript of the conversation"
+msgstr "ابدأ بالتسجيل حتى تحصل على نسخة مكتوبة من المحادثة في الوقت الفعلي"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Stop Recording"
+msgstr "إيقاف التسجيل"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Summary"
+msgstr "الملخص"
+
+#. module: ai_speech
+#: model:ir.model.fields.selection,name:ai_speech.selection__ai_composer__interface_key__voice_transcription_component
+msgid "Summary Buttons for Voice Transcription Component"
+msgstr "أزرار الملخص لمُكَوِّن الكتابة الصوتية"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Transcript"
+msgstr "النص"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "Unable to start the recording."
+msgstr "تعذر بدء التسجيل."
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid "User error"
+msgstr "خطأ لدى المستخدم"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.xml:0
+msgid "Voice Recording"
+msgstr "تسجيل صوتي"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
+msgid "Voice Transcript"
+msgstr "النصوص الصوتية"
+
+#. module: ai_speech
+#. odoo-javascript
+#: code:addons/ai_speech/static/src/editor/embedded_components/core/voice_transcription.js:0
+msgid ""
+"You must allow the access to your microphone to start the recording. Try "
+"refreshing the page and start again."
+msgstr ""
+"يجب أن تسمح بالوصول إلى الميكروفون الخاص بك لبدء التسجيل. حاول تحديث الصفحة "
+"وابدأ من جديد."

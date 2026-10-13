@@ -547,7 +547,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
 #: code:addons/ai/static/src/editor/plugins/chatgpt_plugin.js:0
 #: code:addons/ai/static/src/web/systray_action.xml:0
 #: model:ir.model.fields.selection,name:ai.selection__ir_actions_server__state__ai
@@ -634,14 +633,6 @@ msgstr "Sun'iy intellekt vositalari"
 #, fuzzy
 msgid "AI chat"
 msgstr "Sun'iy intellekt suhbati"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-#, fuzzy
-msgid "AI is listening..."
-msgstr "Sun'iy intellekt tinglamoqda..."
 
 #. module: ai
 #. odoo-javascript
@@ -733,13 +724,6 @@ msgid "AI: Search"
 msgstr "Sun'iy intellekt: Qidiruv"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid "Access error"
-msgstr "Kirish xatosi"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_composer__interface_key
 #: model_terms:ir.ui.view,arch_db:ai.ai_log_action
 #, fuzzy
@@ -794,13 +778,6 @@ msgstr "Manbalar qo‘shish"
 #, fuzzy
 msgid "Add a Link"
 msgstr "Havola qo‘shish"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-#, fuzzy
-msgid "Add notes about your upcoming meeting"
-msgstr "Kelgusi yig‘ilishingiz haqida eslatmalar qo‘shing"
 
 #. module: ai
 #. odoo-javascript
@@ -866,13 +843,6 @@ msgstr "AI vositasi ogohlantiruvini ko‘rsatish"
 #, fuzzy
 msgid "Allow End Message"
 msgstr "Xabar tugashiga ruxsat berish"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid "An error occured"
-msgstr "Xatolik yuz berdi"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_agent__response_style__analytical
@@ -1081,13 +1051,6 @@ msgstr "Dolzarblik va formatlashni nazorat qilish uchun moslashtiring."
 #, fuzzy
 msgid "Description"
 msgstr "Tavsif"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-#, fuzzy
-msgid "Dictate text or record a meeting"
-msgstr "Matnni aytib bering yoki yig‘ilishni yozib oling"
 
 #. module: ai
 #. odoo-javascript
@@ -1605,14 +1568,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Notes"
-msgstr "Eslatmalar"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 #, fuzzy
 msgid "Online"
@@ -1668,13 +1623,6 @@ msgstr "Chiroyli tahrirlash"
 #, fuzzy
 msgid "Processing"
 msgstr "Qayta ishlash"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Processing..."
-msgstr "Qayta ishlanmoqda..."
 
 #. module: ai
 #. odoo-javascript
@@ -1801,20 +1749,6 @@ msgid "Server Action"
 msgstr "Server harakati"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Share by email"
-msgstr "Elektron pochta orqali ulashish"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid "Share transcript summary"
-msgstr "Transkripsiya xulosasini ulashish"
-
-#. module: ai
 #: model_terms:ir.ui.view,arch_db:ai.ir_actions_server_view_form
 #, fuzzy
 msgid "Short explanation of what this does"
@@ -1859,46 +1793,10 @@ msgid "Sources Fully Processed"
 msgstr "Manbalar to‘liq qayta ishlandi"
 
 #. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Start Recording"
-msgstr "Yozib olishni boshlash"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-#, fuzzy
-msgid "Start recording to get a real-time transcript of the conversation"
-msgstr ""
-"Suhbatning real vaqtdagi transkripsiyasini olish uchun yozib olishni boshlang"
-
-#. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent_source__status
 #, fuzzy
 msgid "Status"
 msgstr "Holat"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Stop Recording"
-msgstr "Yozib olishni to‘xtatish"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Summary"
-msgstr "Xulosa"
-
-#. module: ai
-#: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__voice_transcription_component
-#, fuzzy
-msgid "Summary Buttons for Voice Transcription Component"
-msgstr "Ovoz transkripsiyasi komponenti uchun umumlashtiruvchi tugmalar"
 
 #. module: ai
 #: model:ir.model.fields,field_description:ai.field_ai_agent__is_system_agent
@@ -2066,14 +1964,6 @@ msgstr "Mavzular"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Transcript"
-msgstr "Yozma bayonnoma"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 #, fuzzy
 msgid "Tried to switch to %s but the app is no longer in an action window."
@@ -2139,13 +2029,6 @@ msgstr ""
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid "Unable to start the recording."
-msgstr "Yozib olishni boshlash imkonsiz."
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/ai_natural_language_service.js:0
 #, fuzzy
 msgid "Unable to switch view"
@@ -2199,32 +2082,10 @@ msgstr "Foydalanuvchi kirishga ega"
 
 #. module: ai
 #. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid "User error"
-msgstr "Foydalanuvchi xatosi"
-
-#. module: ai
-#. odoo-javascript
 #: code:addons/ai/static/src/im_status_patch.xml:0
 #, fuzzy
 msgid "User is online"
 msgstr "Foydalanuvchi onlayn"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/readonly_voice_transcription.xml:0
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.xml:0
-#, fuzzy
-msgid "Voice Recording"
-msgstr "Ovoz yozish"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/plugins/voice_transcription_plugin.js:0
-#, fuzzy
-msgid "Voice Transcript"
-msgstr "Ovoz yozma bayonnomasi"
 
 #. module: ai
 #: model:ir.model.fields.selection,name:ai.selection__ai_composer__interface_key__mail_composer
@@ -2244,17 +2105,6 @@ msgstr "HTML maydoniga yozish"
 #, fuzzy
 msgid "Wrong value %(value)s, should be in: %(enum)s"
 msgstr "%(value)s qiymati noto‘g‘ri, u %(enum)s ichida bo‘lishi kerak"
-
-#. module: ai
-#. odoo-javascript
-#: code:addons/ai/static/src/editor/embedded_components/core/voice_transcription.js:0
-#, fuzzy
-msgid ""
-"You must allow the access to your microphone to start the recording. Try "
-"refreshing the page and start again."
-msgstr ""
-"Yozib olishni boshlash uchun mikrofoningizga kirishga ruxsat berishingiz "
-"kerak. Sahifani yangilab, qaytadan urinib ko‘ring."
 
 #. module: ai
 #. odoo-javascript

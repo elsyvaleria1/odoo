@@ -67,6 +67,7 @@
             "@ai_fields/*": ["./addons/ai_fields/static/src/*"],
             "@ai_knowledge/*": ["./addons/ai_knowledge/static/src/*"],
             "@ai_livechat/*": ["./addons/ai_livechat/static/src/*"],
+            "@ai_speech/*": ["./addons/ai_speech/static/src/*"],
             "@ai_website/*": ["./addons/ai_website/static/src/*"],
             "@ai_website_livechat/*": ["./addons/ai_website_livechat/static/src/*"],
             "@analytic/*": ["./addons/analytic/static/src/*"],

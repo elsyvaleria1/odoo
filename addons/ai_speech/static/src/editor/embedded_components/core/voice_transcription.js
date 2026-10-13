@@ -16,7 +16,7 @@ import { useService } from "@web/core/utils/hooks";
 import { useViewModel } from "@web/model/model";
 
 export class VoiceTranscription extends Component {
-    static template = "ai.VoiceTranscription";
+    static template = "ai_speech.VoiceTranscription";
     static components = {};
     static props = {
         host: t.object(),

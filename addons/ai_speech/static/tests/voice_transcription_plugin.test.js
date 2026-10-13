@@ -1,5 +1,6 @@
-import { aiVoiceTranscriptionEmbeddedComponent } from "@ai/editor/embedded_components/core/voice_transcription";
-import { TranscriptionPlugin } from "@ai/editor/embedded_components/plugins/voice_transcription_plugin";
+import { defineAIModels } from "@ai/../tests/ai_test_helpers";
+import { aiVoiceTranscriptionEmbeddedComponent } from "@ai_speech/editor/embedded_components/core/voice_transcription";
+import { TranscriptionPlugin } from "@ai_speech/editor/embedded_components/plugins/voice_transcription_plugin";
 import {
     setupMultiEditor,
     validateSameHistory,
@@ -24,8 +25,6 @@ import {
 } from "@web/../tests/web_test_helpers";
 import { user } from "@web/core/user";
 import { renderToString } from "@web/core/utils/render";
-
-import { defineAIModels } from "./ai_test_helpers.js";
 
 class Dummy extends models.Model {
     _name = "dummy";
@@ -99,7 +98,7 @@ const config = {
 describe("Component behaviour", () => {
     test.tags("desktop");
     test("transcript component tabs have proper hints", async () => {
-        const transcriptBlock = renderToString("ai.VoiceTranscriptionBlueprint");
+        const transcriptBlock = renderToString("ai_speech.VoiceTranscriptionBlueprint");
         await setupEditor(`<p>[]</p>${transcriptBlock}`, {
             config,
         });
@@ -129,7 +128,7 @@ describe("Component behaviour", () => {
     });
 
     test("transcription items are properly rendered", async () => {
-        const transcriptBlock = renderToString("ai.VoiceTranscriptionBlueprint");
+        const transcriptBlock = renderToString("ai_speech.VoiceTranscriptionBlueprint");
         await setupEditor(`<p>[]</p>${transcriptBlock}`, {
             config,
         });
@@ -167,7 +166,7 @@ describe("Component behaviour", () => {
     });
 
     test("should only summarize when there is content in the transcription tab", async () => {
-        const transcriptBlock = renderToString("ai.VoiceTranscriptionBlueprint");
+        const transcriptBlock = renderToString("ai_speech.VoiceTranscriptionBlueprint");
         await setupEditor(`<p>[]</p>${transcriptBlock}`, {
             config,
         });
@@ -193,7 +192,7 @@ describe("Component behaviour", () => {
     });
 
     test("share composer should have summary content", async () => {
-        const transcriptBlock = renderToString("ai.VoiceTranscriptionBlueprint");
+        const transcriptBlock = renderToString("ai_speech.VoiceTranscriptionBlueprint");
         const server = await makeMockServer();
         server.env["wizard.mail.message.send"]._views.form = `
             <form>
@@ -238,7 +237,7 @@ describe("Component behaviour", () => {
             ],
         }));
 
-        const transcriptBlock = renderToString("ai.VoiceTranscriptionBlueprint");
+        const transcriptBlock = renderToString("ai_speech.VoiceTranscriptionBlueprint");
         const server = await makeMockServer();
         server.env["wizard.mail.message.send"]._views.form = `
         <form>
@@ -286,7 +285,7 @@ describe("Collaboration on transcription component", () => {
         editor1.shared.dom.insert(
             parseHTML(
                 editor1.document,
-                renderToString("ai.VoiceTranscriptionBlueprint"),
+                renderToString("ai_speech.VoiceTranscriptionBlueprint"),
             ),
         );
         addStep(editor1);

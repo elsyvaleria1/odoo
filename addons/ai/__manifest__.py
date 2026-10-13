@@ -1,6 +1,6 @@
 {
     "name": "AI Agent Foundation",
-    "version": "1.3",
+    "version": "1.4",
     "oldest_upgradable_version": "1.1",
     "category": "Hidden",
     "summary": "Provide AI agents, source indexing and model-provider connections",
@@ -10,7 +10,6 @@
     "depends": [
         "credential",
         "mail",
-        "speech",
     ],
     "data": [
         "data/ir_actions_server_data.xml",

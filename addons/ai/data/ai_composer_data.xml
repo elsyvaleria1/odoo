@@ -23,19 +23,6 @@
         <record id="ai_prompt_stock_move" model="ai.prompt.button">
             <field name="name">Single most common stock move from/to</field>
         </record>
-        <record
-            id="ai_prompt_transcription_summarize_recruitment_call"
-            model="ai.prompt.button">
-            <field name="name">Summarize this recruitment call</field>
-        </record>
-        <record
-            id="ai_prompt_transcription_summarize_prospect_call"
-            model="ai.prompt.button">
-            <field name="name">Summarize this prospect call</field>
-        </record>
-        <record id="ai_prompt_transcription_write_email_recap" model="ai.prompt.button">
-            <field name="name">Write an email recap</field>
-        </record>
         <record id="ai_prompt_sales_by_country" model="ai.prompt.button">
             <field name="name">Pie chart of sales by customer country</field>
         </record>
@@ -174,20 +161,6 @@
                 name="available_prompts"
                 eval="[Command.link(ref('ai.ai_prompt_optout_reason')), Command.link(ref('ai.ai_prompt_stock_move')), Command.link(ref('ai.ai_prompt_sales_by_country')), Command.link(ref('ai.ai_prompt_low_stock_pivot')), Command.link(ref('ai.ai_prompt_agenda_today')), Command.link(ref('ai.ai_prompt_top_sales_reps')), Command.link(ref('ai.ai_prompt_sales_by_category')), Command.link(ref('ai.ai_prompt_top_selling_products_chart')), Command.link(ref('ai.ai_prompt_customer_japan')), Command.link(ref('ai.ai_prompt_most_expensive_project')), Command.link(ref('ai.ai_prompt_cash_flow_status')), Command.link(ref('ai.ai_prompt_top_ticket_cause')), Command.link(ref('ai.ai_prompt_latest_po_azure')), Command.link(ref('ai.ai_prompt_profit_margin_by_category')), Command.link(ref('ai.ai_prompt_blog_ideas_catalog'))]" />
             <field name="is_system_default">True</field>
-        </record>
-        <record id="ai_voice_transcription" model="ai.composer">
-            <field name="name">Summarize Voice Transcription</field>
-            <field name="interface_key">voice_transcription_component</field>
-            <field name="ai_agent" ref="ai.ai_default_agent" />
-            <field
-                name="default_prompt">Summarize the transcript below.
-
-Your summary should be structured in a way that is easy to skim. It should only contain the essential information.
-It must be in markdown format. Do NOT put the main markup inside code blocks.</field>
-            <field name="is_system_default">True</field>
-            <field
-                name="available_prompts"
-                eval="[Command.link(ref('ai.ai_prompt_transcription_summarize_recruitment_call')), Command.link(ref('ai.ai_prompt_transcription_summarize_prospect_call')), Command.link(ref('ai.ai_prompt_transcription_write_email_recap'))]" />
         </record>
     </data>
 

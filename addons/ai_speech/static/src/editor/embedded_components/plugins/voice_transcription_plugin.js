@@ -63,11 +63,14 @@ export class TranscriptionPlugin extends Plugin {
     };
 
     insertTranscriptionComponent(params = {}) {
-        const transcriptBlock = renderToElement("ai.VoiceTranscriptionBlueprint", {
-            embeddedProps: JSON.stringify({
-                id: uuid(),
-            }),
-        });
+        const transcriptBlock = renderToElement(
+            "ai_speech.VoiceTranscriptionBlueprint",
+            {
+                embeddedProps: JSON.stringify({
+                    id: uuid(),
+                }),
+            },
+        );
         this.dependencies.dom.insert(transcriptBlock);
         this.dependencies.history.addStep();
     }

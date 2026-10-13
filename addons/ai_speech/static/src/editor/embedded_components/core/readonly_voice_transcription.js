@@ -8,7 +8,7 @@ import { Component, onMounted, onWillStart, proxy, t, useProps } from "@odoo/owl
 import { elementRefs } from "@web/core/utils/element_ref";
 
 export class ReadonlyVoiceTranscription extends Component {
-    static template = "ai.ReadonlyVoiceTranscription";
+    static template = "ai_speech.ReadonlyVoiceTranscription";
     static components = {};
     static props = { host: t.object() };
     props = useProps(this.constructor.props);
