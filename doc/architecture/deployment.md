@@ -149,10 +149,10 @@ Defaults, from `odoo/tools/config.py`:
 | `limit_time_real` | `120 s` | wall time per request |
 | `limit_time_real_cron` | `-1` | wall time per cron job; `-1` defers to `limit_time_real` |
 | `limit_time_real_job` | `-1` | wall time per background job; `-1` defers to `limit_time_real_cron`, which defers in turn |
-| `limit_time_real_module_operation` | `0` | wall time of a request, cron or job while it holds the module-operations lock (the Apps install/upgrade/uninstall buttons, the scheduled-upgrade wizard), in place of the budget above; `0` is no limit, `-1` defers to `limit_time_real`. In prefork the worker's CPU limit follows it: `0` lifts it for the operation, a positive budget allows that many CPU seconds from the operation's start, `-1` leaves `limit_time_cpu` as armed for the request |
+| `limit_time_real_module_operation` | `0` | wall time of a request, cron or job while it holds the module-operations lock (the Apps install/upgrade/uninstall buttons, the scheduled-upgrade wizard, a data-module import: the Import Module wizard, an industry install, `/base_import_module/login_upload`), in place of the budget above; `0` is no limit, `-1` defers to `limit_time_real`. In prefork the worker's CPU limit follows it in place of `limit_time_cpu`: `0` lifts it for the operation, a positive budget allows that many CPU seconds from the operation's start, `limit_time_cpu` set or `0`, `-1` leaves `limit_time_cpu` as armed for the request |
 | `limit_time_worker_cron` | `0` | how long a cron thread or worker lives before it is restarted; `0` disables |
 | `limit_time_worker_job` | `-1` | the same for a job worker; `-1` defers to `limit_time_worker_cron` |
-| `module_operation_job_wait` | `30 s` | how long a module install, upgrade or removal — `-i`/`-u`/`--reinit`, `odoo-bin module`, the Apps buttons — waits for the background jobs already running in its database; none starts meanwhile, and past it the operation is refused naming them (the CLI exits non-zero) |
+| `module_operation_job_wait` | `30 s` | how long a module install, upgrade or removal — `-i`/`-u`/`--reinit`, `odoo-bin module` (a zip given to `odoo-bin module install` included), the Apps buttons, the scheduled-upgrade wizard, a data-module import — waits for the background jobs already running in its database; none starts meanwhile, and past it the operation is refused naming them (the CLI exits non-zero) |
 | `db_maxconn` | `64` | connections held, checked out and idle, **per PostgreSQL server** |
 
 **There is one memory limit, not one of four.** `limit_memory_soft` is enforced at
@@ -231,8 +231,9 @@ its kind: an install started from the Apps menu has committed its modules as
 `to install` before it builds the registry, so interrupting it at
 `limit_time_real` leaves them pending and the database partially updated. The
 prefork monitor keeps feeding the master throughout, budget or none, and sets
-`RLIMIT_CPU` to the operation's budget (none for `0`, `limit_time_cpu`
-untouched for `-1`), re-arming `limit_time_cpu` when it ends. The threaded
+`RLIMIT_CPU` to the operation's budget whether or not `limit_time_cpu` is set
+(none for `0`, `limit_time_cpu` untouched for `-1`), re-arming `limit_time_cpu`
+(none for `0`) when it ends. The threaded
 server does not reload while a marked thread is within its budget, whoever else
 is over its limit (a request waiting on the registry lock the install holds is
 the usual one): the reload waits for the operation, and the grace for the other
@@ -242,6 +243,21 @@ its queries are cancelled, and if it does not return the threaded server
 reloads and the prefork worker is recycled. When the operation ends, what is
 left of the request is timed afresh against its own budget. The threaded server also checks limits while it preloads registries,
 from the moment it serves HTTP, rather than only once preloading is over.
+
+**Every module operation passes one gate; the Apps buttons add two checks.**
+`lock_module_operations` refuses at once while another operation holds it, and
+after `module_operation_job_wait` while background jobs keep running: every
+entry point (`-i`/`-u`/`--reinit`, `odoo-bin module`, the Apps buttons, the
+scheduled-upgrade wizard, a data-module import) is held to that. The Apps
+buttons (`_lock_against_concurrent_module_operations`) rebuild the registry, so
+they also lock the module table and the crons, refusing while a module is
+`to install`, `to upgrade` or `to remove` or a cron runs. A data-module import
+loads data into the running registry without rebuilding it, so it takes the
+gate alone; a dependency it installs goes through the Apps button and those
+checks with it. The scheduled-upgrade wizard takes the gate alone as well:
+applying the pending modules is what it is for. A failed operation whose
+transaction is aborted releases the gate after the rollback
+(`release_session_lock`), not inside the aborted transaction.
 
 Keep `limit_time_real` at or above `SUPERVISION_BEAT_S` (4 s): an idle prefork
 worker pings the master once per beat, so a smaller budget times out idle

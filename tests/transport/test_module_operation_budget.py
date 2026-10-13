@@ -427,3 +427,38 @@ class TestThePreforkWorkerSparesAModuleOperation:
             "-1 keeps limit_time_cpu as armed for the request, as before the "
             "option; a budget of its own bounds the operation's CPU from its start"
         )
+
+    @pytest.mark.parametrize(
+        ("own_budget", "softs"),
+        [
+            (0, []),
+            (server_settings.INHERIT_FROM_CRON, []),
+            (300, [310, resource.RLIM_INFINITY]),
+        ],
+        ids=["unlimited", "inherited", "own"],
+    )
+    def test_the_operation_budget_bounds_the_cpu_without_limit_time_cpu(
+        self, worker_multi, own_budget, softs
+    ):
+        worker = self._worker(worker_multi, budget=2)
+        thread = self._thread(alive_for=3, elapsed=1)
+        marks = iter([True, False, False])
+        type(thread).module_operation = property(lambda self: next(marks, False))
+        res = MagicMock()
+        res.RLIM_INFINITY = resource.RLIM_INFINITY
+        res.getrusage.return_value = MagicMock(ru_utime=10.0, ru_stime=0.0)
+        res.getrlimit.return_value = (resource.RLIM_INFINITY, resource.RLIM_INFINITY)
+        with (
+            server_settings.override(
+                limit_time_real=120,
+                limit_time_cpu=0,
+                limit_time_real_module_operation=own_budget,
+            ),
+            patch.object(_worker, "resource", res),
+            patch("odoo.db.cancel_queries_of"),
+        ):
+            worker._supervise_work_thread(thread)
+        assert [call.args[1][0] for call in res.setrlimit.call_args_list] == softs, (
+            "a budget of its own replaces limit_time_cpu for the operation, "
+            "even when limit_time_cpu is 0"
+        )

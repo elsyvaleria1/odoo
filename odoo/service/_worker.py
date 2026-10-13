@@ -377,16 +377,12 @@ class Worker:
 
     def _rearm_cpu_limit(self, *, module_operation: bool) -> None:
         settings = current()
-        if (
-            settings.limit_time_cpu <= 0
-            or settings.limit_time_real_module_operation <= INHERIT_FROM_CRON
+        budget = settings.limit_time_real_module_operation
+        if budget <= INHERIT_FROM_CRON or (
+            budget == 0 and settings.limit_time_cpu <= 0
         ):
             return
-        self._arm_cpu_limit(
-            settings.limit_time_real_module_operation
-            if module_operation
-            else settings.limit_time_cpu
-        )
+        self._arm_cpu_limit(budget if module_operation else settings.limit_time_cpu)
         _debug.logic(
             "worker.cpu_limit_rearmed", pid=self.pid, module_operation=module_operation
         )

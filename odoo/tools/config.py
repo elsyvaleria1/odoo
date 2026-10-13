@@ -584,7 +584,8 @@ class configmanager:
             dest="module_operation_job_wait",
             my_default=30,
             help="Seconds a module install, upgrade or removal (-i, -u, "
-            "--reinit, the odoo-bin module command, the Apps menu) waits for "
+            "--reinit, the odoo-bin module command, the Apps menu, the "
+            "scheduled-upgrade wizard, a data-module import) waits for "
             "the background jobs already running in its database. No job starts "
             "meanwhile; when they have not finished by then, the operation is "
             "refused, naming them. (default 30)",
@@ -1598,12 +1599,13 @@ class configmanager:
             my_default=0,
             help="Maximum allowed Real time for a request, cron or job while it "
             "installs, upgrades or removes modules (the Apps buttons, the "
-            "scheduled-upgrade wizard), in place of --limit-time-real, which "
-            "would interrupt the operation and leave its modules pending. An "
-            "operation over this budget is cancelled, then reloaded or recycled "
-            "like any request over its limit. In prefork mode it also replaces "
-            "--limit-time-cpu for the operation. Set to 0 for no limit, -1 to "
-            "follow --limit-time-real and --limit-time-cpu. (default: 0)",
+            "scheduled-upgrade wizard, a data-module import), in place of "
+            "--limit-time-real, which would interrupt the operation and leave "
+            "its modules pending. An operation over this budget is cancelled, "
+            "then reloaded or recycled like any request over its limit. In "
+            "prefork mode it also replaces --limit-time-cpu for the operation, "
+            "even when that is 0. Set to 0 for no limit, -1 to follow "
+            "--limit-time-real and --limit-time-cpu. (default: 0)",
             type="int",
         )
         group.add_option(
