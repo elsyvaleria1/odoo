@@ -1,9 +1,12 @@
 from datetime import date
 from unittest.mock import patch
 
+import psycopg
+
 from odoo import Command
-from odoo.exceptions import AccessError, RedirectWarning, ValidationError
+from odoo.exceptions import AccessError, RedirectWarning, UserError, ValidationError
 from odoo.tests import new_test_user, tagged
+from odoo.tools import mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -816,6 +819,9 @@ class TestMarinAccountAuditCompanies(AccountTestInvoicingCommon):
         cls.company_1 = cls.company_data["company"]
         cls.company_2 = cls.company_data_2["company"]
         cls.both_companies = cls.company_1 | cls.company_2
+        cls.branch_1 = cls.setup_other_company(
+            name="Branch of company 1", parent_id=cls.company_1.id
+        )["company"]
         cls.audit_1, cls.audit_2 = (
             cls.env.ref("account.default_audit_return_type")
             .with_context(
@@ -827,19 +833,40 @@ class TestMarinAccountAuditCompanies(AccountTestInvoicingCommon):
 
     def _accounts(self):
         return self.env["account.account"].with_context(
-            allowed_company_ids=self.both_companies.ids
+            allowed_company_ids=(self.both_companies | self.branch_1).ids
         )
 
     def _statuses(self, account):
-        return {
-            row.audit_id: row.status
-            for row in self.env["account.audit.account.status"].search(
-                [
-                    ("account_id", "=", account.id),
-                    ("audit_id", "in", (self.audit_1 | self.audit_2).ids),
-                ]
-            )
-        }
+        rows = self.env["account.audit.account.status"].search(
+            [
+                ("account_id", "=", account.id),
+                ("audit_id", "in", (self.audit_1 | self.audit_2).ids),
+            ]
+        )
+        self.assertEqual(len(rows), len(rows.audit_id), "one row per audit")
+        return {row.audit_id: row.status for row in rows}
+
+    def _expense_accounts(self, codes, companies=None):
+        return self._accounts().create(
+            [
+                {
+                    "name": f"Audited {code}",
+                    "code": code,
+                    "account_type": "expense",
+                    "company_ids": [Command.set((companies or self.company_1).ids)],
+                }
+                for code in codes
+            ]
+        )
+
+    def _merge(self, accounts):
+        self.env["wizard.account.account.merge"].with_context(
+            active_model="account.account",
+            allowed_company_ids=(self.both_companies | self.branch_1).ids,
+            active_ids=accounts.ids,
+        ).create({}).action_merge()
+        self.env.invalidate_all()
+        return accounts.exists()
 
     def test_account_gaining_an_audited_company_gets_a_row(self):
         account = self._accounts().create(
@@ -942,6 +969,105 @@ class TestMarinAccountAuditCompanies(AccountTestInvoicingCommon):
         self.assertEqual(split.company_ids, self.company_2)
         self.assertEqual(self._statuses(account), {self.audit_1: False})
         self.assertEqual(self._statuses(split), {self.audit_2: "reviewed"})
+
+    def test_merged_accounts_keep_one_row_per_audit_with_the_most_urgent_status(self):
+        self.assertEqual(self.audit_1.company_ids, self.company_1 | self.branch_1)
+        for index, (statuses, expected) in enumerate(
+            (
+                (("reviewed", "anomaly"), "anomaly"),
+                (("anomaly", "todo"), "anomaly"),
+                (("supervised", "todo"), "todo"),
+                (("supervised", "reviewed"), "reviewed"),
+                (("reviewed", "supervised"), "reviewed"),
+                ((False, "supervised"), "supervised"),
+                (("todo", False), "todo"),
+                ((False, False), False),
+            )
+        ):
+            with self.subTest(statuses=statuses):
+                accounts = self._expense_accounts(
+                    [f"1906{index}0"]
+                ) | self._expense_accounts([f"1906{index}1"], self.branch_1)
+                for account, status in zip(accounts, statuses, strict=True):
+                    account.with_context(
+                        working_file_id=self.audit_1.id
+                    ).audit_status = status
+
+                merged = self._merge(accounts)
+
+                self.assertEqual(len(merged), 1)
+                self.assertEqual(self._statuses(merged), {self.audit_1: expected})
+
+    def test_accounts_merged_across_companies_keep_each_audit_row(self):
+        accounts = (
+            self._expense_accounts(["190680"])
+            | self._expense_accounts(["190681"], self.branch_1)
+            | self._expense_accounts(["190682"], self.company_2)
+        )
+        for account, audit, status in zip(
+            accounts,
+            (self.audit_1, self.audit_1, self.audit_2),
+            ("reviewed", "anomaly", "supervised"),
+            strict=True,
+        ):
+            account.with_context(working_file_id=audit.id).audit_status = status
+        balances = self.audit_1.audit_balances_count
+
+        merged = self._merge(accounts)
+
+        self.assertEqual(
+            self._statuses(merged),
+            {self.audit_1: "anomaly", self.audit_2: "supervised"},
+        )
+        self.assertEqual(
+            self._accounts()
+            .with_context(working_file_id=self.audit_1.id)
+            .search_count([("id", "=", merged.id), ("audit_status", "!=", False)]),
+            1,
+        )
+        self.audit_1.invalidate_recordset()
+        self.assertEqual(self.audit_1.audit_balances_count, balances - 1)
+
+    def test_a_second_row_for_an_account_in_one_audit_is_refused(self):
+        account = self._expense_accounts(["190683"])
+        with self.assertRaises(psycopg.errors.UniqueViolation), mute_logger("odoo.db"):
+            self.env["account.audit.account.status"].create(
+                {"audit_id": self.audit_1.id, "account_id": account.id}
+            )
+
+    def test_audit_status_written_outside_the_audit_companies_is_refused(self):
+        account = self._expense_accounts(["190684"], self.company_2)
+        foreign = account.with_context(working_file_id=self.audit_1.id)
+
+        with self.assertRaises(UserError):
+            foreign.audit_status = "reviewed"
+        foreign.audit_status = False
+
+        self.assertEqual(self._statuses(account), {self.audit_2: False})
+
+    def test_account_creation_queries_do_not_grow_with_open_audits(self):
+        audit_type = self.env.ref("account.default_audit_return_type")
+        self._expense_accounts(["190685"])
+        self.env.invalidate_all()
+        with self.assertQueryCount(28):
+            self._expense_accounts(["190686"])
+        more_audits = self.env["account.return"]
+        for year in (2020, 2021, 2022, 2023):
+            more_audits |= audit_type.with_context(
+                forced_date_from=date(year, 1, 1), forced_date_to=date(year, 12, 31)
+            )._try_create_returns_for_fiscal_year(self.company_1, False)
+        self.assertEqual(len(more_audits), 4)
+
+        self.env.invalidate_all()
+        with self.assertQueryCount(28):
+            account = self._expense_accounts(["190687"])
+
+        self.assertEqual(
+            self.env["account.audit.account.status"].search_count(
+                [("account_id", "=", account.id)]
+            ),
+            5,
+        )
 
 
 @tagged("post_install", "-at_install")

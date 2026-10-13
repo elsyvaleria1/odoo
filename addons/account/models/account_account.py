@@ -908,7 +908,7 @@ class AccountAccount(models.Model):
         records.flush_recordset()
         records.invalidate_recordset(fnames=["code", "code_store"])
         records._check_code_is_unique()
-        records._create_missing_audit_account_statuses()
+        records._create_new_account_audit_statuses()
         return records
 
     def _as_audit_status_seeder(self):
@@ -919,16 +919,34 @@ class AccountAccount(models.Model):
             reason="an account given its review row in the open audits of its companies",
         )
 
-    def _create_missing_audit_account_statuses(self) -> None:
-        if not self:
-            return
+    def _get_open_audits(self):
         seeder = self._as_audit_status_seeder()
         audits = seeder.env["account.return"].search(
             seeder.env["account.return"]._open_audit_domain()
             & Domain("company_ids", "child_of", seeder.company_ids.ids)
         )
         _debug.logic("open_audits_found", accounts=self, audits=audits)
-        audits._create_missing_audit_account_statuses(seeder)
+        return audits
+
+    def _create_missing_audit_account_statuses(self) -> None:
+        if self:
+            self._get_open_audits()._create_missing_audit_account_statuses(
+                self._as_audit_status_seeder()
+            )
+
+    def _create_new_account_audit_statuses(self) -> None:
+        if self:
+            self._get_open_audits()._create_new_account_audit_statuses(
+                self._as_audit_status_seeder()
+            )
+
+    def _collapse_audit_account_statuses(self) -> None:
+        seeder = self._as_audit_status_seeder()
+        statuses = seeder.env["account.audit.account.status"].search(
+            [("account_id", "in", self.ids)]
+        )
+        statuses._collapse_to_most_urgent("audit_id")
+        statuses.flush_model()
 
     def _check_code_is_unique(self) -> None:
         for account in self.sudo():
@@ -2200,19 +2218,39 @@ class AccountAccount(models.Model):
                 status.account_id: status
                 for status in working_file.audit_account_status_ids
             }
-            create_vals = []
-            for account in self:
-                if account in account_status_by_account:
-                    account_status_by_account[account].status = account.audit_status
-                else:
-                    create_vals.append(
-                        {
-                            "audit_id": working_file.id,
-                            "account_id": account.id,
-                            "status": account.audit_status,
-                        }
+            missing = self.filtered(
+                lambda account: account not in account_status_by_account
+            )
+            in_audit = missing.filtered_domain(
+                self._get_domain_company_compatible(working_file.company_ids)
+            )
+            if foreign := (missing - in_audit).filtered("audit_status"):
+                _debug.logic(
+                    "audit_status_write_rejected",
+                    working_file=working_file,
+                    accounts=foreign,
+                    reason="outside_audit_companies",
+                )
+                raise UserError(
+                    self.env._(
+                        "%(accounts)s do not belong to the companies of %(audit)s, "
+                        "so they have no review status in it.",
+                        accounts=", ".join(foreign.mapped("display_name")),
+                        audit=working_file.display_name,
                     )
-            self.env["account.audit.account.status"].create(create_vals)
+                )
+            for account in self - missing:
+                account_status_by_account[account].status = account.audit_status
+            self.env["account.audit.account.status"].create(
+                [
+                    {
+                        "audit_id": working_file.id,
+                        "account_id": account.id,
+                        "status": account.audit_status,
+                    }
+                    for account in in_audit
+                ]
+            )
 
     @_debug.perf.timed
     def _compute_balance_warning(self, balance_field_name, warning_field_name) -> None:

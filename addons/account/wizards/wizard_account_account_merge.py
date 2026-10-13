@@ -63,6 +63,7 @@ class WizardAccountAccountMerge(models.TransientModel):
 
     @api.model
     def _prepare_merge(self, accounts):
+        accounts._collapse_audit_account_statuses()
         code_store_by_id = dict(
             self.env.execute_query(
                 SQL(

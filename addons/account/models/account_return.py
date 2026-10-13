@@ -315,6 +315,23 @@ class AccountReturn(models.Model):
             "audit_status", "!=", "done"
         )
 
+    def _create_new_account_audit_statuses(self, accounts) -> None:
+        accounts = accounts.filtered("active")
+        status_vals = [
+            {"audit_id": audit.id, "account_id": account.id}
+            for audit in self.filtered(lambda r: r.return_type_category == "audit")
+            for account in accounts.filtered_domain(
+                accounts._get_domain_company_compatible(audit.company_ids)
+            )
+        ]
+        _debug.pipeline(
+            "new_account_audit_statuses_prepared",
+            tax_return=self,
+            accounts=accounts,
+            status_vals=len(status_vals),
+        )
+        self.env["account.audit.account.status"].create(status_vals)
+
     @_debug.perf.timed
     def _create_missing_audit_account_statuses(self, accounts=None) -> None:
         Account = self.env["account.account"]
