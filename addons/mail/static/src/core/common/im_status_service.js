@@ -77,6 +77,13 @@ export class ImStatusService {
         debounce = true,
     }) {
         const store = this.env.services["mail.store"];
+        if (!store) {
+            log.logic("onImStatusUpdated before mail.store started", () => ({
+                partner_id,
+                guest_id,
+            }));
+            return;
+        }
         const partner = store["res.partner"].get(partner_id);
         const guest = store["mail.guest"].get(guest_id);
         if (!partner && !guest) {

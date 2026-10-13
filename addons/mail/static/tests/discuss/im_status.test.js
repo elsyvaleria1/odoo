@@ -2,7 +2,7 @@
 import { addBusServiceListeners } from "@bus/../tests/bus_test_helpers";
 import { WEBSOCKET_CLOSE_CODES } from "@bus/workers/websocket_worker_constants";
 import { defineMailModels, start, startServer } from "@mail/../tests/mail_test_helpers";
-import { AWAY_DELAY } from "@mail/core/common/im_status_service";
+import { AWAY_DELAY, ImStatusService } from "@mail/core/common/im_status_service";
 import { beforeEach, describe, expect, test } from "@odoo/hoot";
 import { advanceTime, freezeTime } from "@odoo/hoot-dom";
 import {
@@ -78,6 +78,22 @@ test("do not update presence if other user's IM status changes to away", async (
         partner_id: serverState.publicPartnerId,
     });
     await waitForSteps([]);
+});
+
+test("IM status update heard before mail.store starts is dropped", async () => {
+    const env = /** @type {any} */ ({ services: {} });
+    const imStatus = new ImStatusService(env, {
+        bus_service: { send: (/** @type {string} */ type) => expect.step(type) },
+        presence: { getInactivityPeriod: () => 0 },
+    });
+    await expect(
+        imStatus.onImStatusUpdated({
+            presence_status: "offline",
+            im_status: "offline",
+            partner_id: serverState.partnerId,
+        }),
+    ).resolves.toBe(undefined);
+    expect.verifySteps([]);
 });
 
 test("update presence when user comes back from away", async () => {
