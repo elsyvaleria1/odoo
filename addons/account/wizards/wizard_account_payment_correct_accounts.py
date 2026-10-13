@@ -113,6 +113,32 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
             )
         return changes
 
+    def _get_standing_reclassifications(self, changes):
+        reclassifications = self.env["account.move"].search(
+            [
+                ("reclassified_payment_id", "=", self.payment_id.id),
+                ("state", "=", "posted"),
+            ]
+        )
+        old_accounts = self.env["account.account"].union(
+            *(old for old, _new in changes.values())
+        )
+        standing = reclassifications.filtered(
+            lambda entry: (
+                not entry.reversal_move_ids.filtered(
+                    lambda reversal: reversal.state == "posted"
+                )
+                and entry.line_ids.account_id & old_accounts
+            )
+        )
+        _debug.logic(
+            "standing_reclassifications",
+            payment=self.payment_id,
+            reclassifications=reclassifications,
+            standing=standing,
+        )
+        return standing
+
     def action_correct(self):
         self.check_singleton()
         payment = self.payment_id
@@ -126,14 +152,12 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
             raise UserError(
                 self.env._("Choose an account different from the current one.")
             )
-        if self.env["account.move"].search_count(
-            [("reclassified_payment_id", "=", payment.id), ("state", "=", "posted")],
-            limit=1,
-        ):
+        if standing := self._get_standing_reclassifications(changes):
             raise UserError(
                 self.env._(
-                    "This payment's accounts were already reclassified by a journal "
-                    "entry; correct that entry instead."
+                    "%(entries)s already reclassified this account of the payment; "
+                    "reverse it before reclassifying the account again.",
+                    entries=", ".join(standing.mapped("display_name")),
                 )
             )
         if (

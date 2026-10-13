@@ -595,6 +595,39 @@ class TestMarinPaymentReclassification(AccountTestInvoicingCommon):
             1,
         )
 
+    def test_a_reversed_reclassification_can_be_done_again(self):
+        payment = self._payment()
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+        first = self._reclassify(payment, self.receivable)
+        first._reverse_moves([{"date": "2026-09-06"}], cancel=True)
+
+        self.assertEqual(len(self._reclassify(payment, self.receivable) - first), 1)
+
+    def test_the_liquidity_account_can_be_reclassified_after_the_counterpart(self):
+        payment = self._payment()
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+        self._reclassify(payment, self.receivable)
+        other_liquidity = self.copy_account(
+            payment.liquidity_account_id, {"name": "Other liquidity"}
+        )
+        wizard = (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({"date": "2026-09-05"})
+        )
+        wizard.liquidity_account_id = other_liquidity
+
+        wizard.action_correct()
+
+        self.assertEqual(
+            len(
+                self.env["account.move"].search(
+                    [("reclassified_payment_id", "=", payment.id)]
+                )
+            ),
+            2,
+        )
+
     def test_reclassification_moves_only_the_open_part_of_the_counterpart(self):
         payment = self._payment()
         invoice = self.env["account.move"].create(
