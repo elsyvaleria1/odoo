@@ -1023,6 +1023,139 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
             1,
         )
 
+    def _post_a_belgian_sale_of_a_same_vat_branch(self, branch_foreign_vat):
+        belgium = self.env.ref("base.be")
+        branch = self._setup_branch("Branch selling in Belgium", self.root_company)
+        branch_position = self.env["account.fiscal.position"].create(
+            {
+                "name": "Branch Belgian VAT",
+                "company_id": branch.id,
+                "country_id": belgium.id,
+                "foreign_vat": branch_foreign_vat,
+            }
+        )
+        _domestic_tax, belgian_tax, _belgian_accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        branch.account_config_id.account_opening_date = "2023-01-01"
+        self.env["account.move"].with_company(branch).create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2024-01-15",
+                "fiscal_position_id": branch_position.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "price_unit": 500.0,
+                            "tax_ids": [Command.set(belgian_tax.ids)],
+                        }
+                    )
+                ],
+            }
+        ).action_post()
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+        self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id), ("date_to", "<", "2024-01-01")]
+        )._as_workflow_step().write({"is_completed": True})
+        return branch, belgian_tax
+
+    def _january_belgian_return(self, company):
+        return self._january_returns(self.return_type, company).filtered(
+            lambda account_return: account_return.country_id == self.env.ref("base.be")
+        )
+
+    def _closed_tax_by_company(self, tax_return, tax):
+        return sorted(
+            (line.company_id.name, line.debit)
+            for line in tax_return.closing_move_ids.line_ids
+            if line.name == tax.name
+        )
+
+    def test_a_branch_filing_its_own_foreign_return_is_closed_by_it_alone(self):
+        branch, belgian_tax = self._post_a_belgian_sale_of_a_same_vat_branch(
+            "BE0897223670"
+        )
+        root_return = self._january_belgian_return(self.root_company)
+        branch_return = self._january_belgian_return(branch)
+        self.assertEqual(root_return.company_ids, self.root_company)
+        self.assertEqual(branch_return.company_ids, branch)
+
+        for tax_return in root_return + branch_return:
+            tax_return.action_validate(bypass_failing_tests=True)
+
+        self.assertEqual(
+            self._closed_tax_by_company(root_return, belgian_tax),
+            [(self.root_company.name, 210.0)],
+        )
+        self.assertEqual(
+            self._closed_tax_by_company(branch_return, belgian_tax),
+            [(branch.name, 105.0)],
+        )
+
+    def test_a_branch_sharing_the_root_foreign_vat_is_closed_by_the_root(self):
+        branch, belgian_tax = self._post_a_belgian_sale_of_a_same_vat_branch(
+            "BE0477472701"
+        )
+        root_return = self._january_belgian_return(self.root_company)
+        self.assertFalse(self._january_belgian_return(branch))
+        self.assertEqual(root_return.company_ids, self.root_company + branch)
+
+        root_return.action_validate(bypass_failing_tests=True)
+
+        self.assertEqual(
+            self._closed_tax_by_company(root_return, belgian_tax),
+            sorted([(self.root_company.name, 210.0), (branch.name, 105.0)]),
+        )
+
+    def test_a_sub_branch_is_closed_by_the_branch_filing_its_own_foreign_vat(self):
+        belgium = self.env.ref("base.be")
+        branch, _belgian_tax = self._post_a_belgian_sale_of_a_same_vat_branch(
+            "BE0897223670"
+        )
+        sub_branch = self._setup_branch("Sub-branch without position", branch)
+
+        filing_companies = self.env[
+            "account.return.type"
+        ]._get_foreign_vat_filing_companies(branch + sub_branch, belgium)
+
+        self.assertEqual(filing_companies[branch.id], branch)
+        self.assertEqual(filing_companies[sub_branch.id], branch)
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+        self.assertEqual(
+            self._january_belgian_return(self.root_company).company_ids,
+            self.root_company,
+        )
+        self.assertEqual(
+            self._january_belgian_return(branch).company_ids, branch + sub_branch
+        )
+
+    def test_a_branch_taking_the_root_vat_loses_its_generated_returns(self):
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        branch = self._setup_branch(
+            "Branch with its own VAT", self.root_company, vat="US98765432"
+        )
+        branch.account_config_id.write(
+            {
+                "account_return_periodicity": "monthly",
+                "account_return_reminder_day": 7,
+                "account_opening_date": "2023-01-01",
+            }
+        )
+        with self._patch_returns_generation():
+            self.env["account.return.type"]._sync_all_returns(self.root_company)
+        branch_returns = self._returns_of_the_countryless_type(company_id=branch.id)
+        self.assertTrue(branch_returns)
+
+        branch.vat = self.root_company.vat
+        with self._patch_returns_generation():
+            self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertFalse(branch_returns.exists())
+        self.assertIn(branch, self._january_returns(self.return_type).company_ids)
+
     def test_the_creation_wizard_offers_no_country_a_country_type_replaces(self):
         belgium = self.env.ref("base.be")
         fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id

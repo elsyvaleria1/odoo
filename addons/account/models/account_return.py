@@ -611,7 +611,7 @@ class AccountReturn(models.Model):
             )
 
     @api.model
-    def _get_company_ids(self, main_company, tax_unit, report):
+    def _get_company_ids(self, main_company, tax_unit, report, country=None):
         companies = (
             tax_unit.company_ids
             if tax_unit
@@ -628,27 +628,49 @@ class AccountReturn(models.Model):
                 .with_company(main_company.id)
                 .get_options(previous_options=previous_options)
             )
-            return self.env["res.company"].browse(
+            companies = self.env["res.company"].browse(
                 report.get_report_company_ids(options)
             )
+        else:
+            companies = self.env["res.company"].browse(companies.ids)
 
-        return self.env["res.company"].browse(companies.ids)
+        if (
+            country
+            and not tax_unit
+            and country != main_company.tax_config_id.account_fiscal_country_id
+            and (branches := companies - main_company)
+        ):
+            filing_companies = self.env[
+                "account.return.type"
+            ]._get_foreign_vat_filing_companies(branches, country)
+            companies = companies.filtered(
+                lambda company: (
+                    company == main_company
+                    or filing_companies[company.id] == main_company
+                )
+            )
+        return companies
 
     @api.depends("company_id", "type_id")
     def _compute_country_id(self) -> None:
         for record in self:
             record.country_id = record.type_id._get_filing_country(record.company_id)
 
-    @api.depends("company_id", "tax_unit_id", "type_id")
+    @api.depends("company_id", "tax_unit_id", "type_id", "country_id")
     def _compute_company_ids(self) -> None:
         company_ids_map = defaultdict(lambda: self.env["account.return"])
         for record in self:
             company_ids_map[
-                record.company_id, record.tax_unit_id, record.type_id.report_id
+                record.company_id,
+                record.tax_unit_id,
+                record.type_id.report_id,
+                record.country_id,
             ] |= record
 
-        for (company, tax_unit, report), returns in company_ids_map.items():
-            returns.company_ids = self._get_company_ids(company, tax_unit, report)
+        for (company, tax_unit, report, country), returns in company_ids_map.items():
+            returns.company_ids = self._get_company_ids(
+                company, tax_unit, report, country
+            )
 
     @api.depends_context("allowed_company_ids")
     @api.depends("company_ids")
@@ -658,7 +680,10 @@ class AccountReturn(models.Model):
                 len(self.env.companies) > 1
                 or len(
                     record._get_company_ids(
-                        record.company_id, record.tax_unit_id, record.type_id.report_id
+                        record.company_id,
+                        record.tax_unit_id,
+                        record.type_id.report_id,
+                        record.country_id,
                     )
                 )
                 > 1
@@ -670,7 +695,7 @@ class AccountReturn(models.Model):
             report = account_return.type_id.report_id
             if (
                 account_return._get_company_ids(
-                    account_return.company_id, False, report
+                    account_return.company_id, False, report, account_return.country_id
                 )
                 - self.env.user.company_ids
             ):

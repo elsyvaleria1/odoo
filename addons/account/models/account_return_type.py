@@ -1,4 +1,5 @@
 import datetime
+from collections import defaultdict
 from datetime import date
 
 from dateutil.relativedelta import relativedelta
@@ -336,32 +337,81 @@ class AccountReturnType(models.Model):
             country=country.name,
         )
 
-    def _is_filed_by_an_ancestor(self, company, country) -> bool:
-        ancestors = company.with_privilege(
+    def _get_foreign_vat_filing_companies(self, companies, country) -> dict:
+        companies = companies.with_privilege(
             "base.privilege_read_company_hierarchy",
-            reason="a foreign-VAT return is filed by the ancestor whose return covers "
-            "the company",
-        ).parent_ids
-        covering_ancestors = (ancestors - company).filtered(
-            lambda ancestor: company in ancestor._get_branches_with_same_vat()
+            reason="a company's foreign-VAT lines are closed by the return of the "
+            "ancestor covering its foreign VAT",
         )
-        if not covering_ancestors:
-            return False
-        FiscalPosition = self.env["account.fiscal.position"]
-        foreign_vat_domain = Domain("foreign_vat", "!=", False) & Domain(
-            "country_id", "=", country.id
-        )
-        if own_foreign_vats := FiscalPosition.search_fetch(
-            foreign_vat_domain & Domain("company_id", "=", company.id),
-            ["foreign_vat"],
-        ).mapped("foreign_vat"):
-            foreign_vat_domain &= Domain("foreign_vat", "in", own_foreign_vats)
-        return bool(
-            FiscalPosition.search_count(
-                FiscalPosition._get_domain_company_compatible(covering_ancestors)
-                & foreign_vat_domain,
-                limit=1,
+        same_vat_branches_by_ancestor = {}
+        chains = {}
+        for company in companies:
+            chain = [company]
+            for ancestor in reversed(company.parent_ids - company):
+                if ancestor not in same_vat_branches_by_ancestor:
+                    same_vat_branches_by_ancestor[ancestor] = (
+                        ancestor._get_branches_with_same_vat()
+                    )
+                if company not in same_vat_branches_by_ancestor[ancestor]:
+                    break
+                chain.append(ancestor)
+            chains[company] = chain
+
+        foreign_vats_by_company = defaultdict(set)
+        if chain_company_ids := {
+            chain_company.id
+            for chain in chains.values()
+            if len(chain) > 1
+            for chain_company in chain
+        }:
+            for position in self.env["account.fiscal.position"].search_fetch(
+                Domain("foreign_vat", "!=", False)
+                & Domain("country_id", "=", country.id)
+                & Domain("company_id", "in", list(chain_company_ids)),
+                ["company_id", "foreign_vat"],
+            ):
+                foreign_vats_by_company[position.company_id.id].add(
+                    position.foreign_vat
+                )
+
+        filing_companies = {}
+        for company, chain in chains.items():
+            filer_index = 0
+            while True:
+                filer_vats = foreign_vats_by_company[chain[filer_index].id]
+                holder_index = next(
+                    (
+                        index
+                        for index in range(filer_index + 1, len(chain))
+                        if (
+                            foreign_vats_by_company[chain[index].id] & filer_vats
+                            if filer_vats
+                            else foreign_vats_by_company[chain[index].id]
+                        )
+                    ),
+                    None,
+                )
+                if holder_index is None:
+                    break
+                filer_index = holder_index
+            filer = (
+                chain[filer_index]
+                if foreign_vats_by_company[chain[filer_index].id]
+                else chain[-1]
             )
+            filing_companies[company.id] = self.env["res.company"].browse(filer.id)
+        _debug.logic(
+            "foreign_vat_filing_companies_resolved",
+            country=country,
+            companies=companies,
+            filing_companies=self.env["res.company"].union(*filing_companies.values()),
+        )
+        return filing_companies
+
+    def _is_filed_by_an_ancestor(self, company, country) -> bool:
+        return (
+            self._get_foreign_vat_filing_companies(company, country)[company.id]
+            != company
         )
 
     def _can_return_exist(self, company, tax_unit=False, country=None) -> bool:
@@ -504,14 +554,14 @@ class AccountReturnType(models.Model):
             for country_code in {fpos.country_id.code for fpos in fiscal_positions}:
                 self._generate_all_returns(country_code, company, None)
 
-        return_root_company_domain = [("company_ids", "in", root_companies.ids)]
         all_return_that_might_be_deleted = self.env["account.return"].search(
-            [
-                ("date_lock", "=", False),
-                ("is_completed", "=", False),
-                ("manually_created", "=", False),
-                *return_root_company_domain,
-            ]
+            Domain("date_lock", "=", False)
+            & Domain("is_completed", "=", False)
+            & Domain("manually_created", "=", False)
+            & (
+                Domain("company_ids", "in", root_companies.ids)
+                | Domain("company_id", "child_of", root_companies.ids)
+            )
         )
         returns_to_unlink = self.env["account.return"]
         can_exist_by_key = {}
@@ -528,10 +578,11 @@ class AccountReturnType(models.Model):
                     return_to_check.tax_unit_id,
                     country=return_to_check.country_id,
                 )
-            if (
-                not can_exist_by_key[key]
-                or return_to_check.date_deadline
-                < return_to_check.company_id.account_config_id.account_opening_date
+            opening_date = (
+                return_to_check.company_id.account_config_id.account_opening_date
+            )
+            if not can_exist_by_key[key] or (
+                opening_date and return_to_check.date_deadline < opening_date
             ):
                 returns_to_unlink |= return_to_check
         _debug.pipeline(
@@ -691,7 +742,7 @@ class AccountReturnType(models.Model):
         expected_companies = (
             self.env["account.return"]
             .sudo()
-            ._get_company_ids(main_company, tax_unit, self.report_id)
+            ._get_company_ids(main_company, tax_unit, self.report_id, filing_country)
         )
         if self.env.context.get("force_periodicity_violation"):
             periods = [(date_from, date_to)]
@@ -996,7 +1047,12 @@ class AccountReturnType(models.Model):
         if need_domain is not None:
             company_ids = (
                 self.env["account.return"]
-                ._get_company_ids(main_company, tax_unit, return_type.report_id)
+                ._get_company_ids(
+                    main_company,
+                    tax_unit,
+                    return_type.report_id,
+                    return_type._get_filing_country(main_company),
+                )
                 .ids
             )
         for period_back in periods_back:
@@ -1059,7 +1115,12 @@ class AccountReturnType(models.Model):
         expected_companies = (
             self.env["account.return"]
             .sudo()
-            ._get_company_ids(main_company, tax_unit, self.report_id)
+            ._get_company_ids(
+                main_company,
+                tax_unit,
+                self.report_id,
+                self._get_filing_country(main_company),
+            )
         )
         if existing_return.company_ids != expected_companies:
             _debug.logic(
