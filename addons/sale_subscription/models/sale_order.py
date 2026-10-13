@@ -17,7 +17,8 @@ from odoo import api, fields, models, modules
 from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import config, format_amount, plaintext2html, str2bool
+from odoo.modules.module import can_commit
+from odoo.tools import format_amount, plaintext2html, str2bool
 from odoo.tools.misc import format_date
 
 from odoo.addons.trade.models.mixin_order import MixinOrder
@@ -2595,7 +2596,7 @@ class SaleOrder(models.Model):
         subscriptions_close |= self.env["sale.order"].browse(unpaid_ids) | self.env[
             "sale.order"
         ].browse(expired_ids)
-        auto_commit = not (config["test_enable"] or modules.module.current_test)
+        auto_commit = can_commit()
         expired_close_reason = self.env.ref(
             "sale_subscription.close_reason_auto_close_limit_reached"
         )
@@ -2721,7 +2722,7 @@ class SaleOrder(models.Model):
             ),
             "currency": invoice.currency_id.name,
         }
-        auto_commit = not (config["test_enable"] or modules.module.current_test)
+        auto_commit = can_commit()
         self._subscription_commit_cursor(auto_commit)
         if self.plan_id.invoice_mail_template_id:
             _logger.debug(

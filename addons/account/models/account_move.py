@@ -1502,6 +1502,12 @@ class AccountMove(models.Model):
     @api.depends(
         "date",
         "journal_id",
+        "journal_id.code",
+        "journal_id.type",
+        "journal_id.is_self_billing",
+        "journal_id.payment_sequence",
+        "journal_id.refund_sequence",
+        "journal_id.sequence_override_regex",
         "move_type",
         "name",
         "origin_payment_id",
@@ -1532,6 +1538,10 @@ class AccountMove(models.Model):
 
     @api.depends(
         "journal_id",
+        "journal_id.is_self_billing",
+        "journal_id.payment_sequence",
+        "journal_id.refund_sequence",
+        "journal_id.sequence_override_regex",
         "date",
         "move_type",
         "origin_payment_id",
@@ -4328,10 +4338,11 @@ class AccountMove(models.Model):
         percentage = discount_percentage / 100
         sign = self.direction_sign
 
+        AccountMoveLine = self.env["account.move.line"]
         values_per_grouping_key = AccountTax._aggregate_base_lines_aggregated_values(
             AccountTax._aggregate_base_lines_tax_details(
                 self._prepare_discountable_base_lines_for_epd(company),
-                self.env["account.move.line"]._get_epd_grouping_function(),
+                AccountMoveLine._get_epd_grouping_function(),
             )
         )
 
@@ -4339,15 +4350,14 @@ class AccountMove(models.Model):
         for grouping_key, values in values_per_grouping_key.items():
             if not grouping_key:
                 continue
-            key_line = frozendict(
-                {"move_id": self.id, **grouping_key, "display_type": "epd"}
+            key_line = AccountMoveLine._get_epd_key(
+                self.id,
+                grouping_key["account_id"],
+                tax_ids=grouping_key["tax_ids"],
+                analytic_distribution=grouping_key["analytic_distribution"],
             )
-            key_counterpart = frozendict(
-                {
-                    "move_id": self.id,
-                    "account_id": grouping_key["account_id"],
-                    "display_type": "epd",
-                }
+            key_counterpart = AccountMoveLine._get_epd_key(
+                self.id, grouping_key["account_id"]
             )
             aggregated_base_lines = [
                 base_line for base_line, _taxes_data in values["base_line_x_taxes_data"]

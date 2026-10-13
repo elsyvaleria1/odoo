@@ -1439,12 +1439,11 @@ class AccountMoveLine(models.Model):
 
     @api.depends(
         "tax_ids",
-        "tax_tag_ids",
         "account_id",
-        "company_id",
         "analytic_distribution",
         "display_type",
         "move_id.invoice_payment_term_id.early_discount",
+        "move_id.invoice_payment_term_id.early_pay_discount_computation",
     )
     @_debug.perf.timed
     def _compute_epd_key(self) -> None:
@@ -1455,17 +1454,24 @@ class AccountMoveLine(models.Model):
                 and pay_term.early_discount
                 and pay_term.early_pay_discount_computation == "mixed"
             ):
-                line.epd_key = frozendict(
-                    {
-                        "account_id": line.account_id.id,
-                        "analytic_distribution": line.analytic_distribution,
-                        "tax_ids": [Command.set(line.tax_ids.ids)],
-                        "tax_tag_ids": [Command.set(line.tax_tag_ids.ids)],
-                        "move_id": line.move_id.id,
-                    }
+                line.epd_key = self._get_epd_key(
+                    line.move_id.id,
+                    line.account_id.id,
+                    tax_ids=line.tax_ids.ids or None,
+                    analytic_distribution=line.analytic_distribution,
                 )
             else:
                 line.epd_key = False
+
+    @api.model
+    def _get_epd_key(
+        self, move_id, account_id, tax_ids=None, analytic_distribution=False
+    ) -> frozendict:
+        key = {"move_id": move_id, "account_id": account_id, "display_type": "epd"}
+        if tax_ids is not None:
+            key["analytic_distribution"] = analytic_distribution
+            key["tax_ids"] = [Command.set(sorted(tax_ids))]
+        return frozendict(key)
 
     @api.depends(
         "move_id.needed_terms",
@@ -1512,14 +1518,14 @@ class AccountMoveLine(models.Model):
             return {
                 "account_id": base_line["account_id"].id,
                 "analytic_distribution": base_line["analytic_distribution"],
-                "tax_ids": [
-                    Command.set(
-                        [
+                "tax_ids": tuple(
+                    sorted(
+                        {
                             line_tax_data["tax"].id
                             for line_tax_data in base_line["tax_details"]["taxes_data"]
-                        ]
+                        }
                     )
-                ],
+                ),
             }
 
         return grouping_function

@@ -1477,3 +1477,132 @@ class TestMarinSelfBillingCommercialPartner(AccountTestInvoicingCommon):
         self.contact.parent_id = self.partner_b
 
         self.assertFalse(draft.highest_name)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinEarlyPaymentDiscountSync(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.epd_term = cls.env["account.payment.term"].create(
+            {
+                "name": "10% within 10 days",
+                "early_discount": True,
+                "discount_percentage": 10,
+                "discount_days": 10,
+                "early_pay_discount_computation": "mixed",
+                "line_ids": [
+                    Command.create(
+                        {"value": "percent", "nb_days": 0, "value_amount": 100}
+                    )
+                ],
+            }
+        )
+        cls.taxes = cls.env["account.tax"].create(
+            [
+                {"name": "EPD 15", "amount": 15, "sequence": 20},
+                {"name": "EPD 5", "amount": 5, "sequence": 10},
+            ]
+        )
+        plan = cls.env["account.analytic.plan"].create({"name": "EPD plan"})
+        cls.analytic = cls.env["account.analytic.account"].create(
+            {"name": "EPD analytic", "plan_id": plan.id}
+        )
+
+    def _invoice(self, **line_vals):
+        return self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-01",
+                "invoice_payment_term_id": self.epd_term.id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "price_unit": 1000.0,
+                            "tax_ids": [Command.set(self.taxes.ids)],
+                            **line_vals,
+                        }
+                    )
+                ],
+            }
+        )
+
+    @staticmethod
+    def _epd_lines(invoice):
+        return invoice.line_ids.filtered(lambda line: line.display_type == "epd")
+
+    def test_existing_keys_are_the_needed_keys(self):
+        for line_vals in ({}, {"analytic_distribution": {self.analytic.id: 100}}):
+            with self.subTest(line_vals=line_vals):
+                invoice = self._invoice(**line_vals)
+                needed = {
+                    key
+                    for line in invoice.invoice_line_ids
+                    for key in (line.epd_needed or {})
+                }
+                self.assertEqual(len(needed), 2)
+                self.assertEqual(
+                    set(self._epd_lines(invoice).mapped("epd_key")), needed
+                )
+
+    def test_epd_lines_are_updated_in_place(self):
+        invoice = self._invoice(analytic_distribution={self.analytic.id: 100})
+        roles = {line.id: line.tax_ids for line in self._epd_lines(invoice)}
+        self.assertEqual(sorted(len(taxes) for taxes in roles.values()), [0, 2])
+
+        invoice.invoice_line_ids.price_unit = 2000.0
+
+        epd_lines = self._epd_lines(invoice)
+        self.assertEqual({line.id: line.tax_ids for line in epd_lines}, roles)
+        self.assertEqual(sorted(epd_lines.mapped("balance")), [-200.0, 200.0])
+
+
+@tagged("post_install", "-at_install")
+class TestMarinSequenceFollowsTheJournal(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.journal = cls.env["account.journal"].create(
+            {"name": "Fresh sales", "code": "FRSH", "type": "sale"}
+        )
+
+    def _move(self, move_type="out_invoice"):
+        return self.env["account.move"].create(
+            {
+                "move_type": move_type,
+                "journal_id": self.journal.id,
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-10",
+                "invoice_line_ids": [Command.create({"name": "x", "price_unit": 10.0})],
+            }
+        )
+
+    def test_placeholder_follows_the_journal_code(self):
+        draft = self._move()
+        self.assertRegex(draft.name_placeholder, r"^FRSH/")
+
+        self.journal.code = "NEWC"
+
+        self.assertRegex(draft.name_placeholder, r"^NEWC/")
+
+    def test_placeholder_follows_the_refund_sequence_flag(self):
+        self.journal.refund_sequence = False
+        refund = self._move("out_refund")
+        self.assertRegex(refund.name_placeholder, r"^FRSH/")
+
+        self.journal.refund_sequence = True
+
+        self.assertRegex(refund.name_placeholder, r"^RFRSH/")
+
+    def test_highest_name_follows_the_refund_sequence_flag(self):
+        self.journal.refund_sequence = True
+        posted = self._move("out_refund")
+        posted.action_post()
+        draft = self._move()
+        self.assertFalse(draft.highest_name)
+
+        self.journal.refund_sequence = False
+
+        self.assertEqual(draft.highest_name, posted.name)

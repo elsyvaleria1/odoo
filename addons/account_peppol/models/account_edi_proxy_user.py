@@ -4,6 +4,7 @@ from datetime import timedelta
 from odoo import api, fields, models, modules, tools
 from odoo.exceptions import UserError
 from odoo.http import request
+from odoo.modules.module import can_commit
 
 from odoo.addons.account_edi_proxy_client.models.account_edi_proxy_user import (
     AccountEdiProxyError,
@@ -85,7 +86,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
 
             if e.code == "invalid_signature":
                 self._mark_connection_out_of_sync()
-                if not tools.config["test_enable"] and not modules.module.current_test:
+                if can_commit():
                     self.env["ir.cron"]._commit_progress()
                 raise UserError(token_out_of_sync_error_message) from e
             raise UserError(e.message) from e
@@ -115,7 +116,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         except AccountEdiProxyError as e:
             if e.code == "connection_superseded":
                 self._peppol_out_of_sync_disconnect_this_database()
-                if not tools.config["test_enable"] and not modules.module.current_test:
+                if can_commit():
                     self.env["ir.cron"]._commit_progress()
                 raise UserError(
                     self.env._(
@@ -136,7 +137,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         if response.get("error"):
             if response["error"].get("code") == "connection_superseded":
                 self._peppol_out_of_sync_disconnect_this_database()
-                if not tools.config["test_enable"] and not modules.module.current_test:
+                if can_commit():
                     self.env["ir.cron"]._commit_progress()
             raise AccountEdiProxyError(
                 response["error"].get("code", "unknown_error"),
@@ -361,7 +362,7 @@ class Account_Edi_Proxy_ClientUser(models.Model):
                 if uuid_to_ack := vals_to_ack.get("uuid"):
                     uuids_to_ack.append(uuid_to_ack)
 
-            if not (modules.module.current_test or tools.config["test_enable"]):
+            if can_commit():
                 self.env["ir.cron"]._commit_progress()
             if uuids_to_ack:
                 edi_user._call_peppol_proxy(
