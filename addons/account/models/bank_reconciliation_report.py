@@ -38,15 +38,7 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             ]
         else:
             options["bank_reconciliation_report_journal_id"] = (
-                self.env["account.journal"]
-                .search(
-                    [
-                        ("type", "=", "bank"),
-                        ("company_id", "in", report.get_report_company_ids(options)),
-                    ],
-                    limit=1,
-                )
-                .id
+                self._get_default_bank_journal(report, options).id
             )
 
         is_multi_currency = self.env.user.has_group(
@@ -71,6 +63,24 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 for column in options["columns"]
                 if column["expression_label"] not in ("amount_currency", "currency")
             ]
+
+    def _get_default_bank_journal(self, report, options):
+        company_ids = report.get_report_company_ids(options)
+        bank_domain = Domain("type", "=", "bank")
+        journal = self.env["account.journal"]
+        if self.env.company.id in company_ids:
+            journal = journal.search(
+                bank_domain & Domain("company_id", "=", self.env.company.id), limit=1
+            )
+        _debug.logic(
+            "bank_reco_default_journal",
+            report=report,
+            journal=journal,
+            from_active_company=bool(journal),
+        )
+        return journal or journal.search(
+            bank_domain & Domain("company_id", "in", company_ids), limit=1
+        )
 
     def _get_bank_journal_and_currencies(self, options) -> tuple:
         journal = self.env["account.journal"].browse(
@@ -581,19 +591,22 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 )
             else:
                 amount = 0
+                balance_to_convert = 0
                 for res in query_res_lines:
                     convert = not (
                         journal_currency and res["currency_id"] == journal_currency.id
                     )
                     if convert:
-                        amount += company_currency._convert(
-                            res["amount_residual"],
-                            journal_currency,
-                            journal.company_id,
-                            options["date"]["date_to"],
-                        )
+                        balance_to_convert += res["amount_residual"]
                     else:
                         amount += res["amount_residual_currency"]
+                if balance_to_convert:
+                    amount += company_currency._convert(
+                        balance_to_convert,
+                        journal_currency,
+                        journal.company_id,
+                        options["date"]["date_to"],
+                    )
 
                 return self._prepare_custom_engine_result(
                     amount=amount,

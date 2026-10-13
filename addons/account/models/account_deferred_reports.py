@@ -29,49 +29,77 @@ class AccountDeferredReportHandler(models.AbstractModel):
             "This method is not implemented in the deferred report handler."
         )
 
-    def _get_domain_fully_inside_period(self, options) -> list:
-        return [
-            "!",
-            "&",
-            "&",
-            "&",
-            "&",
-            "&",
-            "&",
-            "&",
-            ("deferred_start_date", "!=", False),
-            ("deferred_end_date", "!=", False),
-            ("deferred_start_date", ">=", options["date"]["date_from"]),
-            ("deferred_start_date", "<=", options["date"]["date_to"]),
-            ("deferred_end_date", ">=", options["date"]["date_from"]),
-            ("deferred_end_date", "<=", options["date"]["date_to"]),
-            ("move_id.date", ">=", options["date"]["date_from"]),
-            ("move_id.date", "<=", options["date"]["date_to"]),
+    @api.model
+    def _get_deferred_periods(self, options) -> list:
+        return options.get("deferred_periods") or [
+            (options["date"]["date_from"], options["date"]["date_to"])
         ]
+
+    @api.model
+    def _get_deferred_window(self, options) -> tuple:
+        periods = self._get_deferred_periods(options)
+        return (
+            min(date_from for date_from, _date_to in periods),
+            max(date_to for _date_from, date_to in periods),
+        )
+
+    @api.model
+    def _get_deferred_window_options(self, options) -> dict:
+        return {
+            **options,
+            "date": {
+                **options["date"],
+                "date_to": self._get_deferred_window(options)[1],
+            },
+        }
+
+    @api.model
+    def _get_domain_fully_inside_period(self, options) -> Domain:
+        return Domain.AND(
+            ~Domain(
+                [
+                    ("deferred_start_date", "!=", False),
+                    ("deferred_end_date", "!=", False),
+                    ("deferred_start_date", ">=", date_from),
+                    ("deferred_start_date", "<=", date_to),
+                    ("deferred_end_date", ">=", date_from),
+                    ("deferred_end_date", "<=", date_to),
+                    ("date", ">=", date_from),
+                    ("date", "<=", date_to),
+                ]
+            )
+            for date_from, date_to in self._get_deferred_periods(options)
+        )
 
     @_debug.perf.timed
     def _get_domain_deferred_lines(self, report, options, filter_not_started=False):
-        domain = report._get_domain_options(options, "from_beginning")
+        domain = report._get_domain_options(
+            self._get_deferred_window_options(options), "from_beginning"
+        )
         internal_group = (
             "expense" if self._get_deferred_report_type() == "expense" else "income"
         )
+        window_from, window_to = self._get_deferred_window(options)
         domain &= Domain(
             [
                 ("account_id.internal_group", "in", [internal_group]),
                 ("deferred_start_date", "!=", False),
                 ("deferred_end_date", "!=", False),
-                ("deferred_end_date", ">=", options["date"]["date_from"]),
-                ("move_id.date", "<=", options["date"]["date_to"]),
+                ("deferred_end_date", ">=", window_from),
+                ("move_id.date", "<=", window_to),
             ]
         )
-        domain &= Domain(self._get_domain_fully_inside_period(options))
+        domain &= self._get_domain_fully_inside_period(options)
         if filter_not_started:
-            domain &= Domain("deferred_start_date", ">", options["date"]["date_to"])
+            domain &= Domain("deferred_start_date", ">", window_to)
         _debug.logic(
             "deferred_domain_built",
             report=report,
             internal_group=internal_group,
             filter_not_started=filter_not_started,
+            window_from=window_from,
+            window_to=window_to,
+            periods=len(self._get_deferred_periods(options)),
         )
         return domain
 
@@ -143,7 +171,9 @@ class AccountDeferredReportHandler(models.AbstractModel):
     def _get_deferred_line_rows(self, report, options) -> list[dict[str, Any]]:
         domain = self._get_domain_deferred_lines(report, options)
         query = report._get_report_query(
-            options, domain=domain, date_scope="from_beginning"
+            self._get_deferred_window_options(options),
+            domain=domain,
+            date_scope="from_beginning",
         )
         select_clause = SQL(", ").join(self._get_select(options))
 
@@ -161,8 +191,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
             search_condition=query.where_clause,
         )
 
-        self.env.cr.execute(query)
-        lines = self.env.cr.dictfetchall()
+        lines = self.env.execute_query_dict(query)
         _debug.perf.count("deferred_lines_fetched", rows=len(lines))
         return lines
 
@@ -249,6 +278,9 @@ class AccountDeferredReportHandler(models.AbstractModel):
 
         options["columns"] = sorted(
             options["columns"], key=lambda column: column["date_from"]
+        )
+        options["deferred_periods"] = sorted(
+            {(column["date_from"], column["date_to"]) for column in options["columns"]}
         )
         total_column = [
             {
@@ -377,7 +409,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
 
         column_date_from = fields.Date.to_date(column_values["date_from"])
         column_date_to = fields.Date.to_date(column_values["date_to"])
-        report_date_from = fields.Date.to_date(options["date"]["date_from"])
+        report_date_from = fields.Date.to_date(self._get_deferred_window(options)[0])
 
         if column_values["expression_label"] == "not_started":
             column_date_from += relativedelta(days=1)
@@ -447,7 +479,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 date_from=column_date_from,
                 date_to=column_date_to,
             )
-        domain += self._get_domain_fully_inside_period(options)
+        domain = list(Domain(domain) & self._get_domain_fully_inside_period(options))
 
         return {
             "type": "ir.actions.act_window",
@@ -681,7 +713,13 @@ class AccountDeferredReportHandler(models.AbstractModel):
                     "You cannot generate entries for a period that does not end at the end of the month."
                 )
             )
-        options = {**options, "all_entries": False}
+        options = {
+            **options,
+            "all_entries": False,
+            "deferred_periods": [
+                (options["date"]["date_from"], options["date"]["date_to"])
+            ],
+        }
         report = self.env["report.formula"].browse(options["report_id"])
         self.env["account.move.line"].flush_model()
         lines = self._get_lines(report, options, filter_already_generated=True)

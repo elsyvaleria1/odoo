@@ -220,23 +220,45 @@ class ResCurrency(models.Model):
         ]
 
     def _get_currency_table_rates(self, scope: CurrencyTableScope) -> SQL:
+        # The '-infinity' row carries the rate base `_get_rates` falls back to before
+        # a currency's first rate: its first own rate, else its first shared one.
         return SQL(
             """(
+                WITH firsts AS (
+                    SELECT currency_id,
+                           MIN(CASE WHEN company_id = %(main_company_id)s THEN name END) AS first_own_date,
+                           MIN(CASE WHEN company_id IS NULL THEN name END) AS first_shared_date
+                    FROM res_currency_rate
+                    WHERE (company_id = %(main_company_id)s OR company_id IS NULL)
+                      AND currency_id IN (
+                          SELECT currency_id FROM res_company WHERE id IN %(other_company_ids)s
+                      )
+                    GROUP BY currency_id
+                )
                 SELECT rate.id, rate.currency_id, rate.name, rate.rate
                 FROM res_currency_rate rate
-                LEFT JOIN (
-                    SELECT currency_id, MIN(name) AS first_own_date
-                    FROM res_currency_rate
-                    WHERE company_id = %(main_company_id)s
-                    GROUP BY currency_id
-                ) own ON own.currency_id = rate.currency_id
+                JOIN firsts ON firsts.currency_id = rate.currency_id
                 WHERE rate.company_id = %(main_company_id)s
                    OR (
                        rate.company_id IS NULL
-                       AND (own.first_own_date IS NULL OR rate.name < own.first_own_date)
+                       AND (firsts.first_own_date IS NULL OR rate.name < firsts.first_own_date)
                    )
+                UNION ALL
+                (
+                    SELECT DISTINCT ON (firsts.currency_id)
+                        NULL, firsts.currency_id, DATE '-infinity', rate.rate
+                    FROM firsts
+                    JOIN res_currency_rate rate
+                        ON rate.currency_id = firsts.currency_id
+                        AND rate.name = COALESCE(firsts.first_own_date, firsts.first_shared_date)
+                        AND rate.company_id IS NOT DISTINCT FROM (
+                            CASE WHEN firsts.first_own_date IS NOT NULL THEN %(main_company_id)s END
+                        )
+                    ORDER BY firsts.currency_id, rate.id
+                )
             )""",
             main_company_id=scope.main_company_id,
+            other_company_ids=scope.other_company_ids,
         )
 
     def _get_table_builder_domestic_currency(self, companies, use_cta_rates) -> SQL:
@@ -263,7 +285,7 @@ class ResCurrency(models.Model):
                     CAST(NULL AS DATE),
                     CAST(NULL AS DATE),
                     'current',
-                    CASE WHEN rate.id IS NOT NULL THEN %(main_company_unit_factor)s / rate.rate ELSE 1 END
+                    CASE WHEN rate.currency_id IS NOT NULL THEN %(main_company_unit_factor)s / rate.rate ELSE 1 END
                 FROM res_company other_company
                 LEFT JOIN %(rates)s rate
                     ON rate.currency_id = other_company.currency_id
@@ -357,27 +379,25 @@ class ResCurrency(models.Model):
 
                     UNION ALL
 
-                    (
-                        SELECT DISTINCT ON (other_company.id)
-                            other_company.id as other_company_id,
-                            COALESCE(out_period_rate.rate, 1.0) AS rate,
-                            EXTRACT('Day' FROM COALESCE(in_period_rate.name::TIMESTAMP, %(date_to)s::TIMESTAMP + INTERVAL '1' DAY) - %(date_from)s::TIMESTAMP) AS number_of_days
-
-                        FROM res_company other_company
-
-                        LEFT JOIN %(rates)s in_period_rate
-                            ON in_period_rate.currency_id = other_company.currency_id
-                            AND in_period_rate.name <= %(date_to)s
-                            AND in_period_rate.name >= %(date_from)s
-
-                        LEFT JOIN %(rates)s out_period_rate
-                            ON out_period_rate.currency_id = other_company.currency_id
-                            AND out_period_rate.name < %(date_from)s
-
-                        WHERE
-                        other_company.id IN %(other_company_ids)s
-                        ORDER BY other_company.id, in_period_rate.name ASC, out_period_rate.name DESC
-                    )
+                    SELECT
+                        other_company.id as other_company_id,
+                        COALESCE(out_period_rate.rate, 1.0) AS rate,
+                        EXTRACT('Day' FROM COALESCE(in_period_rate.name::TIMESTAMP, %(date_to)s::TIMESTAMP + INTERVAL '1' DAY) - %(date_from)s::TIMESTAMP) AS number_of_days
+                    FROM res_company other_company
+                    LEFT JOIN (
+                        SELECT rate.currency_id, MIN(rate.name) AS name
+                        FROM %(rates)s rate
+                        WHERE rate.name <= %(date_to)s
+                          AND rate.name >= %(date_from)s
+                        GROUP BY rate.currency_id
+                    ) in_period_rate ON in_period_rate.currency_id = other_company.currency_id
+                    LEFT JOIN (
+                        SELECT DISTINCT ON (rate.currency_id) rate.currency_id, rate.rate
+                        FROM %(rates)s rate
+                        WHERE rate.name < %(date_from)s
+                        ORDER BY rate.currency_id, rate.name DESC
+                    ) out_period_rate ON out_period_rate.currency_id = other_company.currency_id
+                    WHERE other_company.id IN %(other_company_ids)s
                 ) rate_with_days
                 GROUP BY rate_with_days.other_company_id
             """,

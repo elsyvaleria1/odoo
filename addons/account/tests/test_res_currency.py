@@ -173,7 +173,7 @@ class TestResCurrencyTable(AccountTestInvoicingCommon):
             for rate_type in ("current", "historical", "average"):
                 self.assertIn((company, rate_type), rate_types)
 
-    def test_create_table_current_rate_falls_back_to_parity(self):
+    def test_create_table_current_rate_falls_back_to_the_first_rate(self):
         future_currency = self.env["res.currency"].create(
             {"name": "FUT", "symbol": "F", "rounding": 0.01}
         )
@@ -195,4 +195,9 @@ class TestResCurrencyTable(AccountTestInvoicingCommon):
             company_id: rate
             for company_id, _rate_type, rate in self._fetch_currency_table()
         }
-        self.assertEqual(rows[fut_company.id], 1)
+        self.assertNotEqual(rows[fut_company.id], 1)
+        main = self.env.company
+        main_factor = main.currency_id._get_rates(main, "2020-06-01")[
+            main.currency_id.id
+        ]
+        self.assertAlmostEqual(rows[fut_company.id], main_factor / 5.0)

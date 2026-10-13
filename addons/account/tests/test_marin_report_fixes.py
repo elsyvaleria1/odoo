@@ -1083,3 +1083,285 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             if report._get_model_info_from_id(line["id"])[0] == "account.account"
         ]
         self.assertFalse(account_lines)
+
+    def _post_deferred_expense(self, account, date, start, end, amount):
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": date,
+                "date": date,
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "deferred",
+                            "account_id": account.id,
+                            "price_unit": amount,
+                            "tax_ids": [Command.clear()],
+                            "deferred_start_date": start,
+                            "deferred_end_date": end,
+                        }
+                    )
+                ],
+            }
+        )
+        bill.action_post()
+        return bill
+
+    def test_deferred_comparison_lists_lines_ending_in_a_compared_period(self):
+        report = self.env.ref("account.deferred_expense_report")
+        self.env.company.account_config_id.write(
+            {
+                "generate_deferred_expense_entries_method": "manual",
+                "deferred_expense_amount_computation_method": "month",
+            }
+        )
+        ended, inside = (
+            self.env["account.account"].create(
+                {"name": name, "code": code, "account_type": "expense"}
+            )
+            for name, code in (("Ended", "DEFEND"), ("Inside", "DEFIN"))
+        )
+        self._post_deferred_expense(
+            ended, "2023-01-01", "2023-01-01", "2023-03-31", 900.0
+        )
+        self._post_deferred_expense(
+            inside, "2023-03-01", "2023-03-01", "2023-03-31", 300.0
+        )
+        options = self._generate_options(report, "2023-04-01", "2023-04-30")
+
+        for period_order in ("descending", "ascending"):
+            compared = self._update_comparison_filter(
+                options, report, "previous_period", 1, period_order=period_order
+            )
+            self.env.cr.cache.pop("report_deferred_lines", None)
+            lines = {line["name"]: line for line in report._get_lines(compared)}
+            self.assertNotIn("DEFIN Inside", lines, period_order)
+            self.assertEqual(
+                [
+                    (column["expression_label"], column["date_from"], cell["no_format"])
+                    for column, cell in zip(
+                        compared["columns"],
+                        lines["DEFEND Ended"]["columns"],
+                        strict=True,
+                    )
+                    if column["expression_label"] != "total"
+                ],
+                [
+                    ("not_started", "2023-04-30", 0.0),
+                    ("before", "1900-01-01", 600.0),
+                    ("current", "2023-03-01", 300.0),
+                    ("current", "2023-04-01", 0.0),
+                    ("recognized", "1900-01-01", 900.0),
+                    ("later", "2023-05-01", 0.0),
+                ],
+                period_order,
+            )
+
+    def test_deferred_generation_ignores_a_later_compared_period(self):
+        report = self.env.ref("account.deferred_expense_report")
+        handler = self.env["account.deferred.expense.report.handler"]
+        self.env.company.account_config_id.write(
+            {
+                "generate_deferred_expense_entries_method": "manual",
+                "deferred_expense_amount_computation_method": "month",
+                "deferred_expense_journal_id": self.company_data[
+                    "default_journal_misc"
+                ].id,
+                "deferred_expense_account_id": self.company_data[
+                    "default_account_deferred_expense"
+                ].id,
+            }
+        )
+        self._post_deferred_expense(
+            self.company_data["default_account_expense"],
+            "2023-05-01",
+            "2023-04-15",
+            "2023-05-15",
+            600.0,
+        )
+        options = self._generate_options(report, "2023-04-01", "2023-04-30")
+        compared = self._update_comparison_filter(
+            options,
+            report,
+            "custom",
+            1,
+            date_from=datetime.date(2023, 5, 1),
+            date_to=datetime.date(2023, 5, 31),
+        )
+        self.env.cr.cache.pop("report_deferred_lines", None)
+        self.assertTrue(handler._get_lines(report, compared))
+        self.assertFalse(handler._get_moves_to_defer(compared)[0])
+
+    def test_bank_reconciliation_report_defaults_to_the_active_company_journal(self):
+        company_1 = self.env.company
+        company_2 = self.company_data_2["company"]
+        report = self.env.ref("account.bank_reconciliation_report")
+        for active, other in ((company_1, company_2), (company_2, company_1)):
+            options = self._generate_options(
+                report.with_context(allowed_company_ids=(active | other).ids),
+                "2019-01-31",
+                "2019-01-31",
+            )
+            journal = self.env["account.journal"].browse(
+                options["bank_reconciliation_report_journal_id"]
+            )
+            self.assertEqual(journal.company_id, active)
+
+    def test_bank_reconciliation_outstanding_total_rounds_the_converted_sum(self):
+        currency = self.setup_other_currency("CHF", rates=[("2016-01-01", 1.4)])
+        bank_journal = self.env["account.journal"].create(
+            {
+                "name": "CHF Bank",
+                "code": "BCHF",
+                "type": "bank",
+                "currency_id": currency.id,
+            }
+        )
+        self.inbound_payment_channel.journal_id = bank_journal.id
+        for _i in range(5):
+            self.env["account.payment"].create(
+                {
+                    "amount": 0.01,
+                    "payment_type": "inbound",
+                    "partner_type": "customer",
+                    "date": "2019-01-01",
+                    "journal_id": bank_journal.id,
+                    "partner_id": self.partner_a.id,
+                    "currency_id": self.env.company.currency_id.id,
+                    "payment_channel_id": self.inbound_payment_channel.id,
+                }
+            ).action_post()
+        report = self.env.ref("account.bank_reconciliation_report").with_context(
+            active_id=bank_journal.id, active_model=bank_journal._name
+        )
+        options = self._generate_options(report, "2019-01-31", "2019-01-31")
+        receipts = next(
+            line
+            for line in report._get_lines(options)
+            if line["name"] == "(+) Outstanding Receipts"
+        )
+        self.assertAlmostEqual(receipts["columns"][-1]["no_format"], 0.07)
+
+    def test_partner_ledger_unfold_all_of_a_letter_pages_each_partner(self):
+        report = self.env.ref("account.partner_ledger_report")
+        report.load_more_limit = 2
+        handler = self.env["account.partner.ledger.report.handler"]
+        bernard = self._create_partner(name="Bernard Gagnant")
+        ursula = self._create_partner(name="Ursula Ultime")
+        for partner, count in ((bernard, 4), (ursula, 1)):
+            for day in range(count):
+                self.init_invoice(
+                    "out_invoice",
+                    partner=partner,
+                    invoice_date=f"2019-03-0{day + 3}",
+                    amounts=[100.0],
+                    taxes=[],
+                    post=True,
+                )
+        self._payment_through_partnerless_misc(bernard)
+        options = self._generate_options(report, "2019-03-01", "2019-03-31")
+        report._init_currency_table(options)
+
+        def batch_rows(prefix):
+            prefix_line_id = report._get_generic_line_id(
+                None, None, markup={"groupby_prefix_group": prefix}
+            )
+            return handler._custom_unfold_all_batch_data_generator(
+                report,
+                options,
+                {
+                    "_report_expand_unfoldable_line_partner_ledger_prefix_group": [
+                        {"id": prefix_line_id}
+                    ]
+                },
+            )["aml_values"]
+
+        def keys(rows):
+            return [(row["id"], row["partial_id"]) for row in rows]
+
+        page_size = report.load_more_limit + 1
+        b_rows = batch_rows("b")
+        self.assertEqual(
+            keys(b_rows[bernard.id]),
+            keys(
+                handler._prepare_aml_values(options, [bernard.id], limit=page_size)[
+                    bernard.id
+                ]
+            ),
+        )
+        self.assertEqual(len(b_rows[bernard.id]), page_size)
+        u_rows = batch_rows("u")
+        self.assertEqual(len(u_rows[ursula.id]), 1)
+        unknown_rows = handler._prepare_aml_values(options, [None], limit=page_size)[
+            None
+        ]
+        self.assertIn(
+            bernard.id,
+            {row["partner_id"] for row in unknown_rows},
+        )
+        self.assertEqual(keys(u_rows[None]), keys(unknown_rows))
+
+    def _currency_table_rate_at(self, company, rate_type, date):
+        self.env.cr.execute(
+            SQL(
+                """
+                SELECT rate
+                  FROM account_currency_table
+                 WHERE company_id = %(company_id)s
+                   AND rate_type = %(rate_type)s
+                   AND (date_from IS NULL OR date_from <= %(date)s)
+                   AND (date_next IS NULL OR date_next > %(date)s)
+                """,
+                company_id=company.id,
+                rate_type=rate_type,
+                date=date,
+            )
+        )
+        return [rate for (rate,) in self.env.cr.fetchall()]
+
+    def test_currency_table_before_the_first_rate_agrees_with_base_rates(self):
+        main = self.env.company
+        currency = self.env["res.currency"].create(
+            {"name": "FUT", "symbol": "F", "rounding": 0.01}
+        )
+        self.env["res.currency.rate"].create(
+            [
+                {
+                    "name": "2029-01-01",
+                    "rate": 4.0,
+                    "currency_id": currency.id,
+                    "company_id": False,
+                },
+                {
+                    "name": "2030-01-01",
+                    "rate": 5.0,
+                    "currency_id": currency.id,
+                    "company_id": main.root_id.id,
+                },
+            ]
+        )
+        company = self.env["res.company"].create(
+            {"name": "FUT Co", "currency_id": currency.id}
+        )
+
+        def expected(date):
+            main_factor = main.currency_id._get_rates(main, date)[main.currency_id.id]
+            return main_factor / currency._get_rates(main, date)[currency.id]
+
+        for date_from, date_to, historical_date in (
+            ("2020-01-01", "2020-06-30", "2020-03-01"),
+            ("2029-01-01", "2029-06-30", "2028-03-01"),
+            ("2029-01-01", "2029-06-30", "2029-03-01"),
+        ):
+            self.env["res.currency"]._create_currency_table(
+                main | company, [("period", date_from, date_to)], use_cta_rates=True
+            )
+            for rate_type, date in (
+                ("current", date_to),
+                ("average", date_to),
+                ("historical", historical_date),
+            ):
+                rates = self._currency_table_rate_at(company, rate_type, date)
+                self.assertEqual(len(rates), 1, (rate_type, date))
+                self.assertAlmostEqual(rates[0], expected(date), msg=(rate_type, date))

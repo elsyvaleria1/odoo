@@ -348,10 +348,33 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             )
             if partner_ids_to_expand
             else {},
-            "aml_values": self._prepare_aml_values(options, partner_ids_to_expand)
-            if partner_ids_to_expand
-            else {},
+            "aml_values": self._prepare_unfold_all_aml_values(
+                report, options, partner_ids_to_expand
+            ),
         }
+
+    def _prepare_unfold_all_aml_values(self, report, options, partner_ids) -> dict:
+        page_size = (
+            report.load_more_limit + 1
+            if report.load_more_limit and options["export_mode"] != "print"
+            else None
+        )
+        known_partner_ids = [partner_id for partner_id in partner_ids if partner_id]
+        aml_values = {}
+        if known_partner_ids:
+            aml_values |= self._prepare_aml_values(
+                options, known_partner_ids, limit_per_partner=page_size
+            )
+        if None in partner_ids:
+            aml_values |= self._prepare_aml_values(options, [None], limit=page_size)
+        _debug.pipeline(
+            "unfold_batch_amls_paged",
+            report=report,
+            partners=len(known_partner_ids),
+            unknown_partner=None in partner_ids,
+            page_size=page_size,
+        )
+        return aml_values
 
     def _get_report_partner_ids(self, report, options, domain) -> list:
         partner_ids = set()
@@ -1006,7 +1029,9 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         )
 
     @_debug.perf.timed
-    def _prepare_aml_values(self, options, partner_ids, offset=0, limit=None):
+    def _prepare_aml_values(
+        self, options, partner_ids, offset=0, limit=None, limit_per_partner=None
+    ):
         rslt = {partner_id: [] for partner_id in partner_ids}
 
         partner_ids_wo_none = [x for x in partner_ids if x]
@@ -1042,6 +1067,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             unknown_partner=None in partner_ids,
             offset=offset,
             limit=limit,
+            limit_per_partner=limit_per_partner,
         )
 
         queries = []
@@ -1209,12 +1235,27 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 )
             )
 
+        amls = SQL(" UNION ALL ").join(
+            SQL("(SELECT %s AS source_rank, sub.* FROM (%s) AS sub)", rank, query)
+            for rank, query in enumerate(queries)
+        )
+        if limit_per_partner:
+            amls = SQL(
+                """
+                SELECT * FROM (
+                    SELECT amls.*, ROW_NUMBER() OVER (
+                        PARTITION BY amls.partner_id ORDER BY amls.source_rank, amls.sort_rank
+                    ) AS partner_rank
+                    FROM (%(amls)s) AS amls
+                ) AS ranked
+                WHERE ranked.partner_rank <= %(limit_per_partner)s
+                """,
+                amls=amls,
+                limit_per_partner=limit_per_partner,
+            )
         query = SQL(
             "SELECT * FROM (%s) AS amls ORDER BY amls.source_rank, amls.sort_rank",
-            SQL(" UNION ALL ").join(
-                SQL("(SELECT %s AS source_rank, sub.* FROM (%s) AS sub)", rank, query)
-                for rank, query in enumerate(queries)
-            ),
+            amls,
         )
 
         if offset:
