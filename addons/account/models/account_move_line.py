@@ -1542,14 +1542,19 @@ class AccountMoveLine(models.Model):
     def _get_epd_grouping_function(self):
         def grouping_function(base_line, tax_data):
             del tax_data
+            taxes_data = base_line["tax_details"]["taxes_data"]
+            discountable_taxes = {line_tax_data["tax"] for line_tax_data in taxes_data}
             return {
                 "account_id": base_line["account_id"].id,
                 "analytic_distribution": base_line["analytic_distribution"],
                 "tax_ids": tuple(
                     sorted(
                         {
-                            line_tax_data["tax"].id
-                            for line_tax_data in base_line["tax_details"]["taxes_data"]
+                            group.id
+                            if (group := line_tax_data["group"])
+                            and set(group.children_tax_ids) <= discountable_taxes
+                            else line_tax_data["tax"].id
+                            for line_tax_data in taxes_data
                         }
                     )
                 ),

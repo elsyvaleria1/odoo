@@ -1653,6 +1653,48 @@ class TestMarinEarlyPaymentDiscountSync(AccountTestInvoicingCommon):
         self.assertTrue(payment.is_invoice_reconciled)
         self.assertEqual(payment.amount, 1531.0)
 
+    def test_group_tax_children_get_one_tax_line_each(self):
+        children = self.env["account.tax"].create(
+            [
+                {"name": "EPD child 15", "amount": 15, "type_tax_use": "none"},
+                {"name": "EPD child 5", "amount": 5, "type_tax_use": "none"},
+            ]
+        )
+        group = self.env["account.tax"].create(
+            {
+                "name": "EPD group",
+                "amount_type": "group",
+                "children_tax_ids": [Command.set(children.ids)],
+            }
+        )
+        invoice = self._invoice(tax_ids=[Command.set(group.ids)])
+        self.assertEqual(
+            self._epd_lines(invoice).tax_ids, group, "the EPD line is taxed as the line"
+        )
+        self.assertRecordValues(
+            invoice.line_ids.filtered(lambda line: line.display_type == "tax").sorted(
+                "balance"
+            ),
+            [
+                {
+                    "tax_line_id": children[0].id,
+                    "group_tax_id": group.id,
+                    "balance": -135.0,
+                    "tax_base_amount": -900.0,
+                },
+                {
+                    "tax_line_id": children[1].id,
+                    "group_tax_id": group.id,
+                    "balance": -45.0,
+                    "tax_base_amount": -900.0,
+                },
+            ],
+        )
+        self.assertRecordValues(
+            invoice,
+            [{"amount_untaxed": 1000.0, "amount_tax": 180.0, "amount_total": 1180.0}],
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestMarinEarlyPaymentDiscountForeignCurrency(AccountTestInvoicingCommon):
