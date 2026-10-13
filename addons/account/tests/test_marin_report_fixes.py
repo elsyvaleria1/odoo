@@ -636,7 +636,6 @@ class TestMarinReportFixes(TestAccountReportsCommon):
             }
         )
         bill.action_post()
-        self.env.cr.cache.pop("report_deferred_lines", None)
         options = self._generate_options(report, "2023-01-01", "2023-01-31")
         handler = self.env["account.deferred.expense.report.handler"]
         lines = handler._get_lines(report, options)
@@ -676,7 +675,6 @@ class TestMarinReportFixes(TestAccountReportsCommon):
                 ],
             }
         )
-        self.env.cr.cache.pop("report_deferred_lines", None)
         handler = self.env["account.deferred.expense.report.handler"]
         options = self._generate_options(report, "2023-01-01", "2023-01-31")
         options["all_entries"] = True
@@ -835,7 +833,6 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             }
         )
         bill.action_post()
-        self.env.cr.cache.pop("report_deferred_lines", None)
         return bill
 
     def test_deferred_comparison_columns_follow_the_dates_in_either_order(self):
@@ -847,7 +844,6 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             compared = self._update_comparison_filter(
                 options, report, "previous_period", 2, period_order=period_order
             )
-            self.env.cr.cache.pop("report_deferred_lines", None)
             line = report._get_lines(compared)[-1]
             return [
                 (column["expression_label"], column["date_from"], cell["no_format"])
@@ -1134,7 +1130,6 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             compared = self._update_comparison_filter(
                 options, report, "previous_period", 1, period_order=period_order
             )
-            self.env.cr.cache.pop("report_deferred_lines", None)
             lines = {line["name"]: line for line in report._get_lines(compared)}
             self.assertNotIn("DEFIN Inside", lines, period_order)
             self.assertEqual(
@@ -1189,7 +1184,6 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             date_from=datetime.date(2023, 5, 1),
             date_to=datetime.date(2023, 5, 31),
         )
-        self.env.cr.cache.pop("report_deferred_lines", None)
         self.assertTrue(handler._get_lines(report, compared))
         self.assertFalse(handler._get_moves_to_defer(compared)[0])
 
@@ -1231,6 +1225,52 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         self.assertTrue(bill_row()["is_already_generated"])
         deferral_moves.action_draft()
         self.assertFalse(bill_row()["is_already_generated"])
+
+    def test_deferred_report_renders_the_writes_of_its_transaction(self):
+        report = self.env.ref("account.deferred_expense_report")
+        handler = self.env["account.deferred.expense.report.handler"]
+        self.env.company.account_config_id.write(
+            {
+                "generate_deferred_expense_entries_method": "manual",
+                "deferred_expense_amount_computation_method": "month",
+                "deferred_expense_journal_id": self.company_data[
+                    "default_journal_misc"
+                ].id,
+                "deferred_expense_account_id": self.company_data[
+                    "default_account_deferred_expense"
+                ].id,
+            }
+        )
+        account = self.env["account.account"].create(
+            {"name": "Rendered", "code": "DEFRND", "account_type": "expense"}
+        )
+        self._post_deferred_expense(
+            account, "2023-01-01", "2023-01-01", "2023-12-31", 1200.0
+        )
+        options = self._generate_options(report, "2023-01-01", "2023-01-31")
+
+        def render():
+            warnings = {}
+            lines = {
+                line["name"]: line
+                for line in report._get_lines(options, warnings=warnings)
+            }
+            (current,) = self._cells(options, lines["DEFRND Rendered"], "current")
+            return current, set(warnings)
+
+        self.assertEqual(
+            render(), (100.0, {"account.deferred_report_warning_never_generated"})
+        )
+        self.assertTrue(handler._generate_deferral_entry(options))
+        self.assertEqual(
+            render(), (100.0, {"account.deferred_report_info_fully_generated"})
+        )
+        self._post_deferred_expense(
+            account, "2023-01-01", "2023-01-01", "2023-12-31", 2400.0
+        )
+        self.assertEqual(
+            render(), (300.0, {"account.deferred_report_warning_partially_generated"})
+        )
 
     def test_bank_reconciliation_report_defaults_to_the_active_company_journal(self):
         company_1 = self.env.company
@@ -1501,8 +1541,6 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                     / len(days),
                     msg=msg,
                 )
-            if currency == rateless:
-                continue
             for date in (
                 "2028-06-30",
                 "2029-01-01",
@@ -1521,3 +1559,41 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                     factor(periods[-1][2]) / base_rate(currency, date),
                     msg=msg,
                 )
+
+    def test_currency_table_rateless_currency_converts_like_base(self):
+        main = self.env.company
+        self.env["res.currency.rate"].search(
+            [("currency_id", "=", main.currency_id.id)]
+        ).unlink()
+        self.env["res.currency.rate"].create(
+            {
+                "currency_id": main.currency_id.id,
+                "company_id": main.root_id.id,
+                "name": "2000-01-01",
+                "rate": 2.0,
+            }
+        )
+        rateless = self.env["res.currency"].create(
+            {"name": "QRL", "symbol": "L", "rounding": 0.01}
+        )
+        company = self.env["res.company"].create(
+            {"name": "QRL Co", "currency_id": rateless.id}
+        )
+        date_from, date_to = "2023-01-01", "2023-01-31"
+        self.env["res.currency"]._create_currency_table(
+            main | company, [("period", date_from, date_to)], use_cta_rates=True
+        )
+        for rate_type, date in (
+            ("current", date_to),
+            ("average", date_to),
+            ("historical", "2023-01-15"),
+            ("historical", "1990-01-01"),
+        ):
+            rates = self._currency_table_rate_at(company, rate_type, date)
+            self.assertEqual(len(rates), 1, (rate_type, date))
+            self.assertAlmostEqual(
+                100.0 * rates[0],
+                rateless._convert(100.0, main.currency_id, main, date, round=False),
+                msg=(rate_type, date),
+            )
+            self.assertAlmostEqual(rates[0], 2.0, msg=(rate_type, date))

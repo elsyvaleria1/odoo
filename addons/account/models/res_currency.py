@@ -223,7 +223,8 @@ class ResCurrency(models.Model):
 
     def _get_currency_table_rates(self, scope: CurrencyTableScope) -> SQL:
         # The '-infinity' row carries the rate base `_get_rates` falls back to before
-        # a currency's first rate: its first own rate, else its first shared one.
+        # a currency's first rate: its first own rate, else its first shared one,
+        # else 1.0 for a currency without any rate.
         return SQL(
             """(
                 WITH firsts AS MATERIALIZED (
@@ -259,9 +260,8 @@ class ResCurrency(models.Model):
                        AND (firsts.first_own_date IS NULL OR rate.name < firsts.first_own_date)
                    )
                 UNION ALL
-                SELECT NULL, firsts.currency_id, DATE '-infinity', firsts.first_rate
+                SELECT NULL, firsts.currency_id, DATE '-infinity', COALESCE(firsts.first_rate, 1.0)
                 FROM firsts
-                WHERE firsts.first_rate IS NOT NULL
             )""",
             main_company_id=scope.main_company_id,
             currency_ids=scope.currency_ids,
@@ -291,7 +291,7 @@ class ResCurrency(models.Model):
                     CAST(NULL AS DATE),
                     CAST(NULL AS DATE),
                     'current',
-                    CASE WHEN rate.currency_id IS NOT NULL THEN %(main_company_unit_factor)s / rate.rate ELSE 1 END
+                    %(main_company_unit_factor)s / COALESCE(rate.rate, 1.0)
                 FROM res_company other_company
                 LEFT JOIN (%(rates)s) rate
                     ON rate.currency_id = other_company.currency_id
@@ -386,7 +386,7 @@ class ResCurrency(models.Model):
 
                     SELECT
                         other_company.id as other_company_id,
-                        COALESCE(out_period_rate.rate, 1.0) AS rate,
+                        out_period_rate.rate AS rate,
                         EXTRACT('Day' FROM COALESCE(in_period_rate.name::TIMESTAMP, %(date_to)s::TIMESTAMP + INTERVAL '1' DAY) - %(date_from)s::TIMESTAMP) AS number_of_days
                     FROM res_company other_company
                     LEFT JOIN (

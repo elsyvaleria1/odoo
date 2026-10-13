@@ -159,12 +159,10 @@ class TestDeferredReports(TestAccountReportsCommon, HttpCase):
 
     def get_lines(self, options, report=None):
         report = report if report is not None else self.deferred_expense_report
-        self.env.cr.cache.pop("report_deferred_lines", None)
         return report._get_lines(options)
 
     def generate_deferral_entries(self, options, report_handler=None):
         report_handler = report_handler if report_handler is not None else self.handler
-        self.env.cr.cache.pop("report_deferred_lines", None)
         return report_handler._generate_deferral_entry(options)
 
     def test_deferred_expense_report_months(self):

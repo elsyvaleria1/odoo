@@ -9,7 +9,7 @@ from odoo import Command, api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, groupby
+from odoo.tools import SQL, TransactionMemo, groupby
 
 from odoo.addons.account.models.account_move_deferred import (
     DEFERRED_DATE_MAX,
@@ -17,6 +17,17 @@ from odoo.addons.account.models.account_move_deferred import (
 )
 
 _debug = DebugLog(__name__)
+
+_DEFERRED_LINE_READ_MODELS = (
+    "account.move.line",
+    "account.move",
+    "account.account",
+    "product.product",
+    "product.template",
+)
+DEFERRED_LINES = TransactionMemo(
+    "account.deferred_report.lines", invalidated_by=_DEFERRED_LINE_READ_MODELS
+)
 
 
 class AccountDeferredReportHandler(models.AbstractModel):
@@ -154,7 +165,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
 
     @_debug.perf.timed
     def _get_lines(self, report, options, filter_already_generated=False):
-        cache = self.env.cr.cache.setdefault("report_deferred_lines", {})
+        cache = DEFERRED_LINES(self.env)
         cache_key = (self._name, json.dumps(options, sort_keys=True, default=str))
         if cache_key not in cache:
             cache[cache_key] = self._get_deferred_line_rows(report, options)
@@ -191,13 +202,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
             search_condition=query.where_clause,
         )
 
-        for model_name in (
-            "account.move.line",
-            "account.move",
-            "account.account",
-            "product.product",
-            "product.template",
-        ):
+        for model_name in _DEFERRED_LINE_READ_MODELS:
             self.env[model_name].flush_model()
         lines = self.env.execute_query_dict(query)
         _debug.perf.count("deferred_lines_fetched", rows=len(lines))
@@ -829,6 +834,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
                 for deferral_move in new_deferred_moves
             ],
         )
+        DEFERRED_LINES.discard(self.env)
         new_deferred_moves.invalidate_recordset()
         new_deferred_moves._post(soft=True)
         _debug.pipeline(
