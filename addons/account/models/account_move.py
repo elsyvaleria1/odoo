@@ -72,6 +72,7 @@ _debug = DebugLog(__name__)
 AUTO_POST_MAX_ATTEMPTS = 5
 AUTO_POST_RETRY_BASE_DELAY = timedelta(hours=1)
 AUTO_POST_RETRY_MAX_DELAY = timedelta(days=7)
+AUTO_RECONCILE_WAKE_UP_MINUTES = 5
 _AUTO_POST_RETRY_RESET = frozendict(
     is_auto_post_failed=False,
     count_auto_post_attempt=0,
@@ -351,6 +352,12 @@ class AccountMove(models.Model):
             amount="amount_total",
         ),
     }
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", shared=False),
+            "partner": "partner_id",
+        }
+    )
 
     @api.depends("invoice_pdf_report_file")
     def _compute_invoice_pdf_report_id(self) -> None:
@@ -484,6 +491,19 @@ class AccountMove(models.Model):
         string="Related reconciliation",
     )
 
+    payment_ids = fields.One2many(
+        comodel_name="account.payment",
+        inverse_name="move_id",
+        string="Payments",
+    )
+    reclassified_payment_id = fields.Many2one(
+        comodel_name="account.payment",
+        index="btree_not_null",
+        copy=False,
+        readonly=True,
+        help="The payment whose accounts this entry reclassifies, its own entry "
+        "being in a locked period.",
+    )
     origin_payment_id = fields.Many2one(
         comodel_name="account.payment",
         string="Payment",
@@ -518,6 +538,11 @@ class AccountMove(models.Model):
         check_company=True,
     )
     statement_id = fields.Many2one(related="statement_line_id.statement_id")
+    statement_line_ids = fields.One2many(
+        comodel_name="account.bank.statement.line",
+        inverse_name="move_id",
+        string="Statements",
+    )
 
     adjusting_entry_origin_move_ids = fields.Many2many(
         comodel_name="account.move",
@@ -4565,13 +4590,6 @@ class AccountMove(models.Model):
             "date": format_date(self.env, line.discount_date),
         }
 
-    def _get_entry_owner(self):
-        self.check_singleton()
-        return False
-
-    def _check_entry_shape(self) -> None:
-        return
-
     @_debug.perf.timed
     def copy_data(self, default=None):
         _debug.lifecycle("copy_data", records=self)
@@ -4903,6 +4921,7 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def write(self, vals):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
+        self._check_owned_move_write(vals)
         if not vals:
             return True
         vals = self._with_due_date_choice(self._normalize_vals(vals))
@@ -6666,6 +6685,11 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def _post(self, soft=True):
         _debug.lifecycle("_post", records=self)
+        self._as_entry_owner_check().payment_ids.filtered(
+            lambda payment: (
+                payment.move_id in self and not payment.counterpart_review_required
+            )
+        )._check_entry_matches_payment()
         self._post_check_access()
 
         moves = self.with_context(skip_is_manually_modified=True)
@@ -6719,6 +6743,28 @@ class AccountMove(models.Model):
         self._create_deferred_entries_on_validation()
         self._update_accounts_audit_status()
         return self
+
+    def _trigger_statement_line_auto_reconcile(self) -> None:
+        documents = self.filtered(
+            lambda move: (
+                not move.statement_line_id
+                and any(
+                    line.account_type in {"asset_receivable", "liability_payable"}
+                    and not line.reconciled
+                    for line in move.line_ids
+                )
+            )
+        )
+        _debug.logic(
+            "auto_reconcile_wake_up",
+            posted=len(self),
+            documents=len(documents),
+        )
+        if documents:
+            self.env["ir.cron"]._trigger_ref(
+                "account.auto_reconcile_bank_statement_line",
+                coalesce=AUTO_RECONCILE_WAKE_UP_MINUTES,
+            )
 
     @_debug.perf.timed
     def _has_sequence_gap_around(self, previous, current, next_move) -> bool:

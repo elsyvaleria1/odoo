@@ -648,3 +648,103 @@ class TestMarinFoldMoveLineHooks(TestBankRecWidgetCommon):
         attachments = st_line.move_id._get_mail_thread_data_attachments()
 
         self.assertIn(attachment, attachments[st_line.move_id.id])
+
+
+@tagged("post_install", "-at_install")
+class TestMarinFoldEntryOwnership(TestBankRecWidgetCommon):
+    def _record(self, events, name, method):
+        def recorder(records, *args, **kwargs):
+            events.append(name)
+            return method(records, *args, **kwargs)
+
+        return recorder
+
+    def _payment(self):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2019-01-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.company_data["default_journal_bank"].id,
+            }
+        )
+        payment.action_post()
+        return payment
+
+    def test_the_entry_owner_is_its_payment_or_its_statement_line(self):
+        payment = self._payment()
+        st_line = self._create_st_line(100.0)
+        entry = self.env["account.move"].create(
+            {"move_type": "entry", "date": "2019-01-01"}
+        )
+
+        self.assertEqual(payment.move_id._get_entry_owner(), payment)
+        self.assertEqual(st_line.move_id._get_entry_owner(), st_line)
+        self.assertFalse(entry._get_entry_owner())
+        self.assertEqual(payment.move_id.line_ids[:1]._get_entry_owner(), payment)
+
+    def test_a_statement_entry_refuses_owned_fields_unless_its_owner_syncs(self):
+        st_line = self._create_st_line(100.0)
+
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            st_line.move_id.partner_id = self.partner_b
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            st_line.move_id.date = "2019-01-02"
+
+        st_line.move_id.ref = "free"
+        with self.assertRaisesRegex(UserError, "readonly fields on a posted move"):
+            st_line.move_id.with_context(
+                entry_owner_sync=True
+            ).partner_id = self.partner_b
+
+    def test_a_payment_entry_refuses_owned_fields_before_the_write_checks(self):
+        payment = self._payment()
+        move_class = self.registry["account.move"]
+        events = []
+
+        with (
+            patch.object(
+                move_class,
+                "_check_owned_move_write",
+                self._record(events, "owner", move_class._check_owned_move_write),
+            ),
+            patch.object(
+                move_class,
+                "_check_write_allowed",
+                self._record(events, "allowed", move_class._check_write_allowed),
+            ),
+            self.assertRaisesRegex(UserError, "can only change through it"),
+        ):
+            payment.move_id.write({"date": "2019-01-02"})
+
+        self.assertEqual(events, ["owner"])
+        with self.assertRaisesRegex(UserError, "can only change through it"):
+            payment.move_id.journal_id = self.company_data["default_journal_cash"]
+
+    def test_posting_checks_the_payment_entry_before_the_access(self):
+        payment = self._payment()
+        payment.action_draft()
+        events = []
+        payment_class = self.registry["account.payment"]
+        move_class = self.registry["account.move"]
+
+        with (
+            patch.object(
+                payment_class,
+                "_check_entry_matches_payment",
+                self._record(
+                    events, "matches", payment_class._check_entry_matches_payment
+                ),
+            ),
+            patch.object(
+                move_class,
+                "_post_check_access",
+                self._record(events, "access", move_class._post_check_access),
+            ),
+        ):
+            payment.move_id.action_post()
+
+        self.assertEqual(events[:2], ["matches", "access"])
+        self.assertEqual(payment.move_id.state, "posted")

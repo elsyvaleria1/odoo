@@ -1,6 +1,6 @@
 from odoo import fields, models
 
-from odoo.addons.account.models.product import ACCOUNT_DOMAIN
+from odoo.addons.account.models.product_template import ACCOUNT_DOMAIN
 
 
 class ProductCategory(models.Model):

@@ -144,3 +144,15 @@ class AccountMoveLine(models.Model):
                         }:
                             coverage += value
                 line.analytic_coverage = coverage / 100
+
+    @api.model
+    @_debug.perf.timed
+    def _search(self, *args, **kwargs):
+        query = super()._search(*args, **kwargs)
+        if self.env.context.get(
+            "account_report_analytic_groupby"
+        ) and not self.env.context.get("account_report_cash_basis"):
+            query._tables["account_move_line"] = self.env[
+                "report.formula"
+            ]._create_aml_shadowing_query_for_analytic_groupby()
+        return query

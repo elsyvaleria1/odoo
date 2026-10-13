@@ -3,7 +3,7 @@ from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Command
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.sql import INT4_MAX
-from odoo.tools import SQL, frozendict
+from odoo.tools import SQL
 from odoo.tools.misc import str2bool
 
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
@@ -1031,57 +1031,3 @@ class AccountBankStatementLine(models.Model):
             deleted=len(other_lines),
         )
         return move_vals
-
-
-class AccountMove(models.Model):
-    _inherit = "account.move"
-    _access_anchors = frozendict(
-        {
-            "company": models.Anchor("company_id", shared=False),
-            "partner": "partner_id",
-        }
-    )
-
-    statement_line_ids = fields.One2many(
-        comodel_name="account.bank.statement.line",
-        inverse_name="move_id",
-        string="Statements",
-    )
-
-    def _get_entry_owner(self):
-        self.check_singleton()
-        return super()._get_entry_owner() or self.statement_line_id
-
-    def _check_entry_shape(self) -> None:
-        super()._check_entry_shape()
-        for move in self.filtered("statement_line_id"):
-            journal = move.statement_line_id.journal_id
-            liquidity = move.line_ids.filtered(
-                lambda line: line.payment_role == "liquidity"
-            )
-            if len(liquidity) != 1 or (move.line_ids - liquidity).filtered(
-                lambda line, account=liquidity.account_id: line.account_id == account
-            ):
-                _debug.logic("statement_entry_liquidity_refused", move=move)
-                raise UserError(
-                    self.env._(
-                        "The journal entry %s reached an invalid state regarding its related statement line.\n"
-                        "To be consistent, the journal entry must always have exactly one journal item involving the "
-                        "bank/cash account.",
-                        move.display_name,
-                    )
-                )
-            suspense = move.line_ids.filtered(
-                lambda line, account=journal.suspense_account_id: (
-                    line.account_id == account
-                )
-            )
-            if len(suspense) > 1:
-                _debug.logic("statement_entry_suspense_refused", move=move)
-                raise UserError(
-                    self.env._(
-                        "%(move)s reached an invalid state regarding its related statement line.\n"
-                        "To be consistent, the journal entry must always have exactly one suspense line.",
-                        move=move.display_name,
-                    )
-                )

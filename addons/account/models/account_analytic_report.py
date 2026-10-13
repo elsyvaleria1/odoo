@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, Query, frozendict
+from odoo.tools import SQL, Query
 
 from odoo.addons.web.controllers.utils import clean_action
 
@@ -422,26 +422,3 @@ class AccountReport(models.AbstractModel):
             )
 
         return domain
-
-
-class AccountMoveLine(models.Model):
-    _inherit = "account.move.line"
-    _search_visibility_fields = ()
-    _access_anchors = frozendict(
-        {
-            "company": models.Anchor("company_id", shared=False),
-            "partner": "move_id.partner_id",
-        }
-    )
-
-    @api.model
-    @_debug.perf.timed
-    def _search(self, *args, **kwargs):
-        query = super()._search(*args, **kwargs)
-        if self.env.context.get(
-            "account_report_analytic_groupby"
-        ) and not self.env.context.get("account_report_cash_basis"):
-            query._tables["account_move_line"] = self.env[
-                "report.formula"
-            ]._create_aml_shadowing_query_for_analytic_groupby()
-        return query

@@ -331,6 +331,135 @@ class TestMarinAccountAccountMultiCompany(AccountTestInvoicingCommon):
             currents,
         )
 
+    def _legacy_shared_credit_card(self, code_1, code_2):
+        account = self._accounts().create(
+            {
+                "name": "Legacy Card",
+                "code": code_1,
+                "account_type": "liability_credit_card",
+                "company_ids": [Command.set(self.company_1.ids)],
+            }
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "INSERT INTO account_account_res_company_rel "
+            "(account_account_id, res_company_id) VALUES (%s, %s)",
+            [account.id, self.company_2.id],
+        )
+        self.env.cr.execute(
+            "UPDATE account_account "
+            "SET code_store = code_store || jsonb_build_object(%s::text, %s::text) "
+            "WHERE id = %s",
+            [self.company_2.root_id.id, code_2, account.id],
+        )
+        self.env.invalidate_all()
+        self.assertEqual(account.company_ids, self.both_companies)
+        return account
+
+    def test_a_legacy_shared_credit_card_account_can_be_unmerged(self):
+        account = self._legacy_shared_credit_card("190506", "190507")
+        move_2 = self.env["account.move"].create(
+            {
+                "company_id": self.company_2.id,
+                "journal_id": self.company_data_2["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create(
+                        {"account_id": account.id, "debit": 0.0, "credit": 10.0}
+                    ),
+                    Command.create(
+                        {
+                            "account_id": self.company_data_2[
+                                "default_account_expense"
+                            ].id,
+                            "debit": 10.0,
+                            "credit": 0.0,
+                        }
+                    ),
+                ],
+            }
+        )
+
+        account.with_company(self.company_1).with_context(
+            allowed_company_ids=self.both_companies.ids,
+            account_unmerge_confirm=True,
+        ).action_unmerge()
+        self.env.invalidate_all()
+
+        split = self._accounts().search(
+            [("name", "=", "Legacy Card"), ("id", "!=", account.id)]
+        )
+        self.assertRecordValues(
+            account,
+            [
+                {
+                    "company_ids": self.company_1.ids,
+                    "code": "190506",
+                    "account_type": "liability_credit_card",
+                }
+            ],
+        )
+        self.assertRecordValues(
+            split.with_company(self.company_2),
+            [
+                {
+                    "company_ids": self.company_2.ids,
+                    "code": "190507",
+                    "account_type": "liability_credit_card",
+                }
+            ],
+        )
+        self.assertEqual(
+            move_2.line_ids.filtered(lambda line: line.credit).account_id, split
+        )
+
+    def test_a_legacy_shared_credit_card_account_is_not_duplicated_shared(self):
+        account = self._legacy_shared_credit_card("190508", "190509")
+        with self.assertRaisesRegex(ValidationError, "cannot be shared"):
+            account.copy()
+
+        account.with_context(
+            allowed_company_ids=self.both_companies.ids,
+            account_unmerge_confirm=True,
+        ).action_unmerge()
+        copy = account.copy()
+        self.assertRecordValues(
+            copy,
+            [
+                {
+                    "company_ids": self.company_1.ids,
+                    "code": "190510",
+                    "name": "Legacy Card (copy)",
+                }
+            ],
+        )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinAccountAuditWithoutWorkingFile(AccountTestInvoicingCommon):
+    def test_audit_fields_search_and_group_without_working_file(self):
+        Account = self.env["account.account"]
+        self.assertFalse(self.env.context.get("working_file_id"))
+        for field_name in (
+            "audit_debit",
+            "audit_credit",
+            "audit_balance",
+            "audit_previous_balance",
+            "audit_var_n_1",
+        ):
+            with self.subTest(field_name=field_name):
+                self.assertFalse(Account.search([(field_name, ">", 0)]))
+                self.assertEqual(
+                    Account.search([(field_name, "=", 0)]),
+                    Account.search([]),
+                )
+        self.assertFalse(Account.search([("audit_var_percentage", ">", 0)]))
+        self.assertEqual(
+            Account.search([("audit_var_percentage", "=", False)]),
+            Account.search([]),
+        )
+        groups = Account._read_group([], ["audit_balance"], ["__count"])
+        self.assertEqual(groups, [(0.0, Account.search_count([]))])
+
 
 @tagged("post_install", "-at_install")
 class TestMarinFiscalYearBranches(AccountTestInvoicingCommon):

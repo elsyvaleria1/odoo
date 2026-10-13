@@ -53,6 +53,13 @@ class AccountMoveLine(models.Model):
     _order = "date desc, move_name desc, id"
     _check_company_auto = True
     _rec_names_search = ["name", "move_id", "product_id"]
+    _search_visibility_fields = ()
+    _access_anchors = frozendict(
+        {
+            "company": models.Anchor("company_id", shared=False),
+            "partner": "move_id.partner_id",
+        }
+    )
 
     move_id = fields.Many2one(
         comodel_name="account.move",

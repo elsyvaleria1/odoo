@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import date_utils, float_is_zero, float_round, frozendict
+from odoo.tools import date_utils, float_is_zero, float_round
 
 _debug = DebugLog(__name__)
 
@@ -155,24 +155,3 @@ class AccountReportBudget(models.Model):
             dict(vals, name=self.env._("%s (copy)", budget.name))
             for budget, vals in zip(self, vals_list, strict=True)
         ]
-
-
-class AccountReportBudgetItem(models.Model):
-    _name = "account.report.budget.item"
-    _access_anchors = frozendict({"company": "budget_id.company_id"})
-    _description = "Accounting Report Budget Item"
-
-    budget_id = fields.Many2one(
-        comodel_name="account.report.budget",
-        index=True,
-        required=True,
-        ondelete="cascade",
-    )
-    account_id = fields.Many2one(
-        comodel_name="account.account",
-        index=True,
-        required=True,
-        domain="[('account_type', 'in', ('income', 'income_other', 'expense', 'expense_other', 'expense_depreciation', 'expense_direct_cost'))]",
-    )
-    amount = fields.Float(default=0)
-    date = fields.Date(required=True)

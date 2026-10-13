@@ -11,7 +11,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools.mail import is_html_empty
 
 from odoo.addons.account.models.account_return_type import PERIODS
-from odoo.addons.account.models.product import ACCOUNT_DOMAIN
+from odoo.addons.account.models.product_template import ACCOUNT_DOMAIN
 
 _debug = DebugLog(__name__)
 

@@ -12,6 +12,7 @@ from . import wizard_report_config_update_layout
 from . import wizard_account_move_line_pay
 from . import wizard_account_move_create_accrual
 from . import mixin_account_merge
+from . import mixin_account_merge_line
 from . import wizard_account_account_merge
 from . import wizard_account_account_merge_line
 from . import wizard_account_tax_merge

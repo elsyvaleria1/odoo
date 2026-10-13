@@ -14,7 +14,6 @@ _debug = DebugLog(__name__)
 
 MAX_BARREN_CRON_ROUNDS = 3
 AUTO_RECONCILE_RETRY_DAYS = 90
-AUTO_RECONCILE_WAKE_UP_MINUTES = 5
 
 
 class AccountBankStatementLine(models.Model):
@@ -612,29 +611,3 @@ class AccountBankStatementLine(models.Model):
             remaining_st_lines.ids,
             reco_models.ids,
         )
-
-
-class AccountMove(models.Model):
-    _inherit = "account.move"
-
-    def _trigger_statement_line_auto_reconcile(self) -> None:
-        documents = self.filtered(
-            lambda move: (
-                not move.statement_line_id
-                and any(
-                    line.account_type in {"asset_receivable", "liability_payable"}
-                    and not line.reconciled
-                    for line in move.line_ids
-                )
-            )
-        )
-        _debug.logic(
-            "auto_reconcile_wake_up",
-            posted=len(self),
-            documents=len(documents),
-        )
-        if documents:
-            self.env["ir.cron"]._trigger_ref(
-                "account.auto_reconcile_bank_statement_line",
-                coalesce=AUTO_RECONCILE_WAKE_UP_MINUTES,
-            )

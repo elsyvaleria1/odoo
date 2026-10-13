@@ -20,7 +20,6 @@ from odoo.tools.misc import hash_sign, register_signed_scope
 from odoo.tools.translate import LazyTranslate
 
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
-from odoo.addons.base.models.mixin_catalog import name_uniq_index
 
 _debug = DebugLog(__name__)
 
@@ -129,38 +128,6 @@ class JournalPaymentMethods(NamedTuple):
 LIQUIDITY_TYPES = _types_where(family="liquidity")
 DOCUMENT_TYPES = _types_where(family="document")
 CASH_DIFFERENCE_TYPES = _types_where(cash_difference=True)
-
-
-class AccountJournalGroup(models.Model):
-    _name = "account.journal.group"
-    _description = "Account Journal Group"
-    _order = "sequence"
-    _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
-
-    name = fields.Char(
-        string="Ledger group",
-        translate=True,
-        required=True,
-    )
-    company_id = fields.Many2one(
-        comodel_name="res.company",
-        default=lambda self: self.env.company,
-        help="Define which company can select the multi-ledger in report filters. If none is provided, available for all companies",
-    )
-    excluded_journal_ids = fields.Many2many(
-        comodel_name="account.journal",
-        string="Excluded Journals",
-        domain='company_id and [("company_id", "parent_of", company_id)] or []',
-        context={"active_test": False},
-    )
-    sequence = fields.Integer(default=10)
-
-    _name_src_uniq = name_uniq_index(
-        "company_id",
-        nulls_distinct=True,
-        message="A Ledger group name must be unique per company.",
-    )
 
 
 class AccountJournal(models.Model):
