@@ -511,3 +511,114 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         self.assertEqual(returns[0].date_from, date(2023, 5, 1))
         self.assertEqual(returns[-1].date_to, date(2024, 11, 30))
         self.assertEqual(min(evaluated), date(2023, 4, 30))
+
+    def _create_foreign_ec_sales_list_return(self):
+        belgium = self.env.ref("base.be")
+        return_type = self._create_conditional_return_type()
+        return_type.country_id = belgium
+        branch = self._create_foreign_vat_branch(belgium)
+        with self._patch_returns_generation():
+            (
+                self.root_company + branch
+            ).account_config_id.account_opening_date = "2023-01-01"
+            self.env["account.return.type"]._generate_conditional_return(
+                "__test__.marin_conditional_return_type", branch, None
+            )
+        return self.env["account.return"].search(
+            [("type_id", "=", return_type.id), ("company_id", "=", branch.id)]
+        )
+
+    def test_a_foreign_return_named_after_its_type_country(self):
+        account_return = self._create_foreign_ec_sales_list_return()
+        self.assertEqual(len(account_return), 1)
+        self.assertTrue(account_return.name.endswith("(BE)"), account_return.name)
+
+    def _create_foreign_tax_return(self, branch):
+        belgium = self.env.ref("base.be")
+        return_type = self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, BE)",
+                "report_id": self.tax_report.id,
+                "country_id": belgium.id,
+                "auto_generate": False,
+            }
+        )
+        return self.env["account.return"].create(
+            {
+                "name": "BE VAT January",
+                "type_id": return_type.id,
+                "company_id": branch.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+            }
+        )
+
+    def _check_results(self, account_return):
+        return {check.code: check.result for check in account_return.check_ids}
+
+    def test_returns_of_a_type_country_in_europe_run_the_vies_check(self):
+        self.ensure_installed("account_vat")
+        ec_sales_list_return = self._create_foreign_ec_sales_list_return()
+        tax_return = self._create_foreign_tax_return(ec_sales_list_return.company_id)
+        (
+            tax_return + ec_sales_list_return
+        ).company_id.account_config_id.vat_check_vies = True
+        with patch(
+            "odoo.addons.account_vat.models.res_partner.ResPartner._check_vies",
+            lambda partner, vat: {"valid": True},
+        ):
+            (tax_return + ec_sales_list_return).refresh_checks()
+        for account_return in (tax_return, ec_sales_list_return):
+            with self.subTest(account_return=account_return.type_id.name):
+                self.assertEqual(
+                    self._check_results(account_return).get("check_partner_vies"),
+                    "reviewed",
+                )
+
+    def test_tax_closing_reads_the_tax_groups_of_the_type_country(self):
+        tax_return = self._create_foreign_tax_return(
+            self._create_foreign_vat_branch(self.env.ref("base.be"))
+        )
+        payable, receivable = (
+            self.company_data["default_account_tax_sale"].copy({"code": code})
+            for code in ("252001", "152001")
+        )
+        tax_group = self.env["account.tax.group"].create(
+            {
+                "name": "BE VAT",
+                "country_id": tax_return.type_id.country_id.id,
+                "company_ids": [Command.set(self.root_company.ids)],
+                "tax_payable_account_id": payable.id,
+                "tax_receivable_account_id": receivable.id,
+            }
+        )
+        self.env["account.tax"].create(
+            {
+                "name": "BE 21%",
+                "amount": 21,
+                "country_id": tax_return.type_id.country_id.id,
+                "company_ids": [Command.set(self.root_company.ids)],
+                "tax_group_id": tax_group.id,
+            }
+        )
+        self.assertEqual(
+            tax_return._get_tax_group_closing_accounts(), (payable, receivable)
+        )
+
+    def test_a_domestic_type_country_over_a_countryless_report_locks_tax(self):
+        self.return_type.country_id = (
+            self.root_company.tax_config_id.account_fiscal_country_id
+        )
+        tax_return = self.env["account.return"].create(
+            {
+                "name": "Domestic VAT January",
+                "type_id": self.return_type.id,
+                "company_id": self.root_company.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+            }
+        )
+        tax_return.action_validate(bypass_failing_tests=True)
+        self.assertEqual(
+            self.root_company.account_config_id.tax_lock_date, date(2024, 1, 31)
+        )

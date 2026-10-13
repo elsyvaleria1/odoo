@@ -913,19 +913,12 @@ class AccountReturnType(models.Model):
         all_lang=False,
     ):
         main_company = main_company.sudo()
-        country_code = ""
-        if (
-            self.report_id
-            and self.report_id.country_id
-            and main_company.tax_config_id.account_fiscal_country_id
-            != self.report_id.country_id
-        ):
-            if self.report_id and self.report_id.country_id:
-                country_code = f"({self.report_id.country_id.code})"
-            else:
-                country_code = (
-                    f"({main_company.tax_config_id.account_fiscal_country_id.code})"
-                )
+        country_code = (
+            f"({self.country_id.code})"
+            if self.country_id
+            and self.country_id != main_company.tax_config_id.account_fiscal_country_id
+            else ""
+        )
         _debug.logic(
             "return_name_country_suffix",
             returntype=self,

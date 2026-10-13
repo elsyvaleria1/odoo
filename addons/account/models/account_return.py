@@ -1038,8 +1038,8 @@ class AccountReturn(models.Model):
 
                 main_company = self.tax_unit_id.main_company_id or self.company_id
                 if (
-                    report.country_id
-                    and report.country_id
+                    self.type_id.country_id
+                    and self.type_id.country_id
                     == main_company.tax_config_id.account_fiscal_country_id
                 ):
                     companies_to_lock = self.company_ids.filtered(
@@ -1115,7 +1115,7 @@ class AccountReturn(models.Model):
 
     def _get_tax_group_closing_accounts(self) -> tuple:
         country = (
-            self.type_id.report_id.country_id
+            self.type_id.country_id
             or self.company_id.tax_config_id.account_fiscal_country_id
         )
         tax_groups_sudo = (
@@ -1492,8 +1492,8 @@ class AccountReturn(models.Model):
 
         if report := self.type_id.report_id:
             if (
-                not report.country_id
-                or report.country_id
+                not self.type_id.country_id
+                or self.type_id.country_id
                 == self.company_id.tax_config_id.account_fiscal_country_id
             ):
                 violated_lock_dates = []
@@ -1564,7 +1564,7 @@ class AccountReturn(models.Model):
 
             main_company = self.tax_unit_id.main_company_id or self.company_id
             if (
-                report.country_id
+                self.type_id.country_id
                 == main_company.tax_config_id.account_fiscal_country_id
             ):
                 companies_to_unlock = self.company_ids.filtered(
@@ -2002,7 +2002,7 @@ class AccountReturn(models.Model):
             ("tax_group_id.tax_receivable_account_id", "=", False),
         ]
 
-        country = self.type_id.report_id.country_id
+        country = self.type_id.country_id
         if country:
             tax_with_incomplete_group_domain.append(("country_id", "=", country.id))
 
@@ -2583,9 +2583,9 @@ class AccountReturn(models.Model):
     def _run_checks(self, check_codes_to_ignore):
         self.check_singleton()
         checks = []
-        report_country = self.type_id.report_id.country_id
+        type_country = self.type_id.country_id
         europe_country_group = self.env.ref("base.europe")
-        if report_country.code in europe_country_group.mapped("country_ids.code"):
+        if type_country.code in europe_country_group.mapped("country_ids.code"):
             checks += self._check_suite_eu_vat_report(check_codes_to_ignore)
 
         if self.is_tax_return:
@@ -2598,7 +2598,7 @@ class AccountReturn(models.Model):
         _debug.pipeline(
             "check_suites_run",
             tax_return=self,
-            country=report_country,
+            country=type_country,
             tax=self.is_tax_return,
             checks=len(checks),
         )
