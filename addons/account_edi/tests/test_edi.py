@@ -1,3 +1,4 @@
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account_edi.tests.common import AccountEdiTestCommon
@@ -157,6 +158,56 @@ class TestAccountEdi(AccountEdiTestCommon, CronMixinCase):
 
             invoice.action_process_edi_web_services(with_commit=False)
             self.assertRecordValues(invoice.edi_document_ids, [{"state": "cancelled"}])
+
+    def test_sent_web_service_document_freezes_line_label(self):
+        invoice = self.init_invoice("out_invoice", products=self.product_a)
+        line = invoice.invoice_line_ids
+
+        with (
+            self.with_custom_method(
+                "_get_move_applicability",
+                lambda edi_format, inv: {
+                    "post": edi_format._test_edi_post_invoice,
+                    "cancel": edi_format._test_edi_cancel_invoice,
+                },
+            ),
+            self.with_custom_method(
+                "_is_web_service_required", lambda edi_format: True
+            ),
+            self.with_custom_method(
+                "_test_edi_post_invoice",
+                lambda edi_format, inv: {inv: {"success": True}},
+            ),
+            self.with_custom_method(
+                "_test_edi_cancel_invoice",
+                lambda edi_format, inv: {inv: {"success": True}},
+            ),
+        ):
+            invoice.action_post()
+            line.name = "relabelled before sending"
+
+            invoice.action_process_edi_web_services(with_commit=False)
+            for state in ("sent", "to_cancel"):
+                invoice.edi_document_ids.state = state
+                with (
+                    self.subTest(state=state),
+                    self.assertRaisesRegex(UserError, "posted journal item"),
+                ):
+                    line.name = "relabelled after sending"
+            self.assertEqual(line.name, "relabelled before sending")
+
+            line.with_context(skip_readonly_check=True).name = "corrected"
+            self.assertEqual(line.name, "corrected")
+
+            invoice.edi_document_ids.state = "cancelled"
+            line.name = "relabelled after cancellation"
+            self.assertEqual(line.name, "relabelled after cancellation")
+
+    def test_sent_document_without_web_service_keeps_line_label_editable(self):
+        invoice = self.init_invoice("out_invoice", products=self.product_a, post=True)
+        self.create_edi_document(self.test_edi_format, "sent", move=invoice)
+        invoice.invoice_line_ids.name = "relabelled"
+        self.assertEqual(invoice.invoice_line_ids.name, "relabelled")
 
     def test_edi_flow_two_steps(self):
         def step1(edi_format, invoice):

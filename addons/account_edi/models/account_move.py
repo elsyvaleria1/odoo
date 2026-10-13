@@ -137,6 +137,13 @@ class AccountMove(models.Model):
                 return False
         return True
 
+    def _is_document_held_by_authority(self) -> bool:
+        return super()._is_document_held_by_authority() or any(
+            document.state in ("sent", "to_cancel")
+            and document.edi_format_id._is_web_service_required()
+            for document in self.edi_document_ids
+        )
+
     @api.depends("edi_document_ids.state")
     def _compute_show_reset_to_draft_button(self) -> None:
         super()._compute_show_reset_to_draft_button()
