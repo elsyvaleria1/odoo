@@ -800,3 +800,15 @@ test("J1: a re-subscribe replays notifications missed since the worker's waterma
     await runAllTimers();
     await waitNotifications(["t", "missed"]);
 });
+
+test("a notification sent on a channel before its subscribe reaches the client once it subscribes", async () => {
+    await makeMockEnv();
+    startBusService();
+    const busBus = MockServer.env["bus.bus"];
+    getService("bus_service").addChannel("first");
+    await waitForChannels(["first"]);
+    busBus._sendone("later", "t", "sent before the subscribe");
+    getService("bus_service").addChannel("later");
+    await waitForChannels(["later"]);
+    await waitNotifications(["t", "sent before the subscribe"]);
+});

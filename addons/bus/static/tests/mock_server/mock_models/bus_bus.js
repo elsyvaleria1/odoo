@@ -36,26 +36,20 @@ export class BusBus extends models.Model {
                 this.channelsByUser[authenticatedUserId] || [],
             ),
         ];
-        const matching = notifications.filter(([target]) =>
-            this._channelMatches(channels, target),
-        );
-        if (matching.length === 0) {
-            return;
-        }
         const values = [];
-        for (const notification of matching) {
-            const [target, type, payload] = [
-                notification[0],
-                ...notification.slice(1, notification.length),
-            ];
+        for (const [target, type, payload] of notifications) {
             const value = {
                 id: ++this.lastBusNotificationId,
                 message: { payload: JSON.parse(JSON.stringify(payload)), type },
             };
-            values.push(value);
             this._notificationStore.push({ id: value.id, target, value });
+            if (this._channelMatches(channels, target)) {
+                values.push(value);
+            }
         }
-        this._deliver(values);
+        if (values.length) {
+            this._deliver(values);
+        }
     }
 
     /**
