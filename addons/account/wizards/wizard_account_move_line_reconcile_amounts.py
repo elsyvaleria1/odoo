@@ -45,16 +45,28 @@ class WizardAccountMoveLineReconcile(models.TransientModel):
             [amls], shadowed_aml_values=shadowed_aml_values
         )
 
-        all_amls.fetch(["move_id", "matched_debit_ids", "matched_credit_ids"])
+        all_amls.fetch(
+            [
+                "move_id",
+                "matched_debit_ids",
+                "matched_credit_ids",
+                "pending_match_amount",
+            ]
+        )
 
-        aml_values_map = {
-            aml: {
+        aml_values_map = {}
+        for aml in all_amls:
+            residual, residual_currency = aml._get_reconciliation_residuals()
+            aml_values_map[aml] = {
                 "aml": aml,
-                "amount_residual": aml.amount_residual,
-                "amount_residual_currency": aml.amount_residual_currency,
+                "amount_residual": residual,
+                "amount_residual_currency": residual_currency,
             }
-            for aml in all_amls
-        }
+        _debug.logic(
+            "simulated_residuals_seeded",
+            amls=all_amls,
+            reserved=all_amls.filtered("pending_match_amount"),
+        )
         amls._prepare_reconciliation_plan(
             plan_list[0], aml_values_map, shadowed_aml_values=shadowed_aml_values
         )

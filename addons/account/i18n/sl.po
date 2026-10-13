@@ -3626,17 +3626,17 @@ msgstr "Prilagajanje števila premikov izvora vnosa"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
-"Prilagajanje vnosa {povezava} {procent}%% od {znesek} priznano od {datum}"
+"Prilagajanje vnosa {povezava} {procent}% od {znesek} priznano od {datum}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Prilagoditev vnosa {povezava} {procent}%% od {znesek}, priznana na "
+"Prilagoditev vnosa {povezava} {procent}% od {znesek}, priznana na "
 "{novi_datum}"
 
 #. module: account
@@ -27055,8 +27055,8 @@ msgstr "po e-pošti"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "preklic {procent}%% od {zneska}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "preklic {procent}% od {zneska}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

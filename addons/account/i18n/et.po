@@ -3562,15 +3562,15 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
-msgstr "Täiendav kanne {link} {percent}%%  {amount} leitud {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
+msgstr "Täiendav kanne {link} {percent}%  {amount} leitud {date}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
-msgstr "Täiendav kanne {link} {percent}%% {amount} leitud {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
+msgstr "Täiendav kanne {link} {percent}% {amount} leitud {new_date}"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -26699,8 +26699,8 @@ msgstr "e-mailiga"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "tühista {percent}%% of {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "tühista {percent}% of {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

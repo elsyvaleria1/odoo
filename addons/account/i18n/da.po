@@ -3630,17 +3630,17 @@ msgstr "Antal oprindelige posteringer for korrektionsposteringen"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
-"Justerende postering {link} {percent}%% på {amount} genkendt fra {date}"
+"Justerende postering {link} {percent}% på {amount} genkendt fra {date}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Justerende postering {link} {percent}%% på {amount} genkendt på {new_date}"
+"Justerende postering {link} {percent}% på {amount} genkendt på {new_date}"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -27122,8 +27122,8 @@ msgstr "via e-mail"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "annullering {percent}%% af {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "annullering {percent}% af {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

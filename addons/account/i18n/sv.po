@@ -3758,15 +3758,15 @@ msgstr "Justering Entry Origin Moves Count"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
-msgstr "Justeringspost {link} {percent}%% av {amount} erkänd från {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
+msgstr "Justeringspost {link} {percent}% av {amount} erkänd från {date}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
-msgstr "Justeringspost {link} {percent}%% av {amount} erkänd den {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
+msgstr "Justeringspost {link} {percent}% av {amount} erkänd den {new_date}"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -27396,8 +27396,8 @@ msgstr "via e-post"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "annullering av {percent}%% av {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "annullering av {percent}% av {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

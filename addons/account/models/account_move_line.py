@@ -4080,7 +4080,7 @@ class AccountMoveLine(models.Model):
             aggregates=["id:recordset"],
         ):
             if all(move.state == "posted" for move in lines.move_id):
-                if not account.reconcile:
+                if not account.is_reconcilable:
                     _debug.logic("account_reconcile_forced_on", account=account)
                     _logger.info(
                         "%s has reconciled lines, changing the config",
@@ -4092,9 +4092,6 @@ class AccountMoveLine(models.Model):
             self.with_context(
                 no_exchange_difference=True, no_cash_basis=True
             )._reconcile_plan(plan_list)
-
-    def _get_matched_move_ids(self):
-        return self.matched_debit_ids | self.matched_credit_ids
 
     def _get_domain_analytic_business(self) -> str:
         self.check_singleton()

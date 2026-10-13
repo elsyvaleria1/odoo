@@ -36,28 +36,12 @@ class WizardAccountMoveLineReconcile(models.TransientModel):
                     [("id", "in", wizard.move_line_ids.partner_id.ids)],
                 ),
                 "|",
-                ("match_amount", "=", False),
-                "|",
-                "&",
-                ("match_amount", "=", "lower"),
-                ("match_amount_max", ">", wizard.amount),
-                "|",
-                "&",
-                ("match_amount", "=", "greater"),
-                ("match_amount_min", "<", wizard.amount),
-                "&",
-                ("match_amount", "=", "between"),
-                "&",
-                ("match_amount_min", "<", wizard.amount),
-                ("match_amount_max", ">", wizard.amount),
-                "|",
                 ("match_journal_ids", "=", False),
                 ("match_journal_ids", "in", wizard.move_line_ids.journal_id.ids),
                 ("created_automatically", "=", False),
             ]
-            query = self.env["account.reconcile.model"]._search(
-                domain, bypass_access=True
-            )
+            reco_model_model = self.env["account.reconcile.model"]
+            query = reco_model_model._search(domain, bypass_access=True)
             reco_model_ids = [
                 r[0]
                 for r in self.env.execute_query(
@@ -66,12 +50,15 @@ class WizardAccountMoveLineReconcile(models.TransientModel):
                 SELECT account_reconcile_model.id
                 FROM %s
                 JOIN account_reconcile_model_line line ON line.model_id = account_reconcile_model.id
-                WHERE %s
+                WHERE %s AND %s
                 GROUP BY account_reconcile_model.id
                 HAVING COUNT(account_reconcile_model.id) = 1
             """,
                         query.from_clause,
                         query.where_clause or SQL("TRUE"),
+                        reco_model_model._get_match_amount_sql(
+                            SQL("%s", wizard.amount), query.table
+                        ),
                     )
                 )
             ]

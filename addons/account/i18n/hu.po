@@ -3594,17 +3594,17 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
-"Módosító tétel {link} {amount} {percent}%%-a elszámolva {date} időponttól"
+"Módosító tétel {link} {amount} {percent}%-a elszámolva {date} időponttól"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Módosító tétel {link} {amount} {percent}%%-a elszámolva {new_date} "
+"Módosító tétel {link} {amount} {percent}%-a elszámolva {new_date} "
 "időpontban"
 
 #. module: account
@@ -26922,7 +26922,7 @@ msgstr "Emailben"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
+msgid "cancelling {percent}% of {amount}"
 msgstr ""
 
 #. module: account

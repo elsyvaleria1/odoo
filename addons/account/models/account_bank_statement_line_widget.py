@@ -429,7 +429,10 @@ class AccountBankStatementLine(models.Model):
 
         exchange_line = self.env["account.move.line"]
         if (
-            exchange_move := move_line_to_edit._get_matched_move_ids().exchange_move_id
+            exchange_move := (
+                move_line_to_edit.matched_debit_ids
+                | move_line_to_edit.matched_credit_ids
+            ).exchange_move_id
         ) and any(record_data.get(key) for key in ["balance", "amount_currency"]):
             exchange_line |= exchange_move.line_ids.filtered(
                 lambda line: line in move_line_to_edit.reconciled_lines_ids

@@ -700,3 +700,403 @@ class TestMarinRevaluationWizardChoice(TestAccountReportsCommon):
             self._wizard_env()(user=accountant)[
                 "wizard.account.move.create.revaluation"
             ].create({"journal_id": other_journal.id})
+
+
+@tagged("post_install", "-at_install")
+class TestMarinReconcileWizardAudit(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company = cls.company_data["company"]
+        cls.misc_journal = cls.company_data["default_journal_misc"]
+        cls.receivable_account = cls.company_data["default_account_receivable"]
+        cls.revenue_account = cls.company_data["default_account_revenue"]
+        cls.credit_card_account = cls.env["account.account"].create(
+            {
+                "name": "Marin Credit Card",
+                "code": "CC.MARIN",
+                "account_type": "liability_credit_card",
+            }
+        )
+
+    def _entry(self, lines, date="2017-01-01", journal=None, post=True):
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": date,
+                "journal_id": (journal or self.misc_journal).id,
+                "line_ids": [Command.create(vals) for vals in lines],
+            }
+        )
+        if post:
+            move.action_post()
+        return move
+
+    def _transfer_wizard(self, lines, **vals):
+        return (
+            self.env["wizard.account.move.line.transfer"]
+            .with_context(active_model="account.move.line", active_ids=lines.ids)
+            .create({"journal_id": self.misc_journal.id, **vals})
+        )
+
+    def test_adjusting_entry_messages_show_a_single_percent_sign(self):
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-01",
+            amounts=[1000.0],
+            taxes=[],
+            post=True,
+        )
+        accrual = self.env["account.account"].create(
+            {
+                "name": "Accrual",
+                "code": "ACCR.PCT",
+                "account_type": "liability_current",
+                "reconcile": True,
+            }
+        )
+        action = self._transfer_wizard(
+            invoice.invoice_line_ids,
+            action="change_period",
+            date="2018-01-01",
+            percentage=50.0,
+            revenue_accrual_account=accrual.id,
+            expense_accrual_account=accrual.id,
+        ).do_action()
+        created = self.env["account.move"].search(action["domain"])
+        bodies = (invoice + created).message_ids.mapped("body")
+        self.assertTrue(any("50.00% of" in body for body in bodies), bodies)
+        self.assertFalse(any("%%" in body for body in bodies), bodies)
+
+    def test_reconcile_wizard_amount_follows_the_pending_match_reservation(self):
+        reserved = self.create_line_for_reconciliation(
+            100.0, 100.0, self.company.currency_id, "2017-01-01", partner=self.partner_a
+        )
+        draft = self._entry(
+            [
+                {
+                    "account_id": self.receivable_account.id,
+                    "partner_id": self.partner_a.id,
+                    "balance": -30.0,
+                },
+                {"account_id": self.revenue_account.id, "balance": 30.0},
+            ],
+            post=False,
+        )
+        self.env["account.pending.match"].create(
+            {
+                "posted_line_id": reserved.id,
+                "draft_line_id": draft.line_ids.filtered("partner_id").id,
+                "amount": 30.0,
+                "amount_currency": 30.0,
+                "currency_id": self.company.currency_id.id,
+                "origin": "manual",
+            }
+        )
+        counterpart = self.create_line_for_reconciliation(
+            -70.0, -70.0, self.company.currency_id, "2017-01-01", partner=self.partner_a
+        )
+        wizard = (
+            self.env["wizard.account.move.line.reconcile"]
+            .with_context(
+                active_model="account.move.line",
+                active_ids=(reserved + counterpart).ids,
+            )
+            .new({})
+        )
+        self.assertEqual(wizard.amount, 0.0)
+        self.assertFalse(wizard.is_write_off_required)
+
+    def test_imported_matching_on_a_credit_card_account_keeps_its_flag(self):
+        lines = self.env["account.move.line"]
+        for balance in (50.0, -50.0):
+            move = self._entry(
+                [
+                    {
+                        "account_id": self.credit_card_account.id,
+                        "balance": balance,
+                        "matching_number": "77777",
+                    },
+                    {"account_id": self.revenue_account.id, "balance": -balance},
+                ],
+                post=False,
+            )
+            lines += move.line_ids.filtered(
+                lambda line: line.account_id == self.credit_card_account
+            )
+        lines.move_id.action_post()
+        self.assertTrue(lines.full_reconcile_id)
+        self.assertFalse(self.credit_card_account.reconcile)
+
+    def test_change_account_reconciles_lines_moved_off_a_credit_card_account(self):
+        move = self._entry(
+            [
+                {"account_id": self.credit_card_account.id, "balance": -80.0},
+                {"account_id": self.revenue_account.id, "balance": 80.0},
+            ]
+        )
+        source = move.line_ids.filtered(
+            lambda line: line.account_id == self.credit_card_account
+        )
+        destination = self.env["account.account"].create(
+            {
+                "name": "Other liability",
+                "code": "OL.MARIN",
+                "account_type": "liability_current",
+            }
+        )
+        self._transfer_wizard(
+            source,
+            action="change_account",
+            date="2017-01-01",
+            destination_account_id=destination.id,
+        ).do_action()
+        self.assertTrue(source.reconciled)
+        self.assertEqual(source.amount_residual, 0.0)
+
+    def test_auto_reconcile_accepts_a_chosen_credit_card_account(self):
+        lines = self.env["account.move.line"]
+        for balance in (40.0, -40.0):
+            move = self._entry(
+                [
+                    {"account_id": self.credit_card_account.id, "balance": balance},
+                    {"account_id": self.revenue_account.id, "balance": -balance},
+                ]
+            )
+            lines += move.line_ids.filtered(
+                lambda line: line.account_id == self.credit_card_account
+            )
+        self.env["wizard.account.move.line.reconcile.auto"].new(
+            {
+                "from_date": "2016-01-01",
+                "to_date": "2018-01-01",
+                "account_ids": self.credit_card_account.ids,
+                "search_mode": "zero_balance",
+            }
+        ).auto_reconcile()
+        self.assertTrue(lines.full_reconcile_id)
+
+    def test_change_account_books_on_the_branch_of_the_lines(self):
+        branch_1, branch_2 = self.env["res.company"].create(
+            [
+                {"name": "Marin Branch 1", "parent_id": self.company.id},
+                {"name": "Marin Branch 2", "parent_id": self.company.id},
+            ]
+        )
+        self.env.user.company_ids |= branch_1 | branch_2
+        branch_2_journal = self.env["account.journal"].create(
+            {
+                "name": "Branch 2 misc",
+                "code": "B2MSC",
+                "type": "general",
+                "company_id": branch_2.id,
+            }
+        )
+        source_account = self.env["account.account"].create(
+            {
+                "name": "Branch source",
+                "code": "BRSRC.MARIN",
+                "account_type": "asset_current",
+            }
+        )
+        destination = source_account.copy({"code": "BRDST.MARIN"})
+        move = self._entry(
+            [
+                {"account_id": source_account.id, "balance": 60.0},
+                {"account_id": self.revenue_account.id, "balance": -60.0},
+            ],
+            journal=branch_2_journal,
+        )
+        self.assertEqual(move.company_id, branch_2)
+        source = move.line_ids.filtered(lambda line: line.account_id == source_account)
+        branch_env = self.env(
+            context={
+                **self.env.context,
+                "allowed_company_ids": [branch_1.id, self.company.id, branch_2.id],
+            }
+        )
+        action = (
+            branch_env["wizard.account.move.line.transfer"]
+            .with_context(active_model="account.move.line", active_ids=source.ids)
+            .create(
+                {
+                    "action": "change_account",
+                    "date": "2017-01-01",
+                    "journal_id": self.misc_journal.id,
+                    "destination_account_id": destination.id,
+                }
+            )
+            .do_action()
+        )
+        self.assertEqual(
+            self.env["account.move"].browse(action["res_id"]).company_id, branch_2
+        )
+
+    def test_split_amount_is_expressed_in_company_currency(self):
+        currency = self.setup_other_currency("EUR")
+        move = self._entry(
+            [
+                {
+                    "account_id": self.revenue_account.id,
+                    "currency_id": currency.id,
+                    "amount_currency": 100.0,
+                    "balance": 50.0,
+                },
+                {
+                    "account_id": self.company_data["default_account_expense"].id,
+                    "currency_id": currency.id,
+                    "amount_currency": -100.0,
+                    "balance": -50.0,
+                },
+            ],
+            post=False,
+        )
+        line = move.line_ids.filtered(lambda line: line.balance > 0)
+        action = line.action_split_lines()
+        wizard = (
+            self.env[action["res_model"]].with_context(**action["context"]).create({})
+        )
+        self.assertEqual(wizard.amount, 25.0)
+        self.assertEqual(
+            wizard[wizard._fields["amount"].get_currency_field(wizard)],
+            self.company.currency_id,
+        )
+
+    def test_reconcile_wizard_suggests_models_at_their_amount_bounds(self):
+        def model(**vals):
+            return self.env["account.reconcile.model"].create(
+                {
+                    "name": f"Marin bound {vals['match_amount']}",
+                    "trigger": "manual",
+                    "line_ids": [
+                        Command.create({"account_id": self.revenue_account.id})
+                    ],
+                    **vals,
+                }
+            )
+
+        lower = model(match_amount="lower", match_amount_max=100.0)
+        greater = model(match_amount="greater", match_amount_min=100.0)
+        between = model(
+            match_amount="between", match_amount_min=100.0, match_amount_max=100.0
+        )
+        inverted = model(
+            match_amount="between", match_amount_min=150.0, match_amount_max=50.0
+        )
+        lines = self.create_line_for_reconciliation(
+            300.0, 300.0, self.company.currency_id, "2017-01-01"
+        ) + self.create_line_for_reconciliation(
+            -200.0, -200.0, self.company.currency_id, "2017-01-01"
+        )
+        wizard = (
+            self.env["wizard.account.move.line.reconcile"]
+            .with_context(active_model="account.move.line", active_ids=lines.ids)
+            .new({})
+        )
+        self.assertEqual(wizard.amount, 100.0)
+        self.assertLessEqual(
+            lower | greater | between | inverted,
+            wizard.reco_model_autocomplete_ids._origin,
+        )
+
+    def test_change_account_keeps_the_foreign_sign_of_a_netted_group(self):
+        cad = self.setup_other_currency("CAD")
+        source_account = self.env["account.account"].create(
+            {
+                "name": "Foreign source",
+                "code": "FSRC.MARIN",
+                "account_type": "asset_current",
+                "reconcile": True,
+            }
+        )
+        destination = self.env["account.account"].create(
+            {
+                "name": "Foreign destination",
+                "code": "FDST.MARIN",
+                "account_type": "asset_current",
+            }
+        )
+        source = self.env["account.move.line"]
+        for balance, amount_currency in ((100.0, 100.0), (-200.0, -90.0)):
+            move = self._entry(
+                [
+                    {
+                        "account_id": source_account.id,
+                        "partner_id": self.partner_a.id,
+                        "currency_id": cad.id,
+                        "amount_currency": amount_currency,
+                        "balance": balance,
+                    },
+                    {
+                        "account_id": self.revenue_account.id,
+                        "currency_id": cad.id,
+                        "amount_currency": -amount_currency,
+                        "balance": -balance,
+                    },
+                ]
+            )
+            source += move.line_ids.filtered(
+                lambda line: line.account_id == source_account
+            )
+        action = self._transfer_wizard(
+            source,
+            action="change_account",
+            date="2017-01-01",
+            destination_account_id=destination.id,
+        ).do_action()
+        transfer = self.env["account.move"].browse(action["res_id"])
+        on_destination = transfer.line_ids.filtered(
+            lambda line: line.account_id == destination
+        )
+        on_source = transfer.line_ids.filtered(
+            lambda line: line.account_id == source_account
+        )
+        self.assertAlmostEqual(sum(on_destination.mapped("balance")), -100.0)
+        self.assertAlmostEqual(sum(on_destination.mapped("amount_currency")), 10.0)
+        self.assertAlmostEqual(sum((source + on_source).mapped("balance")), 0.0)
+        self.assertAlmostEqual(sum((source + on_source).mapped("amount_currency")), 0.0)
+        self.assertTrue(all(source.mapped("reconciled")))
+
+    def test_partials_read_their_full_reconcile_in_the_same_transaction(self):
+        debit, first_credit, second_credit = (
+            self.create_line_for_reconciliation(
+                balance, balance, self.company.currency_id, "2017-01-01"
+            )
+            for balance in (100.0, -60.0, -40.0)
+        )
+        (debit + first_credit).reconcile()
+        first_partial = debit.matched_credit_ids
+        self.assertFalse(first_partial.full_reconcile_id)
+        (debit + second_credit).reconcile()
+        self.assertTrue(debit.full_reconcile_id)
+        self.assertEqual(
+            debit.matched_credit_ids.full_reconcile_id, debit.full_reconcile_id
+        )
+        self.assertEqual(first_partial.full_reconcile_id, debit.full_reconcile_id)
+
+    def test_analytic_coverage_follows_the_selected_plan(self):
+        self.env.user.group_ids += self.env.ref("analytic.group_analytic_accounting")
+        plan_1, plan_2 = self.env["account.analytic.plan"].create(
+            [{"name": "Coverage plan 1"}, {"name": "Coverage plan 2"}]
+        )
+        analytic = self.env["account.analytic.account"].create(
+            {"name": "Coverage AA", "plan_id": plan_1.id}
+        )
+        move = self._entry(
+            [
+                {
+                    "account_id": self.revenue_account.id,
+                    "balance": 100.0,
+                    "analytic_distribution": {str(analytic.id): 60},
+                },
+                {"account_id": self.receivable_account.id, "balance": -100.0},
+            ]
+        )
+        line = move.line_ids.filtered(lambda line: line.balance > 0)
+        self.assertEqual(
+            line.with_context(selected_analytic_plan=plan_1.id).analytic_coverage, 0.6
+        )
+        self.assertEqual(
+            line.with_context(selected_analytic_plan=plan_2.id).analytic_coverage, 0.0
+        )

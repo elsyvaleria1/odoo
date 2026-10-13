@@ -1,4 +1,6 @@
+import operator
 from collections import defaultdict
+from functools import reduce
 
 from markupsafe import Markup, escape
 
@@ -285,8 +287,9 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
 
     @_debug.perf.timed
     def _get_change_account_groupings(self) -> tuple:
-        counterpart_balances = defaultdict(lambda: defaultdict(lambda: 0))
-        counterpart_distribution_amount = defaultdict(lambda: defaultdict(dict))
+        counterpart_balances = defaultdict(
+            lambda: {"amounts": [], "analytic_distribution": {}}
+        )
         grouped_source_lines = defaultdict(lambda: self.env["account.move.line"])
 
         for line in self.move_line_ids.filtered(
@@ -308,22 +311,19 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
                     line.date,
                 )
 
-            grouping_key = (line.partner_id, counterpart_currency)
-
-            counterpart_balances[grouping_key]["amount_currency"] += (
-                counterpart_amount_currency
+            counterpart_vals = counterpart_balances[
+                (line.partner_id, counterpart_currency)
+            ]
+            counterpart_vals["amounts"].append(
+                (line.balance, counterpart_amount_currency)
             )
-            counterpart_balances[grouping_key]["balance"] += line.balance
             if line.analytic_distribution:
+                distribution_values = counterpart_vals["analytic_distribution"]
                 for account_id, distribution in line.analytic_distribution.items():
-                    distribution_values = counterpart_distribution_amount[grouping_key]
                     distribution_values[account_id] = (
                         line.balance * distribution
                         + distribution_values.get(account_id, 0) * 100
                     ) / 100
-            counterpart_balances[grouping_key]["analytic_distribution"] = (
-                counterpart_distribution_amount[grouping_key] or {}
-            )
             grouped_source_lines[
                 (
                     line.partner_id,
@@ -348,57 +348,76 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             )
         return counterpart_balances, grouped_source_lines
 
+    def _get_sign_consistent_amounts(self, amounts, currency) -> list:
+        company_currency = self.company_id.currency_id
+        balance = sum(line_balance for line_balance, _amount in amounts)
+        amount_currency = sum(amount for _balance, amount in amounts)
+        if (
+            company_currency.compare_amounts(balance, 0)
+            * currency.compare_amounts(amount_currency, 0)
+            >= 0
+        ):
+            return [(balance, amount_currency)]
+        parts = defaultdict(lambda: [0.0, 0.0])
+        for line_balance, line_amount_currency in amounts:
+            part = parts[
+                company_currency.compare_amounts(line_balance, 0)
+                or currency.compare_amounts(line_amount_currency, 0)
+            ]
+            part[0] += line_balance
+            part[1] += line_amount_currency
+        _debug.logic(
+            "transfer_group_split_by_sign",
+            autoentry=self,
+            currency=currency,
+            balance=balance,
+            amount_currency=amount_currency,
+            parts=len(parts),
+        )
+        return [tuple(part) for part in parts.values()]
+
     @_debug.perf.timed
     def _prepare_change_account_counterpart_line_vals(self, counterpart_balances):
+        company_currency = self.company_id.currency_id
+        source_accounts = self.move_line_ids.account_id
+        counterpart_label = (
+            len(source_accounts) == 1
+            and self.env._("Transfer from %s", source_accounts.display_name)
+        ) or self.env._("Transfer counterpart")
         line_vals = []
         for (
             counterpart_partner,
             counterpart_currency,
         ), counterpart_vals in counterpart_balances.items():
-            source_accounts = self.move_line_ids.mapped("account_id")
-            counterpart_label = (
-                len(source_accounts) == 1
-                and self.env._("Transfer from %s", source_accounts.display_name)
-            ) or self.env._("Transfer counterpart")
-
+            group_balance = sum(
+                balance for balance, _amount in counterpart_vals["amounts"]
+            )
             analytic_distribution = {
                 account_id: (
                     100
-                    if counterpart_currency.is_zero(counterpart_vals["balance"])
-                    else 100 * distribution_amount / counterpart_vals["balance"]
+                    if company_currency.is_zero(group_balance)
+                    else 100 * distribution_amount / group_balance
                 )
                 for account_id, distribution_amount in counterpart_vals[
                     "analytic_distribution"
                 ].items()
             }
-
-            if not counterpart_currency.is_zero(
-                counterpart_vals["amount_currency"]
-            ) or not self.company_id.currency_id.is_zero(counterpart_vals["balance"]):
+            for balance, amount_currency in self._get_sign_consistent_amounts(
+                counterpart_vals["amounts"], counterpart_currency
+            ):
+                if counterpart_currency.is_zero(
+                    amount_currency
+                ) and company_currency.is_zero(balance):
+                    continue
                 line_vals.append(
                     {
                         "name": counterpart_label,
-                        "debit": (
-                            counterpart_vals["balance"] > 0
-                            and self.company_id.currency_id.round(
-                                counterpart_vals["balance"]
-                            )
-                        )
-                        or 0,
-                        "credit": (
-                            counterpart_vals["balance"] < 0
-                            and self.company_id.currency_id.round(
-                                -counterpart_vals["balance"]
-                            )
-                        )
-                        or 0,
+                        "debit": max(company_currency.round(balance), 0.0),
+                        "credit": max(company_currency.round(-balance), 0.0),
                         "account_id": self.destination_account_id.id,
                         "partner_id": counterpart_partner.id or None,
-                        "amount_currency": counterpart_currency.round(
-                            ((counterpart_vals["balance"] < 0 and -1) or 1)
-                            * abs(counterpart_vals["amount_currency"])
-                        )
-                        or 0,
+                        "amount_currency": counterpart_currency.round(amount_currency)
+                        or 0.0,
                         "currency_id": counterpart_currency.id,
                         "analytic_distribution": analytic_distribution,
                     }
@@ -413,6 +432,11 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
 
     @_debug.perf.timed
     def _prepare_change_account_source_line_vals(self, grouped_source_lines):
+        company_currency = self.company_id.currency_id
+        label = self.env._(
+            "Transfer to %s",
+            self.destination_account_id.display_name or self.env._("[Not set]"),
+        )
         line_vals = []
         for (
             partner,
@@ -420,33 +444,22 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             account,
             analytic_distribution,
         ), lines in grouped_source_lines.items():
-            account_balance = sum(line.balance for line in lines)
-            if not self.company_id.currency_id.is_zero(account_balance):
-                account_amount_currency = currency.round(
-                    sum(line.amount_currency for line in lines)
-                )
+            for balance, amount_currency in self._get_sign_consistent_amounts(
+                [(line.balance, line.amount_currency) for line in lines], currency
+            ):
+                if company_currency.is_zero(balance) and currency.is_zero(
+                    amount_currency
+                ):
+                    continue
                 line_vals.append(
                     {
-                        "name": self.env._(
-                            "Transfer to %s",
-                            self.destination_account_id.display_name
-                            or self.env._("[Not set]"),
-                        ),
-                        "debit": (
-                            account_balance < 0
-                            and self.company_id.currency_id.round(-account_balance)
-                        )
-                        or 0,
-                        "credit": (
-                            account_balance > 0
-                            and self.company_id.currency_id.round(account_balance)
-                        )
-                        or 0,
+                        "name": label,
+                        "debit": max(company_currency.round(-balance), 0.0),
+                        "credit": max(company_currency.round(balance), 0.0),
                         "account_id": account.id,
                         "partner_id": partner.id or None,
                         "currency_id": currency.id,
-                        "amount_currency": ((account_balance > 0 and -1) or 1)
-                        * abs(account_amount_currency),
+                        "amount_currency": currency.round(-amount_currency) or 0.0,
                         "analytic_distribution": analytic_distribution,
                     }
                 )
@@ -457,6 +470,13 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             lines=len(line_vals),
         )
         return line_vals
+
+    def _get_source_lines_company(self):
+        common_ancestors = reduce(
+            operator.and_,
+            (company.parent_ids for company in self.move_line_ids.company_id),
+        )
+        return max(common_ancestors, key=lambda company: len(company.parent_ids))
 
     @_debug.perf.timed
     def _get_move_dict_vals_change_account(self) -> list:
@@ -471,9 +491,10 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
         accounts = self.env["account.account"].browse(
             [line["account_id"] for line in line_vals]
         )
+        source_company = self._get_source_lines_company()
         companies = (
-            accounts.company_ids.filtered(lambda c: self.env.company in c.parent_ids)
-            | self.env.company
+            accounts.company_ids.filtered(lambda c: source_company in c.parent_ids)
+            | source_company
         )
         lowest_child_company = max(
             companies, key=lambda company: len(company.parent_ids)
@@ -484,6 +505,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             autoentry=self,
             lines=len(line_vals),
             company=lowest_child_company,
+            source_company=source_company,
             candidate_companies=companies,
         )
         return [
@@ -788,7 +810,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             ),
             "link1": self._format_move_link(accrual_move),
             "second": self._format_strings(
-                self.env._("cancelling {percent}%% of {amount}"), move, amount
+                self.env._("cancelling {percent}% of {amount}"), move, amount
             ),
             "link2": self._format_move_link(destination_move),
             "third": self._format_strings(
@@ -800,7 +822,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             self._format_strings(
                 escape(
                     self.env._(
-                        "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+                        "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
                     )
                 ),
                 move,
@@ -809,7 +831,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             self._format_strings(
                 escape(
                     self.env._(
-                        "Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+                        "Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
                     )
                 ),
                 move,
@@ -867,7 +889,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
         destination_move = created_moves[0]
         accrual_lines_per_source_line = (
             self._get_accrual_lines_per_source_line(accrual_account, created_moves)
-            if accrual_account.reconcile
+            if accrual_account.is_reconcilable
             else {}
         )
         destination_messages = []
@@ -881,7 +903,7 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
             )
 
             if (
-                accrual_account.reconcile
+                accrual_account.is_reconcilable
                 and accrual_move.state == "posted"
                 and destination_move.state == "posted"
             ):
@@ -927,23 +949,23 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
                 move=new_move,
                 groups=len(grouped_lines),
                 reconcilable_groups=sum(
-                    1 for (_p, _c, account) in grouped_lines if account.reconcile
+                    1 for (_p, _c, account) in grouped_lines if account.is_reconcilable
                 ),
                 destination_lines=len(destination_lines),
-                destination_reconcilable=self.destination_account_id.reconcile,
+                destination_reconcilable=self.destination_account_id.is_reconcilable,
             )
         new_lines_by_key = new_move.line_ids.grouped(
             lambda x: (x.account_id, x.partner_id, x.currency_id)
         )
         no_line = new_move.line_ids.browse()
         for (partner, currency, account), lines in grouped_lines.items():
-            if account.reconcile:
+            if account.is_reconcilable:
                 to_reconcile = lines + new_lines_by_key.get(
                     (account, partner, currency), no_line
                 )
                 to_reconcile.reconcile()
 
-        if destination_lines and self.destination_account_id.reconcile:
+        if destination_lines and self.destination_account_id.is_reconcilable:
             (
                 destination_lines
                 + new_move.line_ids.filtered(

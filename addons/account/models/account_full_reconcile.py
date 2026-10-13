@@ -122,9 +122,6 @@ class AccountFullReconcile(models.Model):
             _debug.perf.count(
                 "full_partials_linked", rows=sum(len(ids) for ids in partial_ids)
             )
-        fulls.partial_reconcile_ids.invalidate_recordset(
-            ["full_reconcile_id"], flush=False
-        )
         fulls.invalidate_recordset(["partial_reconcile_ids"], flush=False)
         return fulls
 

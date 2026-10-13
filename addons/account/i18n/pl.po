@@ -3927,16 +3927,16 @@ msgstr "Dostosowywanie liczby ruchów pochodzenia wpisu"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
-msgstr "Wpis korygujący {link} {percent}%% {amount} uznanej od {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
+msgstr "Wpis korygujący {link} {percent}% {amount} uznanej od {date}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Wpis korygujący {link} {percent}%% {amount} uznanego w dniu {new_date}"
+"Wpis korygujący {link} {percent}% {amount} uznanego w dniu {new_date}"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -27700,8 +27700,8 @@ msgstr "przez e-mail."
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "anulowanie {percent}%% z {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "anulowanie {percent}% z {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

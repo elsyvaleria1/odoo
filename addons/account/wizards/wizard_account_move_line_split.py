@@ -12,9 +12,9 @@ class WizardAccountMoveLineSplit(models.TransientModel):
         column1="wizard_id",
         column2="line_id",
     )
-    line_currency_id = fields.Many2one(comodel_name="res.currency")
+    company_currency_id = fields.Many2one(comodel_name="res.currency")
     quantity = fields.Integer()
-    amount = fields.Monetary(currency_field="line_currency_id")
+    amount = fields.Monetary(currency_field="company_currency_id")
     account_id = fields.Many2one(comodel_name="account.account")
 
     show_simple_wizard = fields.Boolean(compute="_compute_show_simple_wizard")
@@ -47,7 +47,7 @@ class WizardAccountMoveLineSplit(models.TransientModel):
                     defaults["quantity"] = (
                         int(lines.quantity) if lines.quantity > 1 else 2
                     )
-                    defaults["line_currency_id"] = lines.currency_id.id
+                    defaults["company_currency_id"] = lines.company_currency_id.id
                     defaults["amount"] = abs(lines.balance) / defaults["quantity"]
                     defaults["account_id"] = lines.account_id.id
                 else:

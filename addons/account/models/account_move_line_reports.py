@@ -156,6 +156,7 @@ class AccountMoveLine(models.Model):
         )
 
     @api.depends("analytic_distribution", "distribution_analytic_account_ids")
+    @api.depends_context("selected_analytic_plan")
     @_debug.perf.timed
     def _compute_analytic_coverage(self) -> None:
         plan_id = self.env.context.get("selected_analytic_plan")

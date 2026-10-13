@@ -3541,18 +3541,18 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
-"Тохируулга бичилт {link} {percent}%% нь {amount}-аас {date}-ээс хойш хүлээн "
+"Тохируулга бичилт {link} {percent}% нь {amount}-аас {date}-ээс хойш хүлээн "
 "зөвшөөрөгдсөн."
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Тохируулга бичилт {link} {percent}%% нь {amount} -р {new_date} огноо хүртэл "
+"Тохируулга бичилт {link} {percent}% нь {amount} -р {new_date} огноо хүртэл "
 "тооцогдсон."
 
 #. module: account
@@ -26892,8 +26892,8 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "{percent}%%-иар {amount}-с цуцлах"
+msgid "cancelling {percent}% of {amount}"
+msgstr "{percent}%-иар {amount}-с цуцлах"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

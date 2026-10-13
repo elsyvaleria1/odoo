@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <form string="Split">
                 <field name="line_ids" invisible="1" />
-                <field name="line_currency_id" invisible="1" />
+                <field name="company_currency_id" invisible="1" />
                 <field name="show_simple_wizard" invisible="1" />
                 <group>
                     <field name="quantity" />

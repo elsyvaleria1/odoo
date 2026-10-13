@@ -30,7 +30,7 @@ class WizardAccountMoveLineReconcileAuto(models.TransientModel):
     account_ids = fields.Many2many(
         comodel_name="account.account",
         string="Accounts",
-        domain="[('reconcile', '=', True), ('account_type', '!=', 'off_balance')]",
+        domain="[('is_reconcilable', '=', True)]",
         check_company=True,
     )
     partner_ids = fields.Many2many(
@@ -112,12 +112,16 @@ class WizardAccountMoveLineReconcileAuto(models.TransientModel):
                 ("date", ">=", self.from_date or date.min),
                 ("date", "<=", self.to_date),
                 ("reconciled", "=", False),
-                ("account_id.reconcile", "=", True),
                 ("amount_residual_currency", "!=", 0.0),
                 ("amount_residual", "!=", 0.0),
             ]
             if self.account_ids:
-                domain.append(("account_id", "in", self.account_ids.ids))
+                domain += [
+                    ("account_id", "in", self.account_ids.ids),
+                    ("account_id.is_reconcilable", "=", True),
+                ]
+            else:
+                domain.append(("account_id.reconcile", "=", True))
             if self.partner_ids:
                 domain.append(("partner_id", "in", self.partner_ids.ids))
             _debug.logic(

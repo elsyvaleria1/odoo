@@ -3810,18 +3810,18 @@ msgstr "Nombre de mouvements d'origine des écritures d'ajustement"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
-"Écriture d'ajustement {link} {percent}%% de {amount} reconnue à partir du "
+"Écriture d'ajustement {link} {percent}% de {amount} reconnue à partir du "
 "{date}"
 
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
-"Écriture d'ajustement {link} {percent}%% de {amount} reconnue le {new_date}"
+"Écriture d'ajustement {link} {percent}% de {amount} reconnue le {new_date}"
 
 #. module: account
 #: model:report.formula.column,name:account.multicurrency_revaluation_report_adjustment
@@ -27793,8 +27793,8 @@ msgstr "par e-mail"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "annuler {percent}%% de {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "annuler {percent}% de {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

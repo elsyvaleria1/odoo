@@ -3615,7 +3615,7 @@ msgstr "एंट्री ओरिजिन मूव्स की संख�
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "Adjusting Entry {link} {percent}%% of {amount} recognized from {date}"
+msgid "Adjusting Entry {link} {percent}% of {amount} recognized from {date}"
 msgstr ""
 "समायोजन एंट्री {link}: {amount} का {percent}% हिस्सा {date} से जोड़ा गया"
 
@@ -3623,7 +3623,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid ""
-"Adjusting Entry {link} {percent}%% of {amount} recognized on {new_date}"
+"Adjusting Entry {link} {percent}% of {amount} recognized on {new_date}"
 msgstr ""
 "समायोजन एंट्री {link}: {amount} का {percent}% हिस्सा {date} से जोड़ा गया"
 
@@ -27149,8 +27149,8 @@ msgstr "ईमेल के ज़रिए"
 #. module: account
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
-msgid "cancelling {percent}%% of {amount}"
-msgstr "रद्द किया जा रहा है {percent}%% of {amount}"
+msgid "cancelling {percent}% of {amount}"
+msgstr "रद्द किया जा रहा है {percent}% of {amount}"
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.account_default_terms_and_conditions

@@ -93,10 +93,9 @@ class AccountReconcileModel(models.Model):
         )
 
     @api.model
-    def _get_match_amount_sql(self, st_line="st_line", reco_model="reco_model"):
+    def _get_match_amount_sql(self, amount: SQL, reco_model="reco_model") -> SQL:
         minimum = SQL("COALESCE(%s.match_amount_min, 0.0)", SQL.identifier(reco_model))
         maximum = SQL("COALESCE(%s.match_amount_max, 0.0)", SQL.identifier(reco_model))
-        amount = SQL("%s.amount", SQL.identifier(st_line))
         return SQL(
             """CASE COALESCE(%(match_amount)s, '')
                    WHEN 'lower'   THEN %(amount)s <= %(max)s
@@ -141,7 +140,7 @@ class AccountReconcileModel(models.Model):
                AND %(reco_model)s.active IS TRUE""",
             st_line=st_line_id,
             reco_model=reco_model_id,
-            amount=self._get_match_amount_sql(st_line, reco_model),
+            amount=self._get_match_amount_sql(SQL("%s.amount", st_line_id), reco_model),
             label=self._get_match_label_sql(st_line, reco_model),
         )
 
