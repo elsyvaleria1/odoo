@@ -170,7 +170,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_ui_view_authoring.py` | `post_install`, `-at_install` | 2 | 37 | TransactionCase |
 | `test_legacy_field_names.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
 | `test_login_cooldown_rpc.py` | `post_install`, `-at_install` | 2 | 18 | TransactionCase |
-| `test_method_name_migration.py` | `post_install`, `-at_install` | 2 | 17 | BaseCase, TransactionCase |
+| `test_method_name_migration.py` | `post_install`, `-at_install` | 2 | 28 | BaseCase, TransactionCase |
 | `test_mixin_merge.py` | `post_install`, `-at_install` | 2 | 9 | TransactionCase |
 | `test_mixin_recurrence_rule.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 6 | 22 | TransactionCase |

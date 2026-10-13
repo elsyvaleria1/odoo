@@ -128,6 +128,63 @@ class TestMethodNameMigration(BaseCase):
             expected,
         )
 
+    def test_rebinding_does_not_reuse_a_previous_model_alias(self):
+        bindings = (
+            "records: object = unknown\nrecords._find()\n",
+            "records, other = unknown, 1\nrecords._find()\n",
+            "for records in unknown:\n    pass\nrecords._find()\n",
+            "try:\n    fail()\nexcept Exception as records:\n    records._find()\n",
+            "[(records := unknown) for item in [1]]\nrecords._find()\n",
+            "with unknown as records:\n    records._find()\n",
+            "def records():\n    pass\nrecords._find()\n",
+            "match unknown:\n    case records:\n        records._find()\n",
+            'condition and (records := env["ir.access.exception"])\nrecords._find()\n',
+            "def replace():\n    global records\n    records = unknown\nreplace()\nrecords._find()\n",
+            'def outer():\n    records = env["ir.access.drift"]\n    def replace():\n        nonlocal records\n        records = unknown\n    replace()\n    records._find()\nouter()\n',
+        )
+        for binding in bindings:
+            code = 'records = env["ir.access.drift"]\n' + binding
+            unresolved = set()
+            with self.subTest(binding=binding):
+                rewritten = self.migration._rewrite_generic_method_bindings(
+                    code, None, {}, unresolved
+                )
+                self.assertEqual(rewritten, code)
+                self.assertTrue(unresolved)
+
+    def test_an_annotated_model_alias_can_be_resolved(self):
+        code = 'records: object = env["ir.access.drift"]\nrecords._find()\n'
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(code, None, {}),
+            code.replace("records._find", "records._get_findings_by_identity"),
+        )
+
+    def test_aliases_use_the_last_unconditional_assignment(self):
+        code = (
+            "records = records.sudo()\n"
+            "snapshot = records\n"
+            'records = env["ir.access.exception"]\n'
+            "snapshot._find()\nrecords._find()\n"
+        )
+        expected = code.replace(
+            "snapshot._find", "snapshot._get_findings_by_identity"
+        ).replace("records._find", "records._get_exception_active")
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, "ir.access.drift", {}
+            ),
+            expected,
+        )
+        code = 'method = "_find"\nmethod = "other"\ngetattr(records, method)()'
+        unresolved = set()
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, "ir.access.drift", {}, unresolved
+            ),
+            code,
+        )
+        self.assertFalse(unresolved)
+
     def test_history_reads_model_context_from_its_server_action(self):
         statements = []
         rows = iter(([(7, "ir.access.drift")], [], [(11, "records._find()", 7)]))
@@ -161,6 +218,56 @@ class TestMethodNameMigration(BaseCase):
             expected,
         )
 
+    def test_getattr_resolves_method_name_aliases_without_changing_other_uses(self):
+        code = 'method = "_find"\ntext = method\ngetattr(records, method)()\n'
+        expected = code.replace(
+            "getattr(records, method)", "getattr(records, '_get_exception_active')"
+        )
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, "ir.access.exception", {}
+            ),
+            expected,
+        )
+
+    def test_a_conditional_getattr_name_needs_review(self):
+        code = 'condition and (method := "_find")\ngetattr(records, method)()\n'
+        unresolved = set()
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, "ir.access.exception", {}, unresolved
+            ),
+            code,
+        )
+        self.assertEqual(unresolved, {("_find", 2)})
+
+    def test_indirect_getattr_names_cannot_silently_keep_removed_methods(self):
+        for code in (
+            'method, = ("_find",)\ngetattr(records, method)()',
+            'method = "_find"\ndef helper():\n    return getattr(records, method)()\nhelper()',
+            'method = "_find" if condition else "other"\ngetattr(records, method)()',
+            'method = ["_find"][0]\ngetattr(records, method)()',
+        ):
+            unresolved = set()
+            with self.subTest(code=code):
+                self.assertEqual(
+                    self.migration._rewrite_generic_method_bindings(
+                        code, "ir.access.drift", {}, unresolved
+                    ),
+                    code,
+                )
+                self.assertTrue(unresolved)
+
+        code = 'method = ["_find"][0]\ngetattr(records, method)()'
+        unresolved = set()
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, "unrelated.model", {}, unresolved
+            ),
+            code,
+        )
+        self.assertFalse(unresolved)
+
     def test_unknown_owner_is_reported_for_manual_review(self):
         unresolved = set()
         code = 'unknown._find()\nenv["unrelated.model"]._find()\n'
@@ -193,6 +300,67 @@ class TestMethodNameMigration(BaseCase):
         self.assertEqual(
             self.migration._rewrite_generic_method_bindings(code, None, {}), expected
         )
+
+    def test_specialized_names_only_rewrite_their_own_model(self):
+        for model, old, new in (
+            ("res.users", "_check_uid_passwd", "_authenticate_rpc_credentials"),
+            ("ir.access.changeset", "_check_review", "_get_impact_reviewed"),
+            ("ir.ui.view", "_refuse_recombination", "_handle_recombination_error"),
+            ("resource.resource", "_find_free_window", "_get_window_free"),
+        ):
+            code = f'env["{model}"].{old}()\nenv["unrelated.model"].{old}()\n'
+            expected = code.replace(f'"{model}"].{old}', f'"{model}"].{new}')
+            with self.subTest(model=model, old=old):
+                self.assertEqual(
+                    self.migration._rewrite_generic_method_bindings(code, None, {}),
+                    expected,
+                )
+
+    def test_method_names_follow_ordinary_inheritance(self):
+        parents = {
+            "custom.drift": {"ir.access.drift"},
+            "custom.child": {"custom.drift"},
+            "custom.users": {"res.users"},
+        }
+        code = (
+            'env["custom.child"]._find()\n'
+            'env["custom.users"]._check_uid_passwd(db, uid, passwd)\n'
+        )
+        expected = code.replace("._find", "._get_findings_by_identity").replace(
+            "._check_uid_passwd", "._authenticate_rpc_credentials"
+        )
+        self.assertEqual(
+            self.migration._rewrite_generic_method_bindings(
+                code, None, {}, model_parents=parents
+            ),
+            expected,
+        )
+
+    def test_conflicting_inherited_contracts_need_review(self):
+        parents = {"custom.credentials": {"res.users", "res.users.apikeys"}}
+        with self.assertRaisesRegex(ValueError, "conflicting inherited methods"):
+            self.migration._rewrite_generic_method_bindings(
+                'env["custom.credentials"]._check_credentials(credential)',
+                None,
+                {},
+                model_parents=parents,
+            )
+
+    def test_error_calls_follow_ordinary_inheritance(self):
+        code = "record._raise_currently_executing()\n"
+        rewritten = self.migration._rewrite_error_method_calls(
+            code, "custom.cron", {}, model_parents={"custom.cron": {"ir.cron"}}
+        )
+        self.assertEqual(
+            rewritten, "raise record._prepare_cron_running_error() from None\n"
+        )
+        with self.assertRaisesRegex(ValueError, "Cannot migrate _deny_login"):
+            self.migration._rewrite_error_method_calls(
+                'getattr(record, "_deny_login")(credential)',
+                "custom.users",
+                {},
+                model_parents={"custom.users": {"res.users"}},
+            )
 
     def test_inherited_access_getter_preserves_a_local_validator_with_same_name(self):
         code = 'def _check_access(operation):\n    return None\nrecord._check_access("read")\n_check_access("read")\n'
@@ -248,6 +416,9 @@ class TestMethodNameMigration(BaseCase):
             "result = record._deny_login(credential)",
             'getattr(record, "_deny_login")(credential)',
             'callback = getattr(record, "_deny_login")',
+            'method = "_deny_login"\ngetattr(record, method)(credential)',
+            'method, = ("_deny_login",)\ngetattr(record, method)(credential)',
+            'method = "_deny_login"\ndef helper():\n    getattr(record, method)(credential)\nhelper()',
         ):
             with (
                 self.subTest(code=code),
@@ -336,6 +507,9 @@ class TestMethodNameMigrationDatabase(TransactionCase):
                         "CREATE TABLE ir_actions_server_history (id integer PRIMARY KEY, action_id integer, code text)"
                     )
                     cr.execute(
+                        "CREATE TABLE ir_model_inherit (model_id integer, parent_id integer, parent_field_id integer)"
+                    )
+                    cr.execute(
                         "INSERT INTO ir_model VALUES (1, 'ir.access.drift'), (2, 'res.partner'), (3, 'res.users')"
                     )
                     cr.execute(
@@ -402,19 +576,54 @@ class TestMethodNameMigrationDatabase(TransactionCase):
                 code.replace("records._find", "records._get_findings_by_identity"),
             )
 
-    def test_failed_upgrade_rolls_back_earlier_rewrites(self):
+    def test_inherited_methods_exclude_delegated_models(self):
         with self._use_migration_schema() as cr:
-            code = "records._find()"
-            cr.execute("INSERT INTO ir_act_server VALUES (1, 1, %s)", [code])
             cr.execute(
-                "INSERT INTO ir_actions_server_history VALUES (1, 1, 'unknown._find()')"
+                "INSERT INTO ir_model VALUES (4, 'custom.drift'), (5, 'custom.child'), (6, 'custom.delegated')"
             )
+            cr.execute(
+                "INSERT INTO ir_model_inherit VALUES (4, 1, NULL), (5, 4, NULL), (6, 1, 1)"
+            )
+            cr.execute(
+                "INSERT INTO ir_model_fields VALUES (1, 6, 'drift_id', 'ir.access.drift', NULL)"
+            )
+            cr.execute(
+                "INSERT INTO ir_act_server VALUES (1, 4, 'records._find()'), (2, 5, 'records._find()'), (3, 6, 'records._find()'), (4, 6, 'records.drift_id._find()')"
+            )
+            self.migration.migrate(cr, "1.152")
+            cr.execute("SELECT code FROM ir_act_server ORDER BY id")
+            self.assertEqual(
+                cr.fetchall(),
+                [
+                    ("records._get_findings_by_identity()",),
+                    ("records._get_findings_by_identity()",),
+                    ("records._find()",),
+                    ("records.drift_id._get_findings_by_identity()",),
+                ],
+            )
+
+    def test_failed_upgrade_rolls_back_earlier_rewrites(self):
+        for history_code in (
+            "unknown._find()",
+            'records = env["ir.access.drift"]\nrecords, other = unknown, 1\nrecords._find()',
+            'method = ["_find"][0]\ngetattr(records, method)()',
+        ):
             with (
-                self.assertRaisesRegex(
-                    ValueError, r"ir_actions_server_history.code, row 1:"
-                ),
-                cr.savepoint(flush=False),
+                self.subTest(history_code=history_code),
+                self._use_migration_schema() as cr,
             ):
-                self.migration.migrate(cr, "1.152")
-            cr.execute("SELECT code FROM ir_act_server WHERE id = 1")
-            self.assertEqual(cr.fetchone()[0], code)
+                code = "records._find()"
+                cr.execute("INSERT INTO ir_act_server VALUES (1, 1, %s)", [code])
+                cr.execute(
+                    "INSERT INTO ir_actions_server_history VALUES (1, 1, %s)",
+                    [history_code],
+                )
+                with (
+                    self.assertRaisesRegex(
+                        ValueError, r"ir_actions_server_history.code, row 1:"
+                    ),
+                    cr.savepoint(flush=False),
+                ):
+                    self.migration.migrate(cr, "1.152")
+                cr.execute("SELECT code FROM ir_act_server WHERE id = 1")
+                self.assertEqual(cr.fetchone()[0], code)

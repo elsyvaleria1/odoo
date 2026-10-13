@@ -33,26 +33,21 @@ CODE_CONTEXT_MODELS = {
     },
 }
 
-METHOD_RENAMES = {
-    "_missing_template_error": "_prepare_missing_template_error",
-    "_check_uid_passwd": "_authenticate_rpc_credentials",
-    "_check_uid_passwd_cached": "_authenticate_rpc_credentials_cached",
-    "_check_review": "_get_impact_reviewed",
-    "_check_session_binding": "_is_session_binding_valid",
-    "_check_company_domain": "_get_domain_company_compatible",
-    "_known_readable": "_has_cached_read_access",
-    "_assert_can_auth": "_admit_authentication_attempt",
-    "_assert_group_query_allowed": "_check_group_query_allowed",
-    "_deny_missing_actions": "_update_action_attributes_for_access",
-    "_ensure_private_facet": "_get_or_create_private_facet",
-    "_find_free_window": "_get_window_free",
-    "_refuse_recombination": "_handle_recombination_error",
-    "_refuse_start": "_revoke_for_start_error",
-    "_seed_configurations": "_sync_configurations",
-    "_validates_whole": "_is_whole_view_validation_requested",
-}
-
 MODEL_METHOD_RENAMES = {
+    ("ir.ui.view", "_missing_template_error"): "_prepare_missing_template_error",
+    ("res.users", "_check_uid_passwd"): "_authenticate_rpc_credentials",
+    ("res.users", "_check_uid_passwd_cached"): "_authenticate_rpc_credentials_cached",
+    ("ir.access.changeset", "_check_review"): "_get_impact_reviewed",
+    ("ir.http", "_check_session_binding"): "_is_session_binding_valid",
+    ("res.users", "_assert_can_auth"): "_admit_authentication_attempt",
+    ("res.users", "_assert_group_query_allowed"): "_check_group_query_allowed",
+    ("ir.ui.view", "_deny_missing_actions"): "_update_action_attributes_for_access",
+    ("res.partner", "_ensure_private_facet"): "_get_or_create_private_facet",
+    ("resource.resource", "_find_free_window"): "_get_window_free",
+    ("ir.ui.view", "_refuse_recombination"): "_handle_recombination_error",
+    ("res.users.grant", "_refuse_start"): "_revoke_for_start_error",
+    ("res.company", "_seed_configurations"): "_sync_configurations",
+    ("ir.ui.view", "_validates_whole"): "_is_whole_view_validation_requested",
     ("res.users", "_check_credentials"): "_authenticate_credentials",
     ("res.users.apikeys", "_check_credentials"): "_get_user_id_for_key",
     ("ir.asset.build", "_sweep"): "_remove_expired_builds_and_get_count",
@@ -66,7 +61,8 @@ MODEL_METHOD_RENAMES = {
 }
 
 SHARED_MODEL_METHOD_RENAMES = {
-    **METHOD_RENAMES,
+    "_check_company_domain": "_get_domain_company_compatible",
+    "_known_readable": "_has_cached_read_access",
     "_check_access": "_get_records_forbidden_and_error_factory",
 }
 
@@ -107,6 +103,7 @@ class _GenericMethodBindings(ast.NodeVisitor):
         model: str | None,
         relations: Mapping[tuple[str, str], str],
         context_models: Mapping[str, str] | None = None,
+        model_parents: Mapping[str, set[str]] | None = None,
     ) -> None:
         self.code = code.encode()
         self.context_models = (
@@ -116,29 +113,70 @@ class _GenericMethodBindings(ast.NodeVisitor):
         )
         self.context_models.update(context_models or {})
         self.relations = relations
+        self.model_parents = model_parents or {}
         self.bindings: dict[int, dict[str, list[ast.expr]]] = {}
         self.scopes: dict[int, int] = {}
         self.scope_parents: dict[int, int] = {}
+        self.comprehension_scopes: set[int] = set()
         self.ancestors: dict[int, tuple[ast.AST, ...]] = {}
         self.binding_guards: dict[int, tuple[ast.AST, ...]] = {}
         self.locals: dict[int, set[str]] = {}
         self.uncertain: dict[int, set[str]] = {}
         self.edits: dict[int, tuple[int, bytes]] = {}
         self.unresolved: set[tuple[str, int]] = set()
+        self.method_name_literals: set[str] = set()
         self.line_starts = [0]
         for line in self.code.splitlines(keepends=True):
             self.line_starts.append(self.line_starts[-1] + len(line))
 
+    def _mark_bindings_uncertain(self, scope: int, *names: str) -> None:
+        self.locals.setdefault(scope, set()).update(names)
+        self.uncertain.setdefault(scope, set()).update(names)
+
     def _record_shadowed_names(self, node: ast.AST, scope: int) -> None:
         if isinstance(node, ast.Name) and isinstance(node.ctx, (ast.Store, ast.Del)):
             self.locals.setdefault(scope, set()).add(node.id)
+            parent = self.ancestors[id(node)][-1]
+            if not isinstance(
+                parent,
+                (ast.Assign, ast.AnnAssign, ast.NamedExpr, ast.For, ast.AsyncFor),
+            ):
+                self._mark_bindings_uncertain(scope, node.id)
+        if isinstance(node, (ast.Import, ast.ImportFrom)):
+            self._mark_bindings_uncertain(
+                scope,
+                *(alias.asname or alias.name.split(".")[0] for alias in node.names),
+            )
+        if isinstance(node, ast.ExceptHandler) and node.name:
+            self._mark_bindings_uncertain(scope, node.name)
         if isinstance(node, (ast.Global, ast.Nonlocal)):
-            self.uncertain.setdefault(scope, set()).update(node.names)
-            self.locals.setdefault(scope, set()).update(node.names)
+            self._mark_bindings_uncertain(scope, *node.names)
+            if isinstance(node, ast.Global):
+                self._mark_bindings_uncertain(self.module_scope, *node.names)
+            else:
+                while scope in self.scope_parents:
+                    scope = self.scope_parents[scope]
+                    self._mark_bindings_uncertain(scope, *node.names)
         if isinstance(node, (ast.MatchAs, ast.MatchStar)) and node.name:
-            self.locals.setdefault(scope, set()).add(node.name)
+            self._mark_bindings_uncertain(scope, node.name)
+        if isinstance(node, ast.MatchMapping) and node.rest:
+            self._mark_bindings_uncertain(scope, node.rest)
+        if isinstance(node, ast.NamedExpr) and scope in self.comprehension_scopes:
+            self._mark_bindings_uncertain(scope, node.target.id)
+            while scope in self.comprehension_scopes:
+                scope = self.scope_parents[scope]
+            self._mark_bindings_uncertain(scope, node.target.id)
 
     def add_bindings(self, tree: ast.AST) -> None:
+        self.module_scope = id(tree)
+        self.method_name_literals = {
+            node.value
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and node.value in GENERIC_METHOD_NAMES | ERROR_METHOD_MODELS.keys()
+        }
+
         def collect(
             node: ast.AST, scope: int, ancestors: tuple[ast.AST, ...] = ()
         ) -> None:
@@ -158,9 +196,13 @@ class _GenericMethodBindings(ast.NodeVisitor):
                 if isinstance(
                     node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
                 ):
-                    self.locals.setdefault(scope, set()).add(node.name)
+                    self._mark_bindings_uncertain(scope, node.name)
                 self.scope_parents[id(node)] = scope
                 scope = id(node)
+                if isinstance(
+                    node, (ast.ListComp, ast.SetComp, ast.DictComp, ast.GeneratorExp)
+                ):
+                    self.comprehension_scopes.add(scope)
                 if isinstance(
                     node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda)
                 ):
@@ -178,18 +220,15 @@ class _GenericMethodBindings(ast.NodeVisitor):
                             self.locals[scope].add(arg.arg)
             self.scopes[id(node)] = scope
             self.ancestors[id(node)] = ancestors
-            if isinstance(node, (ast.Import, ast.ImportFrom)):
-                self.locals.setdefault(scope, set()).update(
-                    alias.asname or alias.name.split(".")[0] for alias in node.names
-                )
-            if isinstance(node, ast.ExceptHandler) and node.name:
-                self.locals.setdefault(scope, set()).add(node.name)
             self._record_shadowed_names(node, scope)
             targets = []
             if isinstance(node, ast.Assign):
                 targets = node.targets
                 value = node.value
-            elif isinstance(node, ast.NamedExpr):
+            elif (
+                isinstance(node, (ast.AnnAssign, ast.NamedExpr))
+                and node.value is not None
+            ):
                 targets = [node.target]
                 value = node.value
             elif isinstance(node, (ast.For, ast.AsyncFor)):
@@ -208,17 +247,14 @@ class _GenericMethodBindings(ast.NodeVisitor):
                         ast.Try,
                         ast.TryStar,
                         ast.Match,
+                        ast.BoolOp,
+                        ast.IfExp,
+                        ast.Compare,
                     ),
                 )
             )
             if isinstance(node, (ast.For, ast.AsyncFor)):
                 guards += (node,)
-            if isinstance(node, (ast.AugAssign, ast.Delete)):
-                for child in ast.walk(node):
-                    if isinstance(child, ast.Name) and isinstance(
-                        child.ctx, (ast.Store, ast.Del)
-                    ):
-                        self.uncertain.setdefault(scope, set()).add(child.id)
             for target in targets:
                 if isinstance(target, ast.Name):
                     if guards and not isinstance(node, (ast.For, ast.AsyncFor)):
@@ -253,31 +289,34 @@ class _GenericMethodBindings(ast.NodeVisitor):
         )
 
     def _resolve_model(
-        self, node: ast.AST, seen: frozenset[str] = frozenset()
+        self, node: ast.AST, seen: frozenset[int] = frozenset()
     ) -> str | None:
         if isinstance(node, ast.Name):
-            if node.id in seen:
+            if id(node) in seen:
                 return None
             scope = self.scopes[id(node)]
             if node.id in self.uncertain.get(scope, set()):
                 return None
             candidates = [
                 value
-                for value in self.bindings.get(scope, {}).get(node.id, [])
-                if (value.lineno, value.col_offset) < (node.lineno, node.col_offset)
-                and all(
+                if all(
                     guard in self.ancestors[id(node)]
                     for guard in self.binding_guards[id(value)]
                 )
+                else None
+                for value in self.bindings.get(scope, {}).get(node.id, [])
+                if (value.lineno, value.col_offset) < (node.lineno, node.col_offset)
             ]
             if candidates:
-                models = {
-                    self._resolve_model(value, seen | {node.id}) for value in candidates
-                }
-                return next(iter(models)) if len(models) == 1 else None
+                value = candidates[-1]
+                return (
+                    self._resolve_model(value, seen | {id(node)})
+                    if value is not None
+                    else None
+                )
             return (
                 self.context_models.get(node.id)
-                if self._is_context_name_unshadowed(node)
+                if scope == self.module_scope or self._is_context_name_unshadowed(node)
                 else None
             )
         if isinstance(node, ast.NamedExpr):
@@ -306,11 +345,61 @@ class _GenericMethodBindings(ast.NodeVisitor):
 
     def _resolve_method_name(self, old: str, owner: ast.AST) -> str | None:
         model = self._resolve_model(owner)
-        if model is not None:
-            return MODEL_METHOD_RENAMES.get(
-                (model, old)
-            ) or SHARED_MODEL_METHOD_RENAMES.get(old)
-        return None
+        if model is None:
+            return None
+        if new := MODEL_METHOD_RENAMES.get((model, old)):
+            return new
+        inherited = {
+            new
+            for parent in self._get_model_ancestors(model)
+            if (new := MODEL_METHOD_RENAMES.get((parent, old)))
+        }
+        if len(inherited) > 1:
+            raise ValueError(
+                f"Cannot migrate {old} on {model}: conflicting inherited methods {sorted(inherited)}"
+            )
+        return next(iter(inherited), SHARED_MODEL_METHOD_RENAMES.get(old))
+
+    def _get_model_ancestors(self, model: str) -> set[str]:
+        ancestors = set()
+        pending = [model]
+        while pending:
+            for parent in self.model_parents.get(pending.pop(), ()):
+                if parent not in ancestors and parent != model:
+                    ancestors.add(parent)
+                    pending.append(parent)
+        return ancestors
+
+    def _is_model_derived_from(self, model: str, parent: str) -> bool:
+        return model == parent or parent in self._get_model_ancestors(model)
+
+    def _get_possible_strings(
+        self, node: ast.AST, seen: frozenset[int] = frozenset()
+    ) -> set[str | None]:
+        if isinstance(node, ast.Constant) and isinstance(node.value, str):
+            return {node.value}
+        if not isinstance(node, ast.Name) or id(node) in seen:
+            return {None, *self.method_name_literals}
+        scope = self.scopes[id(node)]
+        results: set[str | None] = set()
+        if node.id in self.uncertain.get(scope, set()):
+            results.add(None)
+        candidates = [
+            value
+            for value in self.bindings.get(scope, {}).get(node.id, [])
+            if (value.lineno, value.col_offset) < (node.lineno, node.col_offset)
+        ]
+        if candidates:
+            value = candidates[-1]
+            if isinstance(self.ancestors[id(value)][-1], (ast.For, ast.AsyncFor)):
+                results.add(None)
+            else:
+                results.update(self._get_possible_strings(value, seen | {id(node)}))
+            if self.binding_guards[id(value)]:
+                results.add(None)
+        if not results or None in results:
+            results.update((None, *self.method_name_literals))
+        return results
 
     def _rename_attribute(self, node: ast.Attribute, new: str) -> None:
         assert node.end_lineno is not None and node.end_col_offset is not None
@@ -339,17 +428,26 @@ class _GenericMethodBindings(ast.NodeVisitor):
             and node.func.id == "getattr"
             and self._is_context_name_unshadowed(node.func)
             and len(node.args) >= 2
-            and isinstance(node.args[1], ast.Constant)
-            and node.args[1].value in GENERIC_METHOD_NAMES
         ):
             value = node.args[1]
-            if new := self._resolve_method_name(value.value, node.args[0]):
+            strings = self._get_possible_strings(value)
+            names = strings & GENERIC_METHOD_NAMES
+            if (
+                len(strings) == 1
+                and names
+                and (new := self._resolve_method_name(next(iter(names)), node.args[0]))
+            ):
                 assert value.end_lineno is not None and value.end_col_offset is not None
                 start = self.line_starts[value.lineno - 1] + value.col_offset
                 end = self.line_starts[value.end_lineno - 1] + value.end_col_offset
                 self.edits[start] = (end, repr(new).encode())
-            elif self._resolve_model(node.args[0]) is None:
-                self.unresolved.add((value.value, node.lineno))
+            elif len(strings) != 1 or self._resolve_model(node.args[0]) is None:
+                self.unresolved.update(
+                    (old, node.lineno)
+                    for old in names
+                    if self._resolve_model(node.args[0]) is None
+                    or self._resolve_method_name(old, node.args[0]) is not None
+                )
         self.generic_visit(node)
 
     def rewrite(self) -> str:
@@ -366,9 +464,12 @@ def _rewrite_generic_method_bindings(
     unresolved: set[tuple[str, int]] | None = None,
     *,
     context_models: Mapping[str, str] | None = None,
+    model_parents: Mapping[str, set[str]] | None = None,
 ) -> str:
     tree = ast.parse(code)
-    rewriter = _GenericMethodBindings(code, model, relations, context_models)
+    rewriter = _GenericMethodBindings(
+        code, model, relations, context_models, model_parents
+    )
     rewriter.add_bindings(tree)
     rewriter.visit(tree)
     if unresolved is not None:
@@ -382,12 +483,15 @@ def _rewrite_error_method_calls(
     relations: Mapping[tuple[str, str], str],
     *,
     context_models: Mapping[str, str] | None = None,
+    model_parents: Mapping[str, set[str]] | None = None,
 ) -> str:
     tree = ast.parse(code)
     parents = {
         child: node for node in ast.walk(tree) for child in ast.iter_child_nodes(node)
     }
-    rewriter = _GenericMethodBindings(code, model, relations, context_models)
+    rewriter = _GenericMethodBindings(
+        code, model, relations, context_models, model_parents
+    )
     rewriter.add_bindings(tree)
     _check_error_method_reflections(tree, rewriter)
     names = {
@@ -405,7 +509,9 @@ def _rewrite_error_method_calls(
         if not isinstance(node, ast.Attribute) or node.attr not in ERROR_METHOD_MODELS:
             continue
         owner = rewriter._resolve_model(node.value)
-        if owner is not None and owner != ERROR_METHOD_MODELS[node.attr]:
+        if owner is not None and not rewriter._is_model_derived_from(
+            owner, ERROR_METHOD_MODELS[node.attr]
+        ):
             continue
         call = parents.get(node)
         statement = parents.get(call)
@@ -455,16 +561,18 @@ def _check_error_method_reflections(
             and node.func.id == "getattr"
             and rewriter._is_context_name_unshadowed(node.func)
             and len(node.args) >= 2
-            and isinstance(node.args[1], ast.Constant)
-            and node.args[1].value in ERROR_METHOD_MODELS
         ):
             continue
-        old = node.args[1].value
         owner = rewriter._resolve_model(node.args[0])
-        if owner is None or owner == ERROR_METHOD_MODELS[old]:
-            raise ValueError(
-                f"Cannot migrate {old} at line {node.lineno}: use a direct standalone call first"
-            )
+        for old in (
+            rewriter._get_possible_strings(node.args[1]) & ERROR_METHOD_MODELS.keys()
+        ):
+            if owner is None or rewriter._is_model_derived_from(
+                owner, ERROR_METHOD_MODELS[old]
+            ):
+                raise ValueError(
+                    f"Cannot migrate {old} at line {node.lineno}: use a direct standalone call first"
+                )
 
 
 def _rename_generic_model_methods(
@@ -477,6 +585,16 @@ def _rename_generic_model_methods(
         "JOIN ir_model m ON m.id = f.model_id WHERE f.relation IS NOT NULL"
     )
     relations = {(model, name): relation for model, name, relation in cr.fetchall()}
+    model_parents = {}
+    if all(
+        ("ir_model_inherit", column) in columns
+        for column in ("model_id", "parent_id", "parent_field_id")
+    ):
+        cr.execute(
+            "SELECT model_id, parent_id FROM ir_model_inherit WHERE parent_field_id IS NULL"
+        )
+        for model_id, parent_id in cr.fetchall():
+            model_parents.setdefault(models[model_id], set()).add(models[parent_id])
     for table, names in CODE_COLUMNS.items():
         for name in names:
             if (table, name) not in columns:
@@ -509,6 +627,7 @@ def _rename_generic_model_methods(
                         relations,
                         unresolved,
                         context_models=CODE_CONTEXT_MODELS.get(table),
+                        model_parents=model_parents,
                     )
                     if unresolved:
                         raise ValueError(
@@ -520,6 +639,7 @@ def _rename_generic_model_methods(
                         models.get(model_id),
                         relations,
                         context_models=CODE_CONTEXT_MODELS.get(table),
+                        model_parents=model_parents,
                     )
                 except (SyntaxError, ValueError) as error:
                     raise ValueError(
@@ -543,7 +663,7 @@ def migrate(cr: BaseCursor, version: str | None) -> None:
     cr.execute(
         "SELECT table_name, column_name FROM information_schema.columns "
         "WHERE table_schema = current_schema() AND table_name = ANY(%s)",
-        [list(CODE_COLUMNS)],
+        [[*CODE_COLUMNS, "ir_model_inherit"]],
     )
     columns = set(cr.fetchall())
     _rename_generic_model_methods(cr, columns)

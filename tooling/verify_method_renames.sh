@@ -64,8 +64,15 @@ with socket.socket() as server:
 PY
 )"
     echo "Testing $module in $database on port $port"
+    test_options=()
+    if [[ "$module" == test_lint ]]; then
+        test_options=(
+            "--addons-path=$workspace/odoo/odoo/addons,$workspace/odoo/addons"
+            --load=base,rpc,web
+        )
+    fi
     if ! "$python" "$odoo_bin" -c "$config" -d "$database" -i "$module" \
-        --test-enable --test-tags "/$module" --http-port "$port" --stop-after-init \
+        "${test_options[@]}" --test-enable --test-tags "/$module" --http-port "$port" --stop-after-init \
         > "$report_dir/$module.log" 2>&1; then
         tail -80 "$report_dir/$module.log"
         echo "Failed database retained for investigation: $database" >&2
