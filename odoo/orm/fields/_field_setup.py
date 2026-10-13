@@ -221,7 +221,10 @@ def get_depends(
                     field=field.name,
                     related=field.related,
                     depends_context=list(depends_context),
+                    dropped=field.store,
                 )
+            if field.store:
+                depends_context = ()
         return [field.related], depends_context
 
     if not field.compute:

@@ -1609,6 +1609,26 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         self.assertFalse(right.left_ids)
         self.assertFalse(right.left_size)
 
+    def test_25_stored_related_through_x2many_has_no_context(self):
+        Left = self.env["test_orm.trigger.left"]
+        self.assertEqual(tuple(Left._fields["right_id"].get_depends(Left)[1]), ())
+        self.assertNotIn(Left._fields["right_id"], self.registry.field_depends_context)
+        Foo = self.env["test_orm.related_foo"]
+        self.assertIn("access", Foo._fields["foo_names"].get_depends(Foo)[1])
+
+    @users("admin")
+    def test_25_stored_related_through_x2many_as_user(self):
+        self.assertFalse(self.env.su)
+        right = self.env["test_orm.trigger.right"].create({})
+        left = self.env["test_orm.trigger.left"].create(
+            {"middle_ids": [Command.create({"right_id": right.id})]}
+        )
+        self.assertEqual(left.right_id, right)
+        self.env.flush_all()
+        self.env.invalidate_all()
+        self.assertEqual(left.right_id, right)
+        self.assertEqual(left.sudo().right_id, right)
+
     def test_26_inherited(self):
         for user in self.env["res.users"].search([]):
             partner = user.partner_id
