@@ -132,22 +132,20 @@ class AccountBankStatementLine(models.Model):
         while not is_limit_time_exceeded():
             st_lines = self.browse()
             try:
-                st_lines, remaining_line_id = compute_st_lines_to_reconcile(
-                    company_id=company_id
-                )
-
-                if not st_lines:
-                    return
-
-                with (
-                    _debug.perf(
+                with self.env.cr.savepoint():
+                    st_lines, remaining_line_id = compute_st_lines_to_reconcile(
+                        company_id=company_id
+                    )
+                    if not st_lines:
+                        return
+                    with _debug.perf(
                         "automatch_cron_batch",
                         cr=self.env.cr,
                         st_lines_count=len(st_lines),
-                    ),
-                    self.env.cr.savepoint(),
-                ):
-                    st_lines._try_auto_reconcile_statement_lines(company_id=company_id)
+                    ):
+                        st_lines._try_auto_reconcile_statement_lines(
+                            company_id=company_id
+                        )
                 st_lines.cron_last_check = self.env.cr.now()
                 barren_rounds = 0
             except Exception as e:

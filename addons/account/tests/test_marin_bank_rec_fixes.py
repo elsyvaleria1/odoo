@@ -548,6 +548,24 @@ class TestMarinBankRecAuditFixes(TestBankRecWidgetCommon):
         self.assertFalse(locked.is_reconciled)
         self.assertTrue(locked.cron_last_check)
 
+    def test_a_failed_batch_selection_does_not_stop_the_cron(self):
+        st_line = self._create_st_line(50.0, payment_ref="SELECTPROBE 1")
+        StatementLine = type(self.env["account.bank.statement.line"])
+        original = StatementLine._get_domain_auto_reconcile_due
+        failures = []
+
+        def fail_once(records, run_start):
+            if not failures:
+                failures.append(run_start)
+                records.env.cr.execute("SELECT 1 / 0")
+            return original(records, run_start)
+
+        with patch.object(StatementLine, "_get_domain_auto_reconcile_due", fail_once):
+            st_line._cron_try_auto_reconcile_statement_lines(batch_size=10)
+
+        self.assertTrue(failures)
+        self.assertTrue(st_line.cron_last_check)
+
     def test_auto_reconcile_leaves_a_reconciled_line_alone(self):
         st_line = self._create_st_line(
             100.0, payment_ref="PAY C2PROBE77", partner_id=self.partner_a.id
@@ -599,6 +617,25 @@ class TestMarinBankRecAuditFixes(TestBankRecWidgetCommon):
             )
 
         self.assertEqual((held | free).mapped("is_reconciled"), [False, True])
+
+    def test_an_edited_model_clears_its_proposal_on_a_line_settled_elsewhere(self):
+        held = self._create_st_line(100.0, payment_ref="C3TAG held")
+        free = self._create_st_line(100.0, payment_ref="C3TAG free")
+        model = self._create_reconcile_model(
+            trigger="manual",
+            match_label="contains",
+            match_label_param="C3TAG",
+            line_ids=[{}],
+        )
+        self.assertEqual(
+            (held | free).move_id.line_ids.reconcile_model_id, model, "proposed"
+        )
+
+        with self._held_elsewhere(held):
+            model.match_label_param = "NOMATCH"
+
+        self.assertFalse(held.move_id.line_ids.reconcile_model_id)
+        self.assertFalse(free.move_id.line_ids.reconcile_model_id)
 
     def test_a_partner_taken_from_the_match_is_not_manual(self):
         st_line = self._create_st_line(100.0)

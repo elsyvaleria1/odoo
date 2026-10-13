@@ -378,6 +378,11 @@ class AccountReconcileModel(models.Model):
         processed_st_line_ids = set()
         manual_lines_per_model = defaultdict(list)
         acting_user = self.env.user
+        settled_elsewhere_ids = set(
+            statement_lines.filtered_domain(
+                statement_lines._get_domain_settled_elsewhere()
+            ).ids
+        )
         for st_line_id, reco_model_id, reco_model_trigger in query_result:
             if st_line_id in processed_st_line_ids or reco_model_id is None:
                 continue
@@ -397,7 +402,7 @@ class AccountReconcileModel(models.Model):
                 reco_model_id=reco_model_id,
                 trigger=reco_model_trigger,
             )
-            may_auto_reconcile = (
+            may_auto_reconcile = st_line_id not in settled_elsewhere_ids and (
                 auto_reconcile_models is None
                 or reco_model_id in auto_reconcile_models.ids
             )
@@ -491,7 +496,6 @@ class AccountReconcileModel(models.Model):
         return StatementLine.search(
             Domain(StatementLine._check_company_domain(self.company_id))
             & Domain("is_reconciled", "=", False)
-            & ~StatementLine._get_domain_settled_elsewhere()
         )
 
     def _clear_statement_line_proposals(self, statement_lines):
