@@ -1,4 +1,6 @@
+import typing
 from collections.abc import Iterable
+from pathlib import Path
 from typing import IO
 
 from lxml import etree
@@ -11,9 +13,12 @@ from odoo.libs.xml import (
     dict_to_xml,
     remove_control_characters,
 )
+from odoo.tools.files import file_path
 
 __all__ = [
+    "XsdFileResolver",
     "check_with_xsd",
+    "check_with_xsd_file",
     "cleanup_xml_node",
     "dict_to_xml",
     "get_xml_value",
@@ -58,6 +63,29 @@ def check_with_xsd(
             errors=len(xml_errors.error_log),
         )
         raise UserError("\n".join(str(e) for e in xml_errors.error_log)) from xml_errors
+
+
+class XsdFileResolver(etree.Resolver):
+    def __init__(self, *paths: str) -> None:
+        super().__init__()
+        self._paths = {Path(path).name: path for path in paths}
+
+    @typing.override
+    def resolve(
+        self, system_url: str, public_id: str | None, context: object
+    ) -> object:
+        path = self._paths.get(system_url.rsplit("/", 1)[-1])
+        _debug.logic("xml_utils.xsd_import_resolved", url=system_url, path=path)
+        if path is None:
+            return None
+        return self.resolve_filename(path, context)
+
+
+def check_with_xsd_file(tree_or_str: XmlSource, schema: str, *imports: str) -> None:
+    root = file_path(schema, filter_ext=(".xsd",))
+    local = [str(path) for path in Path(root).parent.glob("*.xsd")]
+    imported = [file_path(path, filter_ext=(".xsd",)) for path in imports]
+    check_with_xsd(tree_or_str, root, resolvers=(XsdFileResolver(*local, *imported),))
 
 
 def cleanup_xml_node(

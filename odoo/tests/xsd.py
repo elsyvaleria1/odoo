@@ -1,4 +1,3 @@
-import base64
 import contextlib
 import logging
 import typing
@@ -11,8 +10,7 @@ from lxml import etree
 
 from odoo.api import Environment
 from odoo.libs.debug_log import DebugLog
-from odoo.tools.files import file_open
-from odoo.tools.xml_utils import XmlSource, check_with_xsd
+from odoo.tools.xml_utils import XmlSource, check_with_xsd, check_with_xsd_file
 
 if typing.TYPE_CHECKING:
     from odoo.orm.runtime._model_types import IrAttachmentModel
@@ -93,35 +91,26 @@ def check_xml(
     xmls: XmlSource | list[XmlSource],
     xsd_name: str | None = None,
 ) -> None:
-    xsd_attachment: Any = env["ir.attachment"]
-    owned: Any = env["ir.attachment"]
+    if not isinstance(xmls, list):
+        xmls = [xmls]
+
     if path:
-        with file_open(path, filter_ext=(".xsd",)) as file:
-            content = file.read()
-        attachment_vals = {
-            "name": path.split("/")[-1],
-            "datas": base64.b64encode(content.encode()),
-        }
-        xsd_attachment = owned = env["ir.attachment"].create(attachment_vals)
-    elif url:
-        xsd_attachment = load_xsd_files_from_url(env, url) or env["ir.attachment"]
-
-    try:
-        if not xsd_attachment:
-            raise FileNotFoundError(
-                f"No XSD could be loaded from {url or path!r}; refusing to report "
-                f"the document as validated."
-            )
-
-        name = _pick_xsd(xsd_attachment, xsd_name, repr(url or path))
-
-        if not isinstance(xmls, list):
-            xmls = [xmls]
-
         for xml in xmls:
-            check_xml_from_attachment(env, xml, name)
-    finally:
-        owned.unlink()
+            check_with_xsd_file(xml, path)
+        return
+
+    xsd_attachment: Any = (url and load_xsd_files_from_url(env, url)) or env[
+        "ir.attachment"
+    ]
+    if not xsd_attachment:
+        raise FileNotFoundError(
+            f"No XSD could be loaded from {url!r}; refusing to report "
+            f"the document as validated."
+        )
+
+    name = _pick_xsd(xsd_attachment, xsd_name, repr(url))
+    for xml in xmls:
+        check_xml_from_attachment(env, xml, name)
 
 
 def _upsert_xsd_attachment(
