@@ -624,20 +624,7 @@ class AccountReturnType(models.Model):
                     account_return
                 )
             same_periods = set(periods) & set(existing_periods.keys())
-
-            for same_period in same_periods:
-                same_period_returns = existing_periods[same_period]
-                for same_period_return in same_period_returns:
-                    if (
-                        same_period_return.company_id == main_company
-                        and not same_period_return.is_completed
-                        and not same_period_return.date_lock
-                    ):
-                        if same_period_return.tax_unit_id != tax_unit:
-                            same_period_return.tax_unit_id = tax_unit
-                        elif same_period_return.company_ids != expected_companies:
-                            same_period_return.company_ids = expected_companies
-
+            grid_periods = periods
             periods = list(set(periods) - same_periods)
             periods.sort(key=lambda period: period[0])
 
@@ -657,9 +644,38 @@ class AccountReturnType(models.Model):
                         period
                     ]
 
-            unmatched_existing_periods_unposted_returns.filtered(
+            transition_period = self._get_transition_period(
+                grid_periods, unmatched_existing_periods_posted_returns
+            )
+            matched_periods = set(same_periods)
+            if transition_period in unmatched_existing_periods:
+                matched_periods.add(transition_period)
+                unmatched_existing_periods_unposted_returns -= existing_periods[
+                    transition_period
+                ]
+
+            for matched_period in matched_periods:
+                for matched_return in existing_periods[matched_period]:
+                    if (
+                        matched_return.company_id == main_company
+                        and not matched_return.is_completed
+                        and not matched_return.date_lock
+                    ):
+                        if matched_return.tax_unit_id != tax_unit:
+                            matched_return.tax_unit_id = tax_unit
+                        elif matched_return.company_ids != expected_companies:
+                            matched_return.company_ids = expected_companies
+
+            returns_to_unlink = unmatched_existing_periods_unposted_returns.filtered(
                 lambda r: not r.manually_created
-            ).sudo().unlink()
+            )
+            returns_to_unlink.sudo().unlink()
+            if transition_period and any(
+                account_return.date_from <= transition_period[1]
+                and account_return.date_to >= transition_period[0]
+                for account_return in existing_returns - returns_to_unlink
+            ):
+                transition_period = None
 
             _debug.logic(
                 "existing_periods_reconciled",
@@ -676,17 +692,19 @@ class AccountReturnType(models.Model):
                     unmatched_existing_periods_posted_returns,
                     key=lambda ret: ret.date_to,
                 )
-                new_periods = [
+                periods = [
                     period
                     for period in periods
                     if period[0] > most_recent_posted_return.date_to
                 ]
-                periods = new_periods
+                if transition_period:
+                    periods.insert(0, transition_period)
                 _debug.logic(
                     "periods_trimmed_after_posted",
                     returntype=self,
                     last_posted=most_recent_posted_return,
                     last_posted_date_to=most_recent_posted_return.date_to,
+                    transition_period=transition_period,
                     periods_left=len(periods),
                 )
 
@@ -714,6 +732,15 @@ class AccountReturnType(models.Model):
         )
         account_returns._update_translated_name()
         return account_returns
+
+    def _get_transition_period(self, grid_periods, posted_returns) -> tuple | None:
+        if not posted_returns:
+            return None
+        gap_start = max(posted_returns.mapped("date_to")) + relativedelta(days=1)
+        for period_from, period_to in grid_periods:
+            if period_from < gap_start <= period_to:
+                return gap_start, period_to
+        return None
 
     def _get_periods_in_window(self, main_company, date_from, date_to) -> list:
         periods = []

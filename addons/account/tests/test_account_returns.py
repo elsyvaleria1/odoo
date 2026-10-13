@@ -722,6 +722,96 @@ class TestAccountReturn(TestAccountReportsCommon):
                     "2023-12-01",
                     "2023-12-31",
                 ),
+                ("2024-01-01", "2024-03-31"),
+                ("2024-04-01", "2024-07-31"),
+                ("2024-08-01", "2024-11-30"),
+            ],
+        )
+
+    def _switch_to_a_4_months_grid_after_a_posted_december(self):
+        returns = self.env["account.return"].search(
+            [
+                ("type_id", "=", self.basic_return_type.id),
+                ("company_id", "=", self.env.company.id),
+            ]
+        )
+        returns[0].action_validate()
+        with self._patch_returns_generation():
+            self.basic_return_type.deadline_start_date = "2024-12-01"
+            self.env.company.account_config_id.account_return_periodicity = "4_months"
+        return self.env["account.return"].search(
+            [
+                ("type_id", "=", self.basic_return_type.id),
+                ("company_id", "=", self.env.company.id),
+                ("date_from", ">", "2023-12-31"),
+            ]
+        )
+
+    def test_transition_return_survives_the_next_sync(self):
+        returns = self._switch_to_a_4_months_grid_after_a_posted_december()
+        transition = returns.filtered(lambda r: r.date_from == date(2024, 1, 1))
+        self.assertEqual(transition.date_to, date(2024, 3, 31))
+
+        with self._patch_returns_generation():
+            self.env["account.return.type"]._sync_all_returns(self.env.company)
+
+        self.assertEqual(
+            self.env["account.return"].search(
+                [
+                    ("type_id", "=", self.basic_return_type.id),
+                    ("company_id", "=", self.env.company.id),
+                    ("date_from", ">", "2023-12-31"),
+                ]
+            ),
+            returns,
+        )
+
+    def test_posted_transition_return_puts_the_next_sync_back_on_the_grid(self):
+        returns = self._switch_to_a_4_months_grid_after_a_posted_december()
+        returns.filtered(lambda r: r.date_from == date(2024, 1, 1)).action_validate()
+
+        with self._patch_returns_generation():
+            self.env["account.return.type"]._sync_all_returns(self.env.company)
+
+        self.assert_return_dates_equal(
+            self.env["account.return"].search(
+                [
+                    ("type_id", "=", self.basic_return_type.id),
+                    ("company_id", "=", self.env.company.id),
+                ]
+            ),
+            [
+                ("2023-12-01", "2023-12-31"),
+                ("2024-01-01", "2024-03-31"),
+                ("2024-04-01", "2024-07-31"),
+                ("2024-08-01", "2024-11-30"),
+            ],
+        )
+
+    def test_no_transition_return_over_a_return_covering_the_gap(self):
+        returns = self.env["account.return"].search(
+            [
+                ("type_id", "=", self.basic_return_type.id),
+                ("company_id", "=", self.env.company.id),
+            ]
+        )
+        returns[0].action_validate()
+        returns[1].manually_created = True
+
+        with self._patch_returns_generation():
+            self.basic_return_type.deadline_start_date = "2024-12-01"
+            self.env.company.account_config_id.account_return_periodicity = "4_months"
+
+        self.assert_return_dates_equal(
+            self.env["account.return"].search(
+                [
+                    ("type_id", "=", self.basic_return_type.id),
+                    ("company_id", "=", self.env.company.id),
+                ]
+            ),
+            [
+                ("2023-12-01", "2023-12-31"),
+                ("2024-01-01", "2024-01-31"),
                 ("2024-04-01", "2024-07-31"),
                 ("2024-08-01", "2024-11-30"),
             ],
