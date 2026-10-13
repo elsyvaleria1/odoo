@@ -2585,9 +2585,11 @@ class AccountMoveLine(models.Model):
 
     def _get_posted_protected_fields(self) -> frozenset:
         self.check_singleton()
-        if self._is_invoice_product_line():
-            return _POSTED_LINE_FIELDS | _OWNED_AMOUNT_FIELDS
-        return _POSTED_LINE_FIELDS
+        if not self._is_invoice_product_line():
+            return _POSTED_LINE_FIELDS
+        if self.move_id._is_document_held_by_authority():
+            return _POSTED_LINE_FIELDS | _OWNED_AMOUNT_FIELDS | {"name"}
+        return _POSTED_LINE_FIELDS | _OWNED_AMOUNT_FIELDS
 
     def _check_posted_line_create(self) -> None:
         if self.env.context.get("skip_readonly_check"):

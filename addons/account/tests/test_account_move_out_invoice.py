@@ -239,6 +239,23 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         product_line.name = "renamed"
         self.assertEqual(product_line.quantity, 2.0)
 
+    def test_out_invoice_posted_line_label_frozen_while_authority_holds_it(self):
+        invoice = self.init_invoice("out_invoice", products=self.product_a, post=True)
+        line = invoice.invoice_line_ids
+        label = line.name
+        with patch.object(
+            self.registry["account.move"],
+            "_is_cancel_request_required",
+            lambda move: True,
+        ):
+            with self.assertRaisesRegex(UserError, "posted journal item"):
+                line.name = "renamed"
+            self.assertEqual(line.name, label)
+            line.with_context(skip_readonly_check=True).name = "corrected"
+            self.assertEqual(line.name, "corrected")
+        line.name = "renamed"
+        self.assertEqual(line.name, "renamed")
+
     @freeze_time("2020-01-15")
     def test_out_invoice_onchange_invoice_date(self):
         for tax_date, invoice_date, accounting_date in [

@@ -2947,6 +2947,10 @@ class AccountMove(models.Model):
         self.check_singleton()
         return False
 
+    def _is_document_held_by_authority(self) -> bool:
+        self.check_singleton()
+        return self._is_cancel_request_required()
+
     @api.depends("country_code")
     def _compute_need_cancel_request(self):
         for move in self:
