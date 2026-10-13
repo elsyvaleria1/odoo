@@ -271,9 +271,6 @@ class AccountReturnPayment(models.Model):
         if lines.filtered("debit") and lines.filtered("credit"):
             lines.reconcile()
 
-    def action_mark_instructed(self) -> None:
-        self.is_instructed = True
-
     def action_cancel(self) -> None:
         if self.payment_id.filtered(
             lambda payment: payment.state not in ("draft", "canceled")

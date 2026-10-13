@@ -571,7 +571,9 @@ class AccountReturnType(models.Model):
                         and child_company.account_config_id.account_return_reminder_day
                     ):
                         other_main_companies |= child_company
-                    to_treat.append((child_company.vat, child_company))
+                    to_treat.append(
+                        (child_company.vat or vat_from_parent, child_company)
+                    )
 
             _debug.logic(
                 "branch_subtrees_with_own_vat",
@@ -977,7 +979,7 @@ class AccountReturnType(models.Model):
 
             months = 12
             fiscalyears = self.env["account.fiscal.year"].search(
-                [("company_id", "=", company.id)]
+                [("company_id", "=", company.root_id.id)]
             )
             for fiscalyear in fiscalyears:
                 delta = relativedelta(
@@ -1025,22 +1027,18 @@ class AccountReturnType(models.Model):
         else:
             start_day, start_month = self._get_start_date_elements(company_id)
 
-        aligned_date = date + relativedelta(days=-(start_day - 1))
-        year = aligned_date.year
-        month_offset = aligned_date.month - start_month
-        period_number = (month_offset // period_months) + 1
-
-        if date < datetime.date(date.year, start_month, start_day):
-            year -= 1
-            period_number = ((12 + month_offset) // period_months) + 1
-
-        month_delta = period_number * period_months
-
-        end_date = datetime.date(year, start_month, 1) + relativedelta(
-            months=month_delta, days=start_day - 2
+        anchor = datetime.date(date.year, start_month, 1)
+        period_number = (date.month - start_month) // period_months
+        start_date = anchor + relativedelta(
+            months=period_number * period_months, day=start_day
         )
-        start_date = datetime.date(year, start_month, 1) + relativedelta(
-            months=month_delta - period_months, day=start_day
+        if date < start_date:
+            period_number -= 1
+            start_date = anchor + relativedelta(
+                months=period_number * period_months, day=start_day
+            )
+        end_date = anchor + relativedelta(
+            months=(period_number + 1) * period_months, day=start_day, days=-1
         )
         _debug.logic(
             "boundaries_computed",

@@ -282,38 +282,6 @@ class AccountReturn(models.Model):
             for lang_code, translated_name in translated_name_dict.items():
                 account_return.with_context(lang=lang_code).name = translated_name
 
-    @api.deprecated(
-        "Since 19.0, There's no need to have embedded.actions anymore for AccountReturnCheckControlPanel"
-    )
-    @_debug.perf.timed
-    def _create_embedded_actions_config(self, audit_action_id):
-        user_setting_id = self.env.user.res_users_settings_id.id
-        if self.env["res.users.settings.embedded.action"].search(
-            [("user_setting_id", "=", user_setting_id), ("res_id", "=", self.id)],
-        ):
-            return None
-
-        embedded_actions = self.env["ir.embedded.actions"].search(
-            [
-                ("parent_res_model", "=", "account.return"),
-                ("parent_action_id", "=", audit_action_id),
-            ],
-        )
-        user_actions = self.env["res.users.settings.embedded.action"].create(
-            {
-                "user_setting_id": user_setting_id,
-                "action_id": audit_action_id,
-                "res_id": self.id,
-                "embedded_visibility": True,
-                "res_model": self._name,
-                "embedded_actions_visibility": ",".join(
-                    ["false"]
-                    + [str(a.id) for a in embedded_actions if not a.is_deletable]
-                ),
-            }
-        )
-        return user_actions._format_embedded_action_settings()
-
     @api.model_create_multi
     @_debug.perf.timed
     def create(self, vals_list):

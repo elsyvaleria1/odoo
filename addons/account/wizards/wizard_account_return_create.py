@@ -106,12 +106,13 @@ class WizardAccountReturnCreate(models.TransientModel):
     def _onchange_return_type_id(self) -> None:
         today = fields.Date.context_today(self)
         if self.return_type_id:
+            company, _tax_unit = self._get_return_company_and_tax_unit()
             period_months = self.return_type_id._get_periodicity_months_delay(
-                self.company_id, date=self.date_from
+                company, date=self.date_from
             )
             shifted_date = today - relativedelta(months=period_months)
             self.date_from, self.date_to = self.return_type_id._get_period_boundaries(
-                self.company_id, shifted_date
+                company, shifted_date
             )
         else:
             self.date_from = self.date_to = False
@@ -247,11 +248,12 @@ class WizardAccountReturnCreate(models.TransientModel):
                 )
                 continue
 
+            company, _tax_unit = wizard._get_return_company_and_tax_unit()
             date_pointer = wizard.date_from
             first_period = True
             while date_pointer <= wizard.date_to:
                 period_start, period_end = wizard.return_type_id._get_period_boundaries(
-                    wizard.company_id, date_pointer
+                    company, date_pointer
                 )
                 if first_period and wizard.date_from != period_start:
                     wizard.show_warning_wrong_dates = True
@@ -261,7 +263,6 @@ class WizardAccountReturnCreate(models.TransientModel):
             if date_pointer - relativedelta(days=1) != wizard.date_to:
                 wizard.show_warning_wrong_dates = True
 
-            company, _tax_unit = wizard._get_return_company_and_tax_unit()
             intersecting = (
                 self.env["account.return"]
                 .sudo()
