@@ -1486,6 +1486,31 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             self.assertEqual(item_amounts, [0.01] * 4)
             self.assertEqual(partner_rounding, 0.02)
 
+    @staticmethod
+    def _load_every_page(report, options, line, max_pages=4):
+        pages = []
+        progress, offset = line.get("progress"), 0
+        while offset is not None and len(pages) < max_pages:
+            page = report.get_expanded_lines(
+                options,
+                line["id"],
+                line["groupby"],
+                line["expand_function"],
+                progress,
+                offset,
+                None,
+            )
+            pages.append([row for row in page if row["name"] != "Load more..."])
+            load_more = next(
+                (row for row in page if row["name"] == "Load more..."), None
+            )
+            progress, offset = (
+                (load_more["progress"], load_more["offset"])
+                if load_more
+                else (None, None)
+            )
+        return pages
+
     def test_bank_reconciliation_rounding_line_closes_the_last_loaded_page(self):
         bank_journal = self._bank_journal_with_receipts(0.01, 5, 1.4)
         report, options = self._bank_reconciliation_report_and_options(bank_journal)
@@ -1493,23 +1518,7 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         receipts, _children = self._bank_reconciliation_section(
             report._get_lines(options), "(+) Outstanding Receipts"
         )
-        pages = []
-        offset = 0
-        while offset is not None and len(pages) < 4:
-            page = report.get_expanded_lines(
-                options,
-                receipts["id"],
-                receipts["groupby"],
-                receipts["expand_function"],
-                None,
-                offset,
-                None,
-            )
-            pages.append([line for line in page if line["name"] != "Load more..."])
-            offset = next(
-                (line["offset"] for line in page if line["name"] == "Load more..."),
-                None,
-            )
+        pages = self._load_every_page(report, options, receipts)
         self.assertEqual([len(page) for page in pages], [2, 2, 2])
         children = [line for page in pages for line in page]
         self.assertEqual(len({line["id"] for line in children}), 6)
@@ -1518,6 +1527,107 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         )
         self.assertEqual(item_amounts, [0.01] * 5)
         self.assertEqual(rounding_amount, 0.02)
+
+    def test_bank_reconciliation_unknown_partner_at_a_page_boundary(self):
+        bank_journal = self._bank_journal_with_receipts(0.01, 1, 1.4)
+        self._post_bank_receipts(bank_journal, 0.01, 1, self.partner_b)
+        self._post_bank_receipts(bank_journal, 0.01, 1, self.env["res.partner"])
+        self.env.ref("account.outstanding_receipts").user_groupby = "partner_id"
+        report, options = self._bank_reconciliation_report_and_options(bank_journal)
+        report.load_more_limit = 2
+        receipts, _children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        pages = self._load_every_page(report, options, receipts)
+        self.assertEqual(
+            [[line["name"] for line in page] for page in pages],
+            [
+                [self.partner_a.display_name, self.partner_b.display_name],
+                ["Unknown", "Conversion rounding"],
+            ],
+        )
+        self.assertEqual(self._cells(options, receipts, "amount"), (0.04,))
+        item_amounts, rounding_amount = self._assert_conversion_rounding_line(
+            report,
+            options,
+            receipts,
+            [line for page in pages for line in page],
+            item_model="res.partner",
+        )
+        self.assertEqual(item_amounts, [0.01] * 3)
+        self.assertEqual(rounding_amount, 0.01)
+
+    def _bank_reconciliation_statement_lines_without_statement(self):
+        bank_journal = self.company_data["default_journal_bank"]
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2019-01-01",
+            amounts=[100.0],
+            taxes=[],
+            post=True,
+        )
+        reconciled, open_line = self.env["account.bank.statement.line"].create(
+            [
+                {
+                    "journal_id": bank_journal.id,
+                    "date": "2019-01-02",
+                    "payment_ref": ref,
+                    "partner_id": self.partner_a.id,
+                    "amount": amount,
+                }
+                for ref, amount in (("reconciled", 100.0), ("open", 50.0))
+            ]
+        )
+        reconciled.set_line_bank_statement_line(
+            invoice.line_ids.filtered(
+                lambda line: line.account_id.account_type == "asset_receivable"
+            ).ids
+        )
+        self.assertTrue(reconciled.is_reconciled)
+        self.assertFalse(open_line.is_reconciled)
+        return bank_journal
+
+    def test_bank_reconciliation_transactions_without_statement_items_add_up(self):
+        bank_journal = self._bank_reconciliation_statement_lines_without_statement()
+        self.env.ref("account.transaction_without_statement").user_groupby = "id"
+        report, options = self._bank_reconciliation_report_and_options(
+            bank_journal, unfold_all=True
+        )
+        section, children = self._bank_reconciliation_section(
+            report._get_lines(options), "Transactions without statement"
+        )
+        items = [
+            child
+            for child in children
+            if report._get_model_info_from_id(child["id"])[0] != "report.formula.line"
+        ]
+        self.assertNotIn("Conversion rounding", [item["name"] for item in items])
+        self.assertEqual(
+            sorted(self._cells(options, item, "amount")[0] for item in items),
+            [50.0, 100.0],
+        )
+        self.assertEqual(self._cells(options, section, "amount"), (150.0,))
+
+    def test_bank_reconciliation_unfold_all_query_count(self):
+        bank_journal = self._bank_journal_with_receipts(0.01, 1, 1.4)
+        partners = self.env["res.partner"].create(
+            [{"name": f"Payer {index:02d}"} for index in range(19)]
+        )
+        for partner in partners:
+            self._post_bank_receipts(bank_journal, 0.01, 1, partner)
+        self.env.ref("account.outstanding_receipts").user_groupby = "partner_id, id"
+        report, options = self._bank_reconciliation_report_and_options(
+            bank_journal, unfold_all=True
+        )
+        report._get_lines(options)
+        self.env.invalidate_all()
+        with self.assertQueryCount(98):
+            lines = report._get_lines(options)
+        _receipts, groups = self._bank_reconciliation_section(
+            lines, "(+) Outstanding Receipts"
+        )
+        self.assertEqual(len(groups), 21)
 
     def _bank_reconciliation_partial_jpy_receipts(self, bank_journal, invoice_amount):
         foreign_currency = self.setup_other_currency("JPY", rates=[("2016-01-01", 3.0)])

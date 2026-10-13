@@ -648,18 +648,7 @@ class AccountReportLine(models.Model):
             browsed_groupby_keys = self.env[groupby_model].browse(
                 [key for key in group_lines_by_keys if key is not None]
             )
-
-            out_of_sorting_record = None
-            records_to_sort = browsed_groupby_keys
-            if (
-                browsed_groupby_keys
-                and load_one_more
-                and len(browsed_groupby_keys) >= limit
-            ):
-                out_of_sorting_record = browsed_groupby_keys[-1]
-                records_to_sort = records_to_sort[:-1]
-
-            for record in records_to_sort.with_context(active_test=False).sorted():
+            for record in browsed_groupby_keys.with_context(active_test=False).sorted():
                 keys_and_names_in_sequence[record.id] = record.display_name
 
                 draft_entries[record.id] = self._get_groupby_record_state(
@@ -668,11 +657,6 @@ class AccountReportLine(models.Model):
 
             if None in group_lines_by_keys:
                 keys_and_names_in_sequence[None] = self.env._("Unknown")
-
-            if out_of_sorting_record:
-                keys_and_names_in_sequence[out_of_sorting_record.id] = (
-                    out_of_sorting_record.display_name
-                )
 
         elif custom_groupby_name_builder:
             keys_and_names_in_sequence = custom_groupby_name_builder(
@@ -703,6 +687,14 @@ class AccountReportLine(models.Model):
                         keys_and_names_in_sequence[non_relational_key] = str(
                             non_relational_key
                         )
+        if load_one_more and limit and len(group_lines_by_keys) > limit:
+            # The engine's last key, None included, is the one fetched past the
+            # page: it must stay last so the page cut leaves it to the next page.
+            held_back_key = next(reversed(group_lines_by_keys))
+            if held_back_key in keys_and_names_in_sequence:
+                keys_and_names_in_sequence[held_back_key] = (
+                    keys_and_names_in_sequence.pop(held_back_key)
+                )
         _debug.logic(
             "group_names_strategy",
             report_line=self,

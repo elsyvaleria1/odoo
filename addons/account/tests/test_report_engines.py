@@ -1900,8 +1900,6 @@ class TestReportEngines(TestAccountReportsCommon):
         )
 
     def test_load_more(self):
-        self.env.companies = self.env.company
-
         partner_a, partner_b, partner_c = self.env["res.partner"].create(
             [
                 {"name": "Partner A"},
@@ -1943,9 +1941,9 @@ class TestReportEngines(TestAccountReportsCommon):
             lines,
             [0, 1],
             [
-                ("test_line_1", "6,000.00"),
-                ("Partner A", "1,000.00"),
-                ("Partner B", "2,000.00"),
+                ("test_line_1", 6000.0),
+                ("Partner A", 1000.0),
+                ("Partner B", 2000.0),
                 ("Load more...", ""),
             ],
             options,
@@ -1966,8 +1964,63 @@ class TestReportEngines(TestAccountReportsCommon):
             load_more_res,
             [0, 1],
             [
-                ("Partner C", "3,000.00"),
+                ("Partner C", 3000.0),
             ],
+            options,
+        )
+
+    def test_load_more_with_an_unknown_group_at_the_page_boundary(self):
+        partner_a, partner_b = self.env["res.partner"].create(
+            [{"name": "Partner A"}, {"name": "Partner B"}]
+        )
+        self._create_test_account_moves(
+            [
+                self._prepare_test_account_move_line(
+                    1000.0, account_code="101010", partner_id=partner_a.id
+                ),
+                self._prepare_test_account_move_line(
+                    2000.0, account_code="101010", partner_id=partner_b.id
+                ),
+                self._prepare_test_account_move_line(3000.0, account_code="101010"),
+            ]
+        )
+        report = self._create_report(
+            test_report_line_values_list=[
+                self._prepare_test_report_line(
+                    self._prepare_test_expression_domain(
+                        [("account_id.code", "=", "101010")], "sum"
+                    ),
+                    groupby="partner_id",
+                )
+            ],
+            load_more_limit=2,
+        )
+        options = self._generate_options(report, "2020-01-01", "2020-01-31")
+        lines = report._get_lines(options)
+        self.assertLinesValues(
+            lines,
+            [0, 1],
+            [
+                ("test_line_1", 6000.0),
+                ("Partner A", 1000.0),
+                ("Partner B", 2000.0),
+                ("Load more...", ""),
+            ],
+            options,
+        )
+        load_more_line = lines[-1]
+        self.assertLinesValues(
+            report.get_expanded_lines(
+                options,
+                load_more_line["parent_id"],
+                load_more_line["groupby"],
+                load_more_line["expand_function"],
+                load_more_line["progress"],
+                load_more_line["offset"],
+                None,
+            ),
+            [0, 1],
+            [("Unknown", 3000.0)],
             options,
         )
 

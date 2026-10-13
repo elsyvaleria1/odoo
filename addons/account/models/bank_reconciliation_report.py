@@ -411,6 +411,13 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         report = self.env["report.formula"].browse(options["report_id"])
         report._check_groupby_fields([current_groupby] if current_groupby else [])
 
+        def get_amount(res):
+            if unreconciled:
+                return self._get_statement_line_open_amount(
+                    res, journal_currency, company_currency
+                )
+            return res["amount"]
+
         def prepare_result_dict(query_res_lines):
             if current_groupby == "id":
                 res = query_res_lines[0]
@@ -420,7 +427,11 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 return self._prepare_custom_engine_result(
                     date=res["date"] or None,
                     label=res["payment_ref"] or res["ref"] or "/",
-                    amount_currency=-res["amount_residual"]
+                    amount_currency=(
+                        -res["amount_residual"]
+                        if unreconciled
+                        else res["amount_currency"]
+                    )
                     if res["foreign_currency_id"]
                     else None,
                     amount_currency_currency_id=foreign_currency.id
@@ -429,23 +440,14 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                     currency=foreign_currency.display_name
                     if res["foreign_currency_id"]
                     else None,
-                    amount=self._get_statement_line_open_amount(
-                        res, journal_currency, company_currency
-                    )
-                    if res["amount_residual"]
+                    amount=get_amount(res)
+                    if res["amount_residual"] or not unreconciled
                     else None,
                     amount_currency_id=journal_currency.id,
                     has_sublines=True,
                 )
             else:
-                amount = sum(
-                    self._get_statement_line_open_amount(
-                        res, journal_currency, company_currency
-                    )
-                    if unreconciled
-                    else res["amount"]
-                    for res in query_res_lines
-                )
+                amount = sum(get_amount(res) for res in query_res_lines)
                 return self._prepare_custom_engine_result(
                     amount=journal_currency.round(amount),
                     amount_currency_id=journal_currency.id,
@@ -722,22 +724,60 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             offset=offset,
             has_more=result["has_more"],
         )
-        if not result["has_more"]:
+        amount_expression = self._get_converted_amount_expression(report, line_dict_id)
+        if not amount_expression:
+            return result
+
+        carried_amounts = (progress or {}).get("amount_to_explain")
+        _debug.logic(
+            "conversion_rounding_header_source",
+            report=report,
+            line_dict_id=line_dict_id,
+            offset=offset,
+            source="progress" if carried_amounts else "computed",
+        )
+        amount_to_explain = carried_amounts or self._get_group_amounts(
+            report, options, line_dict_id, amount_expression
+        )
+        _journal, journal_currency, _company_currency = (
+            self._get_bank_journal_and_currencies(options)
+        )
+        children = [
+            line for line in result["lines"] if line.get("parent_id") == line_dict_id
+        ]
+        amount_to_explain = {
+            column_group_key: self._get_conversion_rounding(
+                journal_currency,
+                amount,
+                [
+                    self._get_amount_cells(options, child).get(column_group_key)
+                    for child in children
+                ],
+            )
+            for column_group_key, amount in amount_to_explain.items()
+        }
+        if result["has_more"]:
+            result["progress"] = {"amount_to_explain": amount_to_explain}
+        else:
             result["lines"] = self._add_conversion_rounding_line(
-                report, options, line_dict_id, groupby, result["lines"]
+                report, options, line_dict_id, result["lines"], amount_to_explain
             )
         return result
 
-    def _get_conversion_rounding(self, currency, total, amounts):
-        return currency.round(
-            currency.round(total)
-            - sum(currency.round(amount) for amount in amounts if amount is not None)
-        )
-
-    @_debug.perf.timed
-    def _add_conversion_rounding_line(
-        self, report, options, line_dict_id, groupby, lines
+    def _custom_groupby_line_completer(
+        self, report, options, line_dict, current_groupby
     ):
+        super()._custom_groupby_line_completer(
+            report, options, line_dict, current_groupby
+        )
+        if line_dict["groupby"] and self._get_converted_amount_expression(
+            report, line_dict["id"]
+        ):
+            line_dict["progress"] = {
+                "amount_to_explain": self._get_amount_cells(options, line_dict)
+            }
+
+    def _get_converted_amount_expression(self, report, line_dict_id):
         report_line = self.env["report.formula.line"].browse(
             next(
                 model_id
@@ -747,42 +787,67 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
                 if model == "report.formula.line"
             )
         )
-        amount_expression = report_line.expression_ids.filtered(
-            lambda expression: expression.label == "amount"
+        return report_line.expression_ids.filtered(
+            lambda expression: (
+                expression.label == "amount"
+                and expression.engine == "custom"
+                and expression.formula in self._get_converting_engine_formulas()
+            )
         )
+
+    def _get_converting_engine_formulas(self) -> tuple:
+        return (
+            "_report_custom_engine_outstanding_receipts",
+            "_report_custom_engine_outstanding_payments",
+        )
+
+    def _get_amount_cells(self, options, line_dict) -> dict:
+        return {
+            column["column_group_key"]: cell.get("no_format") or 0.0
+            for column, cell in zip(
+                options["columns"], line_dict["columns"], strict=True
+            )
+            if column["expression_label"] == "amount"
+        }
+
+    def _get_group_amounts(self, report, options, line_dict_id, amount_expression):
+        group_totals = report._compute_expression_totals_for_each_column_group(
+            amount_expression,
+            {
+                **options,
+                "forced_domain": options.get("forced_domain", [])
+                + report._get_domain_audit_line_groupby(line_dict_id),
+            },
+        )
+        return {
+            column_group_key: totals[amount_expression]["value"] or 0.0
+            for column_group_key, totals in group_totals.items()
+        }
+
+    def _get_conversion_rounding(self, currency, total, amounts):
+        return currency.round(
+            currency.round(total)
+            - sum(currency.round(amount) for amount in amounts if amount is not None)
+        )
+
+    @_debug.perf.timed
+    def _add_conversion_rounding_line(
+        self, report, options, line_dict_id, lines, rounding_per_column_group
+    ):
         children = [line for line in lines if line.get("parent_id") == line_dict_id]
-        if not amount_expression or not children:
+        if not children:
             return lines
 
         _journal, journal_currency, _company_currency = (
             self._get_bank_journal_and_currencies(options)
         )
-        group_options = {
-            **options,
-            "forced_domain": options.get("forced_domain", [])
-            + report._get_domain_audit_line_groupby(line_dict_id),
-        }
-        group_totals = report._compute_expression_totals_for_each_column_group(
-            amount_expression, group_options
-        )
-        sub_group_totals = report._compute_expression_totals_for_each_column_group(
-            amount_expression, group_options, groupby_to_expand=groupby
-        )
         columns = []
         for column in options["columns"]:
-            rounding = None
-            if column["expression_label"] == "amount":
-                column_group_key = column["column_group_key"]
-                rounding = self._get_conversion_rounding(
-                    journal_currency,
-                    group_totals[column_group_key][amount_expression]["value"] or 0.0,
-                    [
-                        value
-                        for _grouping_key, value in sub_group_totals[column_group_key][
-                            amount_expression
-                        ]["value"]
-                    ],
-                )
+            rounding = (
+                rounding_per_column_group.get(column["column_group_key"])
+                if column["expression_label"] == "amount"
+                else None
+            )
             columns.append(
                 report._prepare_column_dict(
                     rounding,
@@ -799,7 +864,6 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         _debug.logic(
             "conversion_rounding_line",
             report=report,
-            report_line=report_line,
             line_dict_id=line_dict_id,
             children=len(children),
             added=has_rounding,
