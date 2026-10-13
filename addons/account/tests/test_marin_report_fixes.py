@@ -1,5 +1,6 @@
 import copy
 import datetime
+import io
 from unittest.mock import patch
 
 from freezegun import freeze_time
@@ -10,6 +11,11 @@ from odoo.tests import tagged
 from odoo.tools import SQL
 
 from odoo.addons.account.tests.common_report_engine import TestAccountReportsCommon
+
+try:
+    from openpyxl import load_workbook
+except ImportError:
+    load_workbook = None
 
 
 @tagged("post_install", "-at_install")
@@ -1287,10 +1293,8 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             )
             self.assertEqual(journal.company_id, active)
 
-    def test_bank_reconciliation_outstanding_total_rounds_the_converted_sum_not_its_lines(
-        self,
-    ):
-        currency = self.setup_other_currency("CHF", rates=[("2016-01-01", 1.4)])
+    def _bank_journal_with_receipts(self, amount, count, rate):
+        currency = self.setup_other_currency("CHF", rates=[("2016-01-01", rate)])
         bank_journal = self.env["account.journal"].create(
             {
                 "name": "CHF Bank",
@@ -1300,10 +1304,10 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             }
         )
         self.inbound_payment_channel.journal_id = bank_journal.id
-        for _i in range(5):
+        for _i in range(count):
             self.env["account.payment"].create(
                 {
-                    "amount": 0.01,
+                    "amount": amount,
                     "payment_type": "inbound",
                     "partner_type": "customer",
                     "date": "2019-01-01",
@@ -1313,23 +1317,193 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                     "payment_channel_id": self.inbound_payment_channel.id,
                 }
             ).action_post()
+        return bank_journal
+
+    def _bank_reconciliation_report_and_options(self, bank_journal, **options):
         report = self.env.ref("account.bank_reconciliation_report").with_context(
             active_id=bank_journal.id, active_model=bank_journal._name
         )
-        options = self._generate_options(report, "2019-01-31", "2019-01-31")
-        options["unfold_all"] = True
-        lines = report._get_lines(options)
-        receipts = next(
-            line for line in lines if line["name"] == "(+) Outstanding Receipts"
+        return report, {
+            **self._generate_options(report, "2019-01-31", "2019-01-31"),
+            **options,
+        }
+
+    def _bank_reconciliation_section(self, lines, section_name):
+        section = next(line for line in lines if line["name"] == section_name)
+        children = [line for line in lines if line.get("parent_id") == section["id"]]
+        return section, children
+
+    def _assert_conversion_rounding_line(self, report, options, section, children):
+        *items, rounding = children
+        self.assertEqual(rounding["name"], "Conversion rounding")
+        self.assertEqual(
+            report._parse_line_id(rounding["id"])[-1],
+            ("conversion_rounding", None, None),
         )
-        receipt_amounts = [
-            line["columns"][-1]["no_format"]
+        self.assertFalse(rounding["unfoldable"])
+        self.assertFalse(rounding["caret_options"])
+        self.assertFalse(any(cell.get("auditable") for cell in rounding["columns"]))
+        self.assertEqual(
+            {report._get_model_info_from_id(item["id"])[0] for item in items},
+            {"account.move.line"},
+        )
+        (total,) = self._cells(options, section, "amount")
+        amounts = [self._cells(options, child, "amount")[0] for child in children]
+        self.assertAlmostEqual(sum(amounts), total, places=6)
+        return [self._cells(options, item, "amount")[0] for item in items], (
+            self._cells(options, rounding, "amount")[0]
+        )
+
+    def test_bank_reconciliation_outstanding_rounding_line_completes_the_converted_total(
+        self,
+    ):
+        bank_journal = self._bank_journal_with_receipts(0.01, 5, 1.4)
+        report, options = self._bank_reconciliation_report_and_options(
+            bank_journal, unfold_all=True
+        )
+        receipts, children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        self.assertEqual(self._cells(options, receipts, "amount"), (0.07,))
+        item_amounts, rounding_amount = self._assert_conversion_rounding_line(
+            report, options, receipts, children
+        )
+        self.assertEqual(item_amounts, [0.01] * 5)
+        self.assertEqual(rounding_amount, 0.02)
+
+    def test_bank_reconciliation_rounding_line_on_expand_print_and_xlsx(self):
+        bank_journal = self._bank_journal_with_receipts(0.01, 5, 1.4)
+        report, options = self._bank_reconciliation_report_and_options(bank_journal)
+        receipts, folded_children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        self.assertFalse(folded_children)
+        expanded = report.get_expanded_lines(
+            options,
+            receipts["id"],
+            receipts["groupby"],
+            receipts["expand_function"],
+            None,
+            0,
+            None,
+        )
+        self.assertEqual(
+            self._assert_conversion_rounding_line(report, options, receipts, expanded)[
+                1
+            ],
+            0.02,
+        )
+
+        print_options = report.get_options(
+            previous_options={
+                **options,
+                "unfolded_lines": [receipts["id"]],
+                "export_mode": "print",
+            }
+        )
+        printed_lines = report._get_lines(print_options)
+        printed_receipts, printed_children = self._bank_reconciliation_section(
+            printed_lines, "(+) Outstanding Receipts"
+        )
+        self._assert_conversion_rounding_line(
+            report, print_options, printed_receipts, printed_children
+        )
+        self.assertIn(
+            "Conversion rounding",
+            str(
+                report._get_pdf_export_html(
+                    print_options, report._filter_out_folded_children(printed_lines)
+                )
+            ),
+        )
+
+        if load_workbook is None:
+            self.skipTest("openpyxl not available")
+        sheet = load_workbook(
+            filename=io.BytesIO(
+                report.export_to_xlsx({**options, "unfolded_lines": [receipts["id"]]})[
+                    "file_content"
+                ]
+            ),
+            data_only=True,
+        ).worksheets[0]
+        rows = [row for row in sheet.values if row and row[0]]
+        first = next(
+            index
+            for index, row in enumerate(rows)
+            if row[0] == "(+) Outstanding Receipts"
+        )
+        section_rows = rows[first : first + 7]
+        self.assertEqual(
+            [row[-1] for row in section_rows],
+            [0.07, 0.01, 0.01, 0.01, 0.01, 0.01, 0.02],
+        )
+        self.assertEqual(section_rows[-1][0], "Conversion rounding")
+
+    def test_bank_reconciliation_section_adding_up_gets_no_rounding_line(self):
+        bank_journal = self._bank_journal_with_receipts(1.0, 3, 1.4)
+        report, options = self._bank_reconciliation_report_and_options(
+            bank_journal, unfold_all=True
+        )
+        receipts, children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        self.assertEqual(self._cells(options, receipts, "amount"), (4.2,))
+        self.assertEqual(
+            [self._cells(options, child, "amount")[0] for child in children],
+            [1.4] * 3,
+        )
+
+    def test_bank_reconciliation_statement_section_rounds_children_and_completes_its_total(
+        self,
+    ):
+        foreign_currency = self.setup_other_currency("JPY", rates=[("2016-01-01", 3.0)])
+        bank_journal = self.company_data["default_journal_bank"]
+        for index in range(2):
+            invoice = self.init_invoice(
+                "out_invoice",
+                partner=self.partner_a,
+                invoice_date="2019-01-01",
+                amounts=[0.67],
+                taxes=[],
+                post=True,
+            )
+            st_line = self.env["account.bank.statement.line"].create(
+                {
+                    "journal_id": bank_journal.id,
+                    "date": "2019-01-02",
+                    "payment_ref": f"partial {index}",
+                    "partner_id": self.partner_a.id,
+                    "amount": 1.0,
+                    "foreign_currency_id": foreign_currency.id,
+                    "amount_currency": 3.0,
+                }
+            )
+            st_line.set_line_bank_statement_line(
+                invoice.line_ids.filtered(
+                    lambda line: line.account_id.account_type == "asset_receivable"
+                ).ids
+            )
+        report, options = self._bank_reconciliation_report_and_options(
+            bank_journal, unfold_all=True
+        )
+        lines = report._get_lines(options)
+        without_statement = next(
+            line for line in lines if line["name"] == "Transactions without statement"
+        )
+        receipts = next(
+            line
             for line in lines
-            if line.get("parent_id") == receipts["id"]
-        ]
-        self.assertAlmostEqual(receipts["columns"][-1]["no_format"], 0.07)
-        self.assertEqual(receipt_amounts, [0.01] * 5)
-        self.assertAlmostEqual(sum(receipt_amounts), 0.05)
+            if line.get("parent_id") == without_statement["id"]
+            and line["name"] == "Including Unreconciled Receipts"
+        )
+        children = [line for line in lines if line.get("parent_id") == receipts["id"]]
+        self.assertEqual(self._cells(options, receipts, "amount"), (0.67,))
+        item_amounts, rounding_amount = self._assert_conversion_rounding_line(
+            report, options, receipts, children
+        )
+        self.assertEqual(item_amounts, [0.33, 0.33])
+        self.assertEqual(rounding_amount, 0.01)
 
     def test_partner_ledger_unfold_all_of_a_letter_pages_each_partner(self):
         report = self.env.ref("account.partner_ledger_report")
