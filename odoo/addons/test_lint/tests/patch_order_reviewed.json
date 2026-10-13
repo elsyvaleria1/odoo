@@ -193,7 +193,6 @@
   "@account/components/bank_reconciliation/button_list/button_list:BankRecButtonList.prototype :: buttons :: account_accountant_batch_payment | sale_account_accountant",
   "@account/helpers/account_tax:accountTaxHelpers :: add_tax_details_in_base_line :: l10n_account_withholding_tax | l10n_it_pos",
   "@account/helpers/account_tax:accountTaxHelpers :: round_tax_details_base_lines :: l10n_mx | l10n_pt",
-  "@account/helpers/account_tax:accountTaxHelpers :: round_tax_details_tax_amounts :: l10n_mx | l10n_pt",
   "@account/services/account_move_service:AccountMoveService.prototype :: downloadPdf :: l10n_cl_edi_pos | pos_iot",
   "@calendar/views/attendee_calendar/attendee_calendar_model:AttendeeCalendarModel.prototype :: updateData :: hr_calendar | hr_homeworking_calendar",
   "@calendar/views/attendee_calendar/common/attendee_calendar_common_renderer:AttendeeCalendarCommonRenderer.prototype :: options :: hr_calendar | hr_homeworking_calendar",
