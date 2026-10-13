@@ -18,6 +18,8 @@ class ExchangeProtocol(models.AbstractModel):
     _protocol_label = None
     _document_kinds: dict[str, str] = {}
     _batch_size = 1
+    _is_reconcilable = False
+    _is_resend_idempotent = False
 
     @api.model
     def _get_protocols(self) -> dict[str, str]:

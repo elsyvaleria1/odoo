@@ -45,6 +45,10 @@ class TestExchangeChannel(ExchangeCase):
         with self.assertRaises(ValidationError):
             self.channel.annul_window_days = -1
 
+    def test_a_reconciliation_window_is_not_negative(self):
+        with self.assertRaises(ValidationError):
+            self.channel.reconcile_window_days = -1
+
     def test_a_send_only_channel_holds_no_inbox(self):
         self.assertFalse(self.channel.is_inbox_enabled)
         with self.assertRaises(UserError):

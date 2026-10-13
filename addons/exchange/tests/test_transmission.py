@@ -367,19 +367,6 @@ class TestExchangeTransmission(ExchangeCase):
         )
         return polled
 
-    def _read_verdicts(self, limit=100, **context):
-        progress = []
-
-        def commit_progress(cron, processed=0, *, remaining=None, deactivate=False):
-            progress.append((processed, remaining))
-            return float("inf")
-
-        self.patch(type(self.env["ir.cron"]), "_commit_progress", commit_progress)
-        self.env["exchange.transmission"].with_context(**context)._cron_read_verdicts(
-            limit=limit
-        )
-        return progress
-
     def test_the_verdict_cron_takes_its_turn_round_the_whole_backlog(self):
         transmissions = self._outstanding(3)
         polled = self._poll_log()
@@ -621,20 +608,158 @@ class TestExchangeBatch(ExchangeCase):
         self.assertEqual(set(transmissions.mapped("state")), {"queued"})
         self.assertEqual(set(transmissions.mapped("retry_count")), {1})
 
-    def test_a_member_the_counterparty_said_nothing_about_stays_queued(self):
-        transmissions = self._three()
-        batches = []
+    def _capable(self, reconcilable=False, idempotent=False):
+        protocol = type(self.env["exchange.protocol.demo"])
+        self.patch(protocol, "_is_reconcilable", reconcilable)
+        self.patch(protocol, "_is_resend_idempotent", idempotent)
+
+    def _unresolved_log(self):
+        unresolved = []
+        self.patch(
+            type(self.subject),
+            "_on_transmission_unresolved",
+            lambda subject, transmission: unresolved.append((subject, transmission)),
+        )
+        return unresolved
+
+    def _unnamed(self, transmissions=None, batches=None):
+        transmissions = transmissions or self._three()
         script = {0: self._accepted("OK-0"), 2: self._accepted("OK-2")}
         with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
-            self._batched(transmissions, script, batches, size=10)
+            self._batched(transmissions, script, batches or [], size=10)
+        return transmissions[1]
+
+    def test_a_member_the_counterparty_did_not_name_is_sent_with_its_outcome_unknown(
+        self,
+    ):
+        self._capable(reconcilable=True)
+        transmissions = self._three()
+        unnamed = self._unnamed(transmissions)
+
         self.assertEqual(
-            transmissions.mapped("state"), ["accepted", "queued", "accepted"]
+            transmissions.mapped("state"), ["accepted", "sent", "accepted"]
         )
+        self.assertTrue(
+            unnamed.date_sent, "the batch carrying it reached the counterparty"
+        )
+        self.assertIn("without naming this document", unnamed.message)
+        self.assertEqual(unnamed.retry_count, 0)
+        self.assertAlmostEqual(
+            unnamed.date_reconcile_deadline,
+            unnamed.date_sent + timedelta(days=self.channel.reconcile_window_days),
+            delta=timedelta(seconds=5),
+        )
+
+    def test_the_send_job_never_sends_an_unnamed_member_again(self):
+        self._capable(reconcilable=True)
+        unnamed = self._unnamed()
+        batches = []
+
+        self.channel.with_context(
+            exchange_demo_batch={0: self._accepted("DUP")}, demo_batches=batches
+        )._job_send_queued()
         self.assertEqual(
-            transmissions[1].retry_count,
-            0,
-            "silence is not a failed call, so it costs no retry budget",
+            batches,
+            [],
+            "the counterparty may already hold it: a second send is a second "
+            "fiscal submission",
         )
+
+        unnamed.with_context(
+            exchange_demo_batch={0: self._accepted("DUP")}, demo_batches=batches
+        )._send_many()
+        self.assertEqual(batches, [], "nor does a send by hand repeat it")
+        self.assertEqual(unnamed.state, "sent")
+
+    def test_an_unnamed_member_is_reconciled_through_the_verdict_cron(self):
+        self._capable(reconcilable=True)
+        unnamed = self._unnamed()
+
+        self._read_verdicts(demo_poll=self._accepted("FOUND-1"))
+
+        self.assertEqual(unnamed.state, "accepted")
+        self.assertEqual(unnamed.reference, "FOUND-1")
+        self.assertFalse(unnamed.date_reconcile_deadline)
+
+    def test_an_unnamed_member_waits_while_its_window_is_open(self):
+        self._capable(reconcilable=True)
+        unresolved = self._unresolved_log()
+        unnamed = self._unnamed()
+
+        self._read_verdicts()
+
+        self.assertEqual(unnamed.state, "sent")
+        self.assertEqual(unresolved, [])
+
+    def test_an_unnamed_member_never_found_expires_and_its_owner_is_told(self):
+        self._capable(reconcilable=True)
+        unresolved = self._unresolved_log()
+        unnamed = self._unnamed()
+        unnamed.date_reconcile_deadline = fields.Datetime.now() - timedelta(seconds=1)
+
+        self._read_verdicts()
+
+        self.assertEqual(unnamed.state, "expired")
+        self.assertTrue(unnamed.is_settled)
+        self.assertIn("has run out", unnamed.message)
+        self.assertEqual(unresolved, [(unnamed.subject_id, unnamed)])
+
+    def test_an_unnamed_member_whose_lookup_keeps_failing_still_expires(self):
+        self._capable(reconcilable=True)
+        unresolved = self._unresolved_log()
+        unnamed = self._unnamed()
+        unnamed.date_reconcile_deadline = fields.Datetime.now() - timedelta(seconds=1)
+
+        def read_verdict(protocol, transmission):
+            raise ConnectionError("counterparty down")
+
+        self.patch(
+            type(self.env["exchange.protocol.demo"]), "_read_verdict", read_verdict
+        )
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            self._read_verdicts()
+
+        self.assertEqual(unnamed.state, "expired")
+        self.assertIn("could not be asked", unnamed.message)
+        self.assertEqual(unresolved, [(unnamed.subject_id, unnamed)])
+
+    def test_an_unnamed_member_is_sent_again_where_the_counterparty_deduplicates(
+        self,
+    ):
+        self._capable(idempotent=True)
+        unnamed = self._unnamed()
+
+        self.assertEqual(unnamed.state, "queued")
+        self.assertEqual(
+            unnamed.retry_count,
+            1,
+            "a send the counterparty may have taken spends the retry budget",
+        )
+        self.assertTrue(unnamed.date_next_retry)
+        self.assertIn("sent again", unnamed.message)
+
+    def test_resending_an_unnamed_member_stops_at_the_channels_cap(self):
+        self._capable(idempotent=True)
+        self.channel.retry_max_attempts = 2
+        unresolved = self._unresolved_log()
+        unnamed = self._unnamed()
+
+        with mute_logger("odoo.addons.exchange.models.exchange_transmission"):
+            self._batched(unnamed, {}, [], size=10)
+
+        self.assertEqual(unnamed.state, "expired")
+        self.assertIn("Gave up after 2 attempts", unnamed.message)
+        self.assertEqual(unresolved, [(unnamed.subject_id, unnamed)])
+
+    def test_an_unnamed_member_nothing_can_resolve_expires_at_once(self):
+        unresolved = self._unresolved_log()
+        unnamed = self._unnamed()
+
+        self.assertEqual(unnamed.state, "expired")
+        self.assertTrue(unnamed.date_sent)
+        self.assertEqual(unnamed.retry_count, 0)
+        self.assertIn("Check with the counterparty", unnamed.message)
+        self.assertEqual(unresolved, [(unnamed.subject_id, unnamed)])
 
     def test_two_channels_do_not_share_a_call(self):
         other_endpoint = self.endpoint.copy({"code": "demo_second"})

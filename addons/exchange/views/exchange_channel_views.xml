@@ -75,6 +75,7 @@
                                     name="date_last_inbox"
                                     invisible="not is_inbox_enabled" />
                                 <field name="annul_window_days" />
+                                <field name="reconcile_window_days" />
                             </group>
                         </page>
                         <page name="transmissions" string="Transmissions">

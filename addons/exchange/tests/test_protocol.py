@@ -30,6 +30,11 @@ class TestExchangeProtocol(ExchangeCase):
             self.env["exchange.protocol"]._seal_message(None, document), document
         )
 
+    def test_a_protocol_claims_no_way_to_resolve_an_unknown_outcome_by_default(self):
+        protocol = self.env["exchange.protocol"]
+        self.assertFalse(protocol._is_reconcilable)
+        self.assertFalse(protocol._is_resend_idempotent)
+
     def test_an_inbox_is_empty_unless_a_protocol_reads_one(self):
         self.assertEqual(self.env["exchange.protocol"]._read_inbox(self.channel), [])
 

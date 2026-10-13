@@ -39,7 +39,7 @@
                         name="action_send"
                         type="object"
                         string="Send"
-                        invisible="is_settled"
+                        invisible="state not in ('draft', 'queued')"
                         class="oe_highlight" />
                     <button
                         name="action_read_verdict"
@@ -78,6 +78,9 @@
                             <field name="date_created" />
                             <field name="date_sent" />
                             <field name="date_settled" invisible="not is_settled" />
+                            <field
+                                name="date_reconcile_deadline"
+                                invisible="not date_reconcile_deadline" />
                             <field name="is_settled" invisible="1" />
                         </group>
                     </group>

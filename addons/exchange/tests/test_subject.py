@@ -54,3 +54,12 @@ class TestExchangeSubject(ExchangeCase):
     def test_a_record_with_no_channel_says_so(self):
         with self.assertRaises(UserError):
             self.subject._add_transmission("issue")
+
+    def test_the_owner_of_a_record_is_its_user(self):
+        user = self.env["res.users"].create({"name": "Owner", "login": "owner"})
+        self.subject.user_id = user
+        self.assertEqual(self.subject._get_exchange_owner(), user)
+
+    def test_a_record_without_a_user_is_owned_by_its_creator(self):
+        self.assertFalse(self.subject.user_id)
+        self.assertEqual(self.subject._get_exchange_owner(), self.subject.create_uid)

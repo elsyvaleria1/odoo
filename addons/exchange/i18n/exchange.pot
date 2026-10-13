@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-12 22:04+0000\n"
-"PO-Revision-Date: 2026-10-12 22:04+0000\n"
+"POT-Creation-Date: 2026-10-13 00:59+0000\n"
+"PO-Revision-Date: 2026-10-13 00:59+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -48,6 +48,12 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.constraint,message:exchange.constraint_exchange_transmission_reference_uniq
 msgid "A counterparty issues one reference per ask."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_channel.py:0
+msgid "A reconciliation window cannot be negative."
 msgstr ""
 
 #. module: exchange
@@ -250,6 +256,12 @@ msgid "Channels"
 msgstr ""
 
 #. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/mixin_exchange_subject.py:0
+msgid "Check whether the counterparty received this"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__code
 msgid "Code"
 msgstr ""
@@ -368,6 +380,11 @@ msgid "Date Next Retry"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_reconcile_deadline
+msgid "Date Reconcile Deadline"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_sent
 msgid "Date Sent"
 msgstr ""
@@ -375,6 +392,14 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__date_settled
 msgid "Date Settled"
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_channel__reconcile_window_days
+msgid ""
+"Days a document the counterparty's answer did not name is still looked for "
+"at the counterparty. When they run out, the transmission expires and the "
+"document's owner is asked to check by hand."
 msgstr ""
 
 #. module: exchange
@@ -558,6 +583,15 @@ msgstr ""
 #. odoo-python
 #: code:addons/exchange/models/exchange_transmission.py:0
 msgid "Gave up after %(attempts)s attempts. Last error: %(message)s"
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"Gave up after %(attempts)s attempts: the counterparty's last answer did not "
+"name this document. Check with the counterparty whether it holds the "
+"document before sending it again."
 msgstr ""
 
 #. module: exchange
@@ -908,6 +942,11 @@ msgid "Read Verdict"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_channel__reconcile_window_days
+msgid "Reconcile Window Days"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__reference
 msgid "Reference"
 msgstr ""
@@ -990,6 +1029,14 @@ msgid "Sequence"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission__date_reconcile_deadline
+msgid ""
+"Set when the counterparty answered without naming this transmission, so "
+"whether it was received is unknown. Until then its verdict is read back from"
+" the counterparty; after it, the transmission expires."
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_channel__certificate_id
 msgid ""
 "Signing material this counterparty requires. Shared with every other "
@@ -1047,6 +1094,34 @@ msgid "The business record this transmission is about."
 msgstr ""
 
 #. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The counterparty answered without naming this document, so whether it was "
+"received is unknown. It is not sent again: its outcome is read back from the"
+" counterparty."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The counterparty answered without naming this document, so whether it was "
+"received is unknown. It is sent again, which the counterparty takes only "
+"once."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The counterparty answered without naming this document. It cannot be asked "
+"what became of the document, and sending the document again is not safe. "
+"Check with the counterparty whether it holds the document before sending it "
+"again."
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_channel__is_inbox_enabled
 msgid ""
 "The counterparty holds documents addressed to us that must be polled for. "
@@ -1058,6 +1133,15 @@ msgstr ""
 msgid ""
 "The counterparty requires each document to reference the previous one, so "
 "transmissions on this channel form a chain."
+msgstr ""
+
+#. module: exchange
+#. odoo-python
+#: code:addons/exchange/models/exchange_transmission.py:0
+msgid ""
+"The counterparty still has no record of this document, and the time allowed "
+"to find it there has run out. Check with the counterparty whether it holds "
+"the document before sending it again."
 msgstr ""
 
 #. module: exchange

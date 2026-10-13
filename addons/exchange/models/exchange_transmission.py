@@ -150,6 +150,13 @@ class ExchangeTransmission(models.Model):
         "transmission, whatever the answer. The cron asks the least recently "
         "asked first, so a backlog it cannot cover in one batch still rotates.",
     )
+    date_reconcile_deadline = fields.Datetime(
+        readonly=True,
+        help="Set when the counterparty answered without naming this "
+        "transmission, so whether it was received is unknown. Until then its "
+        "verdict is read back from the counterparty; after it, the "
+        "transmission expires.",
+    )
 
     event_log_id = fields.Many2one(
         comodel_name="integration.exchange",
@@ -325,6 +332,13 @@ class ExchangeTransmission(models.Model):
                         name=transmission.display_name,
                     ),
                 )
+            if transmission.state == "sent":
+                _logger.info(
+                    "Left transmission %s, which the counterparty already holds, "
+                    "to its verdict",
+                    transmission.id,
+                )
+                continue
             errors = transmission._get_protocol()._get_message_errors(transmission)
             if errors:
                 transmission._settle(
@@ -357,17 +371,70 @@ class ExchangeTransmission(models.Model):
 
         now = fields.Datetime.now()
         for transmission in self:
+            transmission.date_sent = now
             verdict = verdicts.get(transmission.id)
             if verdict is None:
-                _logger.error(
+                _logger.warning(
                     "%s returned no verdict for transmission %s in a batch of %s",
                     protocol._name,
                     transmission.id,
                     len(self),
                 )
-                continue
-            transmission.date_sent = now
-            transmission._apply(verdict)
+                transmission._update_unknown_outcome(protocol)
+            else:
+                transmission._apply(verdict)
+
+    def _update_unknown_outcome(self, protocol) -> None:
+        self.check_singleton()
+        if protocol._is_reconcilable:
+            self.write(
+                {
+                    "state": "sent",
+                    "message": self.env._(
+                        "The counterparty answered without naming this document, "
+                        "so whether it was received is unknown. It is not sent "
+                        "again: its outcome is read back from the counterparty."
+                    ),
+                    "date_next_retry": False,
+                    "date_reconcile_deadline": fields.Datetime.now()
+                    + timedelta(days=self.channel_id.reconcile_window_days),
+                },
+            )
+            return
+        if protocol._is_resend_idempotent:
+            attempt = self.retry_count + 1
+            if self.channel_id.is_retry_required(attempt):
+                self._schedule_retry(
+                    self.env._(
+                        "The counterparty answered without naming this document, "
+                        "so whether it was received is unknown. It is sent again, "
+                        "which the counterparty takes only once."
+                    ),
+                )
+            else:
+                self._settle_unresolved(
+                    self.env._(
+                        "Gave up after %(attempts)s attempts: the counterparty's "
+                        "last answer did not name this document. Check with the "
+                        "counterparty whether it holds the document before "
+                        "sending it again.",
+                        attempts=attempt,
+                    ),
+                )
+            return
+        self._settle_unresolved(
+            self.env._(
+                "The counterparty answered without naming this document. It "
+                "cannot be asked what became of the document, and sending the "
+                "document again is not safe. Check with the counterparty whether "
+                "it holds the document before sending it again."
+            ),
+        )
+
+    def _settle_unresolved(self, message: str) -> None:
+        self.check_singleton()
+        self._settle(Verdict(state="expired", message=message))
+        self.subject_id._on_transmission_unresolved(self)
 
     def _read_verdict(self) -> None:
         self.check_singleton()
@@ -376,6 +443,24 @@ class ExchangeTransmission(models.Model):
         verdict = self._get_protocol()._read_verdict(self)
         if verdict is not None:
             self._apply(verdict)
+        else:
+            self._settle_if_overdue(
+                self.env._(
+                    "The counterparty still has no record of this document, and "
+                    "the time allowed to find it there has run out. Check with "
+                    "the counterparty whether it holds the document before "
+                    "sending it again."
+                ),
+            )
+
+    def _settle_if_overdue(self, message: str) -> None:
+        self.check_singleton()
+        if (
+            self.state == "sent"
+            and self.date_reconcile_deadline
+            and self.date_reconcile_deadline <= fields.Datetime.now()
+        ):
+            self._settle_unresolved(message)
 
     def _apply(self, verdict: Verdict) -> None:
         self.check_singleton()
@@ -386,6 +471,7 @@ class ExchangeTransmission(models.Model):
         values = {
             "state": verdict.state,
             "date_next_retry": self._get_next_retry(verdict.retry_after),
+            "date_reconcile_deadline": False,
             **verdict.values,
         }
         if verdict.reference:
@@ -401,6 +487,7 @@ class ExchangeTransmission(models.Model):
             "state": verdict.state,
             "date_settled": fields.Datetime.now(),
             "date_next_retry": False,
+            "date_reconcile_deadline": False,
             **verdict.values,
         }
         if verdict.reference:
@@ -513,6 +600,14 @@ class ExchangeTransmission(models.Model):
             except Exception:
                 _logger.exception(
                     "Reading the verdict of transmission %s failed", transmission.id
+                )
+                transmission._settle_if_overdue(
+                    self.env._(
+                        "The counterparty could not be asked what became of this "
+                        "document before the time allowed to find it ran out. "
+                        "Check with the counterparty whether it holds the document "
+                        "before sending it again."
+                    ),
                 )
         self.env["ir.cron"]._commit_progress(
             len(pending),

@@ -57,6 +57,12 @@ class ExchangeChannel(models.Model):
         help="Days after acceptance during which an annulment is still "
         "admissible. Zero means the counterparty sets no window.",
     )
+    reconcile_window_days = fields.Integer(
+        default=2,
+        help="Days a document the counterparty's answer did not name is still "
+        "looked for at the counterparty. When they run out, the transmission "
+        "expires and the document's owner is asked to check by hand.",
+    )
     is_chained = fields.Boolean(
         help="The counterparty requires each document to reference the "
         "previous one, so transmissions on this channel form a chain."
@@ -121,6 +127,14 @@ class ExchangeChannel(models.Model):
             if channel.annul_window_days < 0:
                 raise ValidationError(
                     self.env._("An annulment window cannot be negative."),
+                )
+
+    @api.constrains("reconcile_window_days")
+    def _check_reconcile_window_days(self) -> None:
+        for channel in self:
+            if channel.reconcile_window_days < 0:
+                raise ValidationError(
+                    self.env._("A reconciliation window cannot be negative."),
                 )
 
     def _compute_transmission_counts(self) -> None:

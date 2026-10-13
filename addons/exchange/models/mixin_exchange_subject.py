@@ -162,3 +162,19 @@ class MixinExchangeSubject(models.AbstractModel):
 
     def _on_transmission_settled(self, transmission) -> None:
         return
+
+    def _on_transmission_unresolved(self, transmission) -> None:
+        self.check_singleton()
+        if "activity_ids" not in self._fields:
+            return
+        self.activity_schedule(
+            "mail.mail_activity_data_warning",
+            summary=self.env._("Check whether the counterparty received this"),
+            note=transmission.message,
+            user_id=self._get_exchange_owner().id,
+        )
+
+    def _get_exchange_owner(self):
+        self.check_singleton()
+        owner = self["user_id"] if "user_id" in self._fields else None
+        return owner or self.create_uid

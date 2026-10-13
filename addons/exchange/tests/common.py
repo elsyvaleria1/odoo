@@ -130,3 +130,16 @@ class ExchangeCase(TransactionCase):
 
     def _sent(self, reference="REF-1"):
         return Verdict(state="sent", reference=reference)
+
+    def _read_verdicts(self, limit=100, **context):
+        progress = []
+
+        def commit_progress(cron, processed=0, *, remaining=None, deactivate=False):
+            progress.append((processed, remaining))
+            return float("inf")
+
+        self.patch(type(self.env["ir.cron"]), "_commit_progress", commit_progress)
+        self.env["exchange.transmission"].with_context(**context)._cron_read_verdicts(
+            limit=limit
+        )
+        return progress
