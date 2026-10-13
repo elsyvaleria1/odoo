@@ -24,7 +24,11 @@
                     <field name="name" />
                     <field name="partner_id" optional="hide" />
                     <field name="email" optional="show" />
-                    <field name="phone_ids" widget="many2many_tags" optional="show" />
+                    <field
+                        name="phone_ids"
+                        widget="many2many_tags"
+                        optional="show"
+                        context="{'default_country_id': phone_country_id}" />
                     <field name="company_name" optional="hide" />
                     <field
                         name="event_id"
@@ -125,6 +129,7 @@
                                 <field
                                     name="phone_ids"
                                     widget="many2many_tags"
+                                    context="{'default_country_id': phone_country_id}"
                                     class="o_force_ltr" />
                                 <field
                                     name="company_name"

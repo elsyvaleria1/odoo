@@ -123,6 +123,10 @@ class EventRegistration(models.Model):
         store=True,
         readonly=False,
     )
+    phone_country_id = fields.Many2one(
+        comodel_name="res.country",
+        compute="_compute_phone_country_id",
+    )
     company_name = fields.Char(
         compute="_compute_company_name",
         store=True,
@@ -263,6 +267,13 @@ class EventRegistration(models.Model):
     @api.depends("partner_id")
     def _compute_phone_ids(self) -> None:
         self._compute_from_partner("phone_ids")
+
+    @api.depends("partner_id.country_id", "event_id.country_id")
+    def _compute_phone_country_id(self) -> None:
+        for registration in self:
+            registration.phone_country_id = (
+                registration.partner_id.country_id or registration.event_id.country_id
+            )
 
     @api.depends("partner_id")
     def _compute_company_name(self) -> None:

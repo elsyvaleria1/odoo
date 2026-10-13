@@ -1481,7 +1481,12 @@ class TestCRMLead(TestCrmCommon):
         )
 
     def test_a_number_typed_on_a_lead_form_takes_the_leads_country(self):
-        for xmlid in ("crm.crm_lead_view_form", "crm.quick_create_opportunity_form"):
+        for xmlid in (
+            "crm.crm_lead_view_form",
+            "crm.quick_create_opportunity_form",
+            "crm.crm_case_tree_view_leads",
+            "crm.crm_case_tree_view_oppor",
+        ):
             arch = etree.fromstring(
                 self.env["crm.lead"].get_view(self.env.ref(xmlid).id)["arch"]
             )

@@ -1,5 +1,5 @@
 from odoo import Command
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import Form, TransactionCase, new_test_user, tagged
 
 from odoo.addons.phone_validation import post_init_hook, uninstall_hook
 
@@ -439,6 +439,15 @@ class TestPhoneNumberReuse(TransactionCase):
             typed,
         )
 
+    def test_a_company_country_set_on_its_partner_rekeys_its_numbers(self):
+        company = self.env["res.company"].create({"name": "Countryless office"})
+        typed = self._contact_of(company, "021 209 99 74")
+        self.assertEqual(typed.sanitized, "0212099974")
+
+        company.partner_id.country_id = self.romania
+
+        self.assertEqual(typed.sanitized, "+40212099974")
+
     def test_a_company_country_set_by_a_non_merger_keeps_colliding_numbers(self):
         company = self.env["res.company"].create({"name": "Countryless office"})
         held = self.env["phone.number"].create({"number": "+40 21 209 99 76"})
@@ -469,3 +478,31 @@ class TestPhoneNumberReuse(TransactionCase):
         self.assertEqual(
             self.env["phone.number"].browse(phone_id).sanitized, "+12025550777"
         )
+
+    def _typed_on(self, form, number, fname="phone_ids"):
+        phone_id, _ = (
+            self.env["phone.number"]
+            .with_context(form._get_context(fname))
+            .name_create(number)
+        )
+        return self.env["phone.number"].browse(phone_id)
+
+    def test_a_number_typed_on_a_base_form_takes_the_records_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us = self.env.ref("base.us")
+        partner = self.env["res.partner"].create({"name": "Desk", "country_id": us.id})
+        user = new_test_user(self.env, login="desk_user", country_id=us.id)
+        company = self.env["res.company"].create({"name": "DC", "country_id": us.id})
+        bank = self.env["res.bank"].create({"name": "DC bank", "country_id": us.id})
+        typed_on = [
+            (partner, "base.view_partner_form"),
+            (partner, "base.view_partner_simple_form"),
+            (user, "base.view_users_form"),
+            (user, "base.view_users_simple_form"),
+            (company, "base.view_company_form"),
+            (bank, "base.view_res_bank_form"),
+        ]
+        for line, (record, view) in enumerate(typed_on):
+            with self.subTest(view=view):
+                phone = self._typed_on(Form(record, view=view), f"202 555 07{line:02d}")
+                self.assertEqual(phone.sanitized, f"+120255507{line:02d}")

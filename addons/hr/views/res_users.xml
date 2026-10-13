@@ -152,6 +152,7 @@
                                     name="private_phone_ids"
                                     string="Private Phone"
                                     widget="many2many_tags"
+                                    context="{'default_country_id': private_country_id}"
                                     readonly="not is_hr_user" />
                             </group>
                             <group string="Emergency Contact">
@@ -164,6 +165,7 @@
                                     name="emergency_phone_ids"
                                     string="Contact Phone"
                                     widget="many2many_tags"
+                                    context="{'default_country_id': private_country_id}"
                                     readonly="not is_hr_user" />
                             </group>
                             <group string="Personal Information">
@@ -350,6 +352,7 @@
                             string="Work Phone"
                             placeholder="Work Phone"
                             widget="many2many_tags"
+                            context="{'default_country_id': country_id}"
                             class="w-75" />
                     </h5>
                 </xpath>

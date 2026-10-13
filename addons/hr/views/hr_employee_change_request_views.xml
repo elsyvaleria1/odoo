@@ -78,6 +78,7 @@
                                 <field
                                     name="private_phone_ids"
                                     widget="many2many_tags"
+                                    context="{'default_country_id': private_country_id}"
                                     readonly="approval_state not in ['new', 'pending']" />
                             </group>
                             <group string="Emergency Contact">
@@ -88,6 +89,7 @@
                                 <field
                                     name="emergency_phone_ids"
                                     widget="many2many_tags"
+                                    context="{'default_country_id': private_country_id}"
                                     readonly="approval_state not in ['new', 'pending']" />
                             </group>
                         </group>

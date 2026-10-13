@@ -106,7 +106,11 @@
                 <field name="complete_name" string="Name" />
                 <field name="vat" optional="hide" readonly="1" />
                 <field name="email" optional="show" />
-                <field name="phone_ids" widget="many2many_tags" optional="show" />
+                <field
+                    name="phone_ids"
+                    widget="many2many_tags"
+                    optional="show"
+                    context="{'default_country_id': country_id}" />
                 <field name="main_phone_id" optional="hide" />
                 <field name="main_mobile_id" optional="hide" />
                 <field name="street" optional="hide" />
@@ -264,7 +268,10 @@
                         placeholder="e.g. Sales Director"
                         invisible="is_company" />
                     <field name="email" widget="email" required="True" />
-                    <field name="phone_ids" widget="many2many_tags" />
+                    <field
+                        name="phone_ids"
+                        widget="many2many_tags"
+                        context="{'default_country_id': country_id}" />
                 </group>
             </form>
         </field>
@@ -468,6 +475,7 @@
                                         name="phone_ids"
                                         placeholder="Phone"
                                         widget="many2many_tags"
+                                        context="{'default_country_id': country_id}"
                                         class="w-100" />
                                 </div>
                                 <!-- Extra contact rows (messaging handles,
@@ -700,6 +708,7 @@
                                                             name="phone_ids"
                                                             placeholder="Phone"
                                                             widget="many2many_tags"
+                                                            context="{'default_country_id': country_id}"
                                                             class="w-100" />
                                                     </div>
                                                     <div

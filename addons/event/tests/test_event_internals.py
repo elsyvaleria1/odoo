@@ -1482,3 +1482,38 @@ class TestEventMessageAccess(EventCase):
             events.with_user(self.user_eventregistrationdesk), "create"
         )
         self.assertEqual(per_record, set(events.ids))
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnRegistrationForm(TestEventInternalsCommon):
+    def test_a_number_typed_on_a_registration_takes_its_partners_or_events_country(
+        self,
+    ):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us, mexico = self.env.ref("base.us"), self.env.ref("base.mx")
+        event = self.env["event.event"].create(
+            {
+                "name": "Monterrey meetup",
+                "date_begin": self.reference_beg,
+                "date_end": self.reference_end,
+                "address_id": self.env["res.partner"]
+                .create({"name": "Venue", "country_id": mexico.id})
+                .id,
+            }
+        )
+        booker = self.env["res.partner"].create({"name": "Booker", "country_id": us.id})
+        Registration = self.env["event.registration"]
+        booked = Registration.create({"event_id": event.id, "partner_id": booker.id})
+        walk_in = Registration.create({"event_id": event.id, "name": "Walk-in"})
+        Phone = self.env["phone.number"]
+        for line, (registration, country) in enumerate(
+            [(booked, us), (walk_in, mexico)]
+        ):
+            with self.subTest(registration=registration.name):
+                context = Form(
+                    registration, view="event.view_event_registration_form"
+                )._get_context("phone_ids")
+                phone_id, _ = Phone.with_context(context).name_create(
+                    f"202 555 07{line:02d}"
+                )
+                self.assertEqual(Phone.browse(phone_id).country_id, country)

@@ -19,7 +19,10 @@
                             <group string="Contact">
                                 <field name="contact_name" />
                                 <field name="contact_email" />
-                                <field name="phone_ids" widget="many2many_tags" />
+                                <field
+                                    name="phone_ids"
+                                    widget="many2many_tags"
+                                    context="{'default_country_id': partner_country_id}" />
                             </group>
                         </group>
                     </sheet>
@@ -36,7 +39,11 @@
                     <field name="sale_order_line_id" />
                     <field name="contact_name" optional="hide" />
                     <field name="contact_email" optional="hide" />
-                    <field name="phone_ids" widget="many2many_tags" optional="hide" />
+                    <field
+                        name="phone_ids"
+                        widget="many2many_tags"
+                        optional="hide"
+                        context="{'default_country_id': partner_country_id}" />
                 </list>
             </field>
         </record>

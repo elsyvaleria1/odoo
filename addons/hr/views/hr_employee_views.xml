@@ -240,6 +240,7 @@
                                             string="Work Phone"
                                             placeholder="Work Phone"
                                             widget="many2many_tags"
+                                            context="{'default_country_id': country_id}"
                                             class="w-100 w-sm-75" />
                                     </h5>
                                     <h5>
@@ -355,7 +356,8 @@
                                         <field
                                             name="private_phone_ids"
                                             string="Phone"
-                                            widget="many2many_tags" />
+                                            widget="many2many_tags"
+                                            context="{'default_country_id': private_country_id}" />
                                         <field
                                             name="has_multiple_bank_accounts"
                                             invisible="1" />
@@ -458,7 +460,8 @@
                                         <field
                                             name="emergency_phone_ids"
                                             string="Phone"
-                                            widget="many2many_tags" />
+                                            widget="many2many_tags"
+                                            context="{'default_country_id': private_country_id}" />
                                     </group>
                                     <group string="Visa &amp; Work Permit">
                                         <label for="visa_no" />

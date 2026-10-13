@@ -81,6 +81,10 @@ class HrApplicant(models.Model):
         store=True,
         copy=True,
     )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="partner_id.country_id",
+    )
     linkedin_profile = fields.Char(
         string="LinkedIn Profile",
         index="btree_not_null",

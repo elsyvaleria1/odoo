@@ -154,6 +154,10 @@ class EventTrack(models.Model):
         store=True,
         readonly=False,
     )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="partner_id.country_id",
+    )
     partner_biography = fields.Html(
         string="Biography",
         sanitize_attributes=False,

@@ -213,6 +213,10 @@ class HelpdeskTicket(models.Model):
         copy=False,
         readonly=False,
     )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="partner_id.country_id",
+    )
     commercial_partner_id = fields.Many2one(related="partner_id.commercial_partner_id")
     closed_by_partner = fields.Boolean(
         string="Closed by Partner",

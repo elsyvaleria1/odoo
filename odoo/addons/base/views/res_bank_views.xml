@@ -77,7 +77,10 @@
                             </div>
                         </group>
                         <group name="communication_details">
-                            <field name="phone_ids" widget="many2many_tags" />
+                            <field
+                                name="phone_ids"
+                                widget="many2many_tags"
+                                context="{'default_country_id': country_id}" />
                             <field name="email" widget="email" />
                         </group>
                     </group>

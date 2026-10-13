@@ -47,6 +47,10 @@ class EventBooth(models.Model):
         copy=False,
         readonly=False,
     )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="partner_id.country_id",
+    )
     state = fields.Selection(
         selection=[("available", "Available"), ("unavailable", "Unavailable")],
         string="Status",

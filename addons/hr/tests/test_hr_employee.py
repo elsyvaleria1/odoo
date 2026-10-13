@@ -1213,3 +1213,35 @@ class TestEmployeeKanbanLaunchPlan(TestHrCommon):
             self._kanban_arch().get("js_class"),
             "hr_employee_kanban",
         )
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnEmployeeForms(TransactionCase):
+    def test_a_number_typed_on_an_employee_form_takes_the_employees_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us = self.env.ref("base.us")
+        user = new_test_user(self.env, login="remote", country_id=us.id)
+        employee = self.env["hr.employee"].create(
+            {"name": "Remote", "user_id": user.id, "private_country_id": us.id}
+        )
+        employee.country_id = us
+        request = self.env["hr.employee.change.request"].create(
+            {"employee_id": employee.id, "private_country_id": us.id}
+        )
+        typed_on = [
+            (employee, "hr.view_employee_form", "phone_ids"),
+            (employee, "hr.view_employee_form", "private_phone_ids"),
+            (employee, "hr.view_employee_form", "emergency_phone_ids"),
+            (request, "hr.hr_employee_change_request_view_form", "private_phone_ids"),
+            (request, "hr.hr_employee_change_request_view_form", "emergency_phone_ids"),
+            (user, "hr.res_users_view_form_preferences", "private_phone_ids"),
+            (user, "hr.res_users_view_form_preferences", "emergency_phone_ids"),
+        ]
+        Phone = self.env["phone.number"]
+        for line, (record, view, fname) in enumerate(typed_on):
+            with self.subTest(view=view, field=fname):
+                context = Form(record, view=view)._get_context(fname)
+                phone_id, _ = Phone.with_context(context).name_create(
+                    f"202 555 07{line:02d}"
+                )
+                self.assertEqual(Phone.browse(phone_id).country_id, us)

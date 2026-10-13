@@ -534,7 +534,11 @@
                 <field name="contact_name" optional="hide" />
                 <field name="partner_name" optional="hide" />
                 <field name="email_from" optional="show" />
-                <field name="phone_ids" widget="many2many_tags" optional="hide" />
+                <field
+                    name="phone_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    context="{'default_country_id': country_id}" />
                 <field
                     name="company_id"
                     optional="hide"
@@ -1157,7 +1161,11 @@
                 <field name="partner_id" optional="hide" />
                 <field name="contact_name" optional="show" />
                 <field name="email_from" />
-                <field name="phone_ids" widget="many2many_tags" optional="hide" />
+                <field
+                    name="phone_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    context="{'default_country_id': country_id}" />
                 <field
                     name="company_id"
                     optional="hide"

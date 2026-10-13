@@ -273,7 +273,10 @@
                                 name="email_from"
                                 placeholder="e.g. john.doe@example.com"
                                 widget="email" />
-                            <field name="phone_ids" widget="many2many_tags" />
+                            <field
+                                name="phone_ids"
+                                widget="many2many_tags"
+                                context="{'default_country_id': partner_country_id}" />
                             <field
                                 name="linkedin_profile"
                                 placeholder="e.g. https://www.linkedin.com/in/..."

@@ -9,6 +9,18 @@ class ResPartner(models.Model):
     _name = "res.partner"
     _inherit = ["mixin.mail.thread.phone", "res.partner"]
 
+    def write(self, vals):
+        result = super().write(vals)
+        if (
+            "country_id" in vals
+            and not self.env.context.get("phone_rekeyed_by_company")
+            and not set(self.ids).isdisjoint(
+                self.env["res.company"]._get_company_partner_ids()
+            )
+        ):
+            self.env["phone.number"]._rekey_local_sanitized()
+        return result
+
     def _phone_replace_number(self, fname, number, *types):
         self.check_singleton()
         current = self._phone_get_number()

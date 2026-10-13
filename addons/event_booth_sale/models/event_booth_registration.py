@@ -43,6 +43,10 @@ class EventBoothRegistration(models.Model):
         store=True,
         readonly=False,
     )
+    partner_country_id = fields.Many2one(
+        comodel_name="res.country",
+        related="partner_id.country_id",
+    )
 
     _unique_registration = models.Constraint(
         "unique(sale_order_line_id, event_booth_id)",

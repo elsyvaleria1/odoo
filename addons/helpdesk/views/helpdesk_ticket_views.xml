@@ -810,7 +810,8 @@
                                 <field
                                     name="phone_ids"
                                     string="Phone"
-                                    widget="many2many_tags" />
+                                    widget="many2many_tags"
+                                    context="{'default_country_id': partner_country_id}" />
                                 <span
                                     class="fa-solid fa-exclamation-triangle text-warning oe_edit_only"
                                     title="By saving this change, the customer phone number will also be updated."

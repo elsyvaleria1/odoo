@@ -5,7 +5,7 @@ from freezegun import freeze_time
 
 from odoo.exceptions import AccessError
 from odoo.fields import Command
-from odoo.tests import Form
+from odoo.tests import Form, tagged
 from odoo.tests.common import users
 
 from .common import HelpdeskCommon
@@ -1306,3 +1306,27 @@ Content-Transfer-Encoding: quoted-printable
         ticket = ticket_form.save()
         self.assertTrue(ticket.id)
         self.assertEqual(ticket.stage_id.name, "New")
+
+
+@tagged("post_install", "-at_install")
+class TestPhoneTypedOnTicketForm(HelpdeskCommon):
+    def test_a_number_typed_on_a_ticket_takes_its_customers_country(self):
+        self.env.company.country_id = self.env.ref("base.fr")
+        us = self.env.ref("base.us")
+        self.partner.country_id = us
+        ticket = self.env["helpdesk.ticket"].create(
+            {
+                "name": "Call me",
+                "team_id": self.test_team.id,
+                "partner_id": self.partner.id,
+            }
+        )
+        context = Form(ticket, view="helpdesk.helpdesk_ticket_view_form")._get_context(
+            "phone_ids"
+        )
+
+        phone_id, _ = (
+            self.env["phone.number"].with_context(context).name_create("202 555 0700")
+        )
+
+        self.assertEqual(self.env["phone.number"].browse(phone_id).country_id, us)

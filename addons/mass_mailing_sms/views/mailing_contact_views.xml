@@ -67,7 +67,10 @@
                         groups="base.group_user"
                         invisible="not phone_blacklisted"
                         class="fa-solid fa-ban text-danger" />
-                    <field name="phone_ids" widget="many2many_tags" />
+                    <field
+                        name="phone_ids"
+                        widget="many2many_tags"
+                        context="{'default_country_id': country_id}" />
                     <field name="phone_sanitized" invisible="1" />
                 </div>
             </xpath>

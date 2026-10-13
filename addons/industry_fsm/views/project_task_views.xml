@@ -160,6 +160,7 @@
                     <field
                         name="phone_ids"
                         widget="many2many_tags"
+                        context="{'default_country_id': partner_country_id}"
                         readonly="not partner_phones_editable" />
                     <span
                         class="fa-solid fa-exclamation-triangle text-warning oe_edit_only"

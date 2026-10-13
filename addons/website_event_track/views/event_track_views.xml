@@ -286,6 +286,7 @@
                                     <field
                                         name="phone_ids"
                                         widget="many2many_tags"
+                                        context="{'default_country_id': partner_country_id}"
                                         class="o_force_ltr" />
                                     <field name="partner_function" />
                                     <field name="partner_company_name" />
@@ -350,7 +351,11 @@
                 <field name="partner_name" string="Speaker Name" />
                 <field name="partner_id" optional="hide" />
                 <field name="partner_email" optional="hide" />
-                <field name="phone_ids" widget="many2many_tags" optional="hide" />
+                <field
+                    name="phone_ids"
+                    widget="many2many_tags"
+                    optional="hide"
+                    context="{'default_country_id': partner_country_id}" />
                 <field
                     name="event_id"
                     column_invisible="context.get('default_event_id')" />

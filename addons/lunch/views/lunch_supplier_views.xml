@@ -70,6 +70,7 @@
                             <field
                                 name="phone_ids"
                                 widget="many2many_tags"
+                                context="{'default_country_id': country_id}"
                                 required="send_by == 'phone'" />
                             <field
                                 name="company_id"

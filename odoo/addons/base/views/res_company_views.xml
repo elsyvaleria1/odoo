@@ -167,7 +167,10 @@
                                         options="{'no_create': True, 'no_open': True}" />
                                 </group>
                                 <group>
-                                    <field name="phone_ids" widget="many2many_tags" />
+                                    <field
+                                        name="phone_ids"
+                                        widget="many2many_tags"
+                                        context="{'default_country_id': country_id}" />
                                     <field name="email" />
                                     <field
                                         name="website"
