@@ -1,4 +1,3 @@
-
 import hashlib
 
 INDEX_NAME_PREFIX = "odoo-doc-index-"

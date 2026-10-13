@@ -194,7 +194,9 @@ class TestThreadOverrunEnforcement:
     def test_cancellation_failure_still_allows_stuck_work_to_be_marked(self, server):
         with (
             server_settings.override(limit_time_real=1),
-            patch.object(_threaded.db, "cancel_queries_of", side_effect=RuntimeError("down")) as cancel,
+            patch.object(
+                _threaded.db, "cancel_queries_of", side_effect=RuntimeError("down")
+            ) as cancel,
             _Request("uncancellable-thread", elapsed=20) as thread,
         ):
             server.enforce_runtime_limits()

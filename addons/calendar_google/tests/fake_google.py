@@ -1,4 +1,3 @@
-
 import itertools
 import re
 from unittest.mock import patch

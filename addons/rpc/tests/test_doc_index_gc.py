@@ -1,4 +1,3 @@
-
 import base64
 
 from odoo.tests import TransactionCase, tagged

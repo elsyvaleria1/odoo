@@ -1,4 +1,3 @@
-
 from odoo.db.schema import column_exists
 
 

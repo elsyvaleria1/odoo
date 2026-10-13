@@ -1,4 +1,3 @@
-
 from shapely import get_srid, unary_union
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
 from shapely.geometry.base import BaseGeometry

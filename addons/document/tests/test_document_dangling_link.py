@@ -1,4 +1,3 @@
-
 from odoo.tests.common import TransactionCase, tagged
 
 GONE = "gone.module.model"

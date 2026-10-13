@@ -1,4 +1,3 @@
-
 from typing import Protocol
 
 from odoo.addons.device_gps.tools.actions import (

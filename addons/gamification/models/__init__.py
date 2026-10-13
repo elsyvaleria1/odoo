@@ -1,4 +1,3 @@
-
 from . import gamification_utils
 from . import gamification_badge
 from . import gamification_badge_user

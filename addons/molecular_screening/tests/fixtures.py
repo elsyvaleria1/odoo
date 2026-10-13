@@ -1,4 +1,3 @@
-
 BENZENE = """benzene
   molecular_screening      2D
 

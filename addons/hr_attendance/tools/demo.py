@@ -1,4 +1,3 @@
-
 from calendar import monthrange
 from datetime import timedelta
 from random import randint

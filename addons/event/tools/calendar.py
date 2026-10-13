@@ -1,4 +1,3 @@
-
 from datetime import datetime
 
 from odoo.libs.datetime import timezone

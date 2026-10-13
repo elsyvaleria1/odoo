@@ -1,4 +1,3 @@
-
 from odoo import Command
 from odoo.exceptions import AccessError
 

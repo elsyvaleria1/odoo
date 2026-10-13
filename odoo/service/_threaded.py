@@ -92,7 +92,9 @@ connections the websockets' work runs on.
 _SIGXCPU_EXIT_CODE = 128 + getattr(signal, "SIGXCPU", 24)
 
 
-def _is_thread_overrun_finished(thread: threading.Thread, started: float | None) -> bool:
+def _is_thread_overrun_finished(
+    thread: threading.Thread, started: float | None
+) -> bool:
     return getattr(thread, "start_time", None) != started
 
 

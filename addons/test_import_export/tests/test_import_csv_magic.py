@@ -1,4 +1,3 @@
-
 import codecs
 
 from odoo.tests import common

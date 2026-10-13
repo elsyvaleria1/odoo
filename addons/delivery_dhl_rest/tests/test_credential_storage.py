@@ -1,4 +1,3 @@
-
 from odoo.tests import tagged
 
 from odoo.addons.delivery_dhl_rest.tests.test_delivery_dhl import TestDeliveryDHLCommon

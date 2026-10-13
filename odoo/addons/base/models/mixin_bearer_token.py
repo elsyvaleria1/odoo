@@ -1,4 +1,3 @@
-
 import base64
 import hashlib
 from typing import Any

@@ -1,4 +1,3 @@
-
 from lxml import etree
 
 INPUT_CONTEXT_KEY = "automation_input_line_id"

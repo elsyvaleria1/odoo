@@ -1,4 +1,3 @@
-
 AUTH_URL = "https://auth.lazada.com/oauth/authorize"
 
 API_ENDPOINTS = {

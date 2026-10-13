@@ -1,4 +1,3 @@
-
 from lxml import html
 
 from odoo import Command

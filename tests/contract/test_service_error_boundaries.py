@@ -1,4 +1,3 @@
-
 import pytest
 
 from odoo.service.db._dump_scanner import _get_disallowed_psql_meta_command

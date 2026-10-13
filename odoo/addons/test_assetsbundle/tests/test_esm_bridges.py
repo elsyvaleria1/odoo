@@ -118,7 +118,7 @@ class TestBridgeHashWidth(BridgeRequestBoundCase):
         with patch.object(
             BridgeShimManager,
             "_create_bridge_attachments_via_rw_cursor",
-            return_value=None
+            return_value=None,
         ):
             urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/test_hash": "export default 1;"}
@@ -137,7 +137,7 @@ class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
         with patch.object(
             BridgeShimManager,
             "_create_bridge_attachments_via_rw_cursor",
-            return_value=None
+            return_value=None,
         ) as escalate:
             urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/ro_test": "export default 1;"}
@@ -153,7 +153,7 @@ class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
         with patch.object(
             BridgeShimManager,
             "_create_bridge_attachments_via_rw_cursor",
-            side_effect=RuntimeError("primary unavailable")
+            side_effect=RuntimeError("primary unavailable"),
         ) as escalate:
             urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/ro_test2": "export default 2;"}
@@ -171,7 +171,7 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
         with patch.object(
             BridgeShimManager,
             "_create_bridge_attachments_via_rw_cursor",
-            return_value=None
+            return_value=None,
         ) as escalate:
             urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/decoupled": "export const decoupled = 1;"}
@@ -191,7 +191,7 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
         with patch.object(
             BridgeShimManager,
             "_create_bridge_attachments_via_rw_cursor",
-            side_effect=RuntimeError("primary unavailable")
+            side_effect=RuntimeError("primary unavailable"),
         ):
             urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/degraded": "export const degraded = 2;"}
@@ -225,7 +225,9 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
             )
         self.assertEqual(urls["@probe/reused"], reused)
         self.assertEqual(urls["@probe/missing"], urls["@probe/same_content"])
-        self.assertEqual(unquote(urls["@probe/missing"].split(",", 1)[1]), missing_source)
+        self.assertEqual(
+            unquote(urls["@probe/missing"].split(",", 1)[1]), missing_source
+        )
         create.assert_called_once()
         self.assertEqual(len(create.call_args.args[0]), 1)
         self.assertIn("failed; falling back to data: URIs", "\n".join(logged.output))
@@ -259,13 +261,17 @@ class TestBridgeNoRequestPersistence(TransactionCase):
         )
         urls = manager._get_or_create_bridge_urls(sources)
         self.assertEqual(urls["@probe/first"], urls["@probe/second"])
-        attachments = self.env["ir.attachment"].sudo().search(
-            [("url", "=", urls["@probe/first"])]
+        attachments = (
+            self.env["ir.attachment"]
+            .sudo()
+            .search([("url", "=", urls["@probe/first"])])
         )
         self.assertEqual(len(attachments), 1)
         self.assertEqual(attachments.raw, sources["@probe/first"].encode())
         with patch.object(
-            type(attachments), "create", side_effect=AssertionError("unexpected creation")
+            type(attachments),
+            "create",
+            side_effect=AssertionError("unexpected creation"),
         ):
             self.assertEqual(manager._get_or_create_bridge_urls(sources), urls)
 
@@ -295,7 +301,12 @@ class TestBridgeShimSources(TransactionCase):
     def test_source_preparation_needs_no_database_environment(self):
         manager = self._manager()
         del manager.env
-        for strict, wait in ((False, False), (False, True), (True, False), (True, True)):
+        for strict, wait in (
+            (False, False),
+            (False, True),
+            (True, False),
+            (True, True),
+        ):
             with self.subTest(strict=strict, wait=wait):
                 shim = manager.prepare_shim_sources(
                     {"@web/core/registry"}, strict=strict, wait=wait

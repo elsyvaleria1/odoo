@@ -1,4 +1,3 @@
-
 from unittest.mock import MagicMock, patch
 
 from odoo.exceptions import UserError

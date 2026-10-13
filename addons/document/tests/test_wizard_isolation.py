@@ -1,4 +1,3 @@
-
 from odoo import Command
 from odoo.exceptions import AccessError
 from odoo.tests.common import tagged

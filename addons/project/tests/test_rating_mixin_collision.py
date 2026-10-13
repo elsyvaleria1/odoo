@@ -1,4 +1,3 @@
-
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.rating.tests.test_rating_mixin_collision import RATED_FIELDS

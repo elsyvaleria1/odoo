@@ -1,4 +1,3 @@
-
 import random
 import re
 from unittest.mock import patch

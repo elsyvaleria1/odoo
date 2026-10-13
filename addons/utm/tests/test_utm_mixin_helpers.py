@@ -1,4 +1,3 @@
-
 from unittest.mock import patch
 
 from odoo.tests import TransactionCase, tagged

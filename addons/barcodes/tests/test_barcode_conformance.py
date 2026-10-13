@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 from odoo.libs.json import loads as json_loads

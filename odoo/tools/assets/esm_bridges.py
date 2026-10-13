@@ -126,9 +126,7 @@ def _prepare_bridge_shim_sources(
         sources_by_specifier[specifier] = shim
         if is_star_fallback:
             star_fallback_specifiers.append(specifier)
-    return _BridgeShimSources(
-        sources_by_specifier, tuple(star_fallback_specifiers)
-    )
+    return _BridgeShimSources(sources_by_specifier, tuple(star_fallback_specifiers))
 
 
 def get_evaluation_time_bridge_uses(
@@ -316,9 +314,7 @@ class BridgeShimManager:
             shim, _star = _bridge_shim_source(specifier, names, has_default=False)
             shims_by_spec[specifier] = shim
 
-        return _ParentBridgeShimSources(
-            shims_by_spec, skipped_tests, skip_legacy_tests
-        )
+        return _ParentBridgeShimSources(shims_by_spec, skipped_tests, skip_legacy_tests)
 
     def _get_or_create_parent_self_bridge_urls(self) -> dict[str, str]:
         sources = self._prepare_parent_self_shim_sources()

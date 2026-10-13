@@ -1,4 +1,3 @@
-
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.constants import CACHES_BY_KEY
 

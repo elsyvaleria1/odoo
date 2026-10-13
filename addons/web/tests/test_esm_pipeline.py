@@ -4287,14 +4287,18 @@ class TestPageBundleExportSurface(TransactionCase):
         )
         self.env.registry.clear_cache("assets")
         bridged = []
-        get_or_create_bridges = esm_bridges.BridgeShimManager._get_or_create_native_to_legacy_bridge_urls
+        get_or_create_bridges = (
+            esm_bridges.BridgeShimManager._get_or_create_native_to_legacy_bridge_urls
+        )
 
         def spy(manager, *args, **kwargs):
             bridged.append(manager.bundle_name)
             return get_or_create_bridges(manager, *args, **kwargs)
 
         with patch.object(
-            esm_bridges.BridgeShimManager, "_get_or_create_native_to_legacy_bridge_urls", spy
+            esm_bridges.BridgeShimManager,
+            "_get_or_create_native_to_legacy_bridge_urls",
+            spy,
         ):
             consumers = IrQweb._get_export_consumers(
                 "web.report_assets_common", bundle, params, []

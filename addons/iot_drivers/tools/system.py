@@ -1,4 +1,3 @@
-
 import subprocess
 from platform import release, system
 

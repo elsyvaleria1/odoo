@@ -1,4 +1,3 @@
-
 from psycopg import errors
 
 from odoo import api

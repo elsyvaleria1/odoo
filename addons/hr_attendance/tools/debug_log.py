@@ -1,4 +1,3 @@
-
 import logging
 
 from odoo.libs.lazy_log import (

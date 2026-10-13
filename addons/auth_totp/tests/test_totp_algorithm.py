@@ -1,4 +1,3 @@
-
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.auth_totp.models.totp import TOTP, hotp

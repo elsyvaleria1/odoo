@@ -1,4 +1,3 @@
-
 from ..phonemetadata import NumberFormat, PhoneMetadata, PhoneNumberDesc
 
 PHONE_METADATA_CI = PhoneMetadata(

@@ -1,4 +1,3 @@
-
 from odoo.tests import TransactionCase, tagged
 
 _KEY = "test.subject:keyed:global"

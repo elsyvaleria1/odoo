@@ -1,4 +1,3 @@
-
 SDF_SAMPLE = """glifosato
      RDKit          3D
 

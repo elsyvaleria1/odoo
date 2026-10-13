@@ -1,4 +1,3 @@
-
 import dataclasses
 import enum
 from collections.abc import Mapping

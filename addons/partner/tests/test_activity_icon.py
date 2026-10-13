@@ -1,4 +1,3 @@
-
 from odoo import modules
 from odoo.tests import TransactionCase, tagged
 
