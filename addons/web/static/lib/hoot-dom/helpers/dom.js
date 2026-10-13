@@ -10,28 +10,36 @@ import { waitUntil } from "./time.js";
  *  width?: number;
  *  height?: number;
  * }} Dimensions
+ *
  * @typedef {{
  *  root?: Target;
  *  tabbable?: boolean;
  * }} FocusableOptions
+ *
  * @typedef {{
  *  keepInlineTextNodes?: boolean;
  *  tabSize?: number;
  *  type?: "html" | "xml";
  * }} FormatXmlOptions
+ *
  * @typedef {{
  *  inline: boolean;
  *  level: number;
  *  value: MarkupLayerValue;
  * }} MarkupLayer
+ *
  * @typedef {{
  *  close?: string;
  *  open?: string;
  *  textContent?: string;
  * }} MarkupLayerValue
+ *
  * @typedef {(node: Node, index: number, nodes: Node[]) => boolean | Node} NodeFilter
+ *
  * @typedef {(node: Node, selector: string) => Node[]} NodeGetter
+ *
  * @typedef {string | string[] | number | boolean | File[]} NodeValue
+ *
  * @typedef {number | [number, number] | {
  *  x?: number;
  *  y?: number;
@@ -44,8 +52,11 @@ import { waitUntil } from "./time.js";
  *  screenX?: number;
  *  screenY?: number;
  * }} Position
+ *
  * @typedef {(content: string) => QueryFilter} PseudoClassPredicateBuilder
+ *
  * @typedef {string | number | NodeFilter} QueryFilter
+ *
  * @typedef {{
  *  contains?: string;
  *  count?: number;
@@ -69,14 +80,18 @@ import { waitUntil } from "./time.js";
  *  viewPort?: boolean;
  *  visible?: boolean;
  * }} QueryOptions
+ *
  * @typedef {{
  *  trimPadding?: boolean;
  * }} QueryRectOptions
+ *
  * @typedef {{
  *  inline?: boolean;
  *  raw?: boolean;
  * }} QueryTextOptions
+ *
  * @typedef {"both" | "x" | "y"} ScrollAxis
+ *
  * @typedef {import("./time").WaitOptions} WaitOptions
  */
 
@@ -325,6 +340,7 @@ function getNodeContent(node) {
 
 /** @type {NodeFilter} */
 function getNodeIframe(node) {
+    /** @see parseSelector */
     const doc = node.contentDocument;
     return doc && doc.readyState !== "loading" ? doc : false;
 }
@@ -532,6 +548,8 @@ function matchFilter(filter, nodes, index) {
 }
 
 /**
+ * flatMap implementation supporting NodeList iterables.
+ *
  * @param {Iterable<Node>} nodes
  * @param {(node: Node) => Node | Iterable<Node> | null | undefined} flatMapFn
  */
@@ -584,7 +602,17 @@ function parseRawArgs(args) {
     return args[0]?.raw ? [$raw(...args)] : args;
 }
 
-/** @param {string} selector */
+/**
+ * Parses a given selector string into a list of selector groups.
+ *
+ * - the return value is a list of selector `group` objects (representing comma-separated
+ *  selectors);
+ * - a `group` is composed of one or more `part` objects (representing space-separated
+ *  selector parts inside of a group);
+ * - a `part` is composed of a base selector (string) and zero or more 'filters' (predicates).
+ *
+ * @param {string} selector
+ */
 function parseSelector(selector) {
     /**
      * @param {string} selector
@@ -734,7 +762,11 @@ function parseXml(xmlString, type) {
     return doc.getElementsByTagName(wrapperTag)[0].childNodes;
 }
 
-/** @param {string} val */
+/**
+ * Converts a CSS pixel value to a number, removing the 'px' part.
+ *
+ * @param {string} val
+ */
 function pixelValueToNumber(val) {
     return $parseFloat(val.endsWith("px") ? val.slice(0, -2) : val);
 }
@@ -748,7 +780,7 @@ function plural(word, count) {
 }
 
 /**
- * @param {Node[]} nodes
+ * @param {Node[]} nodes (assumed not empty)
  * @param {string} selector
  */
 function queryWithCustomSelector(nodes, selector) {
@@ -793,6 +825,13 @@ function queryWithCustomSelector(nodes, selector) {
 }
 
 /**
+ * Creates a query message if needed, with all the information available used to
+ * gather the given nodes (base selector and count of nodes matching it, then each
+ * modifier applied as a filter with each associated count).
+ *
+ * Returns the resulting message only if the final count of nodes doesn't match
+ * the given expected count.
+ *
  * @param {Node[]} filteredNodes
  * @param {number} [expectedCount]
  */
@@ -835,6 +874,9 @@ function registerQueryMessage(filteredNodes, expectedCount) {
 }
 
 /**
+ * Wrapper around '_queryAll' calls to ensure global variables are properly cleaned
+ * up on any thrown error.
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  */
@@ -951,6 +993,7 @@ class HootDomError extends Error {
 }
 
 const R_CHAR = /[\w-]/;
+/** \s without \n and \v */
 const R_HORIZONTAL_WHITESPACE =
     /[\r\t\f \u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000\ufeff]+/g;
 const R_LINEBREAK = /\s*\n+\s*/g;
@@ -1259,15 +1302,25 @@ export function isEmpty(value) {
 }
 
 /**
+ * Returns whether the given object is an {@link EventTarget}.
+ *
  * @template T
  * @param {T} object
  * @returns {T extends EventTarget ? true : false}
+ * @example
+ *  isEventTarget(window); // true
+ * @example
+ *  isEventTarget(new App()); // false
  */
 export function isEventTarget(object) {
     return object && typeof object.addEventListener === "function";
 }
 
 /**
+ * Returns whether the given object is a {@link Node} object.
+ * Note that it is independant from the {@link Node} class itself to support
+ * cross-window checks.
+ *
  * @template T
  * @param {T} object
  * @returns {T extends Node ? true : false}
@@ -1464,6 +1517,9 @@ export const FOCUSABLE_SELECTOR = [
 ].join(",");
 
 /**
+ * Returns a standardized representation of the given `string` value as a human-readable
+ * XML string template (or HTML if the `type` option is `"html"`).
+ *
  * @param {string} value
  * @param {FormatXmlOptions} [options]
  * @returns {string}
@@ -1474,7 +1530,15 @@ export function formatXml(value, options) {
     return generateStringFromLayers(layers, options?.tabSize ?? 4);
 }
 
-/** @param {Node} [node] */
+/**
+ * Returns the active element in the given document. Further checks are performed
+ * in the following cases:
+ * - the given node is an iframe (checks in its content document);
+ * - the given node has a shadow root (checks in that shadow root document);
+ * - the given node is the body of an iframe (checks in the parent document).
+ *
+ * @param {Node} [node]
+ */
 export function getActiveElement(node) {
     const doc = getDocument(node);
     const view = doc.defaultView;
@@ -1501,8 +1565,14 @@ export function getActiveElement(node) {
 }
 
 /**
+ * Returns the list of focusable elements in the given parent, sorted by their `tabIndex`
+ * property.
+ *
+ * @see {@link isFocusable} for more information
  * @param {FocusableOptions} [options]
  * @returns {Element[]}
+ * @example
+ *  getFocusableElements();
  */
 export function getFocusableElements(options) {
     const parent = _queryOne(options?.root || getDefaultRoot());
@@ -1526,8 +1596,14 @@ export function getFocusableElements(options) {
 }
 
 /**
+ * Returns the next focusable element after the current active element if it is
+ * contained in the given parent.
+ *
+ * @see {@link getFocusableElements}
  * @param {FocusableOptions} [options]
  * @returns {Element | null}
+ * @example
+ *  getPreviousFocusableElement();
  */
 export function getNextFocusableElement(options) {
     const parent = _queryOne(options?.root || getDefaultRoot());
@@ -1537,6 +1613,8 @@ export function getNextFocusableElement(options) {
 }
 
 /**
+ * Returns the parent `<iframe>` of a given node (if any).
+ *
  * @param {Node} node
  * @returns {HTMLIFrameElement | null}
  */
@@ -1557,8 +1635,14 @@ export function getParentFrame(node) {
 }
 
 /**
+ * Returns the previous focusable element before the current active element if it is
+ * contained in the given parent.
+ *
+ * @see {@link getFocusableElements}
  * @param {FocusableOptions} [options]
  * @returns {Element | null}
+ * @example
+ *  getPreviousFocusableElement();
  */
 export function getPreviousFocusableElement(options) {
     const parent = _queryOne(options?.root || getDefaultRoot());
@@ -1568,6 +1652,12 @@ export function getPreviousFocusableElement(options) {
 }
 
 /**
+ * Checks whether a target is displayed, meaning that it has an offset parent and
+ * is contained in the current document.
+ *
+ * Note that it does not mean that the target is "visible" (it can still be hidden
+ * by CSS properties such as `width`, `opacity`, `visiblity`, etc.).
+ *
  * @param {Target} target
  * @returns {boolean}
  */
@@ -1576,8 +1666,17 @@ export function isDisplayed(target) {
 }
 
 /**
+ * Returns whether the given node is editable, meaning that it is an `":enabled"`
+ * `<input>` or `<textarea>` {@link Element};
+ *
+ * Note: this does **NOT** support elements with `contenteditable="true"`.
+ *
  * @param {Node} node
  * @returns {boolean}
+ * @example
+ *  isEditable(document.querySelector("input")); // true
+ * @example
+ *  isEditable(document.body); // false
  */
 export function isEditable(node) {
     return (
@@ -1588,6 +1687,15 @@ export function isEditable(node) {
 }
 
 /**
+ * Returns whether an element is focusable. Focusable elements are either:
+ * - `<a>` or `<area>` elements with an `href` attribute;
+ * - *enabled* `<button>`, `<input>`, `<select>` and `<textarea>` elements;
+ * - `<iframe>` elements;
+ * - any element with its `contenteditable` attribute set to `"true"`.
+ *
+ * A focusable element must also not have a `tabIndex` property set to less than 0.
+ *
+ * @see {@link FOCUSABLE_SELECTOR}
  * @param {Target} target
  * @returns {boolean}
  */
@@ -1596,14 +1704,22 @@ export function isFocusable(target) {
 }
 
 /**
+ * Returns whether the given target is contained in the current root document.
+ *
  * @param {Window | Node} target
  * @returns {boolean}
+ * @example
+ *  isInDOM(queryFirst("div")); // true
+ * @example
+ *  isInDOM(document.createElement("div")); // Not attached -> false
  */
 export function isInDOM(target) {
     return ensureElement(target)?.isConnected;
 }
 
 /**
+ * Checks whether a target is *at least partially* visible in the current viewport.
+ *
  * @param {Target} target
  * @returns {boolean}
  */
@@ -1612,6 +1728,8 @@ export function isInViewPort(target) {
 }
 
 /**
+ * Returns whether an element is scrollable.
+ *
  * @param {Target} target
  * @param {ScrollAxis} [axis]
  * @returns {boolean}
@@ -1621,6 +1739,14 @@ export function isScrollable(target, axis) {
 }
 
 /**
+ * Checks whether a target is visible, meaning that it is "displayed" (see {@link isDisplayed}),
+ * has a non-zero width and height, and is not hidden by "opacity" or "visibility"
+ * CSS properties.
+ *
+ * Note that it does not account for:
+ *  - the position of the target in the viewport (e.g. negative x/y coordinates)
+ *  - the color of the target (e.g. transparent text with no background).
+ *
  * @param {Target} target
  * @returns {boolean}
  */
@@ -1629,15 +1755,32 @@ export function isVisible(target) {
 }
 
 /**
+ * Equivalent to the native `node.matches(selector)`, with a few differences:
+ * - it can take any {@link Target} (strings, nodes and iterable of nodes);
+ * - it supports custom pseudo-classes, such as ":contains" or ":visible".
+ *
  * @param {Target} target
  * @param {string} selector
  * @returns {boolean}
+ * @example
+ *  matches("input[name=surname]", ":value(John)");
+ * @example
+ *  matches(buttonEl, ":contains(Submit)");
  */
 export function matches(target, selector) {
     return elementsMatch(_guardedQueryAll(target), selector);
 }
 
 /**
+ * Listens for DOM mutations on a given target.
+ *
+ * This helper has 2 main advantages over directly calling the native MutationObserver:
+ * - it ensures a single observer is created for a given target, even if multiple
+ *  callbacks are registered;
+ * - it keeps track of these observers, which allows to check whether an observer
+ *  is still running while it should not, and to disconnect all running observers
+ *  at once.
+ *
  * @param {HTMLElement} target
  * @param {MutationCallback} callback
  */
@@ -1674,9 +1817,81 @@ export function observe(target, callback) {
 }
 
 /**
+ * Returns a list of nodes matching the given {@link Target}.
+ * This function can either be used as a **template literal tag** (only supports
+ * string selector without options) or invoked the usual way.
+ *
+ * The target can be:
+ * - a {@link Node} (or an iterable of nodes), or {@link Window} object;
+ * - a {@link Document} object (which will be converted to its body);
+ * - a string representing a *custom selector* (which will be queried in the `root` option);
+ *
+ * This function allows all string selectors supported by the native {@link Element.querySelector}
+ * along with some additional custom pseudo-classes:
+ *
+ * - `:contains(text)`: matches nodes whose *text content* includes the given *text*.
+ *      * The match is **partial** and **case-insensitive**;
+ *      * Given *text* also supports regular expressions (e.g. `:contains(/^foo.+/)`).
+ * - `:count`: return nodes if their count match the given *count*.
+ *      If not matching, an error is thrown;
+ * - `:displayed`: matches nodes that are "displayed" (see {@link isDisplayed});
+ * - `:empty`: matches nodes that have an empty *content* (**value** or **inner text**);
+ * - `:eq(n)`: matches the *nth* node (0-based index);
+ * - `:first`: matches the first node matching the selector (regardless of its actual
+ *  DOM siblings);
+ * - `:focusable`: matches nodes that can be focused (see {@link isFocusable});
+ * - `:hidden`: matches nodes that are **not** "visible" (see {@link isVisible});
+ * - `:interactive`: matches nodes that are not affected by 'pointer-events: none'
+ * - `:iframe`: matches nodes that are `<iframe>` elements, and returns their `body`
+ *  if it is ready;
+ * - `:last`: matches the last node matching the selector (regardless of its actual
+ *  DOM siblings);
+ * - `:selected`: matches nodes that are selected (e.g. `<option>` elements);
+ * - `:shadow`: matches nodes that have shadow roots, and returns their shadow root;
+ * - `:scrollable(axis)`: matches nodes that are scrollable (see {@link isScrollable});
+ * - `:text(text)`: matches nodes whose *content* is strictly equal to the given *text*;
+ *      * The match is **exact**, and **case-insensitive**;
+ *      * Given *text* also supports regular expressions (e.g. `:text(/^foo.+/)`).
+ * - `:value(value)`: matches nodes whose *value* is strictly equal to the given *value*;
+ *      * The match is **partial**, and **case-insensitive**;
+ *      * Given *value* also supports regular expressions (e.g. `:value(/^foo.+/)`).
+ * - `:viewPort`: matches nodes that are contained in the current view port (see
+ *  {@link isInViewPort});
+ * - `:visible`: matches nodes that are "visible" (see {@link isVisible});
+ *
+ * An `options` object can be specified to filter[1] the results:
+ * - `root`: the root node to query the selector in (defaults to the current fixture);
+ * - any of the *custom pseudo-classes* can be given as an option, with the value
+ *  being a boolean for standalone pseudo-classes (e.g. `{ empty: true }`), or a
+ *  string for the others (e.g. `{ contains: "text" }`).
+ *
+ * [1] these filters (except for `count` and `root`) achieve the same result as
+ *  using their homonym pseudo-classes on the final group of the given selector
+ *  string (e.g. ```queryAll`ul > li:visible`;``` = ```queryAll("ul > li", { visible: true })```).
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  * @returns {HTMLElement[]}
+ * @example
+ *  // regular selectors
+ *  queryAll`window`; // -> []
+ *  queryAll`input#name`; // -> [input]
+ *  queryAll`div`; // -> [div, div, ...]
+ *  queryAll`ul > li`; // -> [li, li, ...]
+ * @example
+ *  // custom selectors
+ *  queryAll`div:visible:contains(Lorem ipsum)`; // -> [div, div, ...]
+ *  queryAll`div:visible:contains(${/^L\w+\si.*m$/})`; // -> [div, div, ...]
+ *  queryAll`:focusable`; // -> [a, button, input, ...]
+ *  queryAll`.o_iframe:iframe p`; // -> [p, p, ...] (inside iframe)
+ *  queryAll`#editor:shadow div`; // -> [div, div, ...] (inside shadow DOM)
+ * @example
+ *  // with options
+ *  queryAll(`div:first`, { count: 1 }); // -> [div]
+ *  queryAll(`div`, { root: queryOne`iframe` }); // -> [div, div, ...]
+ *  // the next 2 queries will return the same results
+ *  queryAll(`button:visible`); // -> [button, button, ...]
+ *  queryAll(`button`, { visible: true }); // -> [button, button, ...]
  */
 export function queryAll(target, options) {
     [target, options] = parseRawArgs(arguments);
@@ -1684,6 +1899,9 @@ export function queryAll(target, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns a list of the
+ * *attribute values* of the matching nodes.
+ *
  * @param {Target} target
  * @param {string} attribute
  * @param {QueryOptions} [options]
@@ -1694,6 +1912,9 @@ export function queryAllAttributes(target, attribute, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns a list of the
+ * *properties* of the matching nodes.
+ *
  * @param {Target} target
  * @param {string} property
  * @param {QueryOptions} [options]
@@ -1704,6 +1925,14 @@ export function queryAllProperties(target, property, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns a list of the
+ * {@link DOMRect} of the matching nodes.
+ *
+ * There are a few differences with the native {@link Element.getBoundingClientRect}:
+ * - rects take their positions relative to the top window element (instead of their
+ *  parent `<iframe>` if any);
+ * - they can be trimmed to remove padding with the `trimPadding` option.
+ *
  * @param {Target} target
  * @param {QueryOptions & QueryRectOptions} [options]
  * @returns {DOMRect[]}
@@ -1714,6 +1943,9 @@ export function queryAllRects(target, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns a list of the
+ * *texts* of the matching nodes.
+ *
  * @param {Target} target
  * @param {QueryOptions & QueryTextOptions} [options]
  * @returns {string[]}
@@ -1724,6 +1956,9 @@ export function queryAllTexts(target, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns a list of the
+ * *values* of the matching nodes.
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  * @returns {NodeValue[]}
@@ -1734,6 +1969,11 @@ export function queryAllValues(target, options) {
 }
 
 /**
+ * Performs a {@link queryOne} with the given arguments, with a default 'first'
+ * option, to ensure that *at least* one element is returned.
+ *
+ * 'first' can be overridden by 'last' or 'eq' if needed.
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  * @returns {Node}
@@ -1744,6 +1984,9 @@ export function queryAny(target, options) {
 }
 
 /**
+ * Performs a {@link queryOne} with the given arguments and returns the value of
+ * the given *attribute* of the matching node.
+ *
  * @param {Target} target
  * @param {string} attribute
  * @param {QueryOptions} [options]
@@ -1754,6 +1997,9 @@ export function queryAttribute(target, attribute, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments and returns the first result
+ * or `null`.
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  * @returns {HTMLElement | null}
@@ -1764,6 +2010,11 @@ export function queryFirst(target, options) {
 }
 
 /**
+ * Performs a {@link queryAll} with the given arguments, along with a forced `count: 1`
+ * option to ensure only one node matches the given {@link Target}.
+ *
+ * The returned value is a single node instead of a list of nodes.
+ *
  * @param {Target} target
  * @param {Omit<QueryOptions, "count">} [options]
  * @returns {HTMLElement}
@@ -1779,6 +2030,14 @@ export function queryOne(target, options) {
 }
 
 /**
+ * Performs a {@link queryOne} with the given arguments and returns the {@link DOMRect}
+ * of the matching node.
+ *
+ * There are a few differences with the native {@link Element.getBoundingClientRect}:
+ * - rects take their positions relative to the top window element (instead of their
+ *  parent `<iframe>` if any);
+ * - they can be trimmed to remove padding with the `trimPadding` option.
+ *
  * @param {Target} target
  * @param {QueryOptions & QueryRectOptions} [options]
  * @returns {DOMRect}
@@ -1789,6 +2048,9 @@ export function queryRect(target, options) {
 }
 
 /**
+ * Performs a {@link queryOne} with the given arguments and returns the *text* of
+ * the matching node.
+ *
  * @param {Target} target
  * @param {QueryOptions & QueryTextOptions} [options]
  * @returns {string}
@@ -1799,6 +2061,9 @@ export function queryText(target, options) {
 }
 
 /**
+ * Performs a {@link queryOne} with the given arguments and returns the *value* of
+ * the matching node.
+ *
  * @param {Target} target
  * @param {QueryOptions} [options]
  * @returns {NodeValue}
@@ -1809,9 +2074,18 @@ export function queryValue(target, options) {
 }
 
 /**
+ * Combination of {@link queryAll} and {@link waitUntil}: waits for a given target
+ * to match elements in the DOM and returns the first matching node when it appears
+ * (or immediately if it is already present).
+ *
+ * @see {@link queryAll}
+ * @see {@link waitUntil}
  * @param {Target} target
  * @param {QueryOptions & WaitOptions} [options]
  * @returns {Promise<Element>}
+ * @example
+ *  const button = await waitFor(`button`);
+ *  button.click();
  */
 export function waitFor(target, options) {
     [target, options] = parseRawArgs(arguments);
@@ -1822,9 +2096,15 @@ export function waitFor(target, options) {
 }
 
 /**
+ * Opposite of {@link waitFor}: waits for a given target to disappear from the DOM
+ * (resolves instantly if the selector is already missing).
+ *
+ * @see {@link waitFor}
  * @param {Target} target
  * @param {QueryOptions & WaitOptions} [options]
  * @returns {Promise<number>}
+ * @example
+ *  await waitForNone(`button`);
  */
 export function waitForNone(target, options) {
     [target, options] = parseRawArgs(arguments);

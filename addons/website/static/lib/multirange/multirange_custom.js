@@ -1,5 +1,61 @@
 /** @odoo-module **/
+/**
+ * This code has been more that widely inspired by the multirange library
+ * which can be found on https://github.com/LeaVerou/multirange.
+ *
+ * The license file can be found in the same folder as this file.
+ */
 
+/**
+ * The multirange library will display the two values as one range input with
+ * two cursors linked by a background. This is to be used with Bootstrap
+ * custom-range inputs.
+ *
+ * There is 2 number inputs on the right and left of the multirange to
+ * display and allow quick and precise value modifications. They are
+ * initialized with the same value provided to the input (min, max, step).
+ *
+ * There is 2 events that are added to the input:
+ * - oldRangeValue: Triggered when the user clicks on a cursor or on focus
+ *                  of the right or left number input.
+ * - newRangeValue: Triggered when the user release a cursor or on focus
+ *                  out of the right or left number input.
+ *
+ * The options available for the multirange are :
+ * - On range input or as multirange method options:
+ *     - min: minimal value of the range. Default: 0.
+ *     - max: maximal value of the range. Default: 100.
+ *     - step: precision of the range. Default: 1.
+ *     - currency: symbol preceding the displayed values. Default: Empty.
+ *     - currencyPosition: currency before/after value. Default: "after".
+ *     - value: the current value of the range. Default: "0,100".
+ *
+ * - As multirange method options only:
+ *     - displayCounterInput: if we display the value. Default: true.
+ *
+ * Initialization of a multiple range input can be done in two ways:
+ *
+ * Having the inputs with the options as properties and the multiple
+ * property set will let the library initialize it just after DOM loaded.
+ *
+ * <input type="range" multiple="multiple" class="custom-range
+ * range-with-input" min=2 max=10 step=0.5 data-currency="€"
+ * data-currency-position="before" value="4,8"/>
+ *
+ * Providing a HTMLElement and an Object with the desired options.
+ *
+ * <input id="multi" type="range" class="custom-range"/>
+ *
+ * multirange(document.querySelector('#multi'), {
+ *     min: 2,
+ *     max: 10,
+ *     step: 0.5,
+ *     currency: "€",
+ *     currencyPosition: "before",
+ *     value: "4,8"
+ *     rangeWithInput: true,
+ * });
+ */
 
 const HTMLInputElement = window.HTMLInputElement;
 const descriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value");
@@ -8,6 +64,7 @@ export class Multirange {
     constructor(input, options = {}) {
         const self = this;
 
+        /* Set default and optionnal values */
         this.input = input;
         this.rangeWithInput = options.rangeWithInput === true || this.input.classList.contains('range-with-input');
         const value = options.value || this.input.getAttribute("value");
@@ -19,6 +76,7 @@ export class Multirange {
         this.currencyPosition = options.currencyPosition || this.input.dataset.currencyPosition || 'after';
         const inputClasses = ["multirange", "d-inline-block", "p-0", "align-top"];
 
+        /* Wrap the input and add its ghost */
         this.rangeDiv = document.createElement("div");
         this.rangeDiv.classList.add("multirange-wrapper", "position-relative", "mb-5");
         this.countersWrapper = document.createElement("small");
@@ -40,6 +98,7 @@ export class Multirange {
         this.rightCounter.classList.add("multirange-max", "position-absolute", "opacity-75", "opacity-100-hover", "mt-1", "end-0");
         this.countersWrapper.append(this.leftCounter, this.rightCounter);
 
+        /* Add the counterInput */
         if (this.rangeWithInput) {
             this.leftInput = document.createElement("input");
             this.leftInput.type = "number";
@@ -56,6 +115,7 @@ export class Multirange {
             this.rightCounter.parentNode.appendChild(this.rightInput);
         }
 
+        /* Define new properties on range input to link it with ghost, especially for Safari compatibility*/
         Object.defineProperty(this.input, "originalValue", descriptor.get ? descriptor : {
             get: function () {
                 return this.value;
@@ -132,6 +192,7 @@ export class Multirange {
             this.rightInput.addEventListener("focus", this.selectAllFocus.bind(this));
         }
         this.update();
+        // Single change from original lib: removed jQ from next line:
         this.rangeDiv.classList.add('visible');
     }
 
@@ -172,6 +233,7 @@ export class Multirange {
             counter.classList.add("invisible");
             input.classList.remove("invisible");
             this.saveOldValues();
+            // Hack because firefox: https://bugzilla.mozilla.org/show_bug.cgi?id=1057858
             window.setTimeout(function () {
                 input.focus();
             }, 1);

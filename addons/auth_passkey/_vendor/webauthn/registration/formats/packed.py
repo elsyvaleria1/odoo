@@ -26,15 +26,21 @@ def verify_packed(
     credential_public_key: bytes,
     pem_root_certs_bytes: List[bytes],
 ) -> bool:
+    """Verify a "packed" attestation statement
+
+    See https://www.w3.org/TR/webauthn-2/#sctn-packed-attestation
+    """
     if not attestation_statement.sig:
         raise InvalidRegistrationResponse("Attestation statement was missing signature (Packed)")
 
     if not attestation_statement.alg:
         raise InvalidRegistrationResponse("Attestation statement was missing algorithm (Packed)")
 
+    # Extract attStmt bytes from attestation_object
     attestation_dict = parse_cbor(attestation_object)
     authenticator_data_bytes = attestation_dict["authData"]
 
+    # Generate a hash of client_data_json
     client_data_hash = hashlib.sha256()
     client_data_hash.update(client_data_json)
     client_data_hash_bytes = client_data_hash.digest()
@@ -47,6 +53,7 @@ def verify_packed(
     )
 
     if attestation_statement.x5c:
+        # Validate the certificate chain
         try:
             validate_certificate_chain(
                 x5c=attestation_statement.x5c,
@@ -73,6 +80,7 @@ def verify_packed(
                 "Could not verify attestation statement signature (Packed)"
             )
     else:
+        # Self Attestation
         decoded_pub_key = decode_credential_public_key(credential_public_key)
 
         if decoded_pub_key.alg != attestation_statement.alg:

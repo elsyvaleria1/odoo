@@ -1,6 +1,8 @@
 import functools
 import re
 
+# a browser's own header is well under this; anything longer is padding, which
+# would otherwise be scanned by every pattern and pinned whole in the cache
 _PARSED_LENGTH = 512
 
 

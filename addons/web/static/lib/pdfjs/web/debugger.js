@@ -63,6 +63,7 @@ const FontInspector = (function FontInspectorClosure() {
     }
   }
   return {
+    // Properties/functions needed by PDFBug.
     id: "FontInspector",
     name: "Font Inspector",
     panel: null,
@@ -94,6 +95,7 @@ const FontInspector = (function FontInspectorClosure() {
         removeSelection();
       }
     },
+    // FontInspector specific functions.
     fontAdded(fontObj, url) {
       function properties(obj, list) {
         const moreInfo = document.createElement("table");
@@ -151,6 +153,8 @@ const FontInspector = (function FontInspectorClosure() {
         font.append(select, name, " ", logIt, moreInfo);
       }
       fonts.append(font);
+      // Somewhat of a hack, should probably add a hook for when the text layer
+      // is done rendering.
       setTimeout(() => {
         if (this.active) {
           resetSelection();
@@ -160,6 +164,7 @@ const FontInspector = (function FontInspectorClosure() {
   };
 })();
 
+// Manages all the page steppers.
 const StepperManager = (function StepperManagerClosure() {
   let steppers = [];
   let stepperDiv = null;
@@ -167,6 +172,7 @@ const StepperManager = (function StepperManagerClosure() {
   let stepperChooser = null;
   let breakPoints = Object.create(null);
   return {
+    // Properties/functions needed by PDFBug.
     id: "Stepper",
     name: "Stepper",
     panel: null,
@@ -192,6 +198,7 @@ const StepperManager = (function StepperManagerClosure() {
     },
     enabled: false,
     active: false,
+    // Stepper specific functions.
     create(pageIndex) {
       const pageContainer = document.querySelector(
         `#viewer div[data-page-number="${pageIndex + 1}"]`
@@ -238,7 +245,9 @@ const StepperManager = (function StepperManagerClosure() {
   };
 })();
 
+// The stepper for each page's operatorList.
 class Stepper {
+  // Shorter way to create element and optionally set textContent.
   #c(tag, textContent) {
     const d = document.createElement(tag);
     if (textContent) {
@@ -258,6 +267,7 @@ class Stepper {
       return args;
     }
     if ("length" in args) {
+      // array
       const MAX_ITEMS = 10,
         simpleArgs = [];
       let i, ii;
@@ -384,6 +394,7 @@ class Stepper {
             fontCharRow.append(this.#c("td", glyph.fontChar));
             unicodeRow.append(this.#c("td", glyph.unicode));
           } else {
+            // null or number
             const advanceEl = this.#c("td", glyph);
             advanceEl.classList.add("advance");
             charCodeRow.append(advanceEl);
@@ -560,6 +571,7 @@ class Stepper {
     const dependentColor = `rgba(255, 0, 0, 0.1)`;
 
     const solid = color => `background-color: ${color}`;
+    // Used for operations that have an empty bounding box
     const striped = color => `
       background-image: repeating-linear-gradient(
         -45deg,
@@ -627,13 +639,13 @@ class Stepper {
 
     const listener = evt => {
       switch (evt.keyCode) {
-        case 83:
+        case 83: // step
           document.removeEventListener("keydown", listener);
           this.nextBreakPoint = this.currentIdx + 1;
           this.goTo(-1);
           callback();
           break;
-        case 67:
+        case 67: // continue
           document.removeEventListener("keydown", listener);
           this.nextBreakPoint = this.getNextBreakPoint();
           this.goTo(-1);
@@ -665,9 +677,10 @@ class Stepper {
 const Stats = (function () {
   let stats = [];
   function clear(node) {
-    node.textContent = "";
+    node.textContent = ""; // Remove any `node` contents from the DOM.
   }
   return {
+    // Properties/functions needed by PDFBug.
     id: "Stats",
     name: "Stats",
     panel: null,
@@ -675,6 +688,7 @@ const Stats = (function () {
     init() {},
     enabled: false,
     active: false,
+    // Stats specific functions.
     add(pageNumber, stat) {
       if (!stat) {
         return;
@@ -706,6 +720,7 @@ const Stats = (function () {
   };
 })();
 
+// Manages all the debugging tools.
 class PDFBug {
   static #buttons = [];
 
@@ -722,6 +737,7 @@ class PDFBug {
       }
     }
     if (!all) {
+      // Sort the tools by the order they are enabled.
       tools.sort(function (a, b) {
         let indexA = ids.indexOf(a.id);
         indexA = indexA < 0 ? tools.length : indexA;
@@ -735,6 +751,15 @@ class PDFBug {
   static init(container, ids) {
     this.loadCSS();
     this.enable(ids);
+    /*
+     * Basic Layout:
+     * PDFBug
+     *  Controls
+     *  Panels
+     *    Panel
+     *    Panel
+     *    ...
+     */
     const ui = document.createElement("div");
     ui.id = "PDFBug";
 
@@ -749,6 +774,7 @@ class PDFBug {
     container.append(ui);
     container.style.right = "var(--panel-width)";
 
+    // Initialize all the debugging tools.
     for (const tool of this.tools) {
       const panel = document.createElement("div");
       const panelButton = document.createElement("button");

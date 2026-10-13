@@ -5,6 +5,17 @@ from typing import Mapping, Union
 from ..cose import COSECRV, COSEAlgorithmIdentifier
 from ..exceptions import InvalidTPMPubAreaStructure
 
+################
+#
+# A whole lotta domain knowledge is captured here, with hazy connections to source
+# documents. Good places to start searching for more info on these values are the
+# following Trusted Computing Group TPM Library docs linked in the WebAuthn API:
+#
+# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-1-Architecture-01.38.pdf
+# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-2-Structures-01.38.pdf
+# - https://www.trustedcomputinggroup.org/wp-content/uploads/TPM-Rev-2.0-Part-3-Commands-01.38.pdf
+#
+################
 
 
 class TPM_ST(str, Enum):
@@ -78,6 +89,9 @@ class TPM_ECC_CURVE(str, Enum):
 
 
 class TPMCertInfoClockInfo:
+    """
+    10.11.1 TPMS_CLOCK_INFO
+    """
 
     clock: bytes
     reset_count: int
@@ -92,6 +106,9 @@ class TPMCertInfoClockInfo:
 
 
 class TPMCertInfoAttested:
+    """
+    10.12.3 TPMS_CERTIFY_INFO
+    """
 
     name_alg: TPM_ALG
     name_alg_bytes: bytes
@@ -107,6 +124,9 @@ class TPMCertInfoAttested:
 
 @dataclass
 class TPMCertInfo:
+    """
+    10.12.8 TPMS_ATTEST
+    """
 
     magic: bytes
     type: TPM_ST
@@ -118,6 +138,9 @@ class TPMCertInfo:
 
 
 class TPMPubAreaParametersRSA:
+    """
+    12.2.3.5 TPMS_RSA_PARMS
+    """
 
     symmetric: TPM_ALG
     scheme: TPM_ALG
@@ -132,6 +155,9 @@ class TPMPubAreaParametersRSA:
 
 
 class TPMPubAreaParametersECC:
+    """
+    12.2.3.6 TPMS_ECC_PARMS
+    """
 
     symmetric: TPM_ALG
     scheme: TPM_ALG
@@ -146,6 +172,9 @@ class TPMPubAreaParametersECC:
 
 
 class TPMPubAreaObjectAttributes:
+    """
+    8.3 TPMA_OBJECT (Object Attributes)
+    """
 
     fixed_tpm: bool
     st_clear: bool
@@ -175,6 +204,9 @@ class TPMPubAreaObjectAttributes:
 
 
 class TPMPubAreaUnique:
+    """
+    12.2.3.2 TPMU_PUBLIC_ID
+    """
 
     value: bytes
 
@@ -229,6 +261,9 @@ class TPMPubAreaUnique:
 
 @dataclass
 class TPMPubArea:
+    """
+    12.2.4 TPMT_PUBLIC
+    """
 
     type: TPM_ALG
     name_alg: TPM_ALG
@@ -326,6 +361,7 @@ TPM_ECC_CURVE_MAP: Mapping[bytes, TPM_ECC_CURVE] = {
 }
 
 
+# Intentionally omit curves we can't map so a KeyError gets thrown
 TPM_ECC_CURVE_COSE_CRV_MAP: Mapping[TPM_ECC_CURVE, COSECRV] = {
     TPM_ECC_CURVE.NIST_P256: COSECRV.P256,
     TPM_ECC_CURVE.NIST_P384: COSECRV.P384,
@@ -335,6 +371,7 @@ TPM_ECC_CURVE_COSE_CRV_MAP: Mapping[TPM_ECC_CURVE, COSECRV] = {
 }
 
 
+# Intentionally omit algs we can't map so a KeyError gets thrown
 TPM_ALG_COSE_ALG_MAP: Mapping[TPM_ALG, COSEAlgorithmIdentifier] = {
     TPM_ALG.SHA256: COSEAlgorithmIdentifier.RSASSA_PSS_SHA_256,
     TPM_ALG.SHA384: COSEAlgorithmIdentifier.RSASSA_PKCS1_v1_5_SHA_384,
@@ -343,6 +380,8 @@ TPM_ALG_COSE_ALG_MAP: Mapping[TPM_ALG, COSEAlgorithmIdentifier] = {
 }
 
 
+# Sourced from https://trustedcomputinggroup.org/resource/vendor-id-registry/
+# Latest version: https://trustedcomputinggroup.org/wp-content/uploads/TCG-TPM-Vendor-ID-Registry-Version-1.02-Revision-1.00.pdf
 TPM_MANUFACTURERS: Mapping[str, TPMManufacturerInfo] = {
     "id:414D4400": TPMManufacturerInfo(name="AMD", id="AMD"),
     "id:41544D4C": TPMManufacturerInfo(name="Atmel", id="ATML"),

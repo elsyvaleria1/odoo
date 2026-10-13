@@ -55,7 +55,7 @@ function maybeReportChunkSorting(chunk, context) {
   const items = shared.getImportExportItems(
     chunk,
     sourceCode,
-    () => false,
+    () => false, // isSideEffectImport
     getSpecifiers,
   );
   const sortedItems = [[shared.sortImportExportItems(items)]];
@@ -75,6 +75,7 @@ function maybeReportExportSpecifierSorting(node, context) {
   shared.maybeReportSorting(context, sorted, start, end);
 }
 
+// `export * from "a"` does not have `.specifiers`.
 function getSpecifiers(exportNode) {
   return exportNode.specifiers || [];
 }
@@ -95,6 +96,10 @@ function isPartOfChunk(node, lastNode, sourceCode) {
   return hasGroupingComment ? "PartOfNewChunk" : "PartOfChunk";
 }
 
+// Full export-from statement.
+// export {a, b} from "A"
+// export * from "A"
+// export * as A from "A"
 function isExportFrom(node) {
   return (
     (node.type === "ExportNamedDeclaration" ||

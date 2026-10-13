@@ -1,3 +1,16 @@
+#######################################
+#
+# Google Hardware Attestation Root 1
+#
+# Downloaded from https://developer.android.com/training/articles/security-key-attestation#root_certificate
+# (first entry)
+#
+# Valid until 2026-05-24 @ 09:28 PST
+#
+# SHA256 Fingerprint
+# C1:98:4A:3E:F4:5C:1E:2A:91:85:51:DE:10:60:3C:86:F7:05:1B:22:49:C4:89:1C:AE:32:30:EA:BD:0C:97:D5
+#
+#######################################
 google_hardware_attestation_root_1 = """-----BEGIN CERTIFICATE-----
 MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
 BAUTEGY5MjAwOWU4NTNiNmIwNDUwHhcNMTYwNTI2MTYyODUyWhcNMjYwNTI0MTYy
@@ -33,6 +46,19 @@ wDB5y0USicV3YgYGmi+NZfhA4URSh77Yd6uuJOJENRaNVTzk
     "ascii"
 )
 
+#######################################
+#
+# Google Hardware Attestation Root 2
+#
+# Downloaded from https://developer.android.com/training/articles/security-key-attestation#root_certificate
+# (second entry)
+#
+# Valid until 2034-11-18 @ 12:37 PST
+#
+# SHA256 Fingerprint
+# 1E:F1:A0:4B:8B:A5:8A:B9:45:89:AC:49:8C:89:82:A7:83:F2:4E:A7:30:7E:01:59:A0:C3:A7:3B:37:7D:87:CC
+#
+#######################################
 google_hardware_attestation_root_2 = """-----BEGIN CERTIFICATE-----
 MIIFHDCCAwSgAwIBAgIJANUP8luj8tazMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
 BAUTEGY5MjAwOWU4NTNiNmIwNDUwHhcNMTkxMTIyMjAzNzU4WhcNMzQxMTE4MjAz
@@ -67,6 +93,18 @@ ex0SdDrx+tWUDqG8At2JHA==
     "ascii"
 )
 
+#######################################
+#
+# GlobalSign Root CA
+#
+# Downloaded from https://pki.goog/roots.pem
+#
+# Valid until 2028-01-28 @ 04:00 PST
+#
+# SHA256 Fingerprint
+# EB:D4:10:40:E4:BB:3E:C7:42:C9:E3:81:D3:1E:F2:A4:1A:48:B6:68:5C:96:E7:CE:F3:C1:DF:6C:D4:33:1C:99
+#
+#######################################
 globalsign_root_ca = """-----BEGIN CERTIFICATE-----
 MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkG
 A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
@@ -92,6 +130,18 @@ HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==
     "ascii"
 )
 
+#######################################
+#
+# GlobalSign R2
+#
+# Downloaded from https://pki.goog/repo/certs/gsr2.pem
+#
+# Valid until 2021-12-15 @ 00:00 PST
+#
+# SHA256 Fingerprint
+# 69:E2:D0:6C:30:F3:66:16:61:65:E9:1D:68:D1:CE:E5:CC:47:58:4A:80:22:7E:76:66:60:86:C0:10:72:41:EB
+#
+#######################################
 globalsign_r2 = """-----BEGIN CERTIFICATE-----
 MIIDvDCCAqSgAwIBAgINAgPk9GHsmdnVeWbKejANBgkqhkiG9w0BAQUFADBMMSAw
 HgYDVQQLExdHbG9iYWxTaWduIFJvb3QgQ0EgLSBSMjETMBEGA1UEChMKR2xvYmFs
@@ -118,6 +168,18 @@ KfSSjsd42w3lX1fbgJp7vPmLM6OBRvAXuYRKTFqMAWbb7OaGIEE+cbxY6PDepnva
     "ascii"
 )
 
+#######################################
+#
+# Apple WebAuthn Root CA
+#
+# Downloaded from https://www.apple.com/certificateauthority/Apple_WebAuthn_Root_CA.pem
+#
+# Valid until 2045-03-14 @ 17:00 PST
+#
+# SHA256 Fingerprint
+# 09:15:DD:5C:07:A2:8D:B5:49:D1:F6:77:BB:5A:75:D4:BF:BE:95:61:A7:73:42:43:27:76:2E:9E:02:F9:BB:29
+#
+#######################################
 apple_webauthn_root_ca = """-----BEGIN CERTIFICATE-----
 MIICEjCCAZmgAwIBAgIQaB0BbHo84wIlpQGUKEdXcTAKBggqhkjOPQQDAzBLMR8w
 HQYDVQQDDBZBcHBsZSBXZWJBdXRobiBSb290IENBMRMwEQYDVQQKDApBcHBsZSBJ

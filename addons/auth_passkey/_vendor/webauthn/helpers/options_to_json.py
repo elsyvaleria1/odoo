@@ -14,6 +14,9 @@ def options_to_json(
         PublicKeyCredentialRequestOptions,
     ]
 ) -> str:
+    """
+    Prepare options for transmission to the front end as JSON
+    """
     if isinstance(options, PublicKeyCredentialCreationOptions):
         _rp = {"name": options.rp.name}
         if options.rp.id:
@@ -34,6 +37,7 @@ def options_to_json(
             ],
         }
 
+        # Begin handling optional values
 
         if options.timeout is not None:
             reg_to_return["timeout"] = options.timeout

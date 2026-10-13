@@ -4,6 +4,7 @@
  */
 
 
+// src/point.ts
 var Point = class {
   x;
   y;
@@ -31,6 +32,7 @@ var Point = class {
   }
 };
 
+// src/bezier.ts
 var Bezier = class _Bezier {
   constructor(startPoint, control2, control1, endPoint, startWidth, endWidth) {
     this.startPoint = startPoint;
@@ -65,6 +67,7 @@ var Bezier = class _Bezier {
       c2: new Point(m2.x + tx, m2.y + ty)
     };
   }
+  // Returns approximated length. Code taken from https://www.lemoda.net/maths/bezier-length/index.html.
   length() {
     const steps = 10;
     let length = 0;
@@ -96,13 +99,17 @@ var Bezier = class _Bezier {
     }
     return length;
   }
+  // Calculate parametric value of x or y given t and the four point coordinates of a cubic bezier curve.
   point(t, start, c1, c2, end) {
     return start * (1 - t) * (1 - t) * (1 - t) + 3 * c1 * (1 - t) * (1 - t) * t + 3 * c2 * (1 - t) * t * t + end * t * t * t;
   }
 };
 
+// src/signature_event_target.ts
 var SignatureEventTarget = class {
+  /* tslint:disable: variable-name */
   _et;
+  /* tslint:enable: variable-name */
   constructor() {
     try {
       this._et = new EventTarget();
@@ -121,6 +128,7 @@ var SignatureEventTarget = class {
   }
 };
 
+// src/throttle.ts
 function throttle(fn, wait = 250) {
   let previous = 0;
   let timeout = null;
@@ -159,7 +167,9 @@ function throttle(fn, wait = 250) {
   };
 }
 
+// src/signature_pad.ts
 var SignaturePad = class _SignaturePad extends SignatureEventTarget {
+  /* tslint:enable: variable-name */
   constructor(canvas, options = {}) {
     super();
     this.canvas = canvas;
@@ -192,6 +202,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
     this.clear();
     this.on();
   }
+  // Public stuff
   dotSize;
   minWidth;
   maxWidth;
@@ -202,13 +213,17 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
   backgroundColor;
   throttle;
   canvasContextOptions;
+  // Private stuff
+  /* tslint:disable: variable-name */
   _ctx;
   _drawingStroke = false;
   _isEmpty = true;
   _dataUrl;
   _dataUrlOptions;
   _lastPoints = [];
+  // Stores up to 4 most recent points; used to generate a new curve
   _data = [];
+  // Stores all points in groups (one group per line or dot)
   _lastVelocity = 0;
   _lastWidth = 0;
   _strokeMoveUpdate;
@@ -363,6 +378,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
       pressure: touch.force
     };
   }
+  // Event handlers
   _handleMouseDown(event) {
     if (!this._isLeftButtonPressed(event, true) || this._drawingStroke) {
       return;
@@ -471,6 +487,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
       compositeOperation: group && "compositeOperation" in group ? group.compositeOperation : this.compositeOperation
     };
   }
+  // Private methods
   _strokeBegin(event) {
     const cancelled = !this.dispatchEvent(
       new CustomEvent("beginStroke", { detail: event, cancelable: true })
@@ -578,6 +595,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
       passive: false
     });
   }
+  // Called when a new line is started
   _reset(options) {
     this._lastPoints = [];
     this._lastVelocity = 0;
@@ -594,6 +612,7 @@ var SignaturePad = class _SignaturePad extends SignatureEventTarget {
       (/* @__PURE__ */ new Date()).getTime()
     );
   }
+  // Add point to _lastPoints array and generate a new curve if there are enough points (i.e. 3)
   _addPoint(point, options) {
     const { _lastPoints } = this;
     _lastPoints.push(point);

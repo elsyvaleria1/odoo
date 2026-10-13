@@ -6,6 +6,12 @@ from .exceptions import InvalidCBORData
 
 
 def parse_cbor(data: bytes) -> Any:
+    """
+    Attempt to decode CBOR-encoded data.
+
+    Raises:
+        `helpers.exceptions.InvalidCBORData` if data cannot be decoded
+    """
     try:
         to_return = cbor2.loads(data)
     except Exception as exc:

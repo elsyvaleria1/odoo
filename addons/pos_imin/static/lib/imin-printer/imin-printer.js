@@ -48,6 +48,7 @@
     });
   };
 
+  /*  */
   function assert (condition, message) {
     if (!condition) {
       throw new Error(("[imin-printer] " + message))
@@ -89,6 +90,7 @@
       TCPConnectPrefix["HTTP"] = "/upload";
   })(TCPConnectPrefix || (TCPConnectPrefix = {}));
 
+  /*  */
   var stringify = function (value) {
     return JSON.stringify(value)
   };
@@ -140,8 +142,10 @@
     }
   };
 
+  /*  */
   var inBrowser = typeof window !== 'undefined';
 
+  /*  */
   var PrinterWebSocket = function PrinterWebSocket(address) {
     this.address = address || '127.0.0.1';
     this.port = 8081;
@@ -254,6 +258,7 @@
 
   var PrinterWebSocket$1 = PrinterWebSocket;
 
+  /*  */
   var IminPrinter = /*@__PURE__*/(function (PrinterWebSocket) {
     function IminPrinter(url) {
       {
@@ -269,7 +274,10 @@
     if ( PrinterWebSocket ) IminPrinter.__proto__ = PrinterWebSocket;
     IminPrinter.prototype = Object.create( PrinterWebSocket && PrinterWebSocket.prototype );
     IminPrinter.prototype.constructor = IminPrinter;
-    /** @param {string} connectType */
+    /**
+     * Initialize the printer
+     * @param {string} connectType   example: USB | SPI | Bluetooth
+     */
     IminPrinter.prototype.initPrinter = function initPrinter (
       connectType
     ) {
@@ -278,7 +286,10 @@
       this.connect_type = connectType;
       this.send(this.sendParameter(connectType, 1));
     };
-    /** @param { string  } connectType */
+    /**
+     * Get printer status
+     * @param { string  } connectType  example: USB | SPI | Bluetooth
+     */
     IminPrinter.prototype.getPrinterStatus = function getPrinterStatus (connectType) {
       var this$1$1 = this;
       if ( connectType === void 0 ) connectType = PrinterType.SPI;
@@ -297,22 +308,37 @@
         };
       })
     };
+    /**
+     * Print and feed paper
+     */
     IminPrinter.prototype.printAndLineFeed = function printAndLineFeed () {
       this.send(this.sendParameter('', 3));
     };
-    /** @param {number} height */
+    /**
+     * Print blank lines
+     * @param {number} height  example: 0-255
+     */
     IminPrinter.prototype.printAndFeedPaper = function printAndFeedPaper (height) {
       this.send(
         this.sendParameter('', 4, height <= 0 ? 0 : height >= 255 ? 255 : height)
       );
     };
+    /**
+     * Cutter (paper cutting) correlation
+     */
     IminPrinter.prototype.partialCut = function partialCut () {
       this.send(this.sendParameter('', 5));
     };
+      /**
+     * Cutter (paper cutting) correlation
+     */
       IminPrinter.prototype.partialCutPaper = function partialCutPaper () {
         this.send(this.sendParameter('', 5));
       };
-    /** @param {number} alignment */
+    /**
+     * Set text alignment
+     * @param {number} alignment  example: 0 = left / 1 = center / 2 = right / default = 0
+     */
     IminPrinter.prototype.setAlignment = function setAlignment (alignment) {
       this.send(
         this.sendParameter(
@@ -322,31 +348,47 @@
         )
       );
     };
-    /** @param {number} size */
+    /**
+     * Set text size
+     * @param {number} size   example: 28
+     */
     IminPrinter.prototype.setTextSize = function setTextSize (size) {
       this.send(this.sendParameter('', 7, size));
     };
-    /** @param {number} typeface */
+    /**
+     * Set font
+     * @param {number} typeface
+     */
     IminPrinter.prototype.setTextTypeface = function setTextTypeface (typeface) {
       this.send(this.sendParameter('', 8, typeface));
     };
-    /** @param {number} style */
+    /**
+     * Set font style
+     * @param {number} style  example: NORMAL = 0 BOLD = 1 ITALIC = 2 BOLD_ITALIC = 3
+     */
     IminPrinter.prototype.setTextStyle = function setTextStyle (style) {
       this.send(
         this.sendParameter('', 9, style <= 0 ? 0 : style >= 3 ? 3 : style)
       );
     };
-    /** @param {string} space */
+    /**
+     * Set line spacing
+     * @param {string} space
+     */
     IminPrinter.prototype.setTextLineSpacing = function setTextLineSpacing (space) {
       this.send(this.sendParameter('', 10, space));
     };
-    /** @param {number} width */
+    /**
+     * Set print width
+     * @param {number} width
+     */
     IminPrinter.prototype.setTextWidth = function setTextWidth (width) {
       this.send(
         this.sendParameter('', 11, width <= 0 ? 0 : width >= 576 ? 576 : width)
       );
     };
     /**
+     * Print text
      * @param {string} text
      * @param {number} type
      */
@@ -363,6 +405,7 @@
 
     };
     /**
+     * Print a row of the table (not support Arabic)
      * @param {Array} colTextArr
      * @param {Array} colWidthArr
      * @param {Array} colAlign
@@ -387,7 +430,10 @@
         })
       );
     };
-    /** @param {number} width */
+    /**
+     * Set barcode width
+     * @param {number} width
+     */
     IminPrinter.prototype.setBarCodeWidth = function setBarCodeWidth (width) {
       this.send(
         this.sendParameter(
@@ -397,13 +443,19 @@
         )
       );
     };
-    /** @param {number} height */
+    /**
+     * Set the height of the barcode
+     * @param {number} height
+     */
     IminPrinter.prototype.setBarCodeHeight = function setBarCodeHeight (height) {
       this.send(
         this.sendParameter('', 16, height <= 1 ? 1 : height >= 255 ? 255 : height)
       );
     };
-    /** @param {number} position */
+    /**
+     * When printing barcodes, select the printing position for HRI characters
+     * @param {number} position
+     */
     IminPrinter.prototype.setBarCodeContentPrintPos = function setBarCodeContentPrintPos (position) {
       this.send(
         this.sendParameter(
@@ -414,6 +466,7 @@
       );
     };
     /**
+     * Print barcode
      * @param {number} barCodeType
      * @param {string} barCodeContent
      * @param {number} alignmentMode
@@ -438,19 +491,28 @@
         )
       );
     };
-    /** @param {number} level */
+    /**
+     * Set the size of the QR code
+     * @param {number} level
+     */
     IminPrinter.prototype.setQrCodeSize = function setQrCodeSize (level) {
       this.send(
         this.sendParameter('', 20, level <= 1 ? 1 : level >= 9 ? 9 : level)
       );
     };
-    /** @param {number} level */
+    /**
+     * Set QR code error correction
+     * @param {number} level
+     */
     IminPrinter.prototype.setQrCodeErrorCorrectionLev = function setQrCodeErrorCorrectionLev (level) {
       this.send(
         this.sendParameter('', 21, level <= 48 ? 48 : level >= 51 ? 51 : level)
       );
     };
-    /** @param {number} marginValue */
+    /**
+     * Set left margin of barcode and QR code
+     * @param {number} marginValue
+     */
     IminPrinter.prototype.setLeftMargin = function setLeftMargin (marginValue) {
       this.send(
         this.sendParameter(
@@ -461,6 +523,7 @@
       );
     };
     /**
+     * Printer QR code
      * @param {string} qrStr
      * @param {number} alignmentMode
      */
@@ -479,17 +542,24 @@
         )
       );
     };
-    /** @param {number} style */
+    /**
+     * Set paper specifications
+     * @param {number} style
+     */
     IminPrinter.prototype.setPageFormat = function setPageFormat (style) {
       this.send(
         this.sendParameter('', 25, style >= 1 ? 1 : 0)
       );
     };
+    /**
+     *  Open cash box
+     */
     IminPrinter.prototype.openCashBox = function openCashBox () {
       this.send(this.sendParameter('', 100));
     };
 
     /**
+     *  print single image
      * @param {string} bitmap
      * @param {number} alignmentMode
      */
@@ -559,35 +629,59 @@
     IminPrinter.prototype.partialCut = function partialCut () {
       this.send(this.sendParameter('', 5));
     };
-    /** @param { number} size */
+    /**
+     * set double QR size
+     * @param { number} size
+     */
     IminPrinter.prototype.setDoubleQRSize = function setDoubleQRSize (size) {
       this.send(this.sendParameter('', 28, size));
     };
-    /** @param {number} level */
+    /**
+     * set double QR1 level
+     * @param {number} level
+     */
     IminPrinter.prototype.setDoubleQR1Level = function setDoubleQR1Level (level) {
       this.send(this.sendParameter('', 29, level));
     };
-    /** @param {number} marginValue */
+    /**
+     * set double QR1 margin left
+     * @param {number} marginValue
+     */
     IminPrinter.prototype.setDoubleQR1MarginLeft = function setDoubleQR1MarginLeft (marginValue) {
       this.send(this.sendParameter('', 31, marginValue));
     };
-    /** @param {number} version */
+    /**
+     * set double QR1 version
+     * @param {number} version
+     */
     IminPrinter.prototype.setDoubleQR1Version = function setDoubleQR1Version (version) {
       this.send(this.sendParameter('', 33, version));
     };
-    /** @param {number} level */
+    /**
+     * set double QR2 level
+     * @param {number} level
+     */
     IminPrinter.prototype.setDoubleQR2Level = function setDoubleQR2Level (level) {
       this.send(this.sendParameter('', 30, level));
     };
-    /** @param {number} marginValue */
+    /**
+     * set double QR2 margin left
+     * @param {number} marginValue
+     */
     IminPrinter.prototype.setDoubleQR2MarginLeft = function setDoubleQR2MarginLeft (marginValue) {
       this.send(this.sendParameter('', 32, marginValue));
     };
-    /** @param {number} version */
+    /**
+     * set double QR2 version
+     * @param {number} version
+     */
     IminPrinter.prototype.setDoubleQR2Version = function setDoubleQR2Version (version) {
       this.send(this.sendParameter('', 34, version));
     };
-    /** @param {Array} colTextArr */
+    /**
+     * print double QR
+     * @param {Array} colTextArr
+     */
     IminPrinter.prototype.printDoubleQR = function printDoubleQR (colTextArr) {
       this.send(
         this.sendParameter('', 35, void 0, void 0, {
@@ -596,35 +690,50 @@
       );
     };
 
-    /** @param {Object} labelData */
+    /**
+     * labelInitCanvas
+     * @param {Object} labelData
+     */
     IminPrinter.prototype.labelInitCanvas = function labelInitCanvas (labelData) {
       this.send(
         this.sendParameter('', 200, void 0, labelData)
       )
     };
 
-    /** @param {Object} labelData */
+    /**
+     * labelAddText
+     * @param {Object} labelData
+     */
     IminPrinter.prototype.labelAddText = function labelAddText (labelData) {
       this.send(
         this.sendParameter('', 201, void 0, labelData)
       )
     };
 
-    /** @param {Object} labelData */
+    /**
+     * labelAddBarCod
+     * @param {Object} labelData
+     */
     IminPrinter.prototype.labelAddBarCod = function labelAddBarCod (labelData) {
       this.send(
         this.sendParameter('', 202, void 0, labelData)
       )
     };
 
-    /** @param {Object} labelData */
+    /**
+     * labelAddQrCode
+     * @param {Object} labelData
+     */
     IminPrinter.prototype.labelAddQrCode = function labelAddQrCode (labelData) {
       this.send(
         this.sendParameter('', 203, void 0, labelData)
       )
     };
 
-      /** @param {Object} labelData */
+      /**
+     * labelAddBitmap
+     * @param {Object} labelData
+     */
       IminPrinter.prototype.labelAddBitmap = function labelAddBitmap (bitmap, labelData) {
 
         var this$1$1 = this;
@@ -697,41 +806,59 @@
       });
       };
 
-      /** @param {Object} labelData */
+      /**
+     * labelAddArea
+     * @param {Object} labelData
+     */
       IminPrinter.prototype.labelAddArea = function labelAddArea (labelData) {
         this.send(
           this.sendParameter('', 205, void 0, labelData)
         )
       };
 
-      /** @param {Object} labelData */
+      /**
+     * labelPrintCanvas
+     * @param {Object} labelData
+     */
       IminPrinter.prototype.labelPrintCanvas = function labelPrintCanvas (labelData) {
         this.send(
           this.sendParameter('', 206, void 0, labelData)
         )
       };
 
-    /** @param {Object} labelData */
+    /**
+     * labelLearning
+     * @param {Object} labelData
+     */
           IminPrinter.prototype.labelLearning = function labelLearning (labelData) {
             this.send(
               this.sendParameter('', 207, void 0, labelData)
             )
           };
 
-      /** @param {Object} labelData */
+      /**
+     * setPrintMode
+     * @param {Object} labelData
+     */
        IminPrinter.prototype.setPrintMode = function setPrintMode (labelData) {
         this.send(
           this.sendParameter('', 208, void 0, labelData)
         )
       };
 
-    /** @param {Object} labelData */
+    /**
+     * getPrintModel
+     * @param {Object} labelData
+     */
           IminPrinter.prototype.getPrintModel = function getPrintModel (labelData) {
             this.send(
               this.sendParameter('', 209, void 0, labelData)
             )
           };
-    /** @param {Object} labelData */
+    /**
+     * printLabelBitmap
+     * @param {Object} labelData
+     */
     IminPrinter.prototype.printLabelBitmap = function printLabelBitmap (bitmap, labelData) {
 
       var this$1$1 = this;

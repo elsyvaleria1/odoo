@@ -13,6 +13,10 @@ from .structs import (
 
 
 def parse_authentication_credential_json(json_val: Union[str, dict]) -> AuthenticationCredential:
+    """
+    Parse a JSON form of an authentication credential, as either a stringified JSON object or a
+    plain dict, into an instance of AuthenticationCredential
+    """
     if isinstance(json_val, str):
         try:
             json_val = json_loads(json_val)
@@ -48,14 +52,20 @@ def parse_authentication_credential_json(json_val: Union[str, dict]) -> Authenti
 
     cred_type = json_val.get("type")
     try:
+        # Simply try to get the single matching Enum. We'll set the literal value below assuming
+        # the code can get past here (this is basically a mypy optimization)
         PublicKeyCredentialType(cred_type)
     except ValueError as cred_type_exc:
         raise InvalidJSONStructure("Credential had unexpected type") from cred_type_exc
 
     response_user_handle = cred_response.get("userHandle")
     if isinstance(response_user_handle, str):
+        # The `userHandle` string will most likely be base64url-encoded for ease of JSON
+        # transmission as per the L3 Draft spec:
+        # https://w3c.github.io/webauthn/#dictdef-authenticatorassertionresponsejson
         response_user_handle = base64url_to_bytes(response_user_handle)
     elif response_user_handle is not None:
+        # If it's not a string, and it's not None, then it's definitely not valid
         raise InvalidJSONStructure("Credential response had unexpected userHandle")
 
     cred_authenticator_attachment = json_val.get("authenticatorAttachment")

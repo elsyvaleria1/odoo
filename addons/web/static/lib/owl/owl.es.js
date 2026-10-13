@@ -1,14 +1,19 @@
+// ../owl-runtime/src/version.ts
 var version = "3.0.0-alpha.49";
 
+// ../owl-core/src/owl_error.ts
 var OwlError = class extends Error {
 };
 
+// ../owl-core/src/status.ts
 var STATUS = {
   NEW: 0,
   MOUNTED: 1,
+  // is ready, and in DOM. It has a valid el
   DESTROYED: 2
 };
 
+// ../owl-core/src/batched.ts
 function batched(callback) {
   let latestArgs = null;
   return function batchedCall(...args) {
@@ -24,6 +29,7 @@ function batched(callback) {
   };
 }
 
+// ../owl-core/src/debug.ts
 var DEBUG_CHANNELS = [
   "reactivity",
   "effect",
@@ -68,6 +74,7 @@ function debugLog(channel, message, ...details) {
   sink(channel, message, details);
 }
 
+// ../owl-core/src/computations.ts
 function neverEqual() {
   return false;
 }
@@ -83,12 +90,18 @@ function toEqualsFn(equals) {
 var Link = class {
   dep;
   sub;
+  // the run of `sub` that last read `dep` (see ComputationAtom.version), or
+  // DEAD once the edge is removed
   version;
   prevDep;
   nextDep;
   prevSub;
   nextSub;
+  // what dep.activeLink pointed at before this run pointed it here
   rollback;
+  // dep's value when sub read it: a signal written back to that value since
+  // (a write and its revert in one batch) has not changed for sub. Nothing for
+  // a derived dep, whose recompute notifies sub itself.
   seen;
   constructor(dep, sub, version2, prevDep, nextDep, prevSub, rollback) {
     this.dep = dep;
@@ -128,7 +141,7 @@ var immediateObservers = [];
 var currentComputation;
 var pendingDisposals = /* @__PURE__ */ new Set();
 var graphWalk = [];
-function createComputation(compute, isDerived, state = 1 , immediate = false, name = "") {
+function createComputation(compute, isDerived, state = 1 /* STALE */, immediate = false, name = "") {
   return {
     value: void 0,
     subs: void 0,
@@ -314,7 +327,7 @@ function onWriteAtom(atom, comparable = false) {
   for (let link = atom.subs; link !== void 0; link = link.nextSub) {
     const ctx = link.sub;
     const state = ctx.state;
-    if (state === 0  || ctx.forward) {
+    if (state === 0 /* EXECUTED */ || ctx.forward) {
       if (link.version !== ctx.version) {
         continue;
       }
@@ -325,13 +338,13 @@ function onWriteAtom(atom, comparable = false) {
       } else {
         observers.push(ctx);
       }
-    } else if (state === 3 ) {
+    } else if (state === 3 /* RUNNING */) {
       if (link.version !== ctx.version) {
         continue;
       }
       invalidatedWhileRunning(ctx);
     }
-    ctx.state = comparable && ctx.state !== 1  && !ctx.notifiesWithoutRecompute ? 2  : 1 ;
+    ctx.state = comparable && ctx.state !== 1 /* STALE */ && !ctx.notifiesWithoutRecompute ? 2 /* PENDING */ : 1 /* STALE */;
     if (ctx.isDerived && ctx.subs === void 0) {
       pendingDisposals.add(ctx);
     }
@@ -385,12 +398,12 @@ function updateEach(computations) {
   return errors;
 }
 function updateOwnerFirst(computation) {
-  if (computation.state === 0 ) {
+  if (computation.state === 0 /* EXECUTED */) {
     return;
   }
   let first = null;
   for (let owner = computation.owner; owner !== null; owner = owner.owner) {
-    if (owner.state !== 0  && !owner.running && (owner.isDerived || owner.immediate === computation.immediate)) {
+    if (owner.state !== 0 /* EXECUTED */ && !owner.running && (owner.isDerived || owner.immediate === computation.immediate)) {
       first = owner;
     }
   }
@@ -453,7 +466,7 @@ function setComputation(computation) {
 }
 function updateComputation(computation) {
   const state = computation.state;
-  if (state === 0 ) {
+  if (state === 0 /* EXECUTED */) {
     return;
   }
   if (computation.running) {
@@ -464,19 +477,19 @@ function updateComputation(computation) {
       `Cycle detected: ${computation.name || "a computation"} reads its own value`
     );
   }
-  if (state === 2 ) {
+  if (state === 2 /* PENDING */) {
     try {
       for (let link = computation.deps; link !== void 0; link = link.nextDep) {
         const source = link.dep;
         if (!source.isDerived) {
           if (!Object.is(link.seen, source.value)) {
-            computation.state = 1 ;
+            computation.state = 1 /* STALE */;
             break;
           }
           continue;
         }
         updateComputation(source);
-        if (computation.state === 1 ) {
+        if (computation.state === 1 /* STALE */) {
           break;
         }
       }
@@ -484,17 +497,17 @@ function updateComputation(computation) {
       if (debug.error) {
         debugLog("error", `${computation.name}: a source threw`, error);
       }
-      computation.state = 0 ;
+      computation.state = 0 /* EXECUTED */;
       computation.forward = false;
       throw error;
     }
-    if (computation.state !== 1 ) {
-      computation.state = 0 ;
+    if (computation.state !== 1 /* STALE */) {
+      computation.state = 0 /* EXECUTED */;
       computation.forward = false;
       return;
     }
   }
-  computation.state = 3 ;
+  computation.state = 3 /* RUNNING */;
   computation.forward = false;
   computation.running = true;
   if (computation.isEffect ? debug.effect : computation.isDerived && debug.computed) {
@@ -516,8 +529,8 @@ function updateComputation(computation) {
     throw error;
   } finally {
     computation.running = false;
-    if (computation.state === 3 ) {
-      computation.state = 0 ;
+    if (computation.state === 3 /* RUNNING */) {
+      computation.state = 0 /* EXECUTED */;
     } else {
       endInvalidatedRun(computation);
     }
@@ -566,7 +579,7 @@ function endInvalidatedRun(computation) {
       debugLog("computed", `${computation.name} ends out of date, a write reached it while it ran`);
     }
   } else {
-    computation.state = 0 ;
+    computation.state = 0 /* EXECUTED */;
   }
   const stack = graphWalk;
   stack.push(computation);
@@ -574,7 +587,7 @@ function endInvalidatedRun(computation) {
   while (current = stack.pop()) {
     for (let link = current.deps; link !== void 0; link = link.nextDep) {
       const source = link.dep;
-      if (source.isDerived && source.state !== 0  && !source.forward) {
+      if (source.isDerived && source.state !== 0 /* EXECUTED */ && !source.forward) {
         if (debug.reactivity) {
           debugLog(
             "reactivity",
@@ -669,7 +682,7 @@ function disposeComputation(computation) {
   } catch (error) {
     failure = { error };
   }
-  computation.state = computation.isDerived ? 1  : 0 ;
+  computation.state = computation.isDerived ? 1 /* STALE */ : 0 /* EXECUTED */;
   if (computation.owned !== null) {
     const releaseFailure = releaseOwned(computation, "is disposed");
     failure ||= releaseFailure;
@@ -713,17 +726,17 @@ function markDownstream(computation) {
         continue;
       }
       const state = observer.state;
-      if (state !== 0 ) {
+      if (state !== 0 /* EXECUTED */) {
         if (observer.forward) {
           forwardThrough(observer);
           stack.push(observer);
-        } else if (state === 3 ) {
+        } else if (state === 3 /* RUNNING */) {
           invalidatedWhileRunning(observer);
-          observer.state = observer.notifiesWithoutRecompute ? 1  : 2 ;
+          observer.state = observer.notifiesWithoutRecompute ? 1 /* STALE */ : 2 /* PENDING */;
         }
         continue;
       }
-      observer.state = observer.notifiesWithoutRecompute ? 1  : 2 ;
+      observer.state = observer.notifiesWithoutRecompute ? 1 /* STALE */ : 2 /* PENDING */;
       if (observer.isDerived) {
         stack.push(observer);
       } else if (observer.immediate) {
@@ -772,6 +785,7 @@ function observerNames(atom) {
   return names;
 }
 
+// ../owl-core/src/scope.ts
 var scopeStack2 = scopeStack;
 function runReversed(cbs, reportError) {
   for (let i = cbs.length - 1; i >= 0; i--) {
@@ -795,6 +809,8 @@ var Scope = class {
   status = STATUS.NEW;
   computations = [];
   willStart = [];
+  // true while the scope runs the setup code whose onWillStart callbacks it
+  // will await; outside that window a callback would be queued and never run
   collectingWillStart = false;
   _controller = null;
   _destroyCbs = null;
@@ -803,6 +819,21 @@ var Scope = class {
     this.app = app;
     this.pluginManager = app.pluginManager;
   }
+  /**
+   * Pushes this scope on the stack for the duration of `fn`, invoking it with
+   * the given arguments. Any code executed synchronously inside `fn` can reach
+   * this scope via `useScope()`.
+   *
+   * If the scope is already dead when `run` is called, it throws an
+   * `OwlError` (a programming error — nothing should schedule work in a
+   * destroyed scope). This is deliberately *not* an AbortError.
+   *
+   * If `fn` returns a promise, `run` guards the await with the scope's
+   * lifetime: the returned promise rejects with an AbortError if the scope
+   * dies during the await. AbortError is part of the normal async workflow,
+   * unlike the up-front OwlError above. This does not allocate an
+   * AbortController — status checks are sufficient for guarding between awaits.
+   */
   run(fn, ...args) {
     if (this.status > STATUS.MOUNTED) {
       throw new OwlError("Cannot run a callback in a destroyed scope");
@@ -844,6 +875,11 @@ var Scope = class {
     }
     return result;
   }
+  /**
+   * An AbortSignal tied to this scope's lifetime. If the scope is already
+   * dead, returns a pre-aborted signal. Lazily allocates an AbortController
+   * on first access.
+   */
   get abortSignal() {
     if (this._finalizing || this.status > STATUS.MOUNTED) {
       if (!this._controller) {
@@ -854,9 +890,18 @@ var Scope = class {
     }
     return (this._controller ??= new AbortController()).signal;
   }
+  /**
+   * Returns true once the scope has been destroyed, i.e. `finalize` has run:
+   * the abort signal is aborted, onDestroy callbacks have executed and
+   * computations are disposed.
+   */
   isDestroyed() {
     return this.status >= STATUS.DESTROYED;
   }
+  /**
+   * Registers a callback to run when the scope is destroyed. If the scope is
+   * already destroyed, the callback is invoked immediately.
+   */
   onDestroy(cb) {
     if (this.status >= STATUS.DESTROYED) {
       cb();
@@ -864,6 +909,15 @@ var Scope = class {
     }
     (this._destroyCbs ??= []).push(cb);
   }
+  /**
+   * Aborts the scope's signal, runs all registered onDestroy callbacks in
+   * reverse registration order, disposes the computations attached to this
+   * scope that nothing else observes, and transitions status to DESTROYED. Callbacks run *before* the
+   * status transition so they can still observe the pre-destroyed state
+   * (matching the prior onWillDestroy contract). A callback registered by
+   * another callback runs too, after the current round. Errors in callbacks
+   * are routed to `reportError`.
+   */
   finalize(reportError) {
     if (this._finalizing || this.status >= STATUS.DESTROYED) {
       return;
@@ -890,9 +944,17 @@ var Scope = class {
       }
     }
   }
+  /**
+   * What the scope has registered so far, for `rollback`.
+   */
   mark() {
     return [this.willStart.length, this._destroyCbs?.length ?? 0, this.computations.length];
   }
+  /**
+   * Undoes what the scope registered since `mark`: drops the onWillStart
+   * callbacks, runs the onDestroy callbacks in reverse and disposes the
+   * computations. Used when a setup fails half way.
+   */
   rollback(mark, reportError) {
     if (debug.scope) {
       debugLog(
@@ -906,6 +968,14 @@ var Scope = class {
     }
     disposeUnobserved(this.computations.splice(mark[2]), reportError);
   }
+  /**
+   * Wrapper applied to lifecycle callbacks before they are stored. The base
+   * implementation prepends the scope as the first argument, so every
+   * lifecycle callback receives the scope it was registered in.
+   * ComponentNode overrides to additionally bind `this` to the component and,
+   * in dev mode, to rename the bound function so the hook shows up as
+   * `ComponentName.hookName` in stack traces.
+   */
   decorate(fn, _hookName) {
     return fn.bind(void 0, this);
   }
@@ -937,6 +1007,7 @@ function scopeName(scope) {
   return scope.componentName ?? scope.constructor.name;
 }
 
+// ../owl-core/src/proxy.ts
 var KEYCHANGES = /* @__PURE__ */ Symbol("(keys)");
 var ITEMS = /* @__PURE__ */ Symbol("items");
 var objectToString = Object.prototype.toString;
@@ -1166,7 +1237,7 @@ function observe(target, callback) {
   const computation = createComputation(
     () => untrack(callback),
     false,
-    0 ,
+    0 /* EXECUTED */,
     true,
     `observe ${callback.name || "callback"}`
   );
@@ -1252,11 +1323,14 @@ function isIterator(value) {
 }
 var BasicHandler = class {
   shallow;
+  // the value atoms of the target's keys
   keyAtoms;
   constructor(shallow) {
     this.shallow = shallow;
     this.keyAtoms = void 0;
   }
+  // what the atoms of the target's own properties are keyed by: the target,
+  // or for a collection an object standing for its properties
   host(target) {
     return target;
   }
@@ -1634,6 +1708,7 @@ var CollectionHandler = class extends BasicHandler {
   }
 };
 
+// ../owl-core/src/signal.ts
 function buildSignal(value, toRead, equals) {
   const atom = createAtom(value, "signal");
   const equalsFn = toEqualsFn(equals);
@@ -1693,6 +1768,7 @@ var signal = /* @__PURE__ */ Object.assign(plainSignal, {
   Set: signalSet
 });
 
+// ../owl-core/src/computed.ts
 function readonlySetter() {
   throw new OwlError(
     "Cannot write to a read-only computed value. Pass a `set` option to make it writable."
@@ -1731,7 +1807,7 @@ function computed(getter, options = {}) {
   }, true);
   computation.name = options.name || debug.computed && getter.name || "computed";
   function readComputed() {
-    if (computation.state !== 0 ) {
+    if (computation.state !== 0 /* EXECUTED */) {
       updateComputation(computation);
     }
     onReadAtom(computation);
@@ -1751,6 +1827,7 @@ function computed(getter, options = {}) {
   return readComputed;
 }
 
+// ../owl-core/src/selector.ts
 function selector(source, options = {}) {
   const atoms = /* @__PURE__ */ new Map();
   let swept = 0;
@@ -1791,7 +1868,7 @@ function selector(source, options = {}) {
       }
     },
     false,
-    1 ,
+    1 /* STALE */,
     true,
     options.name || debug.computed && source.name || "selector"
   );
@@ -1843,7 +1920,7 @@ function selector(source, options = {}) {
       return;
     }
     if (!started) {
-      computation.state = 1 ;
+      computation.state = 1 /* STALE */;
     }
     updateComputation(computation);
   }
@@ -1881,6 +1958,7 @@ function selector(source, options = {}) {
   return isSelected;
 }
 
+// ../owl-core/src/effect.ts
 function effect(fn, options) {
   return createEffect(fn, false, options);
 }
@@ -1923,8 +2001,10 @@ function createEffect(fn, immediate, options) {
       return cleanup;
     },
     false,
-    1 ,
+    1 /* STALE */,
     immediate,
+    // fn.name costs a measurable share of an effect's creation: read only
+    // while debugging
     options?.name || debug.effect && fn.name || (immediate ? "immediateEffect" : "effect")
   );
   const owner = options?.detached ? void 0 : adopt(cleanupEffect);
@@ -1947,7 +2027,7 @@ function createEffect(fn, immediate, options) {
       owner.owned?.delete(cleanupEffect);
       computation.owner = null;
     }
-    computation.state = 0 ;
+    computation.state = 0 /* EXECUTED */;
     removeSources(computation);
     if (computation.value || computation.owned) {
       runUnowned(release, computation);
@@ -1987,6 +2067,7 @@ function release(effect2) {
   }
 }
 
+// ../owl-core/src/async_computed.ts
 function asyncComputed(fetcher, options = {}) {
   const value = signal(options.initial, { equals: options.equals });
   const loading = signal(false);
@@ -2060,7 +2141,7 @@ function asyncComputed(fetcher, options = {}) {
   read.refresh = () => refreshTick.set(untrack(refreshTick) + 1);
   read.dispose = dispose;
   read.currentPromise = () => {
-    const queued = runner.state !== 0 ;
+    const queued = runner.state !== 0 /* EXECUTED */;
     if (!inFlight && !queued) {
       return Promise.resolve();
     }
@@ -2086,6 +2167,7 @@ function toError(e) {
   return e instanceof Error || Object.prototype.toString.call(e) === "[object Error]" ? e : new Error(String(e), { cause: e });
 }
 
+// ../owl-core/src/validation.ts
 var PRINT_BUDGET = 1e3;
 function makeSafeReplacer() {
   const ancestors = [];
@@ -2182,6 +2264,7 @@ function validateType(value, validation) {
   return issues;
 }
 
+// ../owl-core/src/types.ts
 var defaultSymbol = /* @__PURE__ */ Symbol("default");
 var innerTypeSymbol = /* @__PURE__ */ Symbol("innerType");
 var shapeSymbol = /* @__PURE__ */ Symbol("shape");
@@ -2564,11 +2647,14 @@ var types = {
   tuple
 };
 
+// ../owl-core/src/registry.ts
 var Registry = class {
   _map = signal.Object(/* @__PURE__ */ Object.create(null));
   _order = 0;
   _name;
   _validation;
+  // the entry a use() overwrote, put back when that use() ends, and the use()
+  // entries that ended: a restore skips them
   _overwritten = /* @__PURE__ */ new WeakMap();
   _ended = /* @__PURE__ */ new WeakSet();
   constructor(options = {}) {
@@ -2670,6 +2756,7 @@ var Registry = class {
   }
 };
 
+// ../owl-core/src/resource.ts
 var Resource = class {
   _items = signal.Array([]);
   _name;
@@ -2725,6 +2812,7 @@ var Resource = class {
   }
 };
 
+// ../owl-core/src/event_modifiers.ts
 var EventModifier = {
   PREVENT_ANY: 1,
   STOP_ANY: 2,
@@ -2753,10 +2841,19 @@ function eventModifierMask(key) {
   return mask;
 }
 
+// ../owl-core/src/plugin_manager.ts
 var Plugin = class {
+  // A plugin is known by its class name, unless it declares `static id =
+  // "..."` (an own property, which a subclass inherits as any static).
   static get id() {
     return this.name;
   }
+  // Plugins passed to `startPlugins` are started in batches of equal sequence,
+  // ascending (lower first), like Resource/Registry. Each batch's onWillStart
+  // callbacks fully settle before the next batch is instantiated, so
+  // foundational plugins (low sequence) are ready before later plugins even
+  // run their setup. Explicit `plugin(X)` dependencies bypass batching and
+  // start immediately.
   static sequence = 50;
   __owl__;
   constructor(manager) {
@@ -2769,10 +2866,20 @@ var PluginManager = class extends Scope {
   config;
   plugins;
   parent;
+  // Resolves once all batches of plugins have started and their willStart
+  // callbacks have settled. The scope transitions to MOUNTED as the last step
+  // of this chain. Consumers (the root's mount(), providePlugins) await this
+  // before treating the manager as ready. `willStart` itself is inherited
+  // from Scope.
   ready = Promise.resolve();
   hasPendingReady = false;
+  // constructors of the batches still waiting for an earlier batch's
+  // willStart, by id, to tell a consumer why the plugin is not there yet
   pending = /* @__PURE__ */ new Map();
+  // plugins being started (constructor or setup), in dependency order: asking
+  // for one of them again is a dependency cycle, this the path it reports
   startingPath = [];
+  // own plugin ids in start order, so a failed setup can unregister what it started
   startedIds = [];
   constructor(app, options = {}) {
     super(app);
@@ -2841,9 +2948,19 @@ var PluginManager = class extends Scope {
     this.pending.delete(id);
     return plugin2;
   }
+  /**
+   * Whether the plugin of `pluginConstructor` is being started (its
+   * constructor or its setup is running).
+   */
   isStarting(pluginConstructor) {
     return this.startingPath.includes(pluginConstructor);
   }
+  /**
+   * Throws when the plugin of `pluginConstructor` is being constructed again:
+   * its constructor asked, through other plugins, for itself, which does not
+   * exist yet. (Asked for while its setup runs, it exists: usePlugin hands it
+   * out.)
+   */
   assertNotStarting(pluginConstructor) {
     const index = this.startingPath.indexOf(pluginConstructor);
     if (index !== -1) {
@@ -2855,6 +2972,11 @@ var PluginManager = class extends Scope {
       throw new OwlError(`Circular plugin dependency: ${ids}`);
     }
   }
+  /**
+   * Whether the nearest manager, up the parent chain, that provides `id` has
+   * not started it yet: its batch still waits for an earlier batch's
+   * onWillStart.
+   */
   isPending(id) {
     for (let manager = this; manager; manager = manager.parent) {
       if (manager.pending.has(id)) {
@@ -2866,6 +2988,8 @@ var PluginManager = class extends Scope {
     }
     return false;
   }
+  // Runs a batch in this scope, collecting its onWillStart callbacks. Not
+  // through run(): its result is returned as is, never guarded as a promise.
   collect(fn) {
     const collecting = this.collectingWillStart;
     this.collectingWillStart = true;
@@ -2996,6 +3120,7 @@ function startPlugins(manager, plugins) {
   }
 }
 
+// ../owl-core/src/lifecycle_hooks.ts
 function onWillStart(fn) {
   const scope = useScope();
   if (!scope.collectingWillStart) {
@@ -3008,6 +3133,7 @@ function onWillDestroy(fn) {
   scope.onDestroy(scope.decorate(fn, "onWillDestroy"));
 }
 
+// ../owl-core/src/utils.ts
 var EventBus = class extends EventTarget {
   trigger(name, payload) {
     this.dispatchEvent(new CustomEvent(name, { detail: payload }));
@@ -3085,6 +3211,7 @@ function markup(valueOrStrings, ...placeholders) {
   return new Markup(acc);
 }
 
+// ../owl-core/src/hooks.ts
 function useEffect(fn) {
   onWillDestroy(effect(fn));
 }
@@ -3137,6 +3264,7 @@ function useApp() {
   return useScope().app;
 }
 
+// ../owl-core/src/plugin_hooks.ts
 function usePlugin(pluginType) {
   const scope = useScope();
   const manager = scope.pluginManager;
@@ -3170,6 +3298,7 @@ function useConfig(key, type) {
 }
 var config = useConfig;
 
+// ../owl-runtime/src/status.ts
 function status(entity) {
   switch (entity.__owl__.status) {
     case STATUS.NEW:
@@ -3181,6 +3310,7 @@ function status(entity) {
   }
 }
 
+// ../owl-runtime/src/event_handling.ts
 var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) => {
   setCurrentEvent(ev);
   if (modifiers) {
@@ -3223,10 +3353,17 @@ var mainEventHandler = (handler, modifiers, context, ev, currentTarget, model) =
   }
 };
 
+// ../owl-runtime/src/blockdom/config.ts
 var config2 = {
+  // this is the main event handler. Every event handler registered with blockdom
+  // goes through this function, given the handler's code and modifiers (static,
+  // given to the block when it is built), the context the latest render gave it,
+  // the event, the element listening and, for a handler with one, the extra
+  // argument the latest render gave it
   mainEventHandler
 };
 
+// ../owl-runtime/src/blockdom/dom.ts
 function fromDom(read) {
   return typeof Node === "undefined" ? void 0 : read();
 }
@@ -3249,8 +3386,12 @@ var nodeGetNextSibling = /* @__PURE__ */ fromDom(
   () => descriptor(Node.prototype, "nextSibling").get
 );
 
+// ../owl-runtime/src/blockdom/toggler.ts
 var txt = /* @__PURE__ */ globalThis.document?.createTextNode("");
 var VToggler = class {
+  // not `key`: a toggler in a keyed list gets its list key written there.
+  // Children of one kind patch each other: a string, or the function a
+  // t-set body renders with
   kind;
   child;
   constructor(kind, child) {
@@ -3305,6 +3446,7 @@ function toggler(kind, child) {
   return new VToggler(kind, child);
 }
 
+// ../owl-runtime/src/blockdom/attributes.ts
 var elemSetAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.setAttribute);
 var removeAttribute = /* @__PURE__ */ fromDom(() => Element.prototype.removeAttribute);
 var tokenListAdd = /* @__PURE__ */ fromDom(() => DOMTokenList.prototype.add);
@@ -3629,6 +3771,7 @@ function makeSharedStyleUpdaters(staticStyle) {
   };
 }
 
+// ../owl-runtime/src/blockdom/events.ts
 function createEventHandler(rawEvent, slot) {
   const eventName = rawEvent.split(".")[0];
   const capture = rawEvent.includes(".capture");
@@ -3811,6 +3954,7 @@ function addSyntheticRoot(target) {
   }
 }
 
+// ../owl-runtime/src/blockdom/multi.ts
 var VMulti = class {
   children;
   anchors;
@@ -3932,6 +4076,7 @@ function multi(children) {
   return new VMulti(children);
 }
 
+// ../owl-runtime/src/blockdom/text.ts
 var VText = class {
   text;
   parentEl;
@@ -3966,6 +4111,8 @@ var VText = class {
       this.text = text2;
     }
   }
+  // its text, not markup: what an attribute or an interpolation of a t-set
+  // body needs (t-att-title="label"), and what text(vtext) renders
   toString() {
     return "" + toText(this.text);
   }
@@ -3988,6 +4135,7 @@ function toText(value) {
   }
 }
 
+// ../owl-runtime/src/blockdom/block_compiler.ts
 var NO_OP = () => {
 };
 var XMLNS_URI = "http://www.w3.org/2000/xmlns/";
@@ -4343,6 +4491,8 @@ function updateCtx(ctx, tree) {
         });
         break;
       }
+      // a handler and its argument read their data at dispatch: their
+      // locations do nothing
       case "handler": {
         ctx.handlers.push({ idx: info.idx, refIdx: info.refIdx, event: info.event });
         ctx.locations.push({
@@ -4605,6 +4755,7 @@ function setText(value) {
   characterDataSetData.call(this, toText(value));
 }
 
+// ../owl-runtime/src/blockdom/list.ts
 var VList = class {
   children;
   anchor;
@@ -4839,6 +4990,7 @@ function createMapping(ch1, startIdx1, endIdx1) {
   return mapping;
 }
 
+// ../owl-runtime/src/blockdom/html.ts
 var VHtml = class {
   html;
   parentEl;
@@ -4912,6 +5064,7 @@ function html(str) {
   return new VHtml(str);
 }
 
+// ../owl-runtime/src/blockdom/event_catcher.ts
 var listenersByParent = /* @__PURE__ */ new WeakMap();
 var byEnd = /* @__PURE__ */ new WeakMap();
 var updating = [];
@@ -5081,6 +5234,7 @@ function createCatcher(eventsSpec, fns) {
   };
 }
 
+// ../owl-runtime/src/blockdom/index.ts
 function mount(vnode, fixture, afterNode = null) {
   addSyntheticRoot(fixture);
   vnode.mount(fixture, afterNode);
@@ -5095,6 +5249,7 @@ function remove(vnode, withBeforeRemove = false) {
   vnode.remove();
 }
 
+// ../owl-runtime/src/rendering/error_handling.ts
 var fibersInError = /* @__PURE__ */ new WeakMap();
 var nodeErrorHandlers = /* @__PURE__ */ new WeakMap();
 var handledBy = null;
@@ -5185,6 +5340,7 @@ function handleHookRejection(node, fiber, error) {
   handleError({ node, error });
 }
 
+// ../owl-runtime/src/rendering/memo.ts
 var collected = null;
 function memoPrevious(node, site) {
   return node.previousMemos?.get(site);
@@ -5271,12 +5427,15 @@ function memoResume(outer) {
   collected = outer;
 }
 
+// ../owl-runtime/src/rendering/scheduler.ts
 function captureAnimationFrame() {
   return typeof window === "undefined" ? void 0 : window.requestAnimationFrame.bind(window);
 }
 var requestAnimationFrame = /* @__PURE__ */ captureAnimationFrame();
 var Scheduler = class _Scheduler {
   static requestAnimationFrame = requestAnimationFrame;
+  // the schedulers that may hold a task: a node's ancestor may belong to
+  // another app, whose render then delays it
   static active = /* @__PURE__ */ new Set();
   tasks = /* @__PURE__ */ new Set();
   requestAnimationFrame;
@@ -5296,6 +5455,9 @@ var Scheduler = class _Scheduler {
     this.tasks.add(fiber.root);
     _Scheduler.active.add(this);
   }
+  /**
+   * Drops the pass of a component destroyed before its commit.
+   */
   forget(fiber) {
     if (this.tasks.delete(fiber)) {
       if (debug.scheduler) {
@@ -5306,6 +5468,10 @@ var Scheduler = class _Scheduler {
       }
     }
   }
+  /**
+   * Process all current tasks. This only applies to the fibers that are ready.
+   * Other tasks are left unchanged.
+   */
   flush() {
     if (this.delayedRenders.length) {
       let renders = this.delayedRenders;
@@ -5385,6 +5551,7 @@ var Scheduler = class _Scheduler {
   }
 };
 
+// ../owl-runtime/src/rendering/fibers.ts
 var MAX_RENDER_ITERATIONS = 1e3;
 var APPLIED_TO_DOM = 1;
 function makeChildFiber(node, parent) {
@@ -5401,7 +5568,7 @@ function makeRootFiber(node) {
   const current = node.fiber;
   if (current) {
     const root = current.root;
-    if (root === current || current.phase === 0  || !fibersInError.has(root) || fibersInError.has(current)) {
+    if (root === current || current.phase === 0 /* NEW */ || !fibersInError.has(root) || fibersInError.has(current)) {
       return recycleFiber(node, current, root);
     }
     if (debug.fiber) {
@@ -5429,13 +5596,13 @@ function recycleFiber(node, current, root) {
     debugLog("fiber", `recycle ${node.componentName} (${current.renderState >> 1})`);
   }
   root.locked = true;
-  const rendered = current.phase === 0  ? 0 : 1;
+  const rendered = current.phase === 0 /* NEW */ ? 0 : 1;
   root.counter += rendered - cancelFibers(current.children);
   root.locked = false;
   current.children = [];
   current.childrenMap = null;
   current.bdom = null;
-  current.phase = 0 ;
+  current.phase = 0 /* NEW */;
   if (root instanceof MountFiber && root.prepared) {
     root.prepared = false;
     root.renderState &= ~APPLIED_TO_DOM;
@@ -5493,7 +5660,7 @@ function cancelFibers(fibers) {
       node._destroy();
     }
     node.fiber = null;
-    if (fiber.phase !== 0 ) {
+    if (fiber.phase !== 0 /* NEW */) {
       node.forceNextRender = true;
     } else {
       result++;
@@ -5509,11 +5676,17 @@ var Fiber2 = class {
   node;
   bdom = null;
   root;
+  // A Fiber that has been replaced by another has no root
   parent;
   children = [];
+  // Packs the "applied to DOM" flag (bit 0, see APPLIED_TO_DOM) together with
+  // the number of times this uncommitted fiber has been recycled by
+  // makeRootFiber (bits 1 and up). The recycle count climbs without bound only
+  // in a render loop (#1968); it shares a slot with the flag so the many
+  // fibers that are never recycled don't pay for a dedicated field.
   renderState = 0;
   deep = false;
-  phase = 0 ;
+  phase = 0 /* NEW */;
   childrenMap = null;
   constructor(node, parent) {
     this.node = node;
@@ -5565,11 +5738,11 @@ var Fiber2 = class {
         });
         return;
       }
-      node.signalComputation.state = 0 ;
+      node.signalComputation.state = 0 /* EXECUTED */;
       node.previousMemos = node.memos;
       node.memos = null;
       const outerCollection = memoSuspend();
-      this.phase = 1 ;
+      this.phase = 1 /* RENDERING */;
       const start = debug.fiber ? debugNow() : -1;
       this.bdom = runTracked(node.signalComputation, () => {
         try {
@@ -5578,7 +5751,7 @@ var Fiber2 = class {
           handleError({ node, error: e });
           return null;
         } finally {
-          this.phase = 2 ;
+          this.phase = 2 /* RENDERED */;
           memoResume(outerCollection);
         }
       });
@@ -5605,10 +5778,15 @@ var Fiber2 = class {
 };
 var RootFiber2 = class extends Fiber2 {
   counter = 1;
+  // the fibers of this pass whose render, onWillStart or onWillUpdateProps
+  // failed: the pass stays failed until none of them is current
   failed = null;
+  // only add stuff in this if they have registered some hooks
   willPatch = [];
   patched = [];
   mounted = [];
+  // A fiber is typically locked when it is completing and the patch has not, or is being applied.
+  // i.e.: render triggered in onWillUnmount or in willPatch will be delayed
   locked = false;
   complete() {
     const node = this.node;
@@ -5732,6 +5910,10 @@ var MountFiber = class extends RootFiber2 {
   position;
   afterNode = null;
   allowDetached = false;
+  // true once the render phase finishes (counter reaches 0), false again if
+  // the root re-renders before its commit. If target is set at that point, we
+  // mount immediately; otherwise we signal readiness via onPrepared and wait
+  // for commit() to supply a target.
   prepared = false;
   onPrepared = null;
   constructor(node, target, options = {}) {
@@ -5794,6 +5976,7 @@ var MountFiber = class extends RootFiber2 {
   }
 };
 
+// ../owl-runtime/src/component_node.ts
 var NO_HOOKS = /* @__PURE__ */ Object.freeze([]);
 var ComponentNode = class extends Scope {
   fiber = null;
@@ -5804,18 +5987,36 @@ var ComponentNode = class extends Scope {
   parentKey;
   props;
   defaultProps = null;
+  // an own function, callable unbound: Odoo's onWillRender / onRendered
+  // (web/core/utils/render_hooks.js) and HOOT wrap it during setup and call the
+  // saved original without `this`
   renderFn;
   parent;
+  // the child nodes by key, null until the first one. A Map rather than an
+  // object: a key is a string built by the render, and a new key on an object
+  // is interned in the engine's string table, several times the cost of a Map
+  // entry
   childMap = null;
   willUpdateProps = NO_HOOKS;
+  // Fired right after `props` is applied to `node.props` on a parent re-render,
+  // so reactive prop notifications happen once the new values are observable
+  // (after user `onWillUpdateProps` hooks, including async ones, have run).
   propsUpdated = NO_HOOKS;
   willUnmount = NO_HOOKS;
   mounted = NO_HOOKS;
   willPatch = NO_HOOKS;
   patched = NO_HOOKS;
   signalComputation;
+  // t-refs bound to an element hosted by this component: a signal mapped to its
+  // atom (so the element can be read without subscribing), a set-like ref to
+  // the elements this component added to it. Swept by isConnected after each
+  // patch and after this subtree is removed, to unbind a ref from a
+  // bulk-removed element (slot host, enclosing t-if, cleared list) — see
+  // sweepRefs.
   trackedRefs = null;
   refCallbacks = null;
+  // the t-memo sites of the render in progress, and of the render before it: a
+  // site the current render does not reach is dropped with the previous one
   memos = null;
   previousMemos = null;
   constructor(C, props2, app, parent, parentKey) {
@@ -5827,8 +6028,9 @@ var ComponentNode = class extends Scope {
     this.signalComputation = createComputation(
       () => this.render(false),
       false,
-      0 ,
+      0 /* EXECUTED */,
       false,
+      // a string per component: built only while its name can be logged
       debug.reactivity || debug.effect ? `render ${C.name}` : ""
     );
     this.signalComputation.tracksElsewhere = true;
@@ -5858,9 +6060,16 @@ var ComponentNode = class extends Scope {
       setComputation(previousComputation);
     }
   }
+  /**
+   * The child nodes by key, as a new plain object.
+   */
   get children() {
     return this.childMap ? Object.fromEntries(this.childMap) : {};
   }
+  /**
+   * Registers a lifecycle callback, last (or first, for the hooks that run in
+   * reverse registration order).
+   */
   addHook(kind, fn, first = false) {
     const hooks = this[kind];
     if (hooks === NO_HOOKS) {
@@ -5885,6 +6094,10 @@ var ComponentNode = class extends Scope {
     }
     return f.bind(component, scope);
   }
+  /**
+   * Starts this node's first render, as `fiber`: once its onWillStart hooks
+   * have settled, if it has some.
+   */
   start(fiber) {
     this.fiber = fiber;
     if (this.mounted.length) {
@@ -5919,12 +6132,12 @@ var ComponentNode = class extends Scope {
       return;
     }
     let current = this.fiber;
-    if (current && (current.root.locked || current.phase === 1 )) {
+    if (current && (current.root.locked || current.phase === 1 /* RENDERING */)) {
       await Promise.resolve();
       current = this.fiber;
     }
     if (current) {
-      if (current.phase === 0  && !fibersInError.has(current)) {
+      if (current.phase === 0 /* NEW */ && !fibersInError.has(current)) {
         if (deep) {
           current.deep = deep;
         }
@@ -6016,6 +6229,19 @@ var ComponentNode = class extends Scope {
       throw failure.error;
     }
   }
+  /**
+   * Unbind any tracked t-ref from the elements no longer in the document, and
+   * stop tracking what is left unbound (its ref callback re-registers it when it
+   * binds an element again). `isConnected` is the discriminator: a ref the
+   * block's own remove() failed to unbind (bulk removal) points at a detached
+   * element and is unbound, while a ref a surviving sibling just took over
+   * (t-if/t-else with a shared signal) points at a still-connected element and
+   * is left alone.
+   *
+   * Called after this component's dom settles: at the tail of `_patch` (before
+   * user `onPatched`), so an element removed in place is caught, and — for the
+   * nodes collected during `_destroy` — after a removed subtree is detached.
+   */
   sweepRefs() {
     const refs = this.trackedRefs;
     if (!refs) {
@@ -6043,6 +6269,11 @@ var ComponentNode = class extends Scope {
       }
     }
   }
+  /**
+   * Finds a child that has dom that is not yet updated, and update it. This
+   * method is meant to be used only in the context of repatching the dom after
+   * a mounted hook failed and was handled.
+   */
   updateDom() {
     if (!this.fiber) {
       return;
@@ -6056,6 +6287,9 @@ var ComponentNode = class extends Scope {
       this._patch(true);
     }
   }
+  // ---------------------------------------------------------------------------
+  // Block DOM methods
+  // ---------------------------------------------------------------------------
   firstNode() {
     const bdom2 = this.bdom;
     return bdom2 ? bdom2.firstNode() : void 0;
@@ -6075,9 +6309,18 @@ var ComponentNode = class extends Scope {
   moveBeforeVNode(other, afterNode) {
     this.bdom.moveBeforeVNode(other ? other.bdom : null, afterNode);
   }
+  /**
+   * Register a t-ref signal bound to an element this component hosts, so its
+   * lifecycle can clear it (see sweepRefs / _destroy). Called each time the ref
+   * binds an element; idempotent.
+   */
   trackRef(ref2, atom) {
     (this.trackedRefs ||= /* @__PURE__ */ new Map()).set(ref2, atom);
   }
+  /**
+   * Register an element this component added to a set-like t-ref, or forget it
+   * once its block removed it from the ref (`bound` false).
+   */
   trackRefElement(ref2, el, bound) {
     const refs = this.trackedRefs ||= /* @__PURE__ */ new Map();
     let els = refs.get(ref2);
@@ -6135,6 +6378,7 @@ function getComponentScope() {
   return scope;
 }
 
+// ../owl-runtime/src/component.ts
 var Component = class {
   static template = "";
   __owl__;
@@ -6145,6 +6389,7 @@ var Component = class {
   }
 };
 
+// ../owl-runtime/src/utils.ts
 function isAttachedToDocument(element, documentElement) {
   let current = element;
   const shadowRoot = documentElement.defaultView.ShadowRoot;
@@ -6191,6 +6436,7 @@ function whenReady(fn) {
   });
 }
 
+// ../owl-runtime/src/rendering/template_helpers.ts
 var ObjectCreate = Object.create;
 function withDefault(value, defaultValue) {
   return value === void 0 || value === null || value === false ? defaultValue : value;
@@ -6330,6 +6576,11 @@ var LazyValue = class {
     this.node = node;
     this.key = key;
   }
+  // Renders the body at an output site of `node`, whose components it is:
+  // they are in its DOM, its render creates and updates them, and its
+  // destruction or a render dropping the site destroys them. Their key is the
+  // site's, then this value's (its node's id first when it is not `node`: two
+  // components may output their own values at one site of a third).
   evaluate(siteKey = "", node = this.node) {
     let key = siteKey + MARK + "v";
     if (node !== this.node) {
@@ -6343,6 +6594,8 @@ var LazyValue = class {
     }
     return this.fn.call(this.component, this.ctx, node, key + this.key);
   }
+  // what an attribute or an interpolation makes of a t-set body: its HTML. A
+  // component would be created for a string, never mounted, and kept alive
   toString() {
     const bdom2 = this.evaluate();
     if (holdsComponent(bdom2)) {
@@ -6768,12 +7021,14 @@ var helpers = {
   memoEnd
 };
 
+// ../owl-runtime/src/build_info.ts
 var buildHash = "a11f5097";
 var build = /* @__PURE__ */ buildName(version, buildHash);
 function buildName(version2, hash) {
   return `${version2}+${hash}`;
 }
 
+// ../owl-compiler/src/inline_expressions.ts
 var RESERVED_WORDS = /* @__PURE__ */ wordSet(
   "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent"
 );
@@ -7440,6 +7695,7 @@ function interpolate(s) {
   return "`" + r + escapeTemplateString(s.slice(last)) + "`";
 }
 
+// ../owl-compiler/src/parse_xml.ts
 function parseXML(xml2) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml2, "text/xml");
@@ -7466,6 +7722,7 @@ ${"-".repeat(column - 1)}^`;
   return doc;
 }
 
+// ../owl-compiler/src/parser.ts
 var ASTType = {
   Text: 0,
   DomNode: 2,
@@ -8269,6 +8526,7 @@ function normalizeXML(el) {
   normalizeTOut(el);
 }
 
+// ../owl-compiler/src/code_generator.ts
 var SCOPE_MARK = "scope";
 var SCOPE_MARKER_RE = /\u0001scope\d+\u0001/g;
 var CAPTURE_MARK = "capture";
@@ -8326,6 +8584,7 @@ var BlockDescription = class {
   hasDynamicChildren = false;
   children = [];
   data = [];
+  // the code of the block's handlers, in the order of their data index
   handlers = [];
   dom;
   currentDom;
@@ -8347,6 +8606,8 @@ var BlockDescription = class {
     this.target.addLine(`let ${id} = ${str};`);
     return this.data.push(id) - 1;
   }
+  // a handler's data is the context (`ctx`, or its capture marker); its code
+  // is static, given with the block
   insertHandler(fn, ctx) {
     this.handlers.push(fn);
     return this.data.push(ctx) - 1;
@@ -8404,12 +8665,18 @@ var CodeTarget = class {
   indentLevel = 0;
   loopLevel = 0;
   loopCtxVars = [];
+  // the loops being compiled, innermost last
   loops = [];
+  // the loop levels whose item (or, for 0, whose function scope) a t-set writes
   writtenLevels = /* @__PURE__ */ new Set();
+  // loop levels whose key is concatenated into a string key: they get a
+  // `skey<level>` that tells object keys apart
   stringKeyLevels = /* @__PURE__ */ new Set();
   tSetVars = /* @__PURE__ */ new Map();
+  // the t-sets and the contexts kept for later, numbered in code order
   seq = 0;
   writes = [];
+  // the loop levels whose item is memoized: a memo hit skips the item's body
   memoLevels = [];
   code = [];
   hasRoot = false;
@@ -8443,6 +8710,8 @@ var CodeTarget = class {
     result.push(`}`);
     return result.join("\n  ");
   }
+  // the key of a list's child: of the item of the innermost loop, which a
+  // list's child is always in
   currentKey(ctx) {
     if (ctx.tKeyExpr) {
       return `\`\${${this.stringKey(this.loopLevel)}}${KEY_MARK}k\${${ctx.tKeyExpr}}\``;
@@ -8469,6 +8738,7 @@ var CodeGenerator = class {
   blocks = [];
   scopeSites = [];
   captureSites = [];
+  // the code of each handler, in the order the template uses them
   handlerUses = [];
   isDebug = false;
   targets = [];
@@ -8481,6 +8751,8 @@ var CodeGenerator = class {
   staticDefs = [];
   hoistedHandlers = /* @__PURE__ */ new Map();
   helpers = /* @__PURE__ */ new Set();
+  // per generator, so that generating a template (a translateFn may compile
+  // another) never shifts the names of the one in progress
   nextBlockId = 1;
   nextDataIds = {};
   generateId = (prefix = "") => {
@@ -8605,6 +8877,10 @@ ${code}`;
     this.scopeSites.push({ marker, target: this.target, from, itemVar, varName, names });
     return marker;
   }
+  /**
+   * A context kept for later (`live`), or a copy of it (`copy`, made with
+   * the helper `helper`): see resolveCaptures.
+   */
   captureMarker(live, copy, helper, reads) {
     const marker = `${CAPTURE_MARK}${this.captureSites.length}`;
     const target = this.target;
@@ -8620,9 +8896,14 @@ ${code}`;
     });
     return marker;
   }
+  // the context here, kept for later by code reading `reads`: a slot, a t-set
+  // body...
   capturedContext(reads) {
     return this.captureMarker("ctx", "slotContext(ctx)", "slotContext", reads);
   }
+  // the context a handler keeps: its block's data is read where the block is
+  // made, after the element's content and the t-sets in it ran, so a copy
+  // is made here, on a line of its own
   handlerContext(handlerIds) {
     const copy = this.generateId("hctx");
     const code = handlerIds.map((id) => this.staticDefs.find((d) => d.id === id)?.expr ?? "");
@@ -8630,15 +8911,32 @@ ${code}`;
     this.addLine(`${marker}${CAPTURE_LINE}const ${copy} = slotContext(ctx);`);
     return marker;
   }
+  // where a compilation starts: see readsSince
   mark() {
     return [this.targets.length, this.handlerUses.length];
   }
+  // the variables read by the functions and the handlers compiled since `mark`
   readsSince([targets2, uses]) {
     return readsOf([
       ...this.targets.slice(targets2).flatMap((t) => t.code),
       ...this.handlerUses.slice(uses)
     ]);
   }
+  /**
+   * A slot's context, a called template's and the one a t-call body runs in
+   * are read later than where they are given: when the child renders its
+   * slots on its own (its state changed, its onWillStart settled), when the
+   * called template's slots do. Kept as they are, they would show what a
+   * t-set wrote into them after that point. A t-set writes the context of a
+   * loop level: the function's (0), or a loop item's. It reaches a kept
+   * context when that level's context is in its chain, the same loop item
+   * for a loop level, and it runs after the context was kept: later in the
+   * code, or in a later item of a loop holding both. Such a context is
+   * copied; any other is kept as it is, which costs nothing. A called
+   * template's context is the caller's, which the called template's own
+   * t-sets never write (a t-set at its top level makes a scope first): the
+   * caller copies it when its own t-sets may still write it.
+   */
   resolveCaptures() {
     const sites = this.captureSites;
     if (!sites.length) {
@@ -8676,6 +8974,16 @@ ${code}`;
       });
     }
   }
+  /**
+   * A context made under another one made in the same render (a loop item)
+   * costs V8 about 1.6 us and 1.2 KB: the item becomes a prototype. A loop
+   * item no t-set writes holds only its loop's names, set when it is made:
+   * a context made under it can be made under the item's own prototype with
+   * a copy of those names instead, which no later write can make stale. That
+   * holds while nothing else writes a context: an expression assigning a
+   * variable (`t-on-click="v = 1"`, a bare-name `t-model.proxy`) turns it off
+   * for the whole template.
+   */
   resolveScopes() {
     const sites = this.scopeSites;
     if (!sites.length) {
@@ -8735,6 +9043,7 @@ ${code}`;
     }
     return block;
   }
+  // a dom block or a list builds its own expression
   insertBlock(block, ctx, expression) {
     let blockExpr = block.generateExpr(expression);
     if (block.parentVar) {
@@ -8765,7 +9074,9 @@ ${code}`;
     const match = translationRE.exec(str);
     return match[1] + this.translateFn(match[2], translationCtx) + match[3];
   }
-  /** @returns */
+  /**
+   * @returns the newly created block name, if any
+   */
   compileAST(ast, ctx) {
     switch (ast.type) {
       case ASTType.Text:
@@ -8802,6 +9113,8 @@ ${code}`;
         return this.compileTTranslationContext(ast, ctx);
     }
   }
+  // a t-debug, t-log, t-translation or t-translation-context renders what it
+  // wraps, if anything
   compileContent(content, ctx) {
     return content ? this.compileAST(content, ctx) : null;
   }
@@ -8830,6 +9143,8 @@ ${code}`;
     }
     return block.varName;
   }
+  // the static code of a handler, a function of (context, event); its
+  // modifiers are read from its key at run time, checked here
   generateHandlerCode(rawEvent, handler) {
     eventModifierMask(rawEvent);
     const { expr: compiled, arrow } = processExpr(handler);
@@ -8846,6 +9161,7 @@ ${code}`;
     }
     return this.hoistHandler(hoistedExpr);
   }
+  // handlers are static functions of (context, event): one per distinct code
   hoistHandler(expr) {
     let id = this.hoistedHandlers.get(expr);
     if (!id) {
@@ -9424,6 +9740,10 @@ ${code}`;
     const target = this.target;
     target.writes.push({ name, seq: ++target.seq, level, loops: [...target.loops] });
   }
+  // the key of a site's content: the t-key around it, the site's id, then
+  // the key of each open loop, each a segment of its own (see keyOf in the
+  // runtime): no loop key, t-key or id can spell another, so two sites, or
+  // two items of a site, never share a key in their component's children
   scopeKey(ctx, site = this.siteId()) {
     let suffix = ctx.tKeyExpr ? `${KEY_MARK}k\${${ctx.tKeyExpr}}${site}` : site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
@@ -9431,13 +9751,29 @@ ${code}`;
     }
     return `key + \`${suffix}\``;
   }
+  // a keyed site's id, unique in the template, as written in the generated code
   siteId() {
     return this.generateId(KEY_MARK);
   }
+  /**
+   * Formats a prop name and value into a string suitable to be inserted in the
+   * generated code. For example:
+   *
+   * Name              Value            Result
+   * ---------------------------------------------------------
+   * "number"          "state"          "number: ctx['state']"
+   * "something"       ""               "something: undefined"
+   * "some-prop"       "state"          "'some-prop': ctx['state']"
+   * "onClick.bind"    "onClick"        "onClick: bind(ctx, ctx['onClick'])"
+   */
   formatProp(name, value, attrsTranslationCtx, ctx) {
     const [key, code] = this.propEntry(name, value, attrsTranslationCtx, ctx);
     return `${propKey(key)}: ${code}`;
   }
+  /**
+   * The name a prop or t-call attribute `name` (suffix stripped) defines, and
+   * the code of its value.
+   */
   propEntry(name, value, attrsTranslationCtx, ctx) {
     if (name.endsWith(".translate")) {
       const attrTranslationCtx = attrsTranslationCtx?.[name] || ctx.translationCtx;
@@ -9576,6 +9912,8 @@ ${code}`;
     this.insertBlock(block, ctx, blockExpr);
     return block.varName;
   }
+  // a catcher's handlers are static, given with its spec; a render gives it
+  // their context
   wrapWithEventCatcher(expr, on) {
     this.helpers.add("createCatcher");
     let name = this.generateId("catcher");
@@ -9632,6 +9970,7 @@ ${code}`;
   }
 };
 
+// ../owl-compiler/src/index.ts
 function compile(template, options = {
   hasGlobalValues: false
 }) {
@@ -9656,6 +9995,7 @@ ${code}
   }
 }
 
+// src/bundled_compiler.ts
 var bundledCompiler = {
   compile,
   parseXML,
@@ -9663,6 +10003,7 @@ var bundledCompiler = {
   hash: buildHash
 };
 
+// ../owl-runtime/src/template_set.ts
 var bdom = { text, createBlock, list, multi, html, toggler };
 var COMPILER_KEY = /* @__PURE__ */ Symbol.for("@odoo/owl/compiler");
 var ownCompiler;
@@ -9683,6 +10024,12 @@ function checkBuild(compiler) {
   }
 }
 var TemplateSet = class _TemplateSet {
+  /**
+   * The compiler: the full build's own, else the compiler module of this
+   * runtime's build once it is registered. Setting a compiler checks that it
+   * is of this build; null leaves the runtime without one, undefined takes
+   * the build's own or the registered one again.
+   */
   static get compiler() {
     if (ownCompiler === void 0) {
       if (bundledCompiler) {
@@ -9883,6 +10230,7 @@ function areTemplatesEqual(t1, t2) {
   return s1 === s2;
 }
 
+// ../owl-runtime/src/app.ts
 var hasBeenLogged = false;
 var apps = /* @__PURE__ */ new Set();
 function exposeToDevtools() {
@@ -10088,6 +10436,7 @@ async function mount2(C, target, config3 = {}) {
   }
 }
 
+// ../owl-runtime/src/lifecycle_hooks.ts
 function onWillUpdateProps(fn) {
   const scope = getComponentScope();
   function swapped(s, nextProps) {
@@ -10116,6 +10465,7 @@ function onError(callback) {
   nodeErrorHandlers.getOrInsertComputed(scope, () => []).push(callback.bind(scope.component));
 }
 
+// ../owl-runtime/src/prop.ts
 function staticProp(key, type) {
   const node = getComponentScope();
   const defaultFactory = getDefault(type);
@@ -10139,11 +10489,13 @@ function staticProp(key, type) {
   return value;
 }
 
+// ../owl-runtime/src/types.ts
 function componentType() {
   return constructorType(Component);
 }
 var types3 = /* @__PURE__ */ Object.assign({}, types, { component: componentType });
 
+// ../owl-runtime/src/props.ts
 var defaultsVersions = /* @__PURE__ */ new WeakMap();
 function makeProps(type) {
   const node = getComponentScope();
@@ -10212,6 +10564,8 @@ var TypedProps = class {
     this.node = node;
     this.defaults = defaults;
   }
+  // a missing prop resolves to this view's default, else to the default another
+  // view of the component declared
   resolve(key) {
     const value = this.node.props[key];
     if (value === void 0) {
@@ -10262,6 +10616,8 @@ var StateStamp = class extends ObjectReturner {
     super(target);
     this.#state = state;
   }
+  // the state of `view`, or of the view it inherits from (a read through
+  // `Object.create(props)`)
   static of(view) {
     while (view !== null && typeof view === "object") {
       if (#state in view) {
@@ -10340,6 +10696,7 @@ var PropsView = class {
     onReadAtom(atom);
     return atom.value;
   }
+  // the key set as a reader sees it: subscribes to its changes
   currentKeys() {
     (this.keySet ||= signal(this.keysVersion))();
     return this.refreshKeys();
@@ -10391,6 +10748,7 @@ var useProps = /* @__PURE__ */ Object.assign(makeProps, {
 });
 var props = useProps;
 
+// ../owl-runtime/src/error_boundary.ts
 var ErrorBoundary = class _ErrorBoundary extends Component {
   static get template() {
     return ownTemplate(_ErrorBoundary, "ErrorBoundary").xml`
@@ -10415,8 +10773,10 @@ var ErrorBoundary = class _ErrorBoundary extends Component {
   }
 };
 
+// ../owl-runtime/src/hooks.ts
 var useApp2 = useApp;
 
+// ../owl-runtime/src/portal.ts
 var PortalContent = class _PortalContent extends Component {
   static get template() {
     return ownTemplate(_PortalContent, "PortalContent").xml`<t t-call-slot="default"/>`;
@@ -10457,8 +10817,18 @@ var Portal = class _Portal extends Component {
             return portalProps.slots;
           }
         },
+        // Forward the plugin chain from this Portal (createRoot defaults
+        // sub-roots to the app-level plugin manager) so `providePlugins`
+        // contributions from ancestors are visible inside the portaled content.
         pluginManager: portalNode.pluginManager,
+        // Route errors from the portaled subtree back through Portal's parent
+        // chain so consumer `onError` handlers still catch them. Without this,
+        // sub-root errors would propagate to app._handleError and tear down
+        // the whole app.
         onError: forwardErrorToParent(portalNode),
+        // Let the scheduler see through the sub-root boundary, so renders of
+        // the portaled content yield to in-flight ancestor renders (e.g. a
+        // t-if about to remove this Portal).
         host: portalNode
       });
       mountedTarget = target;
@@ -10511,6 +10881,7 @@ function resolveTarget(target) {
   return null;
 }
 
+// ../owl-runtime/src/suspense.ts
 var SuspenseHost = class _SuspenseHost extends Component {
   static get template() {
     return ownTemplate(_SuspenseHost, "SuspenseHost").xml`<t t-call-slot="default"/>`;
@@ -10543,6 +10914,7 @@ var SuspenseContent = class {
   }
   beforeRemove() {
   }
+  // the content is removed by its root's destroy, from Suspense's onWillDestroy
   remove() {
     this.anchor.remove();
   }
@@ -10575,8 +10947,17 @@ var Suspense = class _Suspense extends Component {
         },
         content
       },
+      // Thread the plugin manager so `providePlugins` contributions from
+      // ancestors are visible inside the default slot. (createRoot defaults
+      // sub-roots to the app-level plugin manager; override here.) Destroy
+      // cascade is handled explicitly below via `onWillDestroy`.
       pluginManager: suspenseNode.pluginManager,
+      // Route errors from the sub-root back into Suspense's parent chain so
+      // consumer `onError` handlers still catch descendant failures.
       onError: forwardErrorToParent(suspenseNode),
+      // Let the scheduler see through the sub-root boundary, so renders of
+      // the default slot yield to in-flight ancestor renders (e.g. a t-if
+      // about to remove this Suspense).
       host: suspenseNode
     });
     root.prepare().then(() => this.prepared.set(true));
@@ -10595,6 +10976,7 @@ var Suspense = class _Suspense extends Component {
   }
 };
 
+// ../owl-runtime/src/plugin_hooks.ts
 function providePlugins(pluginConstructors, config3) {
   const node = getComponentScope();
   const manager = new PluginManager(node.app, { parent: node.pluginManager, config: config3 });
@@ -10606,11 +10988,14 @@ function providePlugins(pluginConstructors, config3) {
   }
 }
 
+// ../owl-runtime/src/index.ts
 var blockDom = {
   config: config2,
+  // bdom entry points
   mount,
   patch,
   remove,
+  // bdom block types
   list,
   multi,
   text,

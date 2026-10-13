@@ -12,8 +12,14 @@ class ParsedBackupFlags:
 
 
 def parse_backup_flags(flags: AuthenticatorDataFlags) -> ParsedBackupFlags:
+    """Convert backup eligibility and backup state flags into more useful representations
+
+    Raises:
+        `helpers.exceptions.InvalidBackupFlags` if an invalid backup state is detected
+    """
     credential_device_type = CredentialDeviceType.SINGLE_DEVICE
 
+    # A credential that can be backed up can typically be used on multiple devices
     if flags.be:
         credential_device_type = CredentialDeviceType.MULTI_DEVICE
 

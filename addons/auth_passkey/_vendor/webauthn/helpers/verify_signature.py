@@ -35,6 +35,20 @@ def verify_signature(
     signature: bytes,
     data: bytes,
 ) -> None:
+    """Verify a signature was signed with the private key corresponding to the provided
+    public key.
+
+    Args:
+        `public_key`: A public key loaded via cryptography's `load_der_public_key`, `load_der_x509_certificate`, etc...
+        `signature_alg`: Algorithm ID used to sign the signature
+        `signature`: Signature to verify
+        `data`: Data signed by private key
+
+    Raises:
+        `webauth.helpers.exceptions.UnsupportedAlgorithm` when the algorithm is not a recognized COSE algorithm ID
+        `webauth.helpers.exceptions.UnsupportedPublicKey` when the public key is not a valid EC2, RSA, or OKP certificate
+        `cryptography.exceptions.InvalidSignature` when the signature cannot be verified
+    """
     if isinstance(public_key, EllipticCurvePublicKey):
         public_key.verify(signature, data, get_ec2_sig_alg(signature_alg))
     elif isinstance(public_key, RSAPublicKey):

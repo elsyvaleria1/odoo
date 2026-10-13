@@ -1,6 +1,8 @@
+// ../owl-core/src/owl_error.ts
 var OwlError = class extends Error {
 };
 
+// ../owl-core/src/event_modifiers.ts
 var EventModifier = {
   PREVENT_ANY: 1,
   STOP_ANY: 2,
@@ -29,6 +31,7 @@ function eventModifierMask(key) {
   return mask;
 }
 
+// ../owl-compiler/src/inline_expressions.ts
 var RESERVED_WORDS = /* @__PURE__ */ wordSet(
   "true,false,NaN,null,undefined,debugger,console,window,in,instanceof,new,function,return,eval,void,__globals__,Math,RegExp,Array,Object,Date,Number,Boolean,String,Symbol,BigInt,Map,Set,JSON,Intl,Error,Infinity,isFinite,isNaN,parseFloat,parseInt,decodeURI,decodeURIComponent,encodeURI,encodeURIComponent"
 );
@@ -695,6 +698,7 @@ function interpolate(s) {
   return "`" + r + escapeTemplateString(s.slice(last)) + "`";
 }
 
+// ../owl-compiler/src/parse_xml.ts
 function parseXML(xml) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, "text/xml");
@@ -721,6 +725,7 @@ ${"-".repeat(column - 1)}^`;
   return doc;
 }
 
+// ../owl-compiler/src/parser.ts
 var ASTType = {
   Text: 0,
   DomNode: 2,
@@ -1524,6 +1529,7 @@ function normalizeXML(el) {
   normalizeTOut(el);
 }
 
+// ../owl-compiler/src/code_generator.ts
 var SCOPE_MARK = "scope";
 var SCOPE_MARKER_RE = /\u0001scope\d+\u0001/g;
 var CAPTURE_MARK = "capture";
@@ -1581,6 +1587,7 @@ var BlockDescription = class {
   hasDynamicChildren = false;
   children = [];
   data = [];
+  // the code of the block's handlers, in the order of their data index
   handlers = [];
   dom;
   currentDom;
@@ -1602,6 +1609,8 @@ var BlockDescription = class {
     this.target.addLine(`let ${id} = ${str};`);
     return this.data.push(id) - 1;
   }
+  // a handler's data is the context (`ctx`, or its capture marker); its code
+  // is static, given with the block
   insertHandler(fn, ctx) {
     this.handlers.push(fn);
     return this.data.push(ctx) - 1;
@@ -1659,12 +1668,18 @@ var CodeTarget = class {
   indentLevel = 0;
   loopLevel = 0;
   loopCtxVars = [];
+  // the loops being compiled, innermost last
   loops = [];
+  // the loop levels whose item (or, for 0, whose function scope) a t-set writes
   writtenLevels = /* @__PURE__ */ new Set();
+  // loop levels whose key is concatenated into a string key: they get a
+  // `skey<level>` that tells object keys apart
   stringKeyLevels = /* @__PURE__ */ new Set();
   tSetVars = /* @__PURE__ */ new Map();
+  // the t-sets and the contexts kept for later, numbered in code order
   seq = 0;
   writes = [];
+  // the loop levels whose item is memoized: a memo hit skips the item's body
   memoLevels = [];
   code = [];
   hasRoot = false;
@@ -1698,6 +1713,8 @@ var CodeTarget = class {
     result.push(`}`);
     return result.join("\n  ");
   }
+  // the key of a list's child: of the item of the innermost loop, which a
+  // list's child is always in
   currentKey(ctx) {
     if (ctx.tKeyExpr) {
       return `\`\${${this.stringKey(this.loopLevel)}}${KEY_MARK}k\${${ctx.tKeyExpr}}\``;
@@ -1724,6 +1741,7 @@ var CodeGenerator = class {
   blocks = [];
   scopeSites = [];
   captureSites = [];
+  // the code of each handler, in the order the template uses them
   handlerUses = [];
   isDebug = false;
   targets = [];
@@ -1736,6 +1754,8 @@ var CodeGenerator = class {
   staticDefs = [];
   hoistedHandlers = /* @__PURE__ */ new Map();
   helpers = /* @__PURE__ */ new Set();
+  // per generator, so that generating a template (a translateFn may compile
+  // another) never shifts the names of the one in progress
   nextBlockId = 1;
   nextDataIds = {};
   generateId = (prefix = "") => {
@@ -1860,6 +1880,10 @@ ${code}`;
     this.scopeSites.push({ marker, target: this.target, from, itemVar, varName, names });
     return marker;
   }
+  /**
+   * A context kept for later (`live`), or a copy of it (`copy`, made with
+   * the helper `helper`): see resolveCaptures.
+   */
   captureMarker(live, copy, helper, reads) {
     const marker = `${CAPTURE_MARK}${this.captureSites.length}`;
     const target = this.target;
@@ -1875,9 +1899,14 @@ ${code}`;
     });
     return marker;
   }
+  // the context here, kept for later by code reading `reads`: a slot, a t-set
+  // body...
   capturedContext(reads) {
     return this.captureMarker("ctx", "slotContext(ctx)", "slotContext", reads);
   }
+  // the context a handler keeps: its block's data is read where the block is
+  // made, after the element's content and the t-sets in it ran, so a copy
+  // is made here, on a line of its own
   handlerContext(handlerIds) {
     const copy = this.generateId("hctx");
     const code = handlerIds.map((id) => this.staticDefs.find((d) => d.id === id)?.expr ?? "");
@@ -1885,15 +1914,32 @@ ${code}`;
     this.addLine(`${marker}${CAPTURE_LINE}const ${copy} = slotContext(ctx);`);
     return marker;
   }
+  // where a compilation starts: see readsSince
   mark() {
     return [this.targets.length, this.handlerUses.length];
   }
+  // the variables read by the functions and the handlers compiled since `mark`
   readsSince([targets, uses]) {
     return readsOf([
       ...this.targets.slice(targets).flatMap((t) => t.code),
       ...this.handlerUses.slice(uses)
     ]);
   }
+  /**
+   * A slot's context, a called template's and the one a t-call body runs in
+   * are read later than where they are given: when the child renders its
+   * slots on its own (its state changed, its onWillStart settled), when the
+   * called template's slots do. Kept as they are, they would show what a
+   * t-set wrote into them after that point. A t-set writes the context of a
+   * loop level: the function's (0), or a loop item's. It reaches a kept
+   * context when that level's context is in its chain, the same loop item
+   * for a loop level, and it runs after the context was kept: later in the
+   * code, or in a later item of a loop holding both. Such a context is
+   * copied; any other is kept as it is, which costs nothing. A called
+   * template's context is the caller's, which the called template's own
+   * t-sets never write (a t-set at its top level makes a scope first): the
+   * caller copies it when its own t-sets may still write it.
+   */
   resolveCaptures() {
     const sites = this.captureSites;
     if (!sites.length) {
@@ -1931,6 +1977,16 @@ ${code}`;
       });
     }
   }
+  /**
+   * A context made under another one made in the same render (a loop item)
+   * costs V8 about 1.6 us and 1.2 KB: the item becomes a prototype. A loop
+   * item no t-set writes holds only its loop's names, set when it is made:
+   * a context made under it can be made under the item's own prototype with
+   * a copy of those names instead, which no later write can make stale. That
+   * holds while nothing else writes a context: an expression assigning a
+   * variable (`t-on-click="v = 1"`, a bare-name `t-model.proxy`) turns it off
+   * for the whole template.
+   */
   resolveScopes() {
     const sites = this.scopeSites;
     if (!sites.length) {
@@ -1990,6 +2046,7 @@ ${code}`;
     }
     return block;
   }
+  // a dom block or a list builds its own expression
   insertBlock(block, ctx, expression) {
     let blockExpr = block.generateExpr(expression);
     if (block.parentVar) {
@@ -2020,7 +2077,9 @@ ${code}`;
     const match = translationRE.exec(str);
     return match[1] + this.translateFn(match[2], translationCtx) + match[3];
   }
-  /** @returns */
+  /**
+   * @returns the newly created block name, if any
+   */
   compileAST(ast, ctx) {
     switch (ast.type) {
       case ASTType.Text:
@@ -2057,6 +2116,8 @@ ${code}`;
         return this.compileTTranslationContext(ast, ctx);
     }
   }
+  // a t-debug, t-log, t-translation or t-translation-context renders what it
+  // wraps, if anything
   compileContent(content, ctx) {
     return content ? this.compileAST(content, ctx) : null;
   }
@@ -2085,6 +2146,8 @@ ${code}`;
     }
     return block.varName;
   }
+  // the static code of a handler, a function of (context, event); its
+  // modifiers are read from its key at run time, checked here
   generateHandlerCode(rawEvent, handler) {
     eventModifierMask(rawEvent);
     const { expr: compiled, arrow } = processExpr(handler);
@@ -2101,6 +2164,7 @@ ${code}`;
     }
     return this.hoistHandler(hoistedExpr);
   }
+  // handlers are static functions of (context, event): one per distinct code
   hoistHandler(expr) {
     let id = this.hoistedHandlers.get(expr);
     if (!id) {
@@ -2679,6 +2743,10 @@ ${code}`;
     const target = this.target;
     target.writes.push({ name, seq: ++target.seq, level, loops: [...target.loops] });
   }
+  // the key of a site's content: the t-key around it, the site's id, then
+  // the key of each open loop, each a segment of its own (see keyOf in the
+  // runtime): no loop key, t-key or id can spell another, so two sites, or
+  // two items of a site, never share a key in their component's children
   scopeKey(ctx, site = this.siteId()) {
     let suffix = ctx.tKeyExpr ? `${KEY_MARK}k\${${ctx.tKeyExpr}}${site}` : site;
     for (let i = 1; i <= this.target.loopLevel; i++) {
@@ -2686,13 +2754,29 @@ ${code}`;
     }
     return `key + \`${suffix}\``;
   }
+  // a keyed site's id, unique in the template, as written in the generated code
   siteId() {
     return this.generateId(KEY_MARK);
   }
+  /**
+   * Formats a prop name and value into a string suitable to be inserted in the
+   * generated code. For example:
+   *
+   * Name              Value            Result
+   * ---------------------------------------------------------
+   * "number"          "state"          "number: ctx['state']"
+   * "something"       ""               "something: undefined"
+   * "some-prop"       "state"          "'some-prop': ctx['state']"
+   * "onClick.bind"    "onClick"        "onClick: bind(ctx, ctx['onClick'])"
+   */
   formatProp(name, value, attrsTranslationCtx, ctx) {
     const [key, code] = this.propEntry(name, value, attrsTranslationCtx, ctx);
     return `${propKey(key)}: ${code}`;
   }
+  /**
+   * The name a prop or t-call attribute `name` (suffix stripped) defines, and
+   * the code of its value.
+   */
   propEntry(name, value, attrsTranslationCtx, ctx) {
     if (name.endsWith(".translate")) {
       const attrTranslationCtx = attrsTranslationCtx?.[name] || ctx.translationCtx;
@@ -2831,6 +2915,8 @@ ${code}`;
     this.insertBlock(block, ctx, blockExpr);
     return block.varName;
   }
+  // a catcher's handlers are static, given with its spec; a render gives it
+  // their context
   wrapWithEventCatcher(expr, on) {
     this.helpers.add("createCatcher");
     let name = this.generateId("catcher");
@@ -2887,6 +2973,7 @@ ${code}`;
   }
 };
 
+// ../owl-compiler/src/index.ts
 function compile(template, options = {
   hasGlobalValues: false
 }) {
@@ -2911,10 +2998,13 @@ ${code}
   }
 }
 
+// ../owl-runtime/src/version.ts
 var version = "3.0.0-alpha.49";
 
+// ../owl-runtime/src/build_info.ts
 var buildHash = "a11f5097";
 
+// src/compiler.ts
 var registry = globalThis[/* @__PURE__ */ Symbol.for("@odoo/owl/compiler")] ||= /* @__PURE__ */ Object.create(null);
 registry[`${version}+${buildHash}`] = { compile, parseXML, version, hash: buildHash, OwlError };
 export {

@@ -2,6 +2,7 @@
 
 /**
  * @typedef {ArgumentPrimitive | `${ArgumentPrimitive}[]` | null} ArgumentType
+ *
  * @typedef {"any"
  *  | "bigint"
  *  | "boolean"
@@ -15,7 +16,9 @@
  *  | "string"
  *  | "symbol"
  *  | "undefined"} ArgumentPrimitive
+ *
  * @typedef {[string, string | undefined, any[], any]} InteractionDetails
+ *
  * @typedef {"interaction" | "query" | "server" | "time"} InteractionType
  */
 
@@ -293,6 +296,10 @@ export function isFirefox() {
 }
 
 /**
+ * Cross-realm equivalent to 'instanceof'.
+ * Can be called with multiple constructors, and will return true if the given object
+ * is an instance of any of them.
+ *
  * @param {unknown} instance
  * @param {...{ name: string }} classes
  */
@@ -332,6 +339,8 @@ export function isInstanceOf(instance, ...classes) {
 }
 
 /**
+ * Returns whether the given object is iterable (*excluding strings*).
+ *
  * @template T
  * @template {T | Iterable<T>} V
  * @param {V} object

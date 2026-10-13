@@ -3,10 +3,18 @@
 const shared = require("./shared");
 
 const defaultGroups = [
+  // Side effect imports.
   ["^\\u0000"],
+  // Node.js builtins prefixed with `node:`.
   ["^node:"],
+  // Packages.
+  // Things that start with a letter (or digit or underscore), or `@` followed by a letter.
   ["^@?\\w"],
+  // Absolute imports and other imports such as Vue-style `@/foo`.
+  // Anything not matched in another group.
   ["^"],
+  // Relative imports.
+  // Anything that starts with a dot.
   ["^\\."],
 ];
 
@@ -123,18 +131,25 @@ function makeSortedItems(items, outerGroups) {
     );
 }
 
+// Exclude "ImportDefaultSpecifier" – the "def" in `import def, {a, b}`.
 function getSpecifiers(importNode) {
   return importNode.specifiers.filter((node) => isImportSpecifier(node));
 }
 
+// Full import statement.
 function isImport(node) {
   return node.type === "ImportDeclaration";
 }
 
+// import def, { a, b as c, type d } from "A"
+//               ^  ^^^^^^  ^^^^^^
 function isImportSpecifier(node) {
   return node.type === "ImportSpecifier";
 }
 
+// import "setup"
+// But not: import {} from "setup"
+// And not: import type {} from "setup"
 function isSideEffectImport(importNode, sourceCode) {
   return (
     importNode.specifiers.length === 0 &&

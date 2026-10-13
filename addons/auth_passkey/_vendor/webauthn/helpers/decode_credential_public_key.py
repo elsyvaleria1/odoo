@@ -36,6 +36,18 @@ class DecodedRSAPublicKey:
 def decode_credential_public_key(
     key: bytes,
 ) -> Union[DecodedOKPPublicKey, DecodedEC2PublicKey, DecodedRSAPublicKey]:
+    """
+    Decode a CBOR-encoded public key and turn it into a data structure.
+
+    Supports OKP, EC2, and RSA public keys
+    """
+    # Occassionally we might be given a public key in an "uncompressed" format,
+    # typically from older U2F security keys. As per the FIDO spec this is indicated by
+    # a leading 0x04 "uncompressed point compression method" format byte. In that case
+    # we need to fill in some blanks to turn it into a full EC2 key for signature
+    # verification
+    #
+    # See https://fidoalliance.org/specs/fido-v2.0-id-20180227/fido-registry-v2.0-id-20180227.html#public-key-representation-formats
     if key[0] == 0x04:
         return DecodedEC2PublicKey(
             kty=COSEKTY.EC2,
