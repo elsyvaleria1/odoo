@@ -2272,7 +2272,10 @@ class AccountAccount(models.Model):
                     self._field_to_sql(alias, "id", query),
                 ),
             )
-            return SQL("account_audit_account_status.status")
+            return SQL(
+                "CASE WHEN account_audit_account_status.id IS NULL THEN 'todo' "
+                "ELSE account_audit_account_status.status END"
+            )
 
         working_file = self.env["account.return"].browse(
             self.env.context.get("working_file_id")
@@ -2284,8 +2287,6 @@ class AccountAccount(models.Model):
             skipped=not working_file,
         )
         if not working_file:
-            if field_expr == "audit_var_percentage":
-                return SQL("NULL::numeric")
             return SQL("0.0::numeric")
 
         if field_expr in ("audit_debit", "audit_credit", "audit_balance"):
@@ -2342,11 +2343,14 @@ class AccountAccount(models.Model):
                     "(COALESCE(current_account_move_lines.balance, 0) - COALESCE(prev_account_move_line.balance, 0))"
                 )
             else:
-                return SQL("""
-                    CASE WHEN prev_account_move_line.balance IS NULL THEN NULL
-                         ELSE (COALESCE(current_account_move_lines.balance, 0) - COALESCE(prev_account_move_line.balance, 0)) / COALESCE(NULLIF(prev_account_move_line.balance, 0), 1) * 100
+                return SQL(
+                    """
+                    CASE WHEN ROUND(COALESCE(prev_account_move_line.balance, 0) / %(rounding)s::numeric) = 0 THEN 0.0
+                         ELSE (COALESCE(current_account_move_lines.balance, 0) - prev_account_move_line.balance) / prev_account_move_line.balance
                     END
-                """)
+                    """,
+                    rounding=self.env.company.currency_id.rounding,
+                )
         return None
 
     @_debug.perf.timed

@@ -243,21 +243,26 @@ class MixinCompanySplit(models.AbstractModel):
                     },
                 }
             )
-            new.company_ids = [Command.set(company.ids)]
             new_by_company[company] = new
         return new_by_company
+
+    def _unmerge_stored_fields(self, field_types):
+        return [
+            field
+            for model in self.env.values()
+            if model._auto
+            for field in model._fields.values()
+            if field.type in field_types and field.store
+        ]
 
     @_debug.perf.timed
     def _unmerge_remap_many2x_fields(self, new_id_by_company_id) -> None:
         new_id_by_company_id_json = json_dumps(new_id_by_company_id)
-        many2x_fields = self.env["ir.model.fields"].search(
-            [
-                ("ttype", "in", ("many2one", "many2many")),
-                ("relation", "=", self._name),
-                ("store", "=", True),
-                ("company_dependent", "=", False),
-            ]
-        )
+        many2x_fields = [
+            field
+            for field in self._unmerge_stored_fields(("many2one", "many2many"))
+            if field.comodel_name == self._name and not field.company_dependent
+        ]
         _debug.pipeline(
             "unmerge_many2x_fields_found",
             records=self,
@@ -265,9 +270,7 @@ class MixinCompanySplit(models.AbstractModel):
             companies=len(new_id_by_company_id),
         )
         for field_to_update in many2x_fields:
-            model = field_to_update.model
-            if not self.env[model]._auto:
-                continue
+            model = field_to_update.model_name
             if not (query_company_id := self._unmerge_company_id_subquery(model)):
                 continue
             if _debug.logic.enabled:
@@ -276,14 +279,14 @@ class MixinCompanySplit(models.AbstractModel):
                     records=self,
                     model=model,
                     field=field_to_update.name,
-                    ttype=field_to_update.ttype,
+                    ttype=field_to_update.type,
                 )
-            if field_to_update.ttype == "many2one":
+            if field_to_update.type == "many2one":
                 table = self.env[model]._table
                 target_column = field_to_update.name
                 model_column = "id"
             else:
-                table = field_to_update.relation_table
+                table = field_to_update.relation
                 target_column = field_to_update.column2
                 model_column = field_to_update.column1
             self.env.cr.execute(
@@ -347,21 +350,14 @@ class MixinCompanySplit(models.AbstractModel):
     @_debug.perf.timed
     def _unmerge_remap_reference_fields(self, new_id_by_company_id) -> None:
         new_id_by_company_id_json = json_dumps(new_id_by_company_id)
-        reference_fields = self.env["ir.model.fields"].search(
-            [
-                ("ttype", "=", "reference"),
-                ("store", "=", True),
-            ]
-        )
+        reference_fields = self._unmerge_stored_fields(("reference",))
         _debug.pipeline(
             "unmerge_reference_fields_found",
             records=self,
             fields=len(reference_fields),
         )
         for field_to_update in reference_fields:
-            model = field_to_update.model
-            if not self.env[model]._auto:
-                continue
+            model = field_to_update.model_name
             if not (query_company_id := self._unmerge_company_id_subquery(model)):
                 continue
             if _debug.logic.enabled:
@@ -399,26 +395,16 @@ class MixinCompanySplit(models.AbstractModel):
     @_debug.perf.timed
     def _unmerge_remap_many2one_reference_fields(self, new_id_by_company_id) -> None:
         new_id_by_company_id_json = json_dumps(new_id_by_company_id)
-        many2one_reference_fields = self.env["ir.model.fields"].search(
-            [
-                ("ttype", "=", "many2one_reference"),
-                ("store", "=", True),
-            ]
-        )
+        many2one_reference_fields = self._unmerge_stored_fields(("many2one_reference",))
         _debug.pipeline(
             "unmerge_many2one_reference_fields_found",
             records=self,
             fields=len(many2one_reference_fields),
         )
         for field_to_update in many2one_reference_fields:
-            model = field_to_update.model
-            model_field = (
-                self.env[model]._fields[field_to_update.name]._related_model_field
-            )
-            if (
-                not self.env[model]._auto
-                or not self.env[model]._fields[model_field].store
-            ):
+            model = field_to_update.model_name
+            model_field = field_to_update._related_model_field
+            if not self.env[model]._fields[model_field].store:
                 continue
             if not (query_company_id := self._unmerge_company_id_subquery(model)):
                 continue
