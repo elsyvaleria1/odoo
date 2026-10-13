@@ -972,13 +972,12 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(tax_line.name, "Renamed tax")
         self.assertFalse(tax_line.is_name_manual)
 
-    def test_resync_keeps_an_edited_label_on_a_journal_entry_tax_line(self):
-        tax = self.company_data["default_tax_sale"]
+    def _journal_entry(self, tax):
         tax_rep = tax.invoice_repartition_line_ids.filtered(
             lambda rep: rep.repartition_type == "tax"
         )
         rate = tax.amount / 100
-        entry = self.env["account.move"].create(
+        return self.env["account.move"].create(
             {
                 "move_type": "entry",
                 "line_ids": [
@@ -1012,6 +1011,11 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
                 ],
             }
         )
+
+    def test_resync_keeps_an_edited_label_on_a_journal_entry_tax_line(self):
+        tax = self.company_data["default_tax_sale"]
+        rate = tax.amount / 100
+        entry = self._journal_entry(tax)
         base_line, tax_line, counterpart = entry.line_ids.sorted("id")
         self.assertEqual(tax_line.display_type, "product")
         tax_line.name = "Edited label"
@@ -1027,3 +1031,129 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(entry.line_ids.filtered("tax_repartition_line_id"), tax_line)
         self.assertAlmostEqual(tax_line.balance, -200.0 * rate)
         self.assertEqual(tax_line.name, "Edited label")
+
+    def _tax_and_base_lines(self, move):
+        return move.line_ids.filtered(
+            lambda line: line.tax_repartition_line_id or line.tax_ids
+        )
+
+    def test_journal_entry_lines_relabelled_and_repartnered_in_one_write(self):
+        entry = self._journal_entry(self.company_data["default_tax_sale"])
+        base_line, tax_line, counterpart = entry.line_ids.sorted("id")
+        entry.line_ids.write({"name": "Relabelled", "partner_id": self.partner_b.id})
+        self.assertEqual(entry.line_ids.filtered("tax_repartition_line_id"), tax_line)
+        self.assertEqual(entry.line_ids.mapped("name"), ["Relabelled"] * 3)
+        self.assertEqual(entry.line_ids.partner_id, self.partner_b)
+        self.assertTrue(tax_line.is_name_manual)
+        self.assertFalse((base_line + counterpart).filtered("is_name_manual"))
+
+    def test_journal_entry_lines_relabelled_and_moved_in_one_write(self):
+        tax = self.company_data["default_tax_sale"]
+        account = self.copy_account(self.company_data["default_account_revenue"])
+        for vals in (
+            {"account_id": account.id},
+            {"name": "Relabelled", "account_id": account.id},
+        ):
+            with self.subTest(fields=sorted(vals)):
+                entry = self._journal_entry(tax)
+                base_line, tax_line = self._tax_and_base_lines(entry).sorted("id")
+                tax_account = tax_line.account_id
+                (base_line + tax_line).write(vals)
+                self.assertEqual(base_line.name, vals.get("name", "base"))
+                self.assertEqual(base_line.account_id, account)
+                self.assertFalse(tax_line.exists())
+                new_tax_line = entry.line_ids.filtered("tax_repartition_line_id")
+                self.assertEqual(new_tax_line.account_id, tax_account)
+                self.assertEqual(new_tax_line.name, tax.name)
+                self.assertFalse(new_tax_line.is_name_manual)
+
+    def test_journal_entry_lines_relabelled_and_retaxed_in_one_write(self):
+        tax = self.company_data["default_tax_sale"]
+        other_tax = tax.copy({"name": "Other tax", "amount": 10.0})
+        entry = self._journal_entry(tax)
+        base_line, tax_line = self._tax_and_base_lines(entry).sorted("id")
+        (base_line + tax_line).write(
+            {"name": "Relabelled", "tax_ids": [Command.set(other_tax.ids)]}
+        )
+        self.assertEqual(base_line.name, "Relabelled")
+        self.assertEqual(base_line.tax_ids, other_tax)
+        self.assertFalse(tax_line.exists())
+        new_tax_line = entry.line_ids.filtered("tax_repartition_line_id")
+        self.assertEqual(new_tax_line.tax_line_id, other_tax)
+        self.assertEqual(new_tax_line.name, "Other tax")
+        self.assertFalse(new_tax_line.is_name_manual)
+
+    def test_invoice_lines_relabelled_and_repartnered_in_one_write(self):
+        invoice = self._invoice(self.company_data["default_tax_sale"])
+        product_line = invoice.invoice_line_ids
+        tax_line = self._tax_line(invoice)
+        (product_line + tax_line).write(
+            {"name": "Relabelled", "partner_id": self.partner_b.id}
+        )
+        self.assertEqual(self._tax_line(invoice), tax_line)
+        self.assertEqual((product_line + tax_line).mapped("name"), ["Relabelled"] * 2)
+        self.assertEqual((product_line + tax_line).partner_id, self.partner_b)
+        self.assertTrue(tax_line.is_name_manual)
+        self.assertFalse(product_line.is_name_manual)
+
+    def test_invoice_lines_relabelled_and_moved_in_one_write(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        product_line = invoice.invoice_line_ids
+        tax_line = self._tax_line(invoice)
+        tax_account = tax_line.account_id
+        account = self.copy_account(self.company_data["default_account_revenue"])
+        (product_line + tax_line).write(
+            {"name": "Relabelled", "account_id": account.id}
+        )
+        self.assertEqual(product_line.name, "Relabelled")
+        self.assertEqual(product_line.account_id, account)
+        self.assertFalse(tax_line.exists())
+        new_tax_line = self._tax_line(invoice)
+        self.assertEqual(new_tax_line.account_id, tax_account)
+        self.assertEqual(new_tax_line.name, tax.name)
+        self.assertFalse(new_tax_line.is_name_manual)
+
+    def test_invoice_lines_relabelled_and_retaxed_in_one_write(self):
+        tax = self.company_data["default_tax_sale"]
+        other_tax = tax.copy({"name": "Other tax", "amount": 10.0})
+        invoice = self._invoice(tax)
+        product_line = invoice.invoice_line_ids
+        tax_line = self._tax_line(invoice)
+        (product_line + tax_line).write(
+            {"name": "Relabelled", "tax_ids": [Command.set(other_tax.ids)]}
+        )
+        self.assertEqual(product_line.name, "Relabelled")
+        self.assertEqual(product_line.tax_ids, other_tax)
+        self.assertFalse(tax_line.exists())
+        new_tax_line = self._tax_line(invoice)
+        self.assertEqual(new_tax_line.tax_line_id, other_tax)
+        self.assertEqual(new_tax_line.name, "Other tax")
+        self.assertFalse(new_tax_line.is_name_manual)
+        self.assertAlmostEqual(invoice.amount_tax, 10.0)
+
+    def _relabelled_tax_line(self, move):
+        tax_line = move.line_ids.filtered("tax_repartition_line_id")
+        tax_line.name = "Edited label"
+        return tax_line
+
+    def test_reversed_and_duplicated_journal_entry_keep_the_edited_label(self):
+        entry = self._journal_entry(self.company_data["default_tax_sale"])
+        self._relabelled_tax_line(entry)
+        entry.action_post()
+        for move in (entry._reverse_moves(), entry.copy()):
+            tax_line = move.line_ids.filtered("tax_repartition_line_id")
+            self.assertEqual(tax_line.name, "Edited label")
+            self.assertTrue(tax_line.is_name_manual)
+
+    def test_credit_note_takes_the_tax_label_and_a_duplicated_invoice_keeps_it(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        self._relabelled_tax_line(invoice)
+        invoice.action_post()
+        credit_note_tax_line = self._tax_line(invoice._reverse_moves())
+        self.assertEqual(credit_note_tax_line.name, tax.name)
+        self.assertFalse(credit_note_tax_line.is_name_manual)
+        copy_tax_line = self._tax_line(invoice.copy())
+        self.assertEqual(copy_tax_line.name, "Edited label")
+        self.assertTrue(copy_tax_line.is_name_manual)

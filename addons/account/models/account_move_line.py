@@ -2773,35 +2773,7 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         if not vals:
             return True
-        if "name" in vals and "is_name_manual" not in vals:
-            renamed_tax_lines = self.filtered(
-                lambda line: (
-                    line.tax_repartition_line_id
-                    and line.display_type != "rounding"
-                    and line.name != vals["name"]
-                )
-            )
-            if renamed_tax_lines:
-                manual_lines = renamed_tax_lines.filtered(
-                    lambda line: line._is_manual_tax_line_name(vals["name"])
-                )
-                batches = [
-                    (lines, lines_vals)
-                    for lines, lines_vals in (
-                        (self - renamed_tax_lines, vals),
-                        (manual_lines, {**vals, "is_name_manual": True}),
-                        (
-                            renamed_tax_lines - manual_lines,
-                            {**vals, "is_name_manual": False},
-                        ),
-                    )
-                    if lines
-                ]
-                if len(batches) > 1:
-                    for lines, lines_vals in batches:
-                        lines.write(lines_vals)
-                    return True
-                vals = batches[0][1]
+        name_flags = self._get_tax_line_name_flags(vals)
         self._check_deferred_account_change(vals)
         vals = self._normalize_vals(vals)
 
@@ -2837,6 +2809,12 @@ class AccountMoveLine(models.Model):
 
         self.browse(tax_lock_check_ids)._check_tax_lock_date()
 
+        analytic_lines_to_rebuild = (
+            line_to_write.filtered(lambda line: line.parent_state == "posted")
+            if "account_id" in vals or "analytic_distribution" in vals
+            else self.browse()
+        )
+        pending_lines = self._get_pending_lines_sensitive_to(vals)
         move_container = {"records": self.move_id}
         with (
             self.move_id._check_balanced(move_container),
@@ -2853,6 +2831,8 @@ class AccountMoveLine(models.Model):
                 tracking_snapshot = line_to_write._snapshot_tracked_values(vals)
 
                 result = super(AccountMoveLine, line_to_write).write(vals)
+                for flag, lines in name_flags.items():
+                    super(AccountMoveLine, lines).write({"is_name_manual": flag})
                 if "account_id" in vals:
                     line_to_write._assign_statement_suspense_role()
                 line_to_write.move_id._check_entry_shape()
@@ -2870,9 +2850,9 @@ class AccountMoveLine(models.Model):
                         lambda l: l.parent_state == "draft"
                     ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
 
-        if line_to_write and ("account_id" in vals or "analytic_distribution" in vals):
-            line_to_write._rebuild_posted_analytic_lines()
-        self._remove_lost_pending_matches(vals)
+        if analytic_lines_to_rebuild:
+            analytic_lines_to_rebuild._rebuild_posted_analytic_lines()
+        pending_lines._remove_lost_pending_matches()
         return result
 
     def _is_valid_field_parameter(self, field, name) -> bool:
@@ -4745,6 +4725,28 @@ class AccountMoveLine(models.Model):
     @_debug.perf.timed
     def _is_edi_line_tax_required(self) -> bool:
         return self.product_id.type != "combo"
+
+    def _get_tax_line_name_flags(self, vals) -> dict:
+        if "name" not in vals or "is_name_manual" in vals:
+            return {}
+        renamed_tax_lines = self.filtered(
+            lambda line: (
+                line.tax_repartition_line_id
+                and line.display_type != "rounding"
+                and line.name != vals["name"]
+            )
+        )
+        manual_lines = renamed_tax_lines.filtered(
+            lambda line: line._is_manual_tax_line_name(vals["name"])
+        )
+        return {
+            flag: lines
+            for flag, lines in (
+                (True, manual_lines),
+                (False, renamed_tax_lines - manual_lines),
+            )
+            if lines
+        }
 
     def _is_manual_tax_line_name(self, name) -> bool:
         self.check_singleton()

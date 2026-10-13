@@ -131,10 +131,13 @@ class AccountMoveLine(models.Model):
     def _reconcile_or_pend(self, origin):
         return self._reconcile_plan_or_pend([self], origin)
 
-    def _remove_lost_pending_matches(self, vals) -> None:
-        if PENDING_SENSITIVE_FIELDS.intersection(vals) and (
-            pending := self.filtered("pending_match_amount")
-        ):
+    def _get_pending_lines_sensitive_to(self, vals):
+        if not PENDING_SENSITIVE_FIELDS.intersection(vals):
+            return self.browse()
+        return self.filtered("pending_match_amount")
+
+    def _remove_lost_pending_matches(self) -> None:
+        if pending := self.exists():
             pending._get_pending_matches()._drop_lost()
 
     def _release_pending_matches(self) -> None:
