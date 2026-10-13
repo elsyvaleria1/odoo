@@ -37,7 +37,7 @@ function totals(taxAmount) {
     };
 }
 
-/** @param {number} taxAmount */
+/** @param {number} taxAmount @param {number} computedAmount */
 function manualTotals(taxAmount, computedAmount) {
     const values = totals(taxAmount);
     Object.assign(values.subtotals[0].tax_groups[0], {

@@ -142,7 +142,7 @@ export class TranslatedString extends String {
         super(value);
 
         if (!isNotBlank(value)) {
-
+            // @ts-expect-error — valid JS: constructor returning plain String to skip translation
             return new String(value);
         }
 

@@ -26,7 +26,7 @@ export class SettingsFormCompiler extends FormCompiler {
         params.modules = [];
         params.anchors = [];
 
-
+        // @ts-ignore — super.compileForm is on the parent's prototype but not in the strict typedef
         const res = super.compileForm(el, params);
         res.classList.remove("o_form_nosheet");
 
@@ -93,7 +93,7 @@ export class SettingsFormCompiler extends FormCompiler {
             el.getAttribute("type") === "header"
                 ? "SettingHeader"
                 : "SearchableSetting";
-
+        // @ts-ignore — super.compileSetting is on the parent's prototype but not in the strict typedef
         const res = super.compileSetting(el, params);
         return res;
     }
@@ -106,12 +106,12 @@ export class SettingsFormCompiler extends FormCompiler {
                 });
             }
         }
-
+        // @ts-ignore — super.compileNode is on the parent's prototype but not in the strict typedef
         return super.compileNode(node, params, evalInvisible);
     }
 
     compileButton(el, params) {
-
+        // @ts-ignore — super.compileButton is on the parent's prototype but not in the strict typedef
         const res = super.compileButton(el, params);
         if (res.hasAttribute("string") && !res.children.length) {
             const contentSlot = createElement("t");

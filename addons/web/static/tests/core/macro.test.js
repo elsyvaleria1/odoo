@@ -344,7 +344,7 @@ test("a string action fails fast at construction", async () => {
         () =>
             new Macro({
                 name: "test",
-
+                // @ts-expect-error
                 steps: [{ action: "doStuff" }],
             }),
     ).toThrow(/Error in schema for Macro/);

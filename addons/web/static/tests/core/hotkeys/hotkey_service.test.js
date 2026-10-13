@@ -649,17 +649,17 @@ test("hotkeys evil 👹", async () => {
     await makeMockEnv();
     const hotkey = getService("hotkey");
 
-
+    // @ts-expect-error
     expect(() => hotkey.add()).toThrow(/must specify an hotkey/);
-
+    // @ts-expect-error
     expect(() => hotkey.add(null)).toThrow(/must specify an hotkey/);
     function callback() {}
     expect(() => hotkey.add(null, callback)).toThrow(/must specify an hotkey/);
-
+    // @ts-expect-error
     expect(() => hotkey.add("")).toThrow(/must specify an hotkey/);
     expect(() => hotkey.add("crap", callback)).toThrow(/not whitelisted/);
     expect(() => hotkey.add("ctrl+o", callback)).toThrow(/not whitelisted/);
-
+    // @ts-expect-error
     expect(() => hotkey.add("Control+o")).toThrow(/specify a callback/);
     expect(() => hotkey.add("Control+o+d", callback)).toThrow(
         /more than one single key part/,

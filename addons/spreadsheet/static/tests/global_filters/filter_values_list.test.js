@@ -39,7 +39,7 @@ class FilterValuesListWrapper extends Component {
  * @param {{ model: Model }} props
  */
 async function mountFilterValuesList(env, props) {
-
+    //@ts-ignore
     env.dialogData = {
         isActive: true,
         close: () => {},

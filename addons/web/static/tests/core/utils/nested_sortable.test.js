@@ -52,14 +52,14 @@ test("Parameters error handling", async () => {
     };
 
     await mountNestedSortableAndAssert((rootRef) => {
-
+        // @ts-expect-error
         expect(() => useNestedSortable({})).toThrow(
             `Error in hook useNestedSortable: missing required property "ref" in parameter`,
         );
     });
     await mountNestedSortableAndAssert((rootRef) => {
         expect(() =>
-
+            // @ts-expect-error
             useNestedSortable({
                 elements: ".item",
                 groups: ".list",

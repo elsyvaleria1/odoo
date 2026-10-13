@@ -29,7 +29,7 @@ function compatiblePropertyDefinition(previous, next) {
     return previous.type === next.type && previous.comodel === next.comodel;
 }
 
-/** @param {Record<string, any>} previous */
+/** @param {Record<string, any>} previous @param {Record<string, any>} next */
 function compatibleGroupingDefinition(previous, next) {
     if (!compatiblePropertyDefinition(previous, next)) {
         return false;

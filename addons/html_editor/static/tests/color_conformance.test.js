@@ -1,9 +1,5 @@
 /** @odoo-module native */
 
-
-
-
-
 import { VECTORS as vectors } from "@html_editor/../tests/color_conformance_vectors";
 import { expect, test } from "@odoo/hoot";
 import { parseCSSColor } from "@web/core/utils/format/colors";

@@ -1,7 +1,7 @@
 import { expect, test } from "@odoo/hoot";
 import { ProductNameAndDescriptionField } from "@product/product_name_and_description/product_name_and_description";
 
-/** @param {string} productName */
+/** @param {string} productName @param {string} description */
 function labelOf(productName, description) {
     const self = Object.create(ProductNameAndDescriptionField.prototype);
     Object.assign(self, {

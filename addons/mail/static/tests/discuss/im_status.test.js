@@ -27,11 +27,15 @@ test("update presence if IM status changes to offline while this device is onlin
     pyEnv["res.partner"].write(serverState.partnerId, { im_status: "online" });
     await start();
     await waitForSteps(["update_presence"]);
-    pyEnv["bus.bus"]._sendone(serverState.partnerId, "mail.presence/im_status_updated", {
-        presence_status: "offline",
-        im_status: "offline",
-        partner_id: serverState.partnerId,
-    });
+    pyEnv["bus.bus"]._sendone(
+        serverState.partnerId,
+        "mail.presence/im_status_updated",
+        {
+            presence_status: "offline",
+            im_status: "offline",
+            partner_id: serverState.partnerId,
+        },
+    );
     await waitForSteps(["update_presence"]);
 });
 
@@ -42,11 +46,15 @@ test("update presence if IM status changes to away while this device is online",
     pyEnv["res.partner"].write(serverState.partnerId, { im_status: "online" });
     await start();
     await waitForSteps(["update_presence"]);
-    pyEnv["bus.bus"]._sendone(serverState.partnerId, "mail.presence/im_status_updated", {
-        presence_status: "away",
-        im_status: "away",
-        partner_id: serverState.partnerId,
-    });
+    pyEnv["bus.bus"]._sendone(
+        serverState.partnerId,
+        "mail.presence/im_status_updated",
+        {
+            presence_status: "away",
+            im_status: "away",
+            partner_id: serverState.partnerId,
+        },
+    );
     await waitForSteps(["update_presence"]);
 });
 
@@ -57,11 +65,15 @@ test("do not update presence if IM status changes to away while this device is a
     pyEnv["res.partner"].write(serverState.partnerId, { im_status: "away" });
     await start();
     await waitForSteps(["update_presence"]);
-    pyEnv["bus.bus"]._sendone(serverState.partnerId, "mail.presence/im_status_updated", {
-        presence_status: "away",
-        im_status: "away",
-        partner_id: serverState.partnerId,
-    });
+    pyEnv["bus.bus"]._sendone(
+        serverState.partnerId,
+        "mail.presence/im_status_updated",
+        {
+            presence_status: "away",
+            im_status: "away",
+            partner_id: serverState.partnerId,
+        },
+    );
     await waitForSteps([]);
 });
 
@@ -72,11 +84,15 @@ test("do not update presence if other user's IM status changes to away", async (
     pyEnv["res.partner"].write(serverState.partnerId, { im_status: "online" });
     await start();
     await waitForSteps(["update_presence"]);
-    pyEnv["bus.bus"]._sendone(serverState.partnerId, "mail.presence/im_status_updated", {
-        presence_status: "away",
-        im_status: "away",
-        partner_id: serverState.publicPartnerId,
-    });
+    pyEnv["bus.bus"]._sendone(
+        serverState.partnerId,
+        "mail.presence/im_status_updated",
+        {
+            presence_status: "away",
+            im_status: "away",
+            partner_id: serverState.publicPartnerId,
+        },
+    );
     await waitForSteps([]);
 });
 

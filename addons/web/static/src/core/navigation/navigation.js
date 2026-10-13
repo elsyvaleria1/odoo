@@ -186,8 +186,8 @@ export class Navigator {
     /** @type {(containerEl: HTMLElement | null) => void} */
     observe = () => {};
 
-    /** @private */ _hotkeyRemoves = [];
-    /** @private */ _hotkeyService;
+    /** @private @type {Array<() => void>} */ _hotkeyRemoves = [];
+    /** @private @type {import("@web/core/hotkeys/hotkey_service").HotkeyService} */ _hotkeyService;
 
     /**
      * @param {NavigationOptions} options

@@ -305,7 +305,7 @@ function introduceInRangeOperators(tree, options = {}) {
         if (res1) {
             const generateSmartDates =
                 "generateSmartDates" in options ? options.generateSmartDates : true;
-
+            // @ts-ignore
             const { path, value1, value2 } = res1;
             const fieldType = /** @type {any} */ (options.getFieldDef?.(path))?.type;
             if (["date", "datetime"].includes(fieldType) && isSimplePath(path)) {
@@ -331,14 +331,14 @@ function introduceInRangeOperators(tree, options = {}) {
         }
         const res2 = isBetween(c);
         if (res2) {
-
+            // @ts-ignore
             const { path, value1, value2 } = res2;
             const fieldType = /** @type {any} */ (options.getFieldDef?.(path))?.type;
             if (["date", "datetime"].includes(fieldType) && isSimplePath(path)) {
                 return condition(path, "in range", [
                     fieldType,
                     "custom range",
-
+                    // @ts-ignore
                     ...normalizeValue([value1, value2]),
                 ]);
             }
@@ -363,7 +363,7 @@ function eliminateInRangeOperators(tree, options = {}) {
      */
     function _eliminateInRangeOperator(c, options) {
         const { negate, path, operator, value } = c;
-
+        // @ts-ignore
         if (operator !== "in range") {
             return;
         }
@@ -402,7 +402,7 @@ function introduceBetweenOperators(tree, options = {}) {
         if (!res) {
             return;
         }
-
+        // @ts-ignore
         const { path, value1, value2 } = res;
         const fieldType = /** @type {any} */ (options.getFieldDef?.(path))?.type;
         if (
@@ -429,7 +429,7 @@ function eliminateBetweenOperators(tree) {
     /** @param {Condition} c */
     function _eliminateBetweenOperator(c) {
         const { negate, path, operator, value } = c;
-
+        // @ts-ignore
         if (operator !== "between") {
             return;
         }

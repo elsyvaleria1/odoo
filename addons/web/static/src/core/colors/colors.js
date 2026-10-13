@@ -455,7 +455,7 @@ export function getCalendarColor(key) {
     return calendarColorMap.get(key);
 }
 
-/** @param {number} index */
+/** @param {number} index @returns {number} */
 export function getNonzeroColorIndex(index) {
     return (index % (RECORD_COLOR_NAMES.length - 1)) + 1;
 }
@@ -471,7 +471,7 @@ export function getNextColorIndex(usedColors, palette = RECORD_COLOR_INDICES) {
     return palette.find((color) => !usedColors.includes(color)) ?? 0;
 }
 
-/** @param {number|string} index */
+/** @param {number|string} index @returns {string} */
 export function getPreparationDisplayColor(index) {
     return "o_pdis_card_color_" + (Number(index) % 9);
 }

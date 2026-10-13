@@ -81,7 +81,7 @@ export class OdooChart extends AbstractChart {
      */
     getDefinition() {
         return {
-
+            //@ts-ignore Defined in the parent class
             title: this.title,
             background: this.background,
             legendPosition: this.legendPosition,

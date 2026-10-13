@@ -22,7 +22,10 @@ patch(GeoengineRenderer.prototype, {
 
         onWillDestroy(() => {
             this.busService?.unsubscribe(GPS_NOTIFICATION_TYPE, this._gpsLiveCallback);
-            this.busService?.unsubscribe(GEOFENCE_ALERT_TYPE, this._geofenceAlertCallback);
+            this.busService?.unsubscribe(
+                GEOFENCE_ALERT_TYPE,
+                this._geofenceAlertCallback,
+            );
             if (this._gpsLiveRafId) {
                 cancelAnimationFrame(this._gpsLiveRafId);
                 this._gpsLiveRafId = null;

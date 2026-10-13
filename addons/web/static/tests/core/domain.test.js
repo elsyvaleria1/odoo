@@ -576,9 +576,9 @@ describe("Basic Properties", () => {
         expect(() => new Domain(`[(+, "=", 1)]`)).toThrow(
             /Invalid domain representation/,
         );
-
+        // @ts-expect-error
         expect(() => new Domain([{}])).toThrow(/Invalid domain representation/);
-
+        // @ts-expect-error
         expect(() => new Domain([1])).toThrow(/Invalid domain representation/);
     });
 

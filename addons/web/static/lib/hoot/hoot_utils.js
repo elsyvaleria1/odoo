@@ -1210,7 +1210,7 @@ export function getTypeOf(value) {
                     return `${arrayType}[]`;
                 }
             }
-
+            // falls through
         }
         default: {
             return type;

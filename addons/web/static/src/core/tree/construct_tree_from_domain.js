@@ -107,7 +107,7 @@ function _constructTree(ASTs, distributeNot = false) {
 export function constructTreeFromDomain(domain, distributeNot = false) {
     domain = new Domain(domain);
     const domainAST = domain.ast;
-
+    // @ts-ignore
     const initialASTs = domainAST.value;
     if (!initialASTs.length) {
         return connector("&");

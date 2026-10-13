@@ -238,7 +238,7 @@ export function parseFloat(value, { allowOperation = false } = {}) {
     }
     const operation = allowOperation ? parseOperation(value, parseFloat) : null;
     if (operation instanceof Operation) {
-
+        // @ts-expect-error returns Operation when allowOperation is true
         return operation;
     }
     return parseInLocale(value);
@@ -290,7 +290,7 @@ export function parseInteger(value, { allowOperation = false } = {}) {
         ? parseOperation(value, parseInteger, { integer: true })
         : null;
     if (operation instanceof Operation) {
-
+        // @ts-expect-error returns Operation when allowOperation is true
         return operation;
     }
     const parsed = parseInLocale(value);
@@ -341,7 +341,7 @@ export function parsePercentage(value, { allowOperation = false } = {}) {
 export function parseMonetary(value, { allowOperation = false } = {}) {
     const operation = allowOperation ? parseOperation(value, parseMonetary) : null;
     if (operation instanceof Operation) {
-
+        // @ts-expect-error returns Operation when allowOperation is true
         return operation;
     }
     value = value.trim();

@@ -12,11 +12,6 @@ export class PlanningCalendarFilterSection extends CalendarFilterSection {
         return this.section.fieldName === "resource_id" ? "no_filter_color" : "";
     }
 
-
-
-
-
-
     getSortedFilters() {
         const sortedFilters = super.getSortedFilters();
         let nullValueItem = false;
@@ -32,9 +27,6 @@ export class PlanningCalendarFilterSection extends CalendarFilterSection {
         }
         return sortedFilters;
     }
-
-
-
 
     async loadSource(request) {
         const options = await super.loadSource(request);

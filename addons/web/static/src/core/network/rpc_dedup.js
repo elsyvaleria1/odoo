@@ -12,7 +12,7 @@ export function stableStringify(value) {
         : stringifyOrdered(JSON.parse(serialized));
 }
 
-/** @param {any} value */
+/** @param {any} value @returns {string} */
 function stringifyOrdered(value) {
     if (value === null || typeof value !== "object") {
         return JSON.stringify(value);

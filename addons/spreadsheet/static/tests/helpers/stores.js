@@ -39,7 +39,7 @@ export function makeStoreWithModel(model, Store, ...args) {
     return {
         store: container.instantiate(Store, ...args),
         container,
-
+        // @ts-ignore
         model: container.get(ModelStore),
     };
 }

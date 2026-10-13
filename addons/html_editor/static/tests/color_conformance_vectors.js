@@ -1,16 +1,5 @@
 /** @odoo-module native */
 
-
-
-
-
-
-
-
-
-
-
-
 export const VECTORS = JSON.parse(String.raw`
 [
     { "value": "#3AADAA", "rgba": [58, 173, 170, 100] },

@@ -1,4 +1,5 @@
 /** @odoo-module native */
+import { useBusChannel, useBusSubscription } from "@bus/services/bus_service";
 import {
     Component,
     markup,
@@ -13,7 +14,6 @@ import {
     makeInterval,
     RoomBookingForm,
 } from "@room/room_booking/room_booking_form/room_booking_form";
-import { useBusChannel, useBusSubscription } from "@bus/services/bus_service";
 import { RoomBookingRemainingTime } from "@room/room_booking/room_booking_remaining_time";
 import { RoomDisplayTime } from "@room/room_booking/room_display_time";
 import { useInterval } from "@room/room_booking/useInterval";

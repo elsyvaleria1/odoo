@@ -108,10 +108,6 @@ export class IncidentJourney {
         this.timer = setTimeout(() => this.ask(attempt + 1), delay);
     }
 
-
-
-
-
     async report(stack) {
         this.state.stage = "waiting";
         this.listen();

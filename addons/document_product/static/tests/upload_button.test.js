@@ -1,7 +1,7 @@
 import { UploadButton } from "@document_product/js/product_document_kanban/upload_button/upload_button";
 import { expect, test } from "@odoo/hoot";
 
-/** @param {string} allowed */
+/** @param {string} allowed @param {string} type */
 function accepts(allowed, type) {
     return UploadButton.prototype.validFileType.call(
         { props: { allowedMIMETypes: allowed }, notification: { add() {} } },

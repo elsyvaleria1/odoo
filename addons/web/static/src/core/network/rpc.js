@@ -479,7 +479,7 @@ function dedupSettingsFingerprint(settings) {
     return parts.join("&");
 }
 
-/** @param {HeadersInit} [headers] */
+/** @param {HeadersInit} [headers] @returns {Headers} */
 function makeRequestHeaders(headers) {
     const result = new Headers(headers || {});
     result.set("Content-Type", "application/json");
@@ -510,7 +510,7 @@ function copyRPCSettings(settings) {
     return copy;
 }
 
-/** @param {HeadersInit} [headers] */
+/** @param {HeadersInit} [headers] @returns {number | undefined} */
 function headerCacheScope(headers) {
     if (!headers) {
         return;
@@ -752,7 +752,7 @@ function makeFetchRequest(body, settings) {
     };
 }
 
-/** @param {any} parsed */
+/** @param {any} parsed @returns {boolean} */
 function isValidRpcResponse(parsed) {
     if (!isObject(parsed)) {
         return false;

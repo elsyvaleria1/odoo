@@ -1,7 +1,7 @@
 import { describe, expect, test } from "@odoo/hoot";
-import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 import { mockDate } from "@odoo/hoot-mock";
 import { OrderReceipt } from "@point_of_sale/app/screens/receipt_screen/receipt/order_receipt";
+import { patchWithCleanup } from "@web/../tests/web_test_helpers";
 
 import { definePosSelfModels } from "../data/generate_model_definitions.js";
 import { addComboProduct, getFilledSelfOrder, setupSelfPosEnv } from "../utils.js";

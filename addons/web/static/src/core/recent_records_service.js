@@ -13,7 +13,7 @@ const MAX_PER_CALL = 50;
 
 export const recentRecordsService = {
     dependencies: ["orm"],
-    /** @param {import("@web/env").OdooEnv} _env */
+    /** @param {import("@web/env").OdooEnv} _env @param {{ orm: any }} services */
     start(_env, { orm }) {
         /** @type {Map<string, { res_model: string, res_id: number }>} */
         const pending = new Map();

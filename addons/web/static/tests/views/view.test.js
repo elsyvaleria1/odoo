@@ -1378,7 +1378,7 @@ test("the descriptor schema is closed: an unknown key is refused, SearchPanel is
         viewRegistry.add("toy_with_panel", { ...toyView, SearchPanel: Panel }),
     ).not.toThrow();
     expect(() => {
-
+        // @ts-expect-error Unknown descriptor keys must be rejected at runtime too.
         viewRegistry.add("toy_with_dead_key", { ...toyView, multiRecord: true });
     }).toThrow(/unknownKeys[\s\S]*"multiRecord"/);
     expect(viewRegistry.contains("toy_with_dead_key")).toBe(false);

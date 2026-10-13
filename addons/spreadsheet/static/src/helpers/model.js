@@ -312,7 +312,7 @@ function odooChartToImage(model, figure, chartId) {
     }
     document.body.append(div);
     runtime.chartJsConfig.plugins = [backgroundColorPlugin];
-
+    // @ts-ignore
     const chart = new Chart(canvas, runtime.chartJsConfig);
     const img = chart.toBase64Image();
     chart.destroy();

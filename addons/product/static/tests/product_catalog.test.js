@@ -39,7 +39,7 @@ test("grouped records are collected from every opened subgroup", () => {
     ).toEqual([1, 2, 3, 4]);
 });
 
-/** @param {Record<string, any>} self */
+/** @param {Record<string, any>} self @param {any} target @param {string} moved */
 function dropOn(self, target, moved) {
     ProductCatalogSearchPanel.prototype.onDrop.call(self, target, {
         preventDefault() {},

@@ -58,18 +58,18 @@ export class OdooPivot {
         /** @type {"ODOO"} */
         this.type = "ODOO";
 
-        /** @type {OdooPivotCoreDefinition} */
+        /** @type {OdooPivotCoreDefinition} @protected */
         this.coreDefinition = definition;
 
         this.needsReevaluation = false;
 
-        /** @type {OdooPivotRuntimeDefinition | undefined} */
+        /** @type {OdooPivotRuntimeDefinition | undefined} @protected */
         this.runtimeDefinition = undefined;
 
-        /** @type {OdooPivotModel | undefined} */
+        /** @type {OdooPivotModel | undefined} @protected */
         this.model = undefined;
 
-        /** @type {OdooGetters} */
+        /** @type {OdooGetters} @protected */
         this.getters = getters;
 
         /** @protected */
@@ -78,13 +78,13 @@ export class OdooPivot {
             this._load.bind(this),
         );
 
-        /** @type {OdooFields | undefined} */
+        /** @type {OdooFields | undefined} @protected */
         this._fields = undefined;
 
-        /** @protected */
+        /** @protected @type {OdooDataProvider}*/
         this.odooDataProvider = services.odooDataProvider;
 
-        /** @protected */
+        /** @protected @type {Object} */
         this.context = omit(
             definition.context ?? {},
             ...Object.keys(user.context),
@@ -93,7 +93,7 @@ export class OdooPivot {
             "pivot_column_groupby",
         );
 
-        /** @protected */
+        /** @protected @type {import("@web/core/domain").DomainRepr} */
         this.domainWithGlobalFilters = this.coreDefinition.domain;
     }
 
@@ -281,7 +281,7 @@ export class OdooPivot {
                 this.parseGroupField(nameWithGranularity);
             if (isPositional) {
                 const table = this.getExpandedTableStructure();
-
+                // @ts-ignore: That's a VERY ugly hack to make sure the table is computed and sorted (which is needed for
                 this.sortTableStructure(table);
                 const previousDomain = [
                     ...domain,

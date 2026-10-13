@@ -31,14 +31,14 @@ test("Parameters error handling", async () => {
     };
 
     await mountListAndAssert((rootRef) => {
-
+        // @ts-expect-error
         expect(() => useSortable({})).toThrow(
             `Error in hook useSortable: missing required property "ref" in parameter`,
         );
     });
     await mountListAndAssert((rootRef) => {
         expect(() =>
-
+            // @ts-expect-error
             useSortable({
                 elements: ".item",
             }),
@@ -48,7 +48,7 @@ test("Parameters error handling", async () => {
     });
     await mountListAndAssert((rootRef) => {
         expect(() =>
-
+            // @ts-expect-error
             useSortable({
                 elements: ".item",
                 groups: ".list",

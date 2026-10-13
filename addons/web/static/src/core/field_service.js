@@ -128,7 +128,7 @@ class FieldService {
                     name,
                 ]);
         } else {
-
+            // @ts-ignore
             domain = Domain.and([
                 [[definitionRecordField, "!=", false]],
                 domain,

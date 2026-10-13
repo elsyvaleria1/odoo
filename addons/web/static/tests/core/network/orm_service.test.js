@@ -438,11 +438,11 @@ test("validate some obviously wrong calls", async () => {
 
     const { services } = await makeMockEnv();
 
-
+    // @ts-expect-error
     expect(() => services.orm.read(false, [3], ["id", "descr"])).toThrow(
         "Invalid model name: false",
     );
-
+    // @ts-expect-error
     expect(() => services.orm.read("res.res.partner", false, ["id", "descr"])).toThrow(
         "Invalid ids list: false",
     );

@@ -53,9 +53,9 @@ export class DashboardLoader {
         this.env = env;
         /** @private */
         this.orm = orm;
-        /** @private */
+        /** @private @type {Array<DashboardGroupData>} */
         this.groups = [];
-        /** @private */
+        /** @private @type {Object<number, Dashboard>} */
         this.dashboards = {};
         this.geoJsonService = geoJsonService;
     }

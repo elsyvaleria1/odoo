@@ -67,7 +67,7 @@ async function mountSpreadsheetSelectorDialog(config = {}) {
         serverData: config.serverData || serverData,
         mockRPC: config.mockRPC,
     });
-
+    //@ts-ignore
     env.dialogData = {
         isActive: true,
         close: () => {},

@@ -224,9 +224,6 @@ export class PlanningCalendarModel extends CalendarModel {
         return filterRecord;
     }
 
-
-
-
     async loadFilters(data) {
         const loadedFilters = await super.loadFilters(data);
         if (
