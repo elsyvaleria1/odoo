@@ -84,13 +84,3 @@ class ResCompany(models.Model):
             clipped_to=bool(fiscalyear_to),
         )
         return {"date_from": date_from, "date_to": date_to}
-
-    def _get_unreconciled_statement_lines_redirect_action(
-        self, unreconciled_statement_lines
-    ):
-        return self.env[
-            "account.bank.statement.line"
-        ]._action_view_bank_reconciliation_widget(
-            extra_domain=[("id", "in", unreconciled_statement_lines.ids)],
-            name=self.env._("Unreconciled statements lines"),
-        )

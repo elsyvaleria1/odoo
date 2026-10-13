@@ -1,7 +1,7 @@
 from unittest.mock import patch
 
 from odoo import Command, fields
-from odoo.exceptions import ValidationError
+from odoo.exceptions import RedirectWarning, ValidationError
 from odoo.fields import Domain
 from odoo.tests import Form, tagged
 
@@ -742,3 +742,24 @@ class TestMarinBankRecAuditFixes(TestBankRecWidgetCommon):
 
         self.assertEqual(lines.mapped("is_reconciled"), [True, True])
         self.assertEqual(charges_bill.payment_state, "paid")
+
+
+@tagged("post_install", "-at_install")
+class TestMarinUnreconciledLockRedirect(AccountTestInvoicingCommon):
+    def test_locking_over_an_unreconciled_transaction_opens_bank_matching(self):
+        st_line = self.env["account.bank.statement.line"].create(
+            {
+                "journal_id": self.company_data["default_journal_bank"].id,
+                "date": "2019-01-15",
+                "payment_ref": "unmatched",
+                "amount": 100.0,
+            }
+        )
+        with self.assertRaises(RedirectWarning) as caught:
+            self.env.company.account_config_id.fiscalyear_lock_date = "2019-01-31"
+        action = caught.exception.args[1]
+        widget_action = self.env["ir.actions.act_window"]._get_action_dict_by_xml_id(
+            "account.action_bank_statement_line_transactions_kanban"
+        )
+        self.assertEqual(action["id"], widget_action["id"])
+        self.assertIn(("id", "in", st_line.ids), action["domain"])

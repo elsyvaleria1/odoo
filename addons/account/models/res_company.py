@@ -205,27 +205,12 @@ class ResCompany(models.Model):
     def _get_unreconciled_statement_lines_redirect_action(
         self, unreconciled_statement_lines
     ):
-        action = {
-            "name": self.env._("Unreconciled Transactions"),
-            "type": "ir.actions.act_window",
-            "res_model": "account.bank.statement.line",
-            "context": {"create": False},
-        }
-        if len(unreconciled_statement_lines) == 1:
-            action.update(
-                {
-                    "view_mode": "form",
-                    "res_id": unreconciled_statement_lines.id,
-                }
-            )
-        else:
-            action.update(
-                {
-                    "view_mode": "list,form",
-                    "domain": [("id", "in", unreconciled_statement_lines.ids)],
-                }
-            )
-        return action
+        return self.env[
+            "account.bank.statement.line"
+        ]._action_view_bank_reconciliation_widget(
+            extra_domain=[("id", "in", unreconciled_statement_lines.ids)],
+            name=self.env._("Unreconciled statements lines"),
+        )
 
     def _get_domain_unreconciled_statement_lines(self, last_date) -> list:
         return [
