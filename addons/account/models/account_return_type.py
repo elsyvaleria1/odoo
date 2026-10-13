@@ -4,7 +4,7 @@ from datetime import date
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import date_utils
@@ -283,10 +283,9 @@ class AccountReturnType(models.Model):
         )
 
     def _can_return_exist(self, company, tax_unit=False) -> bool:
-        report_country = self.report_id.country_id
         is_foreign_vat = (
-            bool(report_country)
-            and company.tax_config_id.account_fiscal_country_id != report_country
+            bool(self.country_id)
+            and company.tax_config_id.account_fiscal_country_id != self.country_id
         )
 
         is_tax_unit_main_comp = not tax_unit or tax_unit.main_company_id == company
@@ -582,33 +581,17 @@ class AccountReturnType(models.Model):
             .sudo()
             ._get_company_ids(main_company, tax_unit, self.report_id)
         )
-        date_pointer = date_from
-        periods = []
-        deadline_date = date_pointer
-        type_xml_id = self.get_external_id()[self.id]
         if self.env.context.get("force_periodicity_violation"):
-            periods.append((date_from, date_to))
+            periods = [(date_from, date_to)]
         else:
-            while date_pointer < date_to and (
-                deadline_date <= next_year or bypass_period_check
-            ):
-                period_date_from, period_date_to = self._get_period_boundaries(
-                    main_company, date_pointer
-                )
-                deadline_date = self.env["account.return"]._get_deadline(
-                    main_company, self, type_xml_id, period_date_from, period_date_to
-                )
-                if (
-                    main_company.account_config_id.account_opening_date or date.min
-                ) <= deadline_date <= next_year or bypass_period_check:
-                    periods.append((period_date_from, period_date_to))
-                date_pointer = period_date_to + relativedelta(days=1)
+            periods = self._get_periods_in_window(main_company, date_from, date_to)
+            if not bypass_period_check:
+                periods = self._filter_periods_due(main_company, periods, next_year)
         _debug.pipeline(
             "periods_computed",
             returntype=self,
             company=main_company,
             periods=len(periods),
-            last_deadline=deadline_date,
             bypass_period_check=bypass_period_check,
         )
 
@@ -732,6 +715,67 @@ class AccountReturnType(models.Model):
         account_returns._update_translated_name()
         return account_returns
 
+    def _get_periods_in_window(self, main_company, date_from, date_to) -> list:
+        periods = []
+        date_pointer = date_from
+        while date_pointer < date_to:
+            period = self._get_period_boundaries(main_company, date_pointer)
+            periods.append(period)
+            date_pointer = period[1] + relativedelta(days=1)
+        return periods
+
+    def _filter_periods_due(self, main_company, periods, next_year) -> list:
+        opening_date = main_company.account_config_id.account_opening_date or date.min
+        type_xml_id = self.get_external_id()[self.id]
+
+        def get_deadline(period):
+            return self.env["account.return"]._get_deadline(
+                main_company, self, type_xml_id, *period
+            )
+
+        open_periods = [period for period in periods if period[1] >= opening_date]
+        closed_periods = periods[: len(periods) - len(open_periods)]
+        # Deadlines grow with the period: walking back from the opening date
+        # stops at the first period already due before it, so no deadline is
+        # evaluated for periods the books never cover.
+        due_closed_periods = []
+        for period in reversed(closed_periods):
+            try:
+                deadline = get_deadline(period)
+            except UserError as error:
+                # A country that cannot state the deadline of a period closed
+                # before the opening (its rule is not yet in force) has
+                # nothing due in Odoo for it.
+                _debug.logic(
+                    "closed_period_deadline_unknown",
+                    returntype=self,
+                    company=main_company,
+                    period=period,
+                    error=str(error),
+                )
+                break
+            if deadline < opening_date:
+                break
+            if deadline <= next_year:
+                due_closed_periods.append(period)
+        due_periods = due_closed_periods[::-1]
+        for period in open_periods:
+            deadline = get_deadline(period)
+            if deadline > next_year:
+                break
+            if deadline >= opening_date:
+                due_periods.append(period)
+        _debug.logic(
+            "periods_due_filtered",
+            returntype=self,
+            company=main_company,
+            opening_date=opening_date,
+            closed=len(closed_periods),
+            due_closed=len(due_closed_periods),
+            due=len(due_periods),
+        )
+        return due_periods
+
     def _get_previous_period_boundaries(self, main_company, periods_back=1) -> tuple:
         months_per_period = self._get_periodicity_months_delay(main_company)
         return self._get_period_boundaries(
@@ -753,6 +797,14 @@ class AccountReturnType(models.Model):
         return_type = self.env.ref(return_type_xmlid, raise_if_not_found=False)
         if not return_type:
             _debug.logic("conditional_return_type_missing", xmlid=return_type_xmlid)
+            return
+        if not return_type._can_return_exist(main_company, tax_unit):
+            _debug.logic(
+                "conditional_return_cannot_exist",
+                returntype=return_type,
+                company=main_company,
+                tax_unit=tax_unit,
+            )
             return
 
         if need_domain is not None:

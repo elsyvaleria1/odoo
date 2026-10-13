@@ -5,6 +5,7 @@ from unittest.mock import patch
 from freezegun import freeze_time
 
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests import tagged
 
 from odoo.addons.account.models.account_return_type import MONTHS_PER_PERIOD
@@ -38,7 +39,9 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         def generate_only_the_test_type(
             return_type, country_code, main_company, tax_unit=None
         ):
-            cls.return_type._try_create_returns_for_fiscal_year(main_company, tax_unit)
+            cls.return_type.with_env(
+                return_type.env
+            )._try_create_returns_for_fiscal_year(main_company, tax_unit)
 
         return patch.object(
             cls.registry["account.return.type"],
@@ -413,3 +416,98 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
                 ),
                 date(2024, 2, 12),
             )
+
+    def _create_foreign_vat_branch(self, country):
+        branch = self._setup_branch("Foreign VAT branch", self.root_company)
+        self.env["account.fiscal.position"].create(
+            {
+                "name": "Foreign VAT",
+                "company_id": branch.id,
+                "country_id": country.id,
+                "foreign_vat": "BE0477472701",
+            }
+        )
+        return branch
+
+    def test_a_type_country_over_a_countryless_report_is_foreign_for_a_branch(self):
+        belgium = self.env.ref("base.be")
+        return_type = self._create_conditional_return_type()
+        return_type.country_id = belgium
+        branch = self._create_foreign_vat_branch(belgium)
+        with self._patch_returns_generation():
+            (
+                self.root_company + branch
+            ).account_config_id.account_opening_date = "2023-01-01"
+            self.env["account.return.type"]._generate_conditional_return(
+                "__test__.marin_conditional_return_type", branch, None
+            )
+            branch_returns = self.env["account.return"].search(
+                [("type_id", "=", return_type.id), ("company_id", "=", branch.id)]
+            )
+            self.assertTrue(return_type._can_return_exist(branch))
+            self.assertEqual(len(branch_returns), 1)
+
+            self.env["account.return"].with_context(
+                allowed_company_ids=(branch + self.root_company).ids
+            ).action_refresh_all_returns()
+        self.assertTrue(branch_returns.exists())
+
+    def test_conditional_return_is_not_created_for_a_tax_unit_member(self):
+        return_type = self._create_conditional_return_type()
+        member = self.setup_other_company(name="Tax unit member", vat="US98765432")[
+            "company"
+        ]
+        tax_unit = self.env["account.tax.unit"].create(
+            {
+                "name": "Marin tax unit",
+                "country_id": self.root_company.tax_config_id.account_fiscal_country_id.id,
+                "vat": "US11111111",
+                "company_ids": [Command.set((self.root_company + member).ids)],
+                "main_company_id": self.root_company.id,
+            }
+        )
+        created = []
+        create = self.registry["account.return"].create
+
+        def record_create(account_return, vals_list):
+            records = create(account_return, vals_list)
+            created.extend(records.mapped("company_id"))
+            return records
+
+        with patch.object(self.registry["account.return"], "create", record_create):
+            for company in (member, self.root_company):
+                self.env["account.return.type"]._generate_conditional_return(
+                    "__test__.marin_conditional_return_type", company, tax_unit
+                )
+        self.assertEqual(created, [self.root_company])
+        returns = self.env["account.return"].search([("type_id", "=", return_type.id)])
+        self.assertEqual(returns.tax_unit_id, tax_unit)
+
+    def test_deadlines_are_not_evaluated_for_periods_due_before_the_opening(self):
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        evaluated = []
+
+        def deadline_with_rules_from_2022(
+            account_return, company, return_type, xmlid, date_from, date_to
+        ):
+            if return_type == self.return_type:
+                evaluated.append(date_to)
+            if date_to < date(2022, 1, 1):
+                raise UserError("no version in force")
+            return date_to + timedelta(days=17)
+
+        with (
+            self._patch_returns_generation(),
+            patch.object(
+                self.registry["account.return"],
+                "_evaluate_deadline",
+                deadline_with_rules_from_2022,
+            ),
+        ):
+            self.root_company.account_config_id.account_opening_date = "2023-06-01"
+        returns = self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id)], order="date_from"
+        )
+        self.assertEqual(returns[0].date_from, date(2023, 5, 1))
+        self.assertEqual(returns[-1].date_to, date(2024, 11, 30))
+        self.assertEqual(min(evaluated), date(2023, 4, 30))
