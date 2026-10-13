@@ -286,6 +286,7 @@ for label, text in {
     "limit_memory_soft": f"| `limit_memory_soft` | `{s.limit_memory_soft // MIB} MB` |",
     "limit_time_cpu": f"| `limit_time_cpu` | `{s.limit_time_cpu} s` |",
     "limit_time_real": f"| `limit_time_real` | `{s.limit_time_real} s` |",
+    "limit_time_real_module_operation": f"| `limit_time_real_module_operation` | `{s.limit_time_real_module_operation}` |",
     "limit_time_worker_cron": f"| `limit_time_worker_cron` | `{s.limit_time_worker_cron}` |",
     "db_maxconn": f"| `db_maxconn` | `{s.db_maxconn}` |",
     "_CANCEL_GRACE_S": f"`_CANCEL_GRACE_S` ({int(_worker.Worker._CANCEL_GRACE_S)} s)",

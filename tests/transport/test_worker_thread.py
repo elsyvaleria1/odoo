@@ -119,12 +119,13 @@ class TestForgettingARequest:
         declared = set(WorkerThread.__annotations__)
         outlives_a_request = {"type", "start_time", "exec_context"}
         reset_not_dropped = {"rpc_model_method"}
-        assert declared - outlives_a_request - reset_not_dropped == set(
-            REQUEST_SCOPED_ATTRIBUTES
-        ), (
+        restored_by_its_own_block = {"module_operation"}
+        assert declared - outlives_a_request - reset_not_dropped - (
+            restored_by_its_own_block
+        ) == set(REQUEST_SCOPED_ATTRIBUTES), (
             "every attribute a request thread declares is either dropped when "
-            "the request ends, reset, or one of the three that describe the "
-            "thread itself"
+            "the request ends, reset, restored by the block that set it, or one "
+            "of the three that describe the thread itself"
         )
 
 

@@ -22,6 +22,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.hashing import cache_hash
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.parse_version import parse_version
+from odoo.libs.worker_thread import running_module_operation
 from odoo.logutils import RUNBOT
 from odoo.orm._protocols import IrModuleModuleProtocol
 from odoo.tools.convert import LEGACY_ACCESS_MODULE, IdRef, convert_file
@@ -2356,9 +2357,10 @@ def lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[None
     held[db_name] = 1
     _debug.lifecycle("modules.operations_lock.acquired", db=db_name)
     try:
-        with cr.holding_session_state():
-            yield
-        cr.commit()
+        with running_module_operation():
+            with cr.holding_session_state():
+                yield
+            cr.commit()
     finally:
         held.pop(db_name, None)
         _unlock_module_operations(cr, db_name)

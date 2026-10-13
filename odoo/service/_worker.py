@@ -34,6 +34,7 @@ from odoo.libs.worker_thread import (
     as_worker_thread,
     current_worker_thread,
     describe_thread_work,
+    is_running_module_operation,
 )
 from odoo.modules.registry import Registry
 
@@ -210,23 +211,28 @@ class Worker:
             self.logger.info("RSS memory soft-limit reached: %s bytes.", memory)
             self.stop_for("memory_soft")
 
-        limit_time_cpu = settings.limit_time_cpu
-        if limit_time_cpu > 0:
-            r = resource.getrusage(resource.RUSAGE_SELF)
-            cpu_time = r.ru_utime + r.ru_stime
-            _soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
-            soft = int(cpu_time + limit_time_cpu)
+        if settings.limit_time_cpu > 0:
+            self._arm_cpu_limit(settings.limit_time_cpu)
+
+    def _arm_cpu_limit(self, seconds: float) -> None:
+        r = resource.getrusage(resource.RUSAGE_SELF)
+        cpu_time = r.ru_utime + r.ru_stime
+        _soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
+        if seconds <= 0:
+            soft = hard
+        else:
+            soft = int(cpu_time + seconds)
             if hard != resource.RLIM_INFINITY and soft > hard:
                 soft = hard
-            resource.setrlimit(resource.RLIMIT_CPU, (soft, hard))
-            _debug.perf.count(
-                "worker.cpu_sampled",
-                kind=self.__class__.__name__,
-                pid=self.pid,
-                cpu_s=cpu_time,
-                soft_limit=soft,
-                requests=self.request_count,
-            )
+        resource.setrlimit(resource.RLIMIT_CPU, (soft, hard))
+        _debug.perf.count(
+            "worker.cpu_sampled",
+            kind=self.__class__.__name__,
+            pid=self.pid,
+            cpu_s=cpu_time,
+            soft_limit=soft,
+            requests=self.request_count,
+        )
 
     def stop_for(self, reason: str) -> None:
         self.alive = False
@@ -335,22 +341,47 @@ class Worker:
         worker = as_worker_thread(work)
         cancelled_for: float | None = None
         grace_until = 0.0
+        cpu_lifted = False
         while work.is_alive():
             work.join(timeout=min(self.multi.beat, 1.0))
-            budget = self.watchdog_timeout
+            module_operation = is_running_module_operation(work)
+            if module_operation != cpu_lifted:
+                cpu_lifted = module_operation
+                self._rearm_cpu_limit(module_operation=module_operation)
+            budget = (
+                current().module_operation_real_time_budget
+                if module_operation
+                else self.watchdog_timeout
+            )
             started = getattr(worker, "start_time", None)
-            if not budget or not started:
+            if not started:
                 continue
-            now = time.monotonic()
-            if cancelled_for != started and now - started > budget:
-                cancelled_for = started
-                grace_until = now + self._CANCEL_GRACE_S
-                self._cancel_work_thread_queries(work, now - started, budget)
-            elif cancelled_for == started and now >= grace_until:
-                self.stop_for("stalled")
-                return True
+            if budget:
+                now = time.monotonic()
+                if cancelled_for != started and now - started > budget:
+                    cancelled_for = started
+                    grace_until = now + self._CANCEL_GRACE_S
+                    self._cancel_work_thread_queries(work, now - started, budget)
+                elif cancelled_for == started and now >= grace_until:
+                    self.stop_for("stalled")
+                    return True
+            elif not module_operation:
+                continue
             self.multi.ping_pipe(self.watchdog_pipe)
         return False
+
+    def _rearm_cpu_limit(self, *, module_operation: bool) -> None:
+        settings = current()
+        if settings.limit_time_cpu <= 0:
+            return
+        self._arm_cpu_limit(
+            settings.module_operation_real_time_budget
+            if module_operation
+            else settings.limit_time_cpu
+        )
+        _debug.logic(
+            "worker.cpu_limit_rearmed", pid=self.pid, module_operation=module_operation
+        )
 
     def _cancel_work_thread_queries(
         self, work: threading.Thread, elapsed: float, budget: float

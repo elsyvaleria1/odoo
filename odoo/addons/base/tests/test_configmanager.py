@@ -187,6 +187,7 @@ class TestConfigManager(TransactionCase):
                 "limit_time_real": 120,
                 "limit_time_real_cron": -1,
                 "limit_time_real_job": -1,
+                "limit_time_real_module_operation": 0,
                 "limit_request": 2**16,
             }
         )
@@ -314,6 +315,7 @@ class TestConfigManager(TransactionCase):
                 "limit_time_real": 61,
                 "limit_time_real_cron": 62,
                 "limit_time_real_job": -1,
+                "limit_time_real_module_operation": 0,
                 "limit_request": 100,
             }
         )
@@ -478,6 +480,7 @@ class TestConfigManager(TransactionCase):
                 "limit_time_real": 120,
                 "limit_time_real_cron": -1,
                 "limit_time_real_job": -1,
+                "limit_time_real_module_operation": 0,
                 "limit_request": 1 << 16,
                 "db_maxconn_replica": None,
                 "db_maxconn_gevent": None,
@@ -718,6 +721,7 @@ class TestConfigManager(TransactionCase):
                 "limit_time_real": 61,
                 "limit_time_real_cron": 62,
                 "limit_time_real_job": -1,
+                "limit_time_real_module_operation": 0,
                 "limit_request": 100,
             }
         )
@@ -857,6 +861,7 @@ class TestConfigManager(TransactionCase):
                 "limit_time_real": 61,
                 "limit_time_real_cron": 62,
                 "limit_time_real_job": -1,
+                "limit_time_real_module_operation": 0,
                 "limit_request": 100,
             }
         )

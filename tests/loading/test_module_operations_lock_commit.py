@@ -29,3 +29,23 @@ def test_the_next_holder_sees_what_the_previous_one_wrote(base_db):
         with connection.cursor() as cr:
             cr.execute("DELETE FROM ir_config_parameter WHERE key = %s", (key,))
             cr.commit()
+
+
+@requires_pg
+def test_the_holder_thread_runs_on_the_module_operation_budget(base_db):
+    import threading
+
+    import odoo.db
+    from odoo.libs.worker_thread import is_running_module_operation
+    from odoo.modules.loading import lock_module_operations
+
+    thread = threading.current_thread()
+    with odoo.db.db_connect(base_db).cursor() as cr:
+        with lock_module_operations(cr, base_db):
+            inside = is_running_module_operation(thread)
+        after = is_running_module_operation(thread)
+    assert inside, (
+        "an install started from a request is held to limit_time_real and "
+        "cancelled mid-load, leaving its modules 'to install'"
+    )
+    assert not after

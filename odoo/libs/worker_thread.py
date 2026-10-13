@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+import time
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Protocol, cast
 
@@ -14,6 +15,8 @@ __all__ = [
     "current_worker_thread",
     "describe_thread_work",
     "forget_request",
+    "is_running_module_operation",
+    "running_module_operation",
     "working_on_database",
 ]
 
@@ -28,6 +31,7 @@ class WorkerThread(Protocol):
     perf_t0: float
     cursor_mode: str | None
     rpc_model_method: str
+    module_operation: bool
 
     type: str
 
@@ -88,6 +92,26 @@ def working_on_database(db_name: str) -> Iterator[None]:
             worker.dbname = previous
         elif hasattr(worker, "dbname"):
             del worker.dbname
+
+
+def is_running_module_operation(thread: threading.Thread) -> bool:
+    return bool(getattr(thread, "module_operation", False))
+
+
+@contextmanager
+def running_module_operation() -> Iterator[None]:
+    worker = current_worker_thread()
+    outer = is_running_module_operation(threading.current_thread())
+    worker.module_operation = True
+    try:
+        yield
+    finally:
+        worker.module_operation = outer
+        if not outer and getattr(worker, "start_time", None):
+            # What the request does after the operation is held to
+            # limit_time_real again, counted from here, not from a start the
+            # operation's own budget has long overrun.
+            worker.start_time = time.monotonic()
 
 
 def describe_thread_work(thread: threading.Thread) -> str:

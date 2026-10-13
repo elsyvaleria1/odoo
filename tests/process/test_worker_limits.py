@@ -7,7 +7,8 @@ server-wide probe module that answers before dispatch, so no database is
 loaded: `/probe/slow/N` sleeps N seconds in Python, `/probe/burn/N` burns N
 seconds of CPU, `/probe/query/N` runs `pg_sleep(N)` on a checked-out
 connection -- the one shape the budget monitor can cancel -- and
-`/probe/hold/N` keeps N MiB allocated so the soft memory limit trips.
+`/probe/hold/N` keeps N MiB allocated so the soft memory limit trips.  An
+`op-` prefix (`/probe/op-slow/N`) runs the same work as a module operation.
 """
 
 import http.client
@@ -26,6 +27,7 @@ import time
 
 import odoo.db
 from odoo.http import Application
+from odoo.libs.worker_thread import running_module_operation
 
 _original = Application.__call__
 _held = []
@@ -43,6 +45,9 @@ def _probe(self, environ, start_response):
         return _original(self, environ, start_response)
     kind, _, arg = path[len("/probe/"):].partition("/")
     seconds = float(arg or 1)
+    if kind.startswith("op-"):
+        with running_module_operation():
+            return _probe(self, {"PATH_INFO": f"/probe/{kind[3:]}/{arg}"}, start_response)
     if kind == "slow":
         time.sleep(seconds)
     elif kind == "burn":
@@ -165,6 +170,21 @@ class TestPreforkLimits:
             "second verdict racing the worker's own"
         )
 
+    def test_a_module_operation_outlives_both_budgets(self, probe):
+        srv = probe("--workers", "1", "--limit-time-real", "4", "--limit-time-cpu", "2")
+        assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
+        pid = srv.http_workers()[0].pid
+        assert _get(srv.port, "/probe/op-burn/5")[0] == 200
+        status, seconds = _get(srv.port, "/probe/op-slow/10")
+        assert status == 200 and seconds >= 10, (status, seconds)
+        assert srv.http_workers()[0].pid == pid, "the worker itself survived"
+        text = srv.log_text()
+        assert "timeout after" not in text
+        assert "CPU time limit" not in text
+        assert "over its" not in text
+        status, _seconds = _get(srv.port, "/probe/burn/5")
+        assert status is None, "a request that is not an operation keeps its CPU limit"
+
     def test_memory_soft_limit_recycles_cleanly(self, probe):
         srv = probe("--workers", "1", "--limit-memory-soft", str(256 * 1024 * 1024))
         assert srv.wait_until(lambda: len(srv.http_workers()) == 1, timeout=60)
@@ -213,6 +233,29 @@ class TestThreadedLimits:
         assert status is None and seconds < 20, (status, seconds)
         assert srv.wait_until(lambda: srv.log_text().count("Odoo version") == 2, 60)
         assert "Initiating server reload" in srv.log_text()
+
+    def test_a_module_operation_outlives_limit_time_real(self, probe):
+        srv = probe("--workers", "0", "--limit-time-real", "3")
+        operation, out = _in_background(srv.port, "/probe/op-slow/14")
+        time.sleep(1)
+        status, seconds = _get(srv.port, "/probe/query/30")
+        assert status == 500 and seconds < 12, (status, seconds)
+        operation.join(60)
+        assert out["status"] == 200 and out["seconds"] >= 14, out
+        assert srv.log_text().count("Odoo version") == 1, "no reload"
+
+    def test_a_stalled_request_waits_for_the_operation_to_reload(self, probe):
+        srv = probe("--workers", "0", "--limit-time-real", "3")
+        operation, out = _in_background(srv.port, "/probe/op-slow/15")
+        time.sleep(1)
+        status, seconds = _get(srv.port, "/probe/slow/50")
+        assert status is None and seconds < 35, (status, seconds)
+        operation.join(60)
+        assert out["status"] == 200 and out["seconds"] >= 15, (
+            "the reload for the stalled request killed the module operation",
+            out,
+        )
+        assert srv.wait_until(lambda: srv.log_text().count("Odoo version") == 2, 60)
 
     def test_stop_drains_an_in_flight_request(self, probe):
         srv = probe("--workers", "0")

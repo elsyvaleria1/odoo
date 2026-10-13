@@ -84,6 +84,7 @@ class ServerSettings:
     limit_time_real: int = 120
     limit_time_real_cron: int = INHERIT_FROM_CRON
     limit_time_real_job: int = INHERIT_FROM_CRON
+    limit_time_real_module_operation: int = 0
     limit_time_cpu: int = 60
     limit_time_worker_cron: int = 0
     limit_time_worker_job: int = INHERIT_FROM_CRON
@@ -123,6 +124,9 @@ class ServerSettings:
             limit_time_real=int(config["limit_time_real"]),
             limit_time_real_cron=int(config["limit_time_real_cron"]),
             limit_time_real_job=int(config["limit_time_real_job"]),
+            limit_time_real_module_operation=int(
+                config["limit_time_real_module_operation"]
+            ),
             limit_time_cpu=int(config["limit_time_cpu"]),
             limit_time_worker_cron=int(config["limit_time_worker_cron"]),
             limit_time_worker_job=int(config["limit_time_worker_job"]),
@@ -168,7 +172,20 @@ class ServerSettings:
             0,
         )
 
-    def get_real_time_budget(self, kind: str) -> float:
+    @property
+    def module_operation_real_time_budget(self) -> float:
+        return max(
+            _get_first_owned_limit(
+                self.limit_time_real_module_operation, self.limit_time_real
+            ),
+            0,
+        )
+
+    def get_real_time_budget(
+        self, kind: str, *, module_operation: bool = False
+    ) -> float:
+        if module_operation:
+            return self.module_operation_real_time_budget
         if kind == "job":
             return self.job_real_time_budget
         if kind in ("cron", "stream"):

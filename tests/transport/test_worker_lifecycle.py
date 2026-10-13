@@ -380,6 +380,7 @@ class TestTheWorkerCancelsItsOwnOverrun:
         thread = MagicMock()
         thread.name = "Worker WorkerHTTP (4242) workthread"
         thread.start_time = None
+        thread.module_operation = False
         polls = {"n": 0}
 
         def is_alive():

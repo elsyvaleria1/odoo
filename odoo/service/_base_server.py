@@ -153,11 +153,12 @@ class CommonServer:
     def log_ready(self) -> None:
         settings = self.settings
         budgets = ", ".join(
-            f"{label} {int(settings.get_real_time_budget(kind))}s"
-            for label, kind in (
-                ("limit_time_real", "http"),
-                ("cron", "cron"),
-                ("job", "job"),
+            f"{label} {int(budget)}s"
+            for label, budget in (
+                ("limit_time_real", settings.get_real_time_budget("http")),
+                ("cron", settings.get_real_time_budget("cron")),
+                ("job", settings.get_real_time_budget("job")),
+                ("module operation", settings.module_operation_real_time_budget),
             )
         )
         self.logger.info(

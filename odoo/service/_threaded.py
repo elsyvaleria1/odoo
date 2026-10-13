@@ -6,6 +6,7 @@ import os
 import signal
 import threading
 import time
+from collections.abc import Iterator
 from typing import Any, override
 
 import psutil
@@ -18,6 +19,7 @@ from odoo.libs.worker_thread import (
     as_worker_thread,
     current_worker_thread,
     describe_thread_work,
+    is_running_module_operation,
 )
 from odoo.modules.registry import Registry
 from odoo.tools.cache import log_ormcache_stats
@@ -207,7 +209,9 @@ class ThreadedServer(CommonServer):
             elapsed = now - start_time
             watched += 1
             longest_s = max(longest_s, elapsed)
-            budget = settings.get_real_time_budget(thread_type)
+            budget = settings.get_real_time_budget(
+                thread_type, module_operation=is_running_module_operation(thread)
+            )
             if budget <= 0 or elapsed <= budget:
                 continue
             doing = describe_thread_work(thread)
@@ -295,6 +299,38 @@ class ThreadedServer(CommonServer):
             self.limit_reached_time = self.limit_reached_time or now
         else:
             self.limit_reached_time = None
+
+    @staticmethod
+    def _is_reload_held_for_module_operation() -> bool:
+        return any(is_running_module_operation(t) for t in threading.enumerate())
+
+    @contextlib.contextmanager
+    def _watching_limits(self) -> Iterator[None]:
+        done = threading.Event()
+
+        def watch() -> None:
+            while not done.wait(LIMIT_MONITOR_INTERVAL_S):
+                try:
+                    self.check_limits()
+                except Exception as exc:
+                    self.logger.warning(
+                        "Limit check failed while preloading; retrying",
+                        exc_info=True,
+                    )
+                    _debug.logic(
+                        "server.threaded.preload_watch_failed",
+                        error=type(exc).__name__,
+                    )
+
+        watcher = threading.Thread(
+            target=watch, daemon=True, name="odoo.service.limits.preload"
+        )
+        watcher.start()
+        try:
+            yield
+        finally:
+            done.set()
+            watcher.join()
 
     @staticmethod
     def _overrun_work_finished(thread: threading.Thread, started: float | None) -> bool:
@@ -644,7 +680,12 @@ class ThreadedServer(CommonServer):
         self._stop_after_init = stop
         try:
             self.start(stop=stop)
-            rc = preload_registries(preload)
+            with (
+                contextlib.nullcontext()
+                if stop or self.httpd is None
+                else self._watching_limits()
+            ):
+                rc = preload_registries(preload)
             _debug.pipeline(
                 "server.threaded.preloaded",
                 rc=rc,
@@ -669,7 +710,18 @@ class ThreadedServer(CommonServer):
             while self.quit_signals_received == 0:
                 watchdog.beat()
                 self.check_limits()
-                if self.limit_reached_time:
+                if (
+                    self.limit_reached_time
+                    and self._is_reload_held_for_module_operation()
+                ):
+                    _debug.logic(
+                        "server.threaded.reload_held",
+                        reason="module_operation",
+                        since_s=time.monotonic() - self.limit_reached_time,
+                        threads=len(self.limits_reached_threads),
+                    )
+                    time.sleep(watchdog.bound(LIMIT_MONITOR_INTERVAL_S))
+                elif self.limit_reached_time:
                     has_other_valid_requests = self._has_other_http_requests()
                     if (
                         not has_other_valid_requests

@@ -149,6 +149,7 @@ Defaults, from `odoo/tools/config.py`:
 | `limit_time_real` | `120 s` | wall time per request |
 | `limit_time_real_cron` | `-1` | wall time per cron job; `-1` defers to `limit_time_real` |
 | `limit_time_real_job` | `-1` | wall time per background job; `-1` defers to `limit_time_real_cron`, which defers in turn |
+| `limit_time_real_module_operation` | `0` | wall time of a request, cron or job while it holds the module-operations lock (the Apps install/upgrade/uninstall buttons, the scheduled-upgrade wizard), in place of the budget above; `0` is no limit, `-1` defers to `limit_time_real`. In prefork the worker's CPU limit is lifted to the same budget for the operation |
 | `limit_time_worker_cron` | `0` | how long a cron thread or worker lives before it is restarted; `0` disables |
 | `limit_time_worker_job` | `-1` | the same for a job worker; `-1` defers to `limit_time_worker_cron` |
 | `module_operation_job_wait` | `30 s` | how long a module install, upgrade or removal — `-i`/`-u`/`--reinit`, `odoo-bin module`, the Apps buttons — waits for the background jobs already running in its database; none starts meanwhile, and past it the operation is refused naming them (the CLI exits non-zero) |
@@ -221,6 +222,22 @@ Fed, the SIGKILL is reached only when the monitor stops feeding: the grace ran
 out and the worker exited on its own, or the process is wedged. A request
 inside its budget was never at risk either way, because a heartbeat already
 queued when the work began is read during it.
+
+**A module operation runs on its own budget.** `lock_module_operations`
+(`odoo/modules/loading.py`) marks the thread holding it
+(`odoo.libs.worker_thread.running_module_operation`), and both supervisors read
+`limit_time_real_module_operation` for a marked thread instead of the budget of
+its kind: an install started from the Apps menu has committed its modules as
+`to install` before it builds the registry, so interrupting it at
+`limit_time_real` leaves them pending and the database partially updated. The
+prefork monitor keeps feeding the master throughout, budget or none, and lifts
+`RLIMIT_CPU` for the operation, re-arming `limit_time_cpu` when it ends. The
+threaded server does not reload while a marked thread runs, whoever else is
+over its limit (a request waiting on the registry lock the install holds is
+the usual one): the reload waits for the operation, then goes ahead. When the
+operation ends, what is left of the request is timed afresh against its own
+budget. The threaded server also checks limits while it preloads registries,
+from the moment it serves HTTP, rather than only once preloading is over.
 
 Keep `limit_time_real` at or above `SUPERVISION_BEAT_S` (4 s): an idle prefork
 worker pings the master once per beat, so a smaller budget times out idle

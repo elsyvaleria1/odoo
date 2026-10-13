@@ -1593,6 +1593,18 @@ class configmanager:
             type="int",
         )
         group.add_option(
+            "--limit-time-real-module-operation",
+            dest="limit_time_real_module_operation",
+            my_default=0,
+            help="Maximum allowed Real time for a request, cron or job while it "
+            "installs, upgrades or removes modules (the Apps buttons, the "
+            "scheduled-upgrade wizard), in place of --limit-time-real, which "
+            "would interrupt the operation and leave its modules pending; in "
+            "prefork mode the operation is not bound by --limit-time-cpu either. "
+            "Set to 0 for no limit, -1 to follow --limit-time-real. (default: 0)",
+            type="int",
+        )
+        group.add_option(
             PosixOnlyOption(
                 "--limit-request",
                 dest="limit_request",
