@@ -1,12 +1,3 @@
-"""The cron listener protocol, pinned against a real server and a real PostgreSQL.
-
-The unit suites mock this path end to end, and the one regression that mattered
-(75de99404cc) sailed through them; what a refactor of the listeners must not
-break is observable only here: a booted server LISTENs, a NOTIFY wakes it, a
-killed backend is reconnected and the re-armed listener still hears the next
-NOTIFY. Both loops — the threaded cron thread and the prefork WorkerCron — are
-pinned, because they are two implementations of one protocol.
-"""
 
 import os
 import time

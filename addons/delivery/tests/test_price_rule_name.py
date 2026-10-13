@@ -1,4 +1,3 @@
-"""Tests for the human-readable delivery price-rule label."""
 
 from odoo.tests import TransactionCase, tagged
 

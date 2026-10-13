@@ -1,12 +1,3 @@
-"""Valence arithmetic over a connection table.
-
-This is the authority for every stored number: the editor's live panel mirrors
-these rules in JavaScript for immediate feedback, and both are asserted against
-the same fixtures so the two cannot drift silently.
-
-Aromaticity is perceived by Hückel's rule on small rings; nothing here perceives
-stereochemistry, and nothing here is a substitute for a chemistry toolkit.
-"""
 
 WEIGHTS = {
     "H": 1.008,

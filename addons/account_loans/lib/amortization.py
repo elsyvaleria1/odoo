@@ -1,20 +1,3 @@
-"""Amortization schedule generation.
-
-The day-count conventions are derived from pyloan (MIT licence,
-https://github.com/sudo-dakix/pyloan, Copyright (c) 2021 Da.Ki.X); the schedule
-generator itself is ours. Three behaviours differ deliberately from pyloan:
-
-* invalid input raises :class:`ScheduleError` instead of printing to stdout and
-  leaving the object half-constructed;
-* the annual rate keeps its full precision instead of being quantized to four
-  decimal places of the fraction, which silently turned 4.567% into 4.57%;
-* the closing payment absorbs the accumulated rounding, so the principals always
-  sum to the amount borrowed and the schedule ends at a zero balance.
-
-Dates are :class:`datetime.date`. pyloan returned naive midnight datetimes, which
-``format_date`` reinterprets in the user's timezone and renders a day early for
-every negative UTC offset.
-"""
 
 import calendar
 import datetime

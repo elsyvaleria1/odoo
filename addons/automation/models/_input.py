@@ -1,8 +1,3 @@
-"""The input dialog's fields: built from the step that waits, not declared.
-
-Not a model. The run's dialog and a step's dialog both start from a form whose
-`input_fields` group is empty, and fill it in from the context's waiting step.
-"""
 
 from lxml import etree
 

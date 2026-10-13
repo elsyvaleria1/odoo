@@ -1,4 +1,3 @@
-"""Tests for the IAP payload -> Odoo records mapping helpers."""
 
 from odoo.tests import TransactionCase, tagged
 

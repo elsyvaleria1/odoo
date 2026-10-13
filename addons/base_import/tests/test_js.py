@@ -1,16 +1,3 @@
-"""CI entry point for the ``base_import`` addon's HOOT (JS unit) suite.
-
-The addon bundles ``static/tests/**/*.test.js`` into ``web.assets_unit_tests``
-but declared no runner, so nothing ever executed those suites: ``web``'s own
-``WebSuite`` only selects ``@web/...`` prefixes, and its coverage walk only
-inspects ``web``'s own test files. The import action and import records suites
-were therefore dead weight in the bundle.
-
-Mirrors ``pos_loyalty/tests/test_js.py``: the runner machinery (hash, ``&id=``
-filter, ``_run_hoot`` warm navigation) is reused from ``web`` via ``HOOTCommon``,
-imported through the module object so Odoo's unittest loader does not collect
-``web``'s base meta-tests a second time under ``base_import``.
-"""
 
 from pathlib import Path
 

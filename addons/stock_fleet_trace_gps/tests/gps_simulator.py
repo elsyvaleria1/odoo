@@ -1,9 +1,3 @@
-"""A vehicle driving a route, reported the way a Teltonika tracker reports it.
-
-Used by the tests and to rehearse trips on a local database: every reading goes
-through the same processor as the webhook (validation, odometer, fuel deltas),
-only without the HTTP admission of a real device.
-"""
 
 import math
 from datetime import timedelta

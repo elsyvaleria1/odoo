@@ -1,29 +1,3 @@
-"""CI entry point for the ``test_mail`` addon's HOOT (JS unit) suites.
-
-``test_mail`` bundles its JS tests into ``web.assets_unit_tests``
-(``__manifest__.py``) but no ``test_js.py`` ever selected them, so these
-suites never ran as a gated CI check — including the only tests of the
-**activity view** (controller/renderer/compiler), chatter-on-test-models,
-tracking values and the activity systray. This class wires them in,
-mirroring ``mail/tests/test_js.py``: the runner machinery is reused from
-``web`` via ``HOOTCommon`` (imported through the module object so Odoo's
-unittest loader does not collect ``web``'s base meta-tests a second time),
-and a coverage walk fails the build the moment a new ``static/tests`` file
-is added without being selected by a method.
-
-**Both presets are wired.** Desktop alone was not enough: HOOT selects by
-tag, so ``activity_mobile.test.js`` — whose every test carries
-``describe.current.tags("mobile")`` — contributed *zero* tests to the
-desktop pass and ran in no lane at all. Being named by
-``ACTIVITY_SUITES`` did not make it execute, which is why
-``test_suite_filters_cover_every_test_file`` reported it covered while it
-was dark: that walk proves a file is *selected*, not that a preset ever
-runs it. ``MobileTestMailSuite`` below closes the second half, mirroring
-``mail``'s ``MobileMailSuite``.
-
-Fast local runs use the warm-server runner instead:
-``tooling/hoot/hoot --db hoot_test_mail '@test_mail/activity'``.
-"""
 
 from pathlib import Path
 

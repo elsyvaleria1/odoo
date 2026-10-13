@@ -1,9 +1,3 @@
-"""`team.team`'s computed fields must declare what they read.
-
-`dashboard_button_name` reads `use_opportunities` from an override that carried
-no `@api.depends` at all, and `lead_assignment_max` sums an active-filtered o2m whose
-membership changes when a team is archived.
-"""
 
 from odoo.tests import TransactionCase, tagged
 

@@ -1,9 +1,3 @@
-"""Tests for the parts of the module that are not the parser.
-
-The nomenclature/company wiring and the events mixin had no coverage at all,
-which is how a nomenclature could be deleted out from under the company using
-it without anything noticing.
-"""
 
 from odoo.exceptions import UserError
 from odoo.tests import common

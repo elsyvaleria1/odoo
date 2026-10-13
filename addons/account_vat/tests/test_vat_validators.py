@@ -1,4 +1,3 @@
-"""Tests for the country-specific VAT validators and dispatch."""
 
 from odoo.tests import TransactionCase, tagged
 

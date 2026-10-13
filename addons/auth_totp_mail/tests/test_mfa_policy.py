@@ -1,4 +1,3 @@
-"""Tests for the mail-2FA enforcement policy on users."""
 
 from odoo.tests import TransactionCase, tagged
 

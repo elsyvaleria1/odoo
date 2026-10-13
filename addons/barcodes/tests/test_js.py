@@ -1,15 +1,3 @@
-"""CI entry point for the ``barcodes`` addon's HOOT (JS unit) suite.
-
-The addon bundles ``static/tests/*.test.js`` into ``web.assets_unit_tests``
-but declared no runner, so nothing selected those suites: ``_run_hoot`` drives
-HOOT with ``&id=`` filters built from explicit suite names, and a file no filter
-names simply never runs.
-
-Mirrors ``pos_loyalty/tests/test_js.py``: the runner machinery (hash, ``&id=``
-filter, ``_run_hoot`` warm navigation) is reused from ``web`` via ``HOOTCommon``,
-imported through the module object so Odoo's unittest loader does not collect
-``web``'s base meta-tests a second time under ``barcodes``.
-"""
 
 from pathlib import Path
 

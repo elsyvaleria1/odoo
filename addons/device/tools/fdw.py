@@ -1,13 +1,3 @@
-"""Schema management for a log table that lives in another database.
-
-A data-log table may be a ``postgres_fdw`` foreign table pointing at a
-dedicated database. The ORM then cannot manage its schema (``ALTER FOREIGN
-TABLE`` does not create indexes or constraints) and Postgres cannot enforce
-the foreign keys that tie the log to ``device_device`` and ``res_company``.
-This module replaces both: it mirrors the model's columns and indexes onto the
-remote table through ``dblink``, and installs row triggers on the local side
-that do what the foreign keys used to do.
-"""
 
 import logging
 import re

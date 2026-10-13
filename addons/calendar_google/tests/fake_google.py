@@ -1,5 +1,3 @@
-"""Google Calendar, as the contract suite speaks to it: one item per id, which
-every invited calendar shows."""
 
 import itertools
 import re

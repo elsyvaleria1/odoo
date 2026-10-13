@@ -1,12 +1,3 @@
-"""Cache identity for the `/doc` documents.
-
-Two things are named here, and they have to agree: the ETag a client caches
-under, and the attachment name the server stores the index under. Both are
-derived from the same *generation* -- the state of the database that the
-document's content depends on -- which is what lets the garbage collector
-recognise, with a domain and no Python filtering, every index that can no
-longer be served.
-"""
 
 import hashlib
 

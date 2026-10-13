@@ -1,5 +1,3 @@
-"""A provider the engine suite drives: calendars held in memory, with ids per
-calendar (as Outlook gives them) or one id in every calendar (as Google)."""
 
 import itertools
 from datetime import datetime

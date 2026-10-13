@@ -1,4 +1,3 @@
-"""Regression tests for the round-3 documents audit (controllers + wizards)."""
 
 import zipfile
 from datetime import datetime, time, timedelta

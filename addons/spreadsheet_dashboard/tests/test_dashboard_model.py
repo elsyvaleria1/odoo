@@ -1,4 +1,3 @@
-"""Tests for the spreadsheet.dashboard model helpers."""
 
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads

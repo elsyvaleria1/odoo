@@ -1,10 +1,3 @@
-"""SEO metadata, alt text, broken links and field translations.
-
-Mixed into `Website` in `main.py` rather than registered as a controller of its
-own: every method stays on that class, so an addon overriding one -- and
-`website_sale`, `website_appointment` and `website_helpdesk` each override one --
-keeps working unchanged, and so does every `self.` call between them.
-"""
 
 import logging
 import re

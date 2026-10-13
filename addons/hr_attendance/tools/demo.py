@@ -1,13 +1,3 @@
-"""The sample attendance dataset the Attendances app offers on a fresh database.
-
-A month of plausible days for three demo employees, one per check-in mode. It
-lives here rather than on `hr.attendance` because none of it is part of what an
-attendance is: seven methods of randomised fixture-building on the model made
-its own contract harder to read, and gave downstream modules seven override
-points that mean nothing outside a demonstration.
-
-`hr.attendance._load_demo_data` is the one entry point.
-"""
 
 from calendar import monthrange
 from datetime import timedelta

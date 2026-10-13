@@ -1,14 +1,3 @@
-"""Comprehensive tests for time-based automation triggers.
-
-Tests cover:
-- on_time (custom date field)
-- on_time_created (automatic create_date)
-- on_time_updated (automatic write_date)
-- Cron processing
-- Domain filtering
-- Last run tracking
-- Edge cases
-"""
 
 import datetime
 import logging

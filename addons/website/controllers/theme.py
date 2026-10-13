@@ -1,10 +1,3 @@
-"""Theme customisation, font upload and the assets editor.
-
-Mixed into `Website` in `main.py` rather than registered as a controller of its
-own: every method stays on that class, so `website_sale`'s override of
-`theme_customize_data` keeps working unchanged, and so does every `self.` call
-between these methods and the ones that stayed.
-"""
 
 import base64
 import binascii

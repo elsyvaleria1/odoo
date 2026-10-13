@@ -1,17 +1,3 @@
-"""Concrete consumer of ``mixin.resource.scheduling`` used by the tests.
-
-The scheduling mixin only provides the reservation linkage and lifecycle; the
-scheduling columns themselves live on the consumer.  Exercising it therefore
-needs a real consumer model, and this addon is where such a model belongs.
-
-It used to be declared inline in ``resource``'s own test files and pushed into
-the registry with ``add_model_to_registry`` at ``setUpClass`` time.  That leaked: the
-class stayed in the registry for the rest of the process while its table was
-rolled back with the test transaction, so any later ORM trigger that scans
-models with a ``resource_id`` field hit ``UndefinedTable`` — which is how three
-unrelated ``hr_holidays`` accrual tests started failing whenever they ran in the
-same session as the resource suite.
-"""
 
 from odoo import api, fields, models
 

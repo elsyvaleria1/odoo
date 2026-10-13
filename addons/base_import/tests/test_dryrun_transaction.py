@@ -1,31 +1,3 @@
-"""What a dry-run import must leave behind: nothing.
-
-``execute_import(dryrun=True)`` wraps the whole load in a savepoint and rolls it
-back, so a user can check a mapping without touching their data. That promise
-only holds if the rollback restores the ORM as well as the SQL, and nothing
-checked that it did.
-
-It did not. ``execute_import`` opened its savepoint with ``flush=False``, which
-is exactly the case our own ``BaseCursor.savepoint`` docstring warns about: a
-non-flushing savepoint undoes the SQL and leaves ORM state alone, so the caller
-"must invalidate what it touched itself on the rollback path, or stale ORM state
-can survive the SQL rollback". ``base_import`` never did -- there is not one
-``invalidate`` call in the module. Two things went wrong, and the first is worse
-than the feature it protects:
-
-* **The caller's own pending write disappeared.** Anything written but not yet
-  flushed before the import -- an ordinary ``record.field = value`` earlier in
-  the same request -- was still in the ``towrite`` buffer when ``load()`` flushed
-  it, which put the ``UPDATE`` *inside* the dry-run's savepoint. The rollback
-  then took it along. The user edited a record, ran a test import, and the edit
-  was silently gone.
-* **The cache kept values the database had discarded.** A record the dry-run
-  itself updated stayed in ``env.cache`` holding the rolled-back value for the
-  rest of the transaction.
-
-Both are asserted below against ``res.partner`` because ``base_import`` has no
-models of its own; the behaviour is the transaction's, not the model's.
-"""
 
 from odoo.tests.common import TransactionCase, tagged
 

@@ -1,4 +1,3 @@
-"""Tests for the phone parsing/formatting helpers (phonenumbers-backed)."""
 
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, tagged

@@ -1,17 +1,3 @@
-"""Spell every argument of a field declaration as its keyword, in
-FIELD_ATTRIBUTE_ORDER, one per line once there are two.
-
-    python _sort_field_attributes.py [--dry-run] [--ruff <ruff>] <root>...
-
-Invariant, checked per file before anything is written: the module's AST with
-every field call normalised (positionals mapped to their keywords, keywords
-sorted by name) is identical before and after. Only the spelling and the order
-of the arguments may change, and only in a declaration the checker has a
-field-positional-argument or field-attribute-order finding for. A comment on
-the line of the call stays on the line of the call. A declaration the fixer
-cannot carry -- a comment after the last argument, a `*args` or `**kwargs` --
-is reported.
-"""
 
 import argparse
 import ast

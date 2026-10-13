@@ -1,4 +1,3 @@
-"""Operating system-related utilities for the IoT"""
 
 import subprocess
 from platform import release, system

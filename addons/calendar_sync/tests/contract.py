@@ -1,9 +1,3 @@
-"""What every adapter answers the same, held against the provider's own API.
-
-An adapter's `tests/test_contract.py` mixes `CalendarSyncContract` into an
-HttpCase and supplies `fake_server()`: a `FakeCalendarServer` answering the
-provider's service at its `_request`, so the adapter's transport and its
-conversions run as they do against the provider."""
 
 from datetime import datetime, timedelta
 from unittest.mock import patch

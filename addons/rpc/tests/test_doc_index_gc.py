@@ -1,4 +1,3 @@
-"""Tests for the /doc index-cache garbage collector."""
 
 import base64
 

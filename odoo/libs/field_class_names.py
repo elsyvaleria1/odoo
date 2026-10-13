@@ -1,6 +1,3 @@
-"""The naming convention for field sensitivity classes, shared by the ORM
-that compiles ``groups=`` into an anonymous class and by ``ir.access`` that
-reads a row's class. Odoo-agnostic: it manipulates names only."""
 
 from __future__ import annotations
 

@@ -1,17 +1,3 @@
-"""CI entry point for the ``marketing_automation`` addon's HOOT (JS unit) suite.
-
-Mirrors ``pos_enterprise/tests/test_js.py``: the runner machinery (hash,
-``&id=`` filter, ``_run_hoot`` warm navigation) is reused from ``web`` via
-``HOOTCommon``, imported through the module object so Odoo's unittest loader
-does not collect ``web``'s base meta-tests a second time under
-``marketing_automation``.
-
-Without this file the ``static/tests/*.test.js`` bundled into
-``web.assets_unit_tests`` by the manifest were selected by no suite filter and
-therefore never ran -- the exact failure mode ``web/tests/test_js.py`` documents.
-A stale ``.fa-trash`` selector left behind by the FontAwesome upgrade
-(``fa fa-trash`` -> ``fa-solid fa-trash-can``) survived unnoticed that way.
-"""
 
 from pathlib import Path
 

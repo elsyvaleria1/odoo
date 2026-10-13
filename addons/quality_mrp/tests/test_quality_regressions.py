@@ -1,7 +1,3 @@
-"""Regressions found while auditing the quality ring.
-
-Checked against the code before the fix: each of these fails there.
-"""
 
 from odoo import Command
 from odoo.tests import tagged

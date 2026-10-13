@@ -1,14 +1,3 @@
-"""
-Demo Data for Base Automation Testing
-
-This module creates example automations that showcase various trigger types and patterns.
-All demos use test models (automation.lead.test, test_automation.project) to
-avoid dependencies on business modules.
-
-Usage:
-    Install test_automation module with demo data enabled:
-    odoo-bin -d your_db -i test_automation --load-language=en_US
-"""
 
 import logging
 

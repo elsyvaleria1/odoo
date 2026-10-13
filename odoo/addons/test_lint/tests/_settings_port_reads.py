@@ -1,22 +1,3 @@
-"""Read a system setting through the registry's settings port, not an elevated
-ir.config_parameter.
-
-    X["ir.config_parameter"].sudo().get_param(key[, default])
-    X["ir.config_parameter"].sudo().get_param_int / _float / _bool(key, default)
-
-becomes ``X.registry.settings.get / get_int / get_float / get_bool(X, key,
-default)``, which reads the same value through the same model method and hands
-the caller no elevated recordset (coding_guidelines.rst §10.9). A bare
-``get_param(key)`` answers False when the key is absent, the port None: the
-rewrite passes False explicitly. Only an environment spelled as a name or an
-attribute chain is rewritten, since the call names it twice.
-
-A file is written only when the rewritten module parses to the tree its
-original gives with each call replaced by the port call, and is then laid out
-by ``ruff format`` when it was formatted before.
-
-    python _settings_port_reads.py [--dry-run] [--skip PATH ...] <root>...
-"""
 
 import argparse
 import ast

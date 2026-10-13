@@ -1,11 +1,3 @@
-"""A TypeScript client rendered from an OpenAPI document.
-
-The point is not to compete with a generator: it is that the document says
-enough to write a client from, and that this stays true. What the document
-states -- the path and its parameters, the body's schema, the response's,
-and which door each operation is -- becomes a typed method; what it does not
-state becomes `unknown`, which is honest and which a caller must narrow.
-"""
 
 from __future__ import annotations
 

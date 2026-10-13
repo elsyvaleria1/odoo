@@ -1,11 +1,3 @@
-"""Maps for printed documents.
-
-WeasyPrint runs no JavaScript, so a report cannot embed the OpenLayers map.
-A static map is an SVG instead: the geometries as vector paths, framed to fit
-the page box, over the basemap tiles that frame covers, embedded as PNG. The
-tiles come from one XYZ server (``geoengine.static_map_tile_url``) and are kept
-on disk, so a report printed again reads none; a map whose tiles cannot be
-fetched is still drawn, without a basemap."""
 
 import base64
 import hashlib

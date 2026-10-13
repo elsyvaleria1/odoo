@@ -1,4 +1,3 @@
-"""The two rating mixins ask different questions and no longer share an answer."""
 
 from odoo.tests import TransactionCase, tagged
 

@@ -1,11 +1,3 @@
-"""The executors of `error_incident_autofix`: diagnose an incident, fix it.
-
-A diagnosis clones the repository it names with a read-only token and runs the
-agent with the read tools alone; a fix is `change.apply` with the incident and
-its diagnosis as the agent's data. What the incident says is data, never
-instructions: it reaches the agent between fence lines drawn fresh for every
-run.
-"""
 
 from __future__ import annotations
 

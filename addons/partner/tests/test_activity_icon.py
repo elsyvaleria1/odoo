@@ -1,4 +1,3 @@
-"""Tests for the contacts systray activity-icon override."""
 
 from odoo import modules
 from odoo.tests import TransactionCase, tagged

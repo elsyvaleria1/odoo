@@ -1,8 +1,3 @@
-"""
-This module is used to provide an azure.storage.blob.generate_blob_sas
-compatible function for generating sas URLs for Azure Storage without
-importing the azure.storage.blob library.
-"""
 
 import base64
 import hashlib

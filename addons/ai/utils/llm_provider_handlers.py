@@ -1,16 +1,3 @@
-"""Per-provider wire format, separated from the request loop.
-
-``LLMApiService`` owns what is the same for every provider: the successive-call
-loop, tool execution, the call limits, logging. What differs is the wire format
-— base URL, how a request is built and its response parsed, how conversation
-history is shaped, how a tool schema and a tool result are expressed. That was
-six ``if self.provider ==`` branches scattered across the class, and adding a
-provider meant finding all six.
-
-A handler collects them in one object. Built-in handlers are registered below;
-another module registers its own with :func:`register_provider_handler`, and
-nothing in ``LLMApiService`` needs to know it exists.
-"""
 
 from odoo.exceptions import UserError
 

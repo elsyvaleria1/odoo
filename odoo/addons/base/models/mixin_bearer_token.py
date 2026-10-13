@@ -1,18 +1,3 @@
-"""A bearer token kept only as its hash and its sealed value.
-
-Whoever presents the token opens what it guards: a file, an answer in progress,
-an order on a kiosk. The column used to hold it in clear, so a copy of the
-database opened everything. The token now lives as two columns written only
-through this mixin: its SHA-256, which finds the record a presented token opens,
-and the token sealed under a key drawn from the database secret, so the server
-can render it again in the URLs and bus channels it sends. A copy of the tables
-without the secret holds nothing that opens anything.
-
-The field keeps its name and behaviour: `record.access_token` reads the token,
-assigning it stores a new one, and a domain on it finds the records a token
-opens. After the database secret changes, a token already sent keeps opening
-(its hash is unchanged) but the server can no longer show it again.
-"""
 
 import base64
 import hashlib

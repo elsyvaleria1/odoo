@@ -1,14 +1,3 @@
-"""CI entry point for the ``pos_discount`` addon's HOOT (JS unit) suite.
-
-Mirrors ``point_of_sale/tests/test_js.py``: the runner machinery (hash, ``&id=``
-filter, ``_run_hoot`` warm navigation) is reused from ``web`` via ``HOOTCommon``,
-imported through the module object so Odoo's unittest loader does not collect
-``web``'s base meta-tests a second time under ``pos_discount``.
-
-Only ``static/tests/unit`` is bundled into ``web.assets_unit_tests``; the
-coverage walk fails if any bundled ``*.test.js`` is selected by no suite prefix
-(HOOT ``&id=`` filters fail open, so an unselected file silently never runs).
-"""
 
 from pathlib import Path
 

@@ -1,4 +1,3 @@
-"""Regenerate the Sass stub with grpcio-tools==1.84.0 in an isolated environment."""
 
 import ast
 import subprocess

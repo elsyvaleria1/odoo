@@ -1,15 +1,3 @@
-"""``duration_tracking`` must follow the field whose changes produce it.
-
-``mail.tracking.duration.mixin._compute_duration_tracking`` declared no
-dependency at all. The buckets are rebuilt from ``mail.tracking.value`` rows in
-raw SQL, and every one of those rows exists *because* the tracked many2one
-changed -- so that field is the whole dependency, and without it the value was
-computed once and never invalidated.
-
-The window that matters is a single request: moving a record to another stage and
-reading it back, which is exactly what a kanban drag-and-drop does. Before the
-fix the client was handed the time spent in the *previous* stage.
-"""
 
 from odoo.tests import tagged
 

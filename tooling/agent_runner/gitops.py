@@ -1,12 +1,3 @@
-"""Git as the runner runs it.
-
-Never a hook, never fsmonitor, never a global attributes file. Over a tree an
-agent wrote (`trusted=False`) git reads no configuration but the repository's
-own -- not the user's, not the system's -- so a `.gitconfig` the agent left in
-the tree or in a home directory configures nothing. A token travels in the
-environment of the git process (`GIT_CONFIG_*`), never on its command line,
-where every user of the machine reads it.
-"""
 
 from __future__ import annotations
 

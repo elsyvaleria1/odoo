@@ -1,10 +1,3 @@
-"""Claims made by the 2026-08-16 `mixin.mail.render` audit, written as assertions.
-
-Each test states the behaviour the audit argues *should* hold. A test that fails
-is the audit's evidence; a test that passes is a claim the audit got wrong. The
-docstrings name which is which at the time of writing so the file doubles as the
-audit's own falsification record.
-"""
 
 import base64
 import io

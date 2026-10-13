@@ -1,8 +1,3 @@
-"""
-This module is used to provide a google.cloud.storage._signing.generate_signed_url_v4
-compatible function for generating signed URLs for Google Cloud Storage without
-importing the google-cloud-storage library.
-"""
 
 import binascii
 import collections

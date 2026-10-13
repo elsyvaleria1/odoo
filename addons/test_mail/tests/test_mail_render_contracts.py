@@ -1,9 +1,3 @@
-"""What `mixin.mail.render` promises its callers, asserted rather than assumed.
-
-Each class here pins one contract the 2026-08-18 audit found the module was not
-keeping. They are grouped by the promise, not by the method, because the point
-of each is what a caller may rely on.
-"""
 
 from markupsafe import Markup
 

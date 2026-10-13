@@ -1,4 +1,3 @@
-"""A fake agent and a scratch origin repository, for the executors' tests."""
 
 import json
 import subprocess

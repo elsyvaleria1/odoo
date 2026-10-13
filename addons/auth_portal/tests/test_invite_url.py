@@ -1,4 +1,3 @@
-"""Tests for the portal-specific TOTP invite URL."""
 
 from odoo.tests import TransactionCase, tagged
 

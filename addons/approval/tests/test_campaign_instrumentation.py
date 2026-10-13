@@ -1,24 +1,3 @@
-"""The campaign instrumentation's own invariants.
-
-`machine_doc_v1/conventions.md`, "Campaign Instrumentation", states three things a
-reader is asked to rely on. Each is a test here, because a census nobody checks
-drifts into a ranked work list that sends a session after noise:
-
-* a call that SUCCEEDS logs no refusal, so `odoo.approval.refusal` aggregated over a
-  corpus is what the engine actually turns away rather than what it asked itself;
-* every `raise` of a user-facing error reports a refusal, so that census is complete
-  and not a biased sample of the sites somebody remembered;
-* every method `CALL_TRACES` names still exists, so a rename cannot silently unwrap
-  an entry point and leave a target printing nothing.
-
-THE WRAPPED LAYER DOES NOT EXIST DURING AT-INSTALL TESTS. Odoo calls
-`register_model_hooks()` -- and so `base._register_hook`, and so
-`approval_trace.instrument` -- after every module has loaded, which is after the
-at-install phase has run. An at-install test therefore sees the hand-placed events
-and no spans at all, which is why the two classes that depend on wrapping are
-`post_install`. It is also worth knowing when reading a measurement: a suite run
-that reports no spans may be reporting the phase, not the code.
-"""
 
 import ast
 import logging

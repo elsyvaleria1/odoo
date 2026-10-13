@@ -1,13 +1,3 @@
-"""Regression tests for the base_import correctness/security/perf audit.
-
-Each test pins behaviour that was wrong before the audit; the docstring states
-what the old behaviour was, so a future change that reintroduces it fails here
-with an explanation rather than a bare assertion diff.
-
-The crash-class tests are deliberately phrased as "this is a clean import error,
-not an exception": every one of them used to escape ``execute_import`` -- which
-catches only :class:`ImportValidationError` -- and surface as an HTTP 500.
-"""
 
 import contextlib
 import datetime

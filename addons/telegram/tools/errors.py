@@ -1,8 +1,3 @@
-"""What a Bot API call's failure means for whoever sent it.
-
-Telegram answers every failure with `{"ok": false, "error_code", "description",
-"parameters"}`; the class says what to do next, so no caller reads error text.
-"""
 
 import re
 

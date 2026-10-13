@@ -1,4 +1,3 @@
-"""Tests for the partner signup-token lifecycle."""
 
 from unittest.mock import patch
 

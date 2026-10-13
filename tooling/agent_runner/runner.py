@@ -1,21 +1,4 @@
 #!/usr/bin/env python3
-"""The reference runner for `agent_runner`: claims runs from Odoo, keeps each
-lease alive while it works, reports events and finishes the run.
-
-    AGENT_RUNNER_TOKEN=<token> python3 runner.py --url https://odoo.example
-
-The token comes from the environment, never from the command line, where any
-user of the machine reads it in the process list. The runner keeps no
-credential of a run once the run ends: whatever a run needs -- a repository
-token, a model key -- arrives with its lease.
-
-Standard library only: it runs in a bare container.
-
-An executor is ``(lease, reporter) -> Outcome`` registered under a run kind.
-It raises `Permanent` for a failure another attempt cannot fix; any other
-exception is reported as retryable, and Odoo bounds the attempts. `probe` is a
-fake agent, for exercising the protocol end to end.
-"""
 
 from __future__ import annotations
 

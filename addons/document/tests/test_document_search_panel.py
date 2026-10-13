@@ -1,7 +1,3 @@
-"""The folder tree the client draws, and the groupings behind it.
-
-Named for what it protects, not for the review that produced it.
-"""
 
 import pathlib
 import re

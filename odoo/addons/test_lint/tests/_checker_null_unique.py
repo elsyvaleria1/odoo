@@ -1,30 +1,3 @@
-"""A composite UNIQUE that says nothing about its nullable member.
-
-PostgreSQL treats NULLs as distinct in a unique index unless the constraint
-says NULLS NOT DISTINCT, so ``UNIQUE (a, b)`` enforces nothing at all on the
-rows where ``b`` is empty. A constraint whose name says it holds the model's
-key therefore does not hold it for a reachable subset, and nothing reports
-that -- it is the CHECK a NULL satisfies, one constraint family over.
-
-Both intents are legitimate and this fork can spell both, so the finding is
-the SILENCE rather than either choice:
-
-* the key must hold even when the column is empty -- say NULLS NOT DISTINCT;
-* the empty rows are deliberately exempt -- say ``WHERE <column> IS NOT NULL``,
-  which is what a plain UNIQUE was already doing, and now says so.
-
-Only COMPOSITE constraints are reported. A single-column ``UNIQUE (imei)`` on
-an optional identifier is the common and correct idiom -- NULL means "not set"
-and repeated unset rows are intended -- so flagging it would bank a correct
-construct as debt, which is the mistake the CHECK-constraint family teaches.
-In a composite key the same silence is a defect instead: one empty column
-excuses the whole tuple.
-
-Nullability is resolved per MODEL, not per file: Odoo makes a column NOT NULL
-when any declaration of the field says ``required=True``, so a bridge module
-can settle it for a model whose constraint lives elsewhere. A column this scan
-never sees declared is left alone rather than guessed at.
-"""
 
 import re
 from collections.abc import Iterator

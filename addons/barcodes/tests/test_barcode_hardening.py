@@ -1,9 +1,3 @@
-"""Regression tests for the ways scanned input used to reach a 500.
-
-`parse_barcode` is reachable over RPC by any internal user and its argument is
-whatever came off a scanner, so a malformed barcode has to be a parse failure --
-never an exception, and never unbounded work.
-"""
 
 from odoo.exceptions import ValidationError
 from odoo.tests import common

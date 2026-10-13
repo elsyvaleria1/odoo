@@ -1,11 +1,3 @@
-"""OGC API - Features (Part 1, core and GeoJSON) over the geometries geoengine
-maps draw, for GIS clients such as QGIS.
-
-A collection is one stored geo field of a model a geoengine vector layer
-draws, offered only where the caller can read the model and the field; its
-features carry the fields of that model's geoengine view as properties.
-Everything is read as the caller, through ``_search`` and ``read``, so record
-rules and field access apply exactly as in the client."""
 
 import datetime
 from dataclasses import dataclass

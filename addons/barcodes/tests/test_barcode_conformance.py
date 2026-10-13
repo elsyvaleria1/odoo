@@ -1,12 +1,3 @@
-"""Python half of the cross-runtime parser conformance suite.
-
-The barcode parser exists twice, in Python and in JS, and the two drifted apart
-silently for years. Both halves now read the same golden vectors, so a change
-that moves one runtime and not the other fails on the side that did not move.
-
-The JS half is ``barcodes/static/tests/barcode_conformance.test.js``; the
-vectors are ``barcodes/static/tests/conformance_vectors.js``.
-"""
 
 from pathlib import Path
 

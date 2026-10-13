@@ -1,9 +1,3 @@
-"""Molecules asserted by both the Python valence tests and the browser test.
-
-Keeping one fixture set is what stops tools/valence.py and the editor's
-chemistry.js from drifting apart: each side reads these same molecules and the
-same expected figures.
-"""
 
 BENZENE = """benzene
   molecular_screening      2D

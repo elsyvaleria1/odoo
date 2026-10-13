@@ -1,18 +1,3 @@
-"""Temporary debug instrumentation for the hr_attendance quality-improvement campaign.
-
-Four loggers under ``odoo.addons.hr_attendance.debug``; enable one or all with
-``--log-handler odoo.addons.hr_attendance.debug:DEBUG`` (or ``.logic``, ``.performance``,
-``.pipeline``, ``.lifecycle``). Every call site imports this module as ``dbg``,
-so ``grep -rn 'dbg\\.' addons/hr_attendance`` lists the whole instrumentation for removal.
-
-- ``logic``: decision points -- which branch a guard took and on what input.
-- ``performance``: wall time and query count of a method or block.
-- ``pipeline``: hand-offs between stages of a flow (kiosk/systray request ->
-  employee -> attendance; attendance write -> overtime window -> rule -> line),
-  tagged ``[<kind>:<ref>]`` for correlation.
-- ``lifecycle``: create / write / unlink / overtime regeneration / cron entry and
-  exit.
-"""
 
 import logging
 

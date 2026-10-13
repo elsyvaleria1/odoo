@@ -1,4 +1,3 @@
-"""Tests for the attachment content-indexing extractors."""
 
 import io
 import zipfile

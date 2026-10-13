@@ -1,17 +1,3 @@
-"""Revoking a single trusted device from the portal security page.
-
-``revoke_trusted_device.js`` used to select on ``.fa.fa-trash.text-danger``,
-the icon set's own classes. The FontAwesome 4 -> 7 upgrade renamed them in the
-template (``fa-solid fa-trash-can``) and left the selector alone, so the
-per-device revoke button silently stopped binding. Nothing failed, because
-nothing covered revoke at all.
-
-Two tests, deliberately at different depths. The first pins the
-template/selector contract cheaply and names the class, so a rename shows up
-as a failure that says what broke. The second drives the button for real --
-which only became possible once portal users could hold a trusted device in
-the first place; before that fix the fixture could not be built.
-"""
 
 from lxml import html
 

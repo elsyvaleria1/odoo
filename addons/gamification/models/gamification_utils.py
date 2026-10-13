@@ -1,4 +1,3 @@
-"""Shared utility functions for the gamification module."""
 
 from datetime import date, timedelta
 

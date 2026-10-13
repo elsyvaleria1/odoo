@@ -1,4 +1,3 @@
-"""Tests for the HOTP/TOTP primitives against RFC 4226 test vectors."""
 
 from odoo.tests import TransactionCase, tagged
 

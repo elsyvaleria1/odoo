@@ -1,10 +1,3 @@
-"""The doors' OpenAPI document: valid, and the checked-in copy is current.
-
-`/web/openapi.json` describes whatever the server has installed, so it is a
-different document on every database. `rpc`'s own doors are not: they are
-this module's routes, they move only when this module does, and a client
-generator reads them from the copy beside this file.
-"""
 
 import json
 import os

@@ -1,6 +1,3 @@
-"""Module to manage Wi-Fi connections and access point mode using
-NetworkManager and ``nmcli`` tool.
-"""
 
 import base64
 import logging

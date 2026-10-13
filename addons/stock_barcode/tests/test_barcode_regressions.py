@@ -1,8 +1,3 @@
-"""Regression tests for the defects found in the audits of this module.
-
-Each test drives the real code path and asserts the corrected behaviour, so re-introducing
-the defect fails here rather than in a browser tour.
-"""
 
 import base64
 import io

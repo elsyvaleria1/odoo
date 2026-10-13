@@ -1,8 +1,3 @@
-"""Method and block timing for record-oriented debug loggers.
-
-Logger ownership and wording belong to callers. Disabled probes do not read
-the receiver, cursor or clock; enabled probes log even when the body raises.
-"""
 
 import functools
 import logging

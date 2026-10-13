@@ -1,4 +1,3 @@
-"""Tests for the loyalty-card helper methods."""
 
 from odoo.tests import TransactionCase, tagged
 

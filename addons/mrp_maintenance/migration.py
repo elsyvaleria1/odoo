@@ -1,4 +1,3 @@
-"""Import legacy equipment composition without inventing owning identities."""
 
 from odoo.db.schema import column_exists, table_exists
 

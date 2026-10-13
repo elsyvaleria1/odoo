@@ -1,9 +1,3 @@
-"""Regressions found while auditing the quality ring.
-
-Bug regressions pin the behavior that failed before the fix. Payload contracts
-also preserve product order, duplicate suppression and move-line context during
-shared-builder refactors.
-"""
 
 import random
 import re

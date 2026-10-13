@@ -1,19 +1,3 @@
-"""What the two RPC entry points of ``base_import.import`` accept.
-
-Every value exercised here reaches the server from a place the user controls
-and nothing validated: ``res_model`` is a plain ``Char`` the client fills in at
-``create`` time, ``fields`` is the mapping the client assembled, and ``skip`` /
-``limit`` come from two free-text ``<input>`` elements in the batch panel. Each
-one used to fail in its own way, and the failures split into two kinds that
-want different fixes:
-
-* **HTTP 500.** ``execute_import`` catches only ``ImportValidationError``, so a
-  ``TypeError``, ``IndexError``, ``KeyError`` or ``AttributeError`` raised while
-  building the parse plan escaped as a server error with a Python message.
-* **Silence**, which is worse. ``skip=-1`` is not an error to Python at all:
-  ``data[-1:]`` is a legal slice, so the import ran on the last row of the file
-  and reported success.
-"""
 
 import unittest
 from unittest.mock import patch

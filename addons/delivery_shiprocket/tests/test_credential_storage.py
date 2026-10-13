@@ -1,10 +1,3 @@
-"""The Shiprocket secrets rest in the vault; the fields are doors (ADR-0081).
-
-Two secrets of different kinds AND different visibility: the password is the
-durable one and is `base.group_system`, while the access token is what the
-password buys -- valid ten days, regenerated from the pair -- and has no groups
-at all. Both keep exactly the visibility they had.
-"""
 
 from datetime import timedelta
 from unittest.mock import patch

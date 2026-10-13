@@ -1,4 +1,3 @@
-"""Pure iCalendar construction shared by event and track downloads."""
 
 from datetime import datetime
 

@@ -1,9 +1,3 @@
-"""Sample SDF shaped like the pilot's 3D export stage.
-
-Three records on purpose: a reference, an unrelated candidate, and a candidate
-whose connectivity is the reference's own, which is how the real pilot carried
-imidacloprid twice.
-"""
 
 SDF_SAMPLE = """glifosato
      RDKit          3D

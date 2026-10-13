@@ -1,31 +1,3 @@
-"""Access written for stock Odoo: ir.model.access lines and ir.rule records.
-
-A module written for stock Odoo 19.0 ships its access as ir.model.access lines
-and ir.rule records, two models this fork no longer has. The loader leaves
-them to ``ir.access._load_legacy_access``, which reads them from the module's
-data files once its data is loaded and loads the ir.access rows stock Odoo's
-check amounts to, under the module's own external ids:
-
-- a line is a permission of its group, over the operations no rule of a group
-  its members all hold governs;
-- a rule of a group is a permission of that group, and of every group whose
-  members all hold it, with the rule's domain, over the operations those
-  groups have a line for;
-- a rule of a group binds its members whichever line opened the model: stock
-  Odoo ORs the rules of the user's groups and applies them to every access
-  line. That is a members guard on the rule's group (base.conditional_reach):
-  its members reach what their conditional rows reach, and what the groups
-  granting the model whole through a rule (a see-all rule) grant;
-- a global rule is a guard of everyone.
-
-The lines of other modules on the same models take part as the lines they
-were. What stock Odoo does that no row can say (a rule of a group none of whose
-members hold a line of the model, beside the lines of unrelated groups) is
-named in the log, and the rows stay on the side of refusing.
-
-Groups and models this fork renamed are followed; one it removed is refused
-by name.
-"""
 
 from __future__ import annotations
 

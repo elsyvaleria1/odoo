@@ -1,4 +1,3 @@
-"""Tests for the geocoder provider dispatch and address handling."""
 
 from unittest.mock import MagicMock, patch
 

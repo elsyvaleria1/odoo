@@ -1,7 +1,3 @@
-"""The own-attendance rows reach the sender's employee through hr.your_employee,
-read on behalf of the chat's contact, instead of a domain that admitted every
-user-less employee with a Telegram binding. The rows are noupdate, so they are
-rewritten here."""
 
 import logging
 

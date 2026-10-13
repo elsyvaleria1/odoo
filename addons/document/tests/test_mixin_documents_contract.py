@@ -1,22 +1,3 @@
-"""`mixin.documents` is an extension API, so its hook signatures are a contract.
-
-A model that inherits the mixin and redefines one of its hooks with a different
-signature does not fail to load, does not fail a linter, and does not fail its
-own tests -- it simply wins on the MRO and is then called by `document` with
-arguments it was never written for.
-
-Measured 2026-09-16 on `resource.asset`, which inherits `mixin.documents` and
-defined `_prepare_document_vals(self, name, **extra)` next to the mixin's
-`_prepare_document_vals(self, attachment)`. `ir.attachment._create_document`
-called it with an `ir.attachment` and got back vals with **no
-`attachment_id`** and `name` set to `ir.attachment(8474,)`, so every file
-uploaded onto a centralized asset produced an empty document named after the
-recordset. Nothing raised; the auto-creation debug channel even reported
-`auto_document_created count=1`.
-
-This checks the whole registry rather than that one model, because the next
-occurrence will be in a module nobody thought to re-read.
-"""
 
 import inspect
 

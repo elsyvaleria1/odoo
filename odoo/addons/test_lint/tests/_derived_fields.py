@@ -1,14 +1,3 @@
-"""Derived fields that show what their sources hide.
-
-A related field, a stored compute and a `compute_sudo` compute are evaluated
-without the reader's field access to their sources: whoever may read the
-derived field reads a function of the sources. That is intended for a presence
-dot, a count, "a credential is set", and a leak otherwise. A derived field
-either carries an access of its own (`groups=` or `classification=`), or says
-it discloses its sources on purpose (`discloses="<class>"`). This scans the
-source, the way the access index does, and names the derived fields that do
-neither while some dependency path crosses a field that has an access.
-"""
 
 import ast
 import functools

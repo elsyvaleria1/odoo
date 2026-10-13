@@ -1,24 +1,3 @@
-"""How much of the ormcache a dry-run is allowed to throw away.
-
-A dry-run rolls its rows back, so any registry cache it refilled from those rows
-has to go. The module took the widest possible reading of that and called
-``clear_all_caches()``, which drops every group in ``CACHES_BY_KEY`` -- including
-``assets`` and ``routing``, the two most expensive caches in the process and the
-two a data import cannot have touched. The worker that served the import then
-paid to rebuild its routing map and its asset bundles, on every dry-run, for
-nothing.
-
-Clearing only ``default``, ``groups`` and ``stable`` is enough, and the reason is
-not that imports never invalidate ``assets`` -- it is that when they do, they say
-so. ``ir.asset`` calls ``clear_cache("assets")`` in its own ``write``, which puts
-the group in ``registry.cache_invalidated``, and the ``reset_changes()`` on the
-next line re-clears everything in that set. The narrow clear plus
-``reset_changes()`` therefore still drops exactly what the import dirtied.
-
-Both halves are asserted below, because only the second one makes the first
-safe: the sentinels survive an ordinary import, and do not survive one that
-writes the model feeding the cache.
-"""
 
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools.constants import CACHES_BY_KEY

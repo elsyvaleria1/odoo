@@ -1,14 +1,3 @@
-"""Pre-migration to 1.7: versioned log hashes, SMS codes kept only as hashes.
-
-- ``sign.log.hash_version``: every entry written so far is version 1 and keeps
-  verifying as it was hashed; the column is created here, before the ORM would
-  fill it with the default (version 2) for existing rows.
-- ``sign.log.token``: the signer's raw link token, which nothing read, goes.
-- ``sign.request.item.sms_token``: a code still pending is void (the signer asks
-  for a new one); a signer who signed with a code is recorded as having verified
-  the phone, the number the code went to, on the signing date, which the
-  certificate of completion prints.
-"""
 
 from odoo.db.schema import column_exists
 

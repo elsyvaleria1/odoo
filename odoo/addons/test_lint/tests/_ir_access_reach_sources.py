@@ -1,14 +1,3 @@
-"""Rewrite the shipped ir.access rows as reaches through anchors (P4 S2).
-
-Run in an odoo shell on a database whose registry holds the models the rows
-name (their anchors and fields are read from it, never from source):
-
-    odoo-bin shell -d <db> < _ir_access_reach_sources.py   # plan, as JSON
-    REACH_APPLY=1 odoo-bin shell -d <db> < ...             # and write it
-
-A row converts only when `ir_access_reach.proves` finds the proposed rows equal
-to its domain; anything else keeps its domain and counts against the floor.
-"""
 
 import csv
 import io

@@ -1,10 +1,3 @@
-"""What one step of a run may read of the others, and how code names them.
-
-Not a model. `make_step_key` derives a step's key, `collect_references` reads
-which keys a piece of code names without running it, and `StepView` /
-`StepScope` are the read-only objects a code step or an edge expression is
-handed. vision.md Phase 5 carries the design.
-"""
 
 import ast
 import copy

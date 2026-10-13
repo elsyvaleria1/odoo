@@ -1,13 +1,3 @@
-"""Comprehensive tests for webhook automation triggers.
-
-Tests cover:
-- Webhook setup and configuration (UUID, URL)
-- Webhook execution with various payloads
-- Actions integration (code, object_write, mail)
-- Error handling
-- Logging
-- Edge cases
-"""
 
 import contextlib
 import logging

@@ -1,10 +1,3 @@
-"""What the registry exposes over RPC, and what documents it.
-
-The parsing engine lives in :mod:`odoo.libs.docstring`, which knows nothing
-about Odoo. This module is the coupled half: which methods `/json/2` will
-actually accept, which class in the MRO to credit for one, and which docstring
-in that MRO describes it.
-"""
 
 import logging
 

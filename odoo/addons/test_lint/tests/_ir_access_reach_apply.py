@@ -1,14 +1,3 @@
-"""Write a reach plan (`_ir_access_reach_sources.py`) into the modules.
-
-    python _ir_access_reach_apply.py <plan.json> [--dry-run]
-
-Rows: a converted CSV row gets its `reach` and `anchor` and keeps only its
-fixed filter as `domain`; a split permission becomes `<id>`, `<id>_2`, ... in
-place. XML records are rewritten field by field and never split (a split XML
-row keeps its domain). Anchors: each module declares the keys its own rows
-read, on its class of the model when it has one, else on an `_inherit` stub in
-`models/access_anchors.py`.
-"""
 
 import argparse
 import ast

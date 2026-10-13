@@ -1,11 +1,3 @@
-"""Recognize the reach an access row's domain spells out.
-
-Pure: no registry, no cursor. The source converter
-(test_lint/tests/_ir_access_reach_sources.py) reads a row's domain text through
-`propose`, and applies a proposal only when `proves` finds the old domain and
-the proposed rows equal for a synthetic principal, so a row whose text the
-recognizer misreads keeps its domain.
-"""
 
 import ast
 import typing

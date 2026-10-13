@@ -1,4 +1,3 @@
-"""Tests for the IAP tools: email domain search and the JSON-RPC contract."""
 
 from unittest.mock import MagicMock, patch
 

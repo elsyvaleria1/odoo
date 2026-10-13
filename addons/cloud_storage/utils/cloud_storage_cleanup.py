@@ -1,4 +1,3 @@
-"""Shared helpers for standalone cloud cleanup scripts; no Odoo server import."""
 
 import logging
 import xmlrpc.client

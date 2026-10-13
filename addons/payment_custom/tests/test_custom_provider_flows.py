@@ -1,4 +1,3 @@
-"""Custom provider/transaction flow overrides beyond the communication tests."""
 
 from odoo.exceptions import ValidationError
 from odoo.tests import tagged

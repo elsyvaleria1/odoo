@@ -1,12 +1,3 @@
-"""Regression suite for the base_import audit.
-
-Each test asserts the behaviour the module should have, and was written to
-FAIL against the tree before the corresponding fix — 11 of 17 did. They are
-kept so the fixes cannot silently regress, and so each claim stays falsifiable
-rather than becoming folklore.
-
-Claim IDs match the audit report (C*/A*/P*/D*).
-"""
 
 import base64
 import contextlib

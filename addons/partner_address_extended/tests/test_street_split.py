@@ -1,4 +1,3 @@
-"""Tests for the extended street split/compose fields on partners."""
 
 from odoo.tests import TransactionCase, tagged
 

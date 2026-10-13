@@ -1,4 +1,3 @@
-"""Sendcloud credentials are stored in the vault and exposed through field accessors."""
 
 from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged

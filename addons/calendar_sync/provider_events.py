@@ -1,5 +1,3 @@
-"""A provider's events as it lists them, before an adapter reads them into
-the engine's `RemoteEvent`."""
 
 from collections import abc
 from collections.abc import Iterable, Iterator, Mapping

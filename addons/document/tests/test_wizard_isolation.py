@@ -1,23 +1,3 @@
-"""One user's open wizard is not another user's record.
-
-Every wizard this module ships is a `TransientModel` whose ACL grants read and
-write to `base.group_user` as a whole, so without an owner guard any
-internal user reaches any other's live wizard by id. `wizard.document.document.place.folder`
-carried such a rule from the start (`document_operation_rwu`); its four
-siblings did not, and `wizard.document.document.share` is the one that costs something:
-`invite_partner_ids` is who you are about to share with, and `invite_role` is
-what they will get -- writable by anyone, right up until you press the button.
-
-The roster is DERIVED from the registry rather than listed, because a listed
-roster only covers the wizards somebody remembered to list. `_wizard_models`
-finds them; `_builders` says how a real user opens each; and
-`test_the_roster_and_the_fixtures_agree` fails when a new wizard appears with
-no fixture, so adding a wizard is what puts it under test.
-
-The isolation itself is asserted BEHAVIOURALLY -- a stranger really tries to
-read and to write -- not by pattern-matching `domain_force` for "create_uid",
-which `[('create_uid','!=',user.id)]` would also satisfy.
-"""
 
 from odoo import Command
 from odoo.exceptions import AccessError

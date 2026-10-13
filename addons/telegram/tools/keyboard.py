@@ -1,4 +1,3 @@
-"""Inline keyboards: the shapes every feature sends."""
 
 ELLIPSIS = "…"
 

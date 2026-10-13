@@ -1,10 +1,3 @@
-"""Drop `string=` arguments that restate the label the ORM derives from the name.
-
-    python _drop_field_labels.py -d <db> [-c conf] [--addons-path a,b] [--dry-run]
-
-Exact, not syntactic: the redundant set is read off the built registry, so a
-string that overrides a lower definition's different label is kept.
-"""
 
 import argparse
 import ast

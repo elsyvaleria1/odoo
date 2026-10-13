@@ -1,6 +1,3 @@
-"""What a provider's calendar service shares with the others: its connection,
-the raw call through the connection's API client, and the refusal of a sync
-token the provider no longer knows."""
 
 import requests
 

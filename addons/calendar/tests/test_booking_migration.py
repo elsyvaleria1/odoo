@@ -1,4 +1,3 @@
-"""Stored booking data retains its values and schema ownership across upgrades."""
 
 from datetime import datetime
 

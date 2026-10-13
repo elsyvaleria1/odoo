@@ -1,12 +1,3 @@
-"""What the bot may change in Odoo, and how an authorized change is applied.
-
-The agent never writes: it proposes operations, which are kept on the chat
-until the person who asked says "autorizo" (or presses the button), and only
-then run, in superuser mode but in that person's name, as a user would from
-the screens: business models reachable from a menu, through the ORM, never
-deleting and never touching the technical side (views, actions, modules,
-settings, users, rights, credentials).
-"""
 
 import logging
 

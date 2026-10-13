@@ -1,12 +1,3 @@
-"""Regression tests for archive semantics of resource.scheduling.mixin.
-
-Regression: editing a scheduling field on an *archived* consumer record re-ran
-``_sync_reservations``, which searches only active reservations, found none
-(they had been archived by the mirror), and therefore created a fresh **active**
-reservation — a live claim on the resource for a record the user has archived.
-The fix guards the sync to active records and reorders the archive mirror before
-the sync so reactivation reconciles instead of duplicating.
-"""
 
 from datetime import datetime
 

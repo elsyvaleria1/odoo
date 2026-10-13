@@ -1,8 +1,3 @@
-"""Lazada Shop Creation Wizard.
-
-Allows users to create Lazada shops by entering API credentials and authorizing
-the connection with Lazada.
-"""
 
 from odoo import fields, models
 

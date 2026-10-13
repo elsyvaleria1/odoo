@@ -1,4 +1,3 @@
-"""Behavioral contracts for Calendar's meeting and public booking boundary."""
 
 from datetime import UTC, datetime, timedelta, timezone
 from urllib.parse import parse_qs, urlsplit

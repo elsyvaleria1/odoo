@@ -1,10 +1,3 @@
-"""Chemical identity helpers.
-
-RDKit gives a real InChIKey; where it is not installed the module still has to
-deduplicate compounds, so it falls back to a structural hash of the connection
-table. Both carry their provenance in ``method`` so no number ever looks more
-authoritative than it is.
-"""
 
 import hashlib
 

@@ -1,14 +1,3 @@
-"""A `res_model` naming a model the registry no longer has is a dangling link.
-
-Uninstalling a module does not clean the `res_model` strings its records left
-on `document.document` rows, so a document can outlive the model it points at.
-Three sites read that as "not linked" -- `_compute_res_name`,
-`_compute_res_model_name` and `_inverse_res_record` all check
-`res_model in self.env` -- and two write paths did not. They are the ones that
-hurt, because the value is not read but USED: one indexed `self.env[res_model]`
-and raised a bare `KeyError`, the other stamped the dead name onto an
-attachment it had just created.
-"""
 
 from odoo.tests.common import TransactionCase, tagged
 

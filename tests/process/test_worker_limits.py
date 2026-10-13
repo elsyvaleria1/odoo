@@ -1,15 +1,3 @@
-"""Every worker limit and every signal, driven against real servers.
-
-The unit suites pin the decisions; this pins what a deployment sees: which
-request comes back, which worker survives, what the log says, and that no
-policy verdict is ever counted as a crash.  The routes come from a
-server-wide probe module that answers before dispatch, so no database is
-loaded: `/probe/slow/N` sleeps N seconds in Python, `/probe/burn/N` burns N
-seconds of CPU, `/probe/query/N` runs `pg_sleep(N)` on a checked-out
-connection -- the one shape the budget monitor can cancel -- and
-`/probe/hold/N` keeps N MiB allocated so the soft memory limit trips.  An
-`op-` prefix (`/probe/op-slow/N`) runs the same work as a module operation.
-"""
 
 import http.client
 import os

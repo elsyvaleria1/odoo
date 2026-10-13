@@ -1,4 +1,3 @@
-"""Compatibility imports for the shared GPS navigation utility."""
 
 from typing import Protocol
 

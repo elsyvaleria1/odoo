@@ -1,5 +1,3 @@
-"""What an adapter's upgrade does with the synchronization state it kept
-before accounts and links existed; its migrations call this."""
 
 import dataclasses
 import logging

@@ -1,31 +1,3 @@
-"""Every Owl template extension locates its target in the template it extends.
-
-Owl templates are inherited in the browser, lazily, the first time a template
-is rendered (`@web/core/template_inheritance`). An `<xpath>` that matches
-nothing is not an asset error and not a load error: it throws inside the owl
-lifecycle when the component first renders, so the only thing that notices is
-a tour that happens to open that screen. That is how two breaks sat in the tree
-unnoticed:
-
-* `web.KanbanView` started rendering `<ViewLayout>` instead of `<Layout>`; the
-  commit moved the eight inheritors in `odoo` and `account_online_synchronization`
-  kept `//Layout`, so the bank reconciliation screen failed to render whenever
-  it was installed -- four account tours red.
-* `social`'s post and comment menus moved from Bootstrap's `div.dropdown-menu`
-  to `<Dropdown>`/`<DropdownItem>`, and `social_crm` kept inserting its
-  "Create Lead" link before `div.dropdown-menu/a[1]`.
-
-This reads every template under `static/src` of every addon on the addons path,
-resolves each template with its primary parents and its extensions, and lists
-the operations whose target cannot be located or that the engine refuses. It
-locates and applies with `odoo.libs.xml`, which implements the specification the
-browser engine does (`web/static/tests/core/template_inheritance_cases.js` holds
-both to it), so what fails here fails in the browser.
-
-Templates are indexed across bundles, so a name defined in two bundles is
-resolved against the last definition read; the gate is a superset check and
-cannot see which bundle loads which file.
-"""
 
 import copy
 import pathlib

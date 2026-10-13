@@ -1,6 +1,3 @@
-"""Outlook, as the contract suite speaks to it through Graph: every calendar
-holds its own copy of an item, under an id of its own and the item's
-iCalendar UID."""
 
 import itertools
 import re

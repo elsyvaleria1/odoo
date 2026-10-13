@@ -1,4 +1,3 @@
-"""Module to manage odoo code upgrades using git"""
 
 import logging
 import platform

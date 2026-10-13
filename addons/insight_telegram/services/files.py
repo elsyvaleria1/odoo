@@ -1,9 +1,3 @@
-"""Files a person sends the bot, as the content blocks a Claude model reads.
-
-Images and PDFs go as they are, which the model reads natively; spreadsheets,
-documents and text go as their text; anything else is named and measured.
-What a file says is data for the model, never an instruction to it.
-"""
 
 import base64
 import io

@@ -1,9 +1,3 @@
-"""ACL coverage for the `wizard.document.document.link.record`.
-
-The wizard and `document.document.action_link_to_record` live in this module,
-so the test that pins their write check does too. `TransactionCaseDocuments`
-comes from the community module's test helpers (`documents` is a dependency).
-"""
 
 from odoo import Command
 from odoo.exceptions import AccessError

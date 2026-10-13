@@ -1,10 +1,3 @@
-"""Regression tests for defects found in the gamification audit.
-
-Each test here failed before its corresponding fix and passes after it.
-Where the defect was a security one, the test also asserts the control path
-(the route that was always correctly blocked) so a future refactor that
-loosens the guard is caught rather than silently accepted.
-"""
 
 import datetime
 from datetime import date, timedelta

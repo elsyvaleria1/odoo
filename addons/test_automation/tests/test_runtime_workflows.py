@@ -1,20 +1,3 @@
-"""Tests for automation.runtime workflow execution.
-
-Runtime workflows are wizard-based workflows that:
-- Store execution context (partner, amount, date, reference)
-- Track progress through action steps
-- Support DAG dependencies between actions
-- Provide step-by-step or automatic execution
-
-Tests cover:
-- Runtime lifecycle (creation, start, completion, cancellation)
-- Progress tracking
-- Action execution
-- Context propagation
-- DAG dependency resolution
-- Error handling
-- Concurrent runtime instances
-"""
 
 import logging
 

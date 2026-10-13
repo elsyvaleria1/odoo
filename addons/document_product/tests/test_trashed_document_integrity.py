@@ -1,14 +1,3 @@
-"""A `document.document` in the trash is still a row, and two call sites forgot.
-
-Both defects below come from reaching for linked documents through a default
-`search`, which `active_test` scopes to the active ones. A trashed document
-still holds `attachment_id` and still carries `res_model`/`res_id`, so the
-half that is invisible to the search is exactly the half that costs something:
-once as a lost file, once as a constraint violation.
-
-The mixin (`mixin.documents`) is community, but `product.template` is the only
-concrete host a bundled module declares, so its behaviour is pinned here.
-"""
 
 from odoo.tests.common import TransactionCase, tagged
 

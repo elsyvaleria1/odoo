@@ -1,18 +1,3 @@
-"""Temporary debug instrumentation for the hr quality-improvement campaign.
-
-Four loggers under ``odoo.addons.hr.debug``; enable one or all with
-``--log-handler odoo.addons.hr.debug:DEBUG`` (or ``.logic``, ``.performance``,
-``.pipeline``, ``.lifecycle``). Every call site imports this module as ``dbg``,
-so ``grep -rn 'dbg\\.' addons/hr`` lists the whole instrumentation for removal.
-
-- ``logic``: decision points -- which branch a guard took and on what input.
-- ``performance``: wall time and query count of a method or block.
-- ``pipeline``: hand-offs between stages of a flow (user -> employee -> party ->
-  version; departure -> archive -> contract end), tagged ``[<kind>:<ref>]`` for
-  correlation.
-- ``lifecycle``: create / write / unlink / archive / state transitions / cron entry
-  and exit.
-"""
 
 import logging
 

@@ -1,4 +1,3 @@
-"""Service guards must preserve PostgreSQL's real transaction state."""
 
 import pytest
 

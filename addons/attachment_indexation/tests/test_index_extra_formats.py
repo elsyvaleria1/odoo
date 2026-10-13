@@ -1,4 +1,3 @@
-"""Tests for the pptx / xlsx / opendoc content extractors."""
 
 import io
 import zipfile

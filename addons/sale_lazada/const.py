@@ -1,8 +1,3 @@
-"""Lazada integration constants.
-
-Contains API endpoints, operation mappings, status mappings, and API limits
-for Lazada integration.
-"""
 
 AUTH_URL = "https://auth.lazada.com/oauth/authorize"
 

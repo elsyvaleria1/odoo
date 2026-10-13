@@ -1,30 +1,3 @@
-"""Change a repository with an agent, on a branch of its own.
-
-`github.change` is the generic executor: Odoo names the repository, the base
-and the new branch, the prompt, the data the agent works from, and the
-trailers its commit carries; the runner clones, runs the agent headless
-(`claude -p`) with the edit tools and nothing else, commits what it changed,
-pushes the branch and opens the pull request. `incident.fix` is the same work
-with an incident's data.
-
-Each run clones the repository it names with the token handed with its lease
-into a directory that dies with the run; the agent's environment holds nothing
-but the run's own model key. What Odoo sends as data reaches the agent between
-fence lines drawn fresh for every run, never as instructions.
-
-The agent can write files, `.git/` included: a hook or a config entry there
-would run as the runner on its next git command. Git therefore runs without
-hooks and fsmonitor and reads no configuration but the clone's own
-(`gitops`), and a run whose agent touched `.git/` is failed for good before
-anything is committed.
-
-The agent ends with a fenced JSON verdict: ``{"verdict": "changed" |
-"declined", "subject", "body", "note", "test"}``.
-
-    AGENT_RUNNER_CLAUDE   the agent's command (default: claude)
-    AGENT_RUNNER_GIT_URL  clone URL template, `{repository}` = owner/name
-                          (default: https://github.com/{repository}.git)
-"""
 
 from __future__ import annotations
 

@@ -1,5 +1,3 @@
-"""What a consumer of both rating mixins reads: pinned on project, which
-carries `mixin.rating.parent` and, through mail.thread, a rated `rating_ids`."""
 
 from odoo.tests import TransactionCase, tagged
 

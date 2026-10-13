@@ -1,15 +1,3 @@
-"""Where the access rows in the database part from what their modules ship.
-
-A module's security files are the desired state of its rows. Every night the
-rows those files ship outside a noupdate block are replayed, as an upgrade
-would load them, inside a savepoint that is then rolled back, and every field
-the replay would change is reported: what an upgrade would silently undo, or
-what a noupdate row keeps against its file. The report also names the rows no
-installed module ships (left behind by a module that stopped shipping them) and
-the rows a person wrote without a module (customisations, which are someone's
-decision and should have an owner). A drift is logged the first night it is
-seen, and leaves the report the night it is gone.
-"""
 
 import logging
 from pathlib import Path

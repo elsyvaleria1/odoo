@@ -1,9 +1,3 @@
-"""Tests for minting a trusted device from the 2FA login form.
-
-Both cases here are reached by ticking "remember this device" on
-``/web/login/totp``, and both used to fail the whole login POST after the
-session had already been finalized.
-"""
 
 import base64
 import hmac

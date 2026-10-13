@@ -1,13 +1,3 @@
-"""Declare the parameters of every route a program calls.
-
-`type="json2"` and `auth in {bearer, receiver}` say the caller is a program,
-so the route's parameters are a contract: this adds `typed=True` and
-annotates each named parameter from the rule's own converter, leaving a
-handler that reads the raw body with its `**kwargs` alone.
-
-    python _type_machine_routes.py <path>...        # rewrite
-    python _type_machine_routes.py --dry-run <path>...
-"""
 
 import argparse
 import ast

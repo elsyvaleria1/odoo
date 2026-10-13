@@ -1,4 +1,3 @@
-"""Tests for the rating aggregation stats on rated records."""
 
 from datetime import timedelta
 

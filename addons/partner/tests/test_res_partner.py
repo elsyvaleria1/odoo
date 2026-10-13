@@ -1,4 +1,3 @@
-"""Tests for the partner res.partner overrides."""
 
 import datetime
 

@@ -1,8 +1,3 @@
-"""The `wizard.document.document.share` dialog side of the "view but not download" setting.
-
-The setting itself is community (`document.document.is_download_blocked`); the
-dialog that exposes it is this module's, so its coverage lives here.
-"""
 
 from odoo.tests.common import TransactionCase
 

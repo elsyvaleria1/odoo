@@ -1,5 +1,3 @@
-"""What a mail vendor's upgrade does with servers authorized before their
-connections existed; its migrations call these."""
 
 import logging
 from datetime import UTC, datetime

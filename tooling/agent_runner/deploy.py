@@ -1,34 +1,3 @@
-"""The executors of a deploy runner: on the production host, never an agent.
-
-`error_incident.revision` answers which of the awaited fix commits the running
-checkouts contain. `error_incident.hotfix` applies one approved fix to a
-running checkout: the fix's own commits -- what its branch adds to the base it
-was cut from, never the base's unreleased commits -- cherry-picked onto the
-running revision as one commit, then the modules they touch upgraded, the
-server restarted and checked. When the server does not come back healthy, the
-code is reverted, the modules upgraded and the server restarted again; the
-database is not restored, so a fix whose upgrade migrated data is undone in
-code only.
-
-What runs on the host is the host's own configuration, never a lease's: a run
-names a checkout and a commit, and the commands are these, read from the
-environment:
-
-    AGENT_RUNNER_DEPLOY_CHECKOUTS     JSON {"odoo": "/opt/odoo/odoo", ...}
-    AGENT_RUNNER_DEPLOY_UPGRADE       command, `{modules}` = comma-separated names
-    AGENT_RUNNER_DEPLOY_RESTART       command
-    AGENT_RUNNER_DEPLOY_STOP          command; with START, the server is stopped
-    AGENT_RUNNER_DEPLOY_START         for the upgrade instead of restarted after it
-    AGENT_RUNNER_DEPLOY_HEALTH        command; exit 0 = healthy
-    AGENT_RUNNER_DEPLOY_HEALTH_WAIT   seconds to wait for health (default 120)
-    AGENT_RUNNER_DEPLOY_UPGRADE_TIMEOUT  seconds an upgrade may take (default 3600)
-    AGENT_RUNNER_DEPLOY_REMOTE_URL    fetch URL template, `{repository}` = owner/name
-
-A revision that passed its health check is recorded in the checkout as
-`refs/agent-runner/healthy`: an attempt that finds the fix already applied
-but not confirmed healthy -- a runner killed between the two -- activates it
-again instead of reporting it deployed.
-"""
 
 from __future__ import annotations
 

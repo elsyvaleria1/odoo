@@ -1,23 +1,3 @@
-"""Regression tests for calendar defects fixed in the correctness/privacy pass.
-
-Each test states an invariant the module relies on and that a specific defect
-used to break:
-
-- private events must not be readable through search domains, ``order`` or
-  group-by aggregates (only through the masked read path);
-- ``create`` must return events in the caller's order;
-- making a plain event recurrent must build the recurrence whatever the
-  ``recurrence_update`` policy;
-- ``repeat_type='forever'`` must survive being stored;
-- a notification must not copy a template attachment for an attendee it never
-  mails;
-- building a recurrence must not mutate its stored ``count`` column;
-- moving events must un-accept their organizers, one write or many;
-- moving a whole recurrence must tell its attendees the date changed;
-- deleting the tail of a recurrence must trim the rule, not just the rows;
-- the .ics of a recurring event must carry one well-formed RRULE;
-- ``unavailable_partner_ids`` must not cost a query per event.
-"""
 
 from datetime import datetime
 

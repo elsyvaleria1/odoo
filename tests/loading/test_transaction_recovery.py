@@ -1,4 +1,3 @@
-"""Retry a commit rejection with a real registry, cache and compute queue."""
 
 from psycopg import errors
 

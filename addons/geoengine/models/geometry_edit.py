@@ -1,10 +1,3 @@
-"""Changing the areas of one record's shape: adding a drawn area to it,
-cutting one out of it, removing one of its parts; and the shapes of several
-records: splitting one into records, merging several into one.
-
-Area edits come from the map and go back to it, in the map's projection; the
-result is written to the record like any reshape, so saving checks it. A split
-or a merge writes records itself."""
 
 from shapely import get_srid, unary_union
 from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon

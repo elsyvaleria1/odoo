@@ -1,10 +1,3 @@
-"""The service manager protocol, against real servers.
-
-A unit whose Type=notify waits for READY=1 before it considers the service
-started, restarts it when WATCHDOG=1 stops coming, and reads STOPPING=1 as
-the beginning of an orderly stop.  This drives both flavours through a
-datagram socket standing in for systemd's.
-"""
 
 import os
 import signal

@@ -1,4 +1,3 @@
-"""Tests for the GS1 date decoding helper."""
 
 import datetime
 

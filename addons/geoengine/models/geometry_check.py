@@ -1,9 +1,3 @@
-"""What keeps a geometry drawn on the map from being stored as it was drawn.
-
-The map asks after each drawing or edit, so the user sees where an outline
-crosses itself while still holding the pen. Saving runs the same steps, and
-then repairs (``geoengine.auto_repair_geometry``) or refuses: a repaired
-bow-tie is two triangles, which a polygon field refuses as two parts."""
 
 import re
 from dataclasses import dataclass

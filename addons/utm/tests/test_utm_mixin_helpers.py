@@ -1,4 +1,3 @@
-"""Tests for the UTM mixin find-or-create and name helpers."""
 
 from unittest.mock import patch
 

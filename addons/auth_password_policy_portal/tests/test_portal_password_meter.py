@@ -1,11 +1,3 @@
-"""The portal security page must actually get the password meter.
-
-This module renders `password_meter`, a public component registered by
-auth_password_policy_signup, and reached the frontend bundle only through
-that module's asset declaration -- while depending on neither. It worked
-because portal implies auth_signup, so the bridge was always installed
-alongside; nothing said so, and nothing would have caught it stopping.
-"""
 
 from odoo.tests import tagged
 

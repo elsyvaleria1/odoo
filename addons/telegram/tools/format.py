@@ -1,9 +1,3 @@
-"""Telegram's one output dialect: HTML.
-
-Escaping HTML is total -- `&`, `<` and `>` and nothing else -- so any value
-can be interpolated safely; Markdown's escaping differs per dialect and a miss
-makes Telegram refuse the whole message.
-"""
 
 import html
 import re

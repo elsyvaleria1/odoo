@@ -1,6 +1,3 @@
-"""What the shared conformance vectors cannot state: a constraint on write,
-and an order that changes inside the transaction. Parsing itself is held by
-``static/tests/conformance_vectors.js``, in both runtimes."""
 
 from odoo.exceptions import ValidationError
 from odoo.tests import common

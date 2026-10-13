@@ -1,4 +1,3 @@
-"""Auto-generated file, do not edit by hand. IL metadata"""
 
 from ..phonemetadata import NumberFormat, PhoneMetadata, PhoneNumberDesc
 

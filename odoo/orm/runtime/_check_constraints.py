@@ -1,21 +1,3 @@
-"""Evaluating the CHECK constraints this tier can model.
-
-PostgreSQL refuses a row whose CHECK evaluates to FALSE. A CHECK that
-evaluates to NULL -- unknown -- passes, which is why every comparison against
-a NULL column here answers `None` rather than False. Anything this grammar
-cannot parse answers `None` too, so the twin never refuses a row the database
-would accept: it enforces what it can model and ignores the rest, exactly as
-the `unique(...)` handling does.
-
-Grammar, which covers the shapes that exist in this workspace (293 of 341
-table CHECKs are a simple comparison or a boolean combination of them):
-
-    expr      := term (OR term)*
-    term      := factor (AND factor)*
-    factor    := NOT factor | '(' expr ')' | predicate
-    predicate := operand (cmp operand | IS [NOT] NULL | [NOT] IN '(' operands ')')
-    operand   := identifier | number | string
-"""
 
 from __future__ import annotations
 

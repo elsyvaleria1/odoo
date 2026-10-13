@@ -1,6 +1,3 @@
-"""
-Tests for various autodetection magics for CSV imports
-"""
 
 import codecs
 

@@ -1,28 +1,5 @@
 #!/usr/bin/env python3
 
-"""
-Checks versions from the requirements files against distribution-provided
-versions, taking distribution's Python version in account e.g. if checking
-against a release which bundles Python 3.5, checks the 3.5 version of
-requirements.
-
-* only shows requirements for which at least one release diverges from the
-  matching requirements version
-* empty or green cells mean that specific release matches its requirement (happens when
-  checking multiple releases: one of the other releases may mismatch the its
-  requirements necessating showing the row)
-
-This script was heavily reworked but is not in a final version:
-TODO:
-- add legends
-- better management of cache
-- add meta info on cells (mainly to genearte a better html report)
-    - warn/ko reason
-    - wheel + link
-    - original debian package name + link
-    ...
-
-"""
 
 import argparse
 import gzip

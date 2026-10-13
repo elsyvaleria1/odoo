@@ -1,4 +1,3 @@
-"""The DHL carrier's key and secret rest in the vault; the fields are doors."""
 
 from odoo.tests import tagged
 

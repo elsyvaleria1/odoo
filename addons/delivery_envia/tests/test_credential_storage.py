@@ -1,10 +1,3 @@
-"""The Envia keys rest in the vault; the fields are doors (ADR-0081).
-
-These two are not a key and a secret -- they are the SAME credential for two
-environments, and `prod_environment` picks between them. Neither `api_key` nor
-`api_secret` describes that, so both live in `credential_data` under their own
-names -- the same shape `delivery_easypost` established.
-"""
 
 from odoo.libs.json import loads as json_loads
 from odoo.tests import TransactionCase, tagged

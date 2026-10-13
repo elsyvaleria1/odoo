@@ -1,4 +1,3 @@
-"""What an adapter hands the engine of a provider's calendar."""
 
 import dataclasses
 import enum

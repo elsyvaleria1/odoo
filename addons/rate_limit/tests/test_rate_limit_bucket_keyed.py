@@ -1,12 +1,3 @@
-"""`consume_for_key`: rate-limiting a subject that is not an endpoint record.
-
-`consume_for` needs something with `_name`, `id` and `rate_limit_requests`,
-which is right when the subject is a configured endpoint and wrong for the three
-subjects that turned up anyway -- a user id, a peer address and a chat. Both
-callers that had one fabricated a `SimpleNamespace` carrying exactly those
-attributes to get past the signature, independently of each other. These tests
-exercise the entry point meant to replace both fakes.
-"""
 
 from odoo.tests import TransactionCase, tagged
 

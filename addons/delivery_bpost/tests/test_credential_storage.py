@@ -1,9 +1,3 @@
-"""The bpost passphrase rests in the vault; the field is a door (ADR-0081).
-
-These are the module's first STANDARD tests: `test_delivery_bpost.py` is
-`@tagged('-standard', 'external')` and talks to the real bpost API, so it does
-not run in a normal suite and guards nothing here.
-"""
 
 from odoo.tests import TransactionCase, tagged
 

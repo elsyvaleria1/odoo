@@ -1,15 +1,3 @@
-"""Two addons that patch the same key of the same target, neither depending on
-the other, run in an order no manifest states: bundle order makes one the
-other's ``super``. Such a pair is reviewed as order-independent and listed in
-patch_order_reviewed.json (the pairs found when this gate came in are its
-baseline, held by a floor), or one of the addons depends on the other.
-
-An addon that depends on another is loaded after it, so its patch wraps the
-other's by construction and is not reported. The targets are named by the
-module that exports them (``@mail/core/common/thread:Thread.prototype``); a
-patch whose target or extension the scanner cannot name statically (a class
-passed as a parameter, an instance) is counted per repository instead.
-"""
 
 import functools
 import itertools

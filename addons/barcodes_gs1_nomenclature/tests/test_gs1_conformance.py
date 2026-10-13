@@ -1,8 +1,3 @@
-"""Python half of the cross-runtime GS1 conformance suite.
-
-The JS half is ``static/tests/gs1_conformance.test.js``; the vectors are
-``static/tests/gs1_conformance_vectors.js``.
-"""
 
 import datetime
 from pathlib import Path
