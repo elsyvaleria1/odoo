@@ -104,11 +104,8 @@ class AccountJournal(models.Model):
 
     @_debug.perf.timed
     def _render_sample_bill_attachment(self, company, ref, invoice_date):
-        if _debug.logic.enabled and (
-            tools.config["test_enable"] or modules.module.current_test
-        ):
-            _debug.logic("sample_pdf_skipped", reason="test_mode", company=company)
         if tools.config["test_enable"] or modules.module.current_test:
+            _debug.logic("sample_pdf_skipped", reason="test_mode", company=company)
             return self.env["ir.attachment"]
         address = [
             part
