@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.93
+:Version: 7.94
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -3005,6 +3005,15 @@ and ``"""triple double quotes"""``:
 * Imperative, direct: "Return…", "Raise…". No *Basically*, *Note that*, no
   restating the name or the signature.
 * A comment says why, never what.
+
+**Vendored code keeps its comments** ``[review]``
+``[factcheck web, mail, geoengine]``. A third-party file under ``static/lib/``
+stays byte-identical to the release it was vendored from, so a comment or
+docstring pass skips ``static/lib/``. Why: its banner carries the copyright and
+licence notice MIT, BSD and Apache require in every copy we ship, and the version
+the machine-doc probes (``versions.json``) read; stripped, it matches no release
+and cannot be diffed against one. Libraries ``versions.json`` marks
+``"upstream": false`` are fork-local and follow this section like any other code.
 
 **Deleting an existing comment is a separate decision from shortening one**
 ``[review]``. Leave it unless it is now false. Shorten around the reason, never
@@ -6384,6 +6393,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.94
+     - 2026-10-13
+     - §2.5: vendored code keeps its comments -- a third-party file under
+       ``static/lib/`` stays byte-identical to its release, licence banner and
+       version included, and a comment pass skips ``static/lib/``; fork-local
+       libraries (``"upstream": false``) follow §2.5 like any other code.
    * - 7.93
      - 2026-10-13
      - §1.2: code imports only from its dependency closure;
