@@ -190,7 +190,11 @@ SANITIZE_TAGS = {
 
 
 class _Cleaner(clean.Cleaner):
-    _style_re = re.compile(r"""([\w-]+)\s*:\s*((?:[^;"']|"[^";]*"|'[^';]*')+)""")
+    _style_re = re.compile(
+        r"""([\w-]+)\s*:\s*"""
+        r"""((?:[^;"'()]|"[^"]*"|'[^']*'|\((?:[^()"']|"[^"]*"|'[^']*')*\))+?)"""
+        r"""\s*(?:;|$)"""
+    )
 
     _style_whitelist_base = (
         "font-size",

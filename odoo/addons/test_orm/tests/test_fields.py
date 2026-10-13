@@ -3828,6 +3828,24 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         record.invalidate_recordset()
         self.assertEqual(record.comment0, record_value)
 
+    def test_html_sanitize_style_keeps_whole_declarations(self):
+        for value, expected in (
+            (
+                "background-image: url('data:image/png;base64,iV/+OkI='); color: red",
+                "background-image:url('data:image/png;base64,iV/+OkI='); color:red",
+            ),
+            (
+                "background-image: url(data:image/png;base64,AAA=); color: red",
+                "background-image:url(data:image/png;base64,AAA=); color:red",
+            ),
+            ("font-family: 'a; color: blue'", "font-family:'a; color: blue'"),
+        ):
+            with self.subTest(value=value):
+                self.assertEqual(
+                    html_sanitize(f'<div style="{value}">x</div>', sanitize_style=True),
+                    f'<div style="{expected}">x</div>',
+                )
+
     def test_related_column_type(self):
         related_float_field = self.env["test_orm.related"]._fields["foo_float_id"]
         self.assertEqual(related_float_field.column_type[1], "numeric")
