@@ -294,6 +294,7 @@
             <field
                 name="search_view_id"
                 ref="account.account_audit_account_balances_search_view" />
+            <field name="domain">[('account_status.audit_id', '=', active_id)]</field>
             <field name="context">{'working_file_id': active_id }</field>
         </record>
         <record id="action_view_account_audit_checks" model="ir.actions.act_window">

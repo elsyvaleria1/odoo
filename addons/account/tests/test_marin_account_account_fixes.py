@@ -7,6 +7,7 @@ from odoo import Command
 from odoo.exceptions import AccessError, RedirectWarning, UserError, ValidationError
 from odoo.tests import new_test_user, tagged
 from odoo.tools import mute_logger
+from odoo.tools.safe_eval import safe_eval
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
 
@@ -1044,6 +1045,42 @@ class TestMarinAccountAuditCompanies(AccountTestInvoicingCommon):
         foreign.audit_status = False
 
         self.assertEqual(self._statuses(account), {self.audit_2: False})
+
+    def test_the_balances_list_of_an_audit_holds_its_companies_accounts(self):
+        account_1 = self._expense_accounts(["190688"])
+        account_2 = self._expense_accounts(["190689"], self.company_2)
+        balances = self.env.ref("account.action_view_account_balances")
+        check = self.env["account.return.check"].create(
+            {
+                "code": "marin_balances",
+                "name": "Balances",
+                "return_id": self.audit_1.id,
+                "action": balances._get_action_dict(),
+            }
+        )
+        for opened_by, action in (
+            ("audit", self.audit_1.action_view_audit_balances()),
+            ("check", check.action_review()),
+            (
+                "embedded action",
+                {
+                    "domain": safe_eval(
+                        balances.domain or "[]", {"active_id": self.audit_1.id}
+                    ),
+                    "context": {"working_file_id": self.audit_1.id},
+                },
+            ),
+        ):
+            with self.subTest(opened_by=opened_by):
+                shown = (
+                    self._accounts()
+                    .with_context(**action["context"])
+                    .search(action.get("domain") or [])
+                )
+                self.assertIn(account_1, shown)
+                self.assertNotIn(account_2, shown)
+                shown.audit_status = "reviewed"
+                self.assertEqual(self._statuses(account_1)[self.audit_1], "reviewed")
 
     def test_account_creation_queries_do_not_grow_with_open_audits(self):
         audit_type = self.env.ref("account.default_audit_return_type")
