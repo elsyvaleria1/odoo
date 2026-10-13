@@ -27,7 +27,7 @@ from odoo.tests import (
 from odoo.tools import SQL, mute_logger
 
 from odoo.addons.base.models.res_users_auth import PasswordStore
-from odoo.addons.base.tests.common import make_access_row
+from odoo.addons.base.tests.common import create_access_row
 
 
 class UsersCommonCase(TransactionCase):
@@ -694,7 +694,7 @@ class TestUsers2(UsersCommonCase):
             }
         )
 
-        make_access_row(
+        create_access_row(
             self.env,
             "res.users",
             group_portal_user_manager,
@@ -764,23 +764,23 @@ class TestEmptyPassword(TransactionCase):
         user._change_password(password)
 
         self.assertEqual(
-            self._check_credentials(user, password)["auth_method"], "password"
+            self._authenticate_credentials(user, password)["auth_method"], "password"
         )
         with self.assertRaises(AccessDenied):
-            self._check_credentials(user, password.strip())
+            self._authenticate_credentials(user, password.strip())
         for blank in ("", " \t "):
             with self.subTest(blank=repr(blank)), self.assertRaises(UserError):
                 user._change_password(blank)
         self.assertEqual(
-            self._check_credentials(user, password)["auth_method"], "password"
+            self._authenticate_credentials(user, password)["auth_method"], "password"
         )
 
     def _stored_password(self, user):
         self.env.cr.execute("SELECT password FROM res_users WHERE id=%s", (user.id,))
         return self.env.cr.fetchone()[0]
 
-    def _check_credentials(self, user, password):
-        return user.with_user(user)._check_credentials(
+    def _authenticate_credentials(self, user, password):
+        return user.with_user(user)._authenticate_credentials(
             {"type": "password", "login": user.login, "password": password},
             {"interactive": True},
         )
@@ -789,7 +789,7 @@ class TestEmptyPassword(TransactionCase):
         user = new_test_user(self.env, "nopwd_user", password="Secret!Pwd123")
         self.assertTrue(self._stored_password(user))
         self.assertEqual(
-            self._check_credentials(user, "Secret!Pwd123")["auth_method"],
+            self._authenticate_credentials(user, "Secret!Pwd123")["auth_method"],
             "password",
         )
 
@@ -801,7 +801,7 @@ class TestEmptyPassword(TransactionCase):
         )
         for attempt in ("Secret!Pwd123", "", " "):
             with self.assertRaises(AccessDenied):
-                self._check_credentials(user, attempt)
+                self._authenticate_credentials(user, attempt)
 
     def test_reset_after_empty_password(self):
         user = new_test_user(self.env, "repwd_user", password="Secret!Pwd123")
@@ -810,7 +810,7 @@ class TestEmptyPassword(TransactionCase):
         user.password = "New!Secret456"
         self.assertTrue(self._stored_password(user))
         self.assertEqual(
-            self._check_credentials(user, "New!Secret456")["auth_method"],
+            self._authenticate_credentials(user, "New!Secret456")["auth_method"],
             "password",
         )
 
@@ -953,7 +953,7 @@ class TestLoginCooldown(TransactionCase):
         with (
             self._attempt(addr),
             self.assertRaises(AccessDenied),
-            users._assert_can_auth(user=user or self.env.uid),
+            users._admit_authentication_attempt(user=user or self.env.uid),
         ):
             raise AccessDenied
 
@@ -969,7 +969,7 @@ class TestLoginCooldown(TransactionCase):
         with (
             self._attempt("8.8.8.8"),
             self.assertRaises(AccessDenied),
-            users._assert_can_auth(user=self.env.uid),
+            users._admit_authentication_attempt(user=self.env.uid),
         ):
             pass
         self.assertEqual(self._failures("8.8.8.8"), 2, "a refusal is not a failure")
@@ -1001,13 +1001,19 @@ class TestLoginCooldown(TransactionCase):
             with (
                 self._attempt("9.9.9.9"),
                 self.assertRaisesRegex(AccessDenied, "in progress"),
-                users._assert_can_auth(user=self.env.uid),
+                users._admit_authentication_attempt(user=self.env.uid),
             ):
                 pass
-            with self._attempt("9.9.9.10"), users._assert_can_auth(user=self.env.uid):
+            with (
+                self._attempt("9.9.9.10"),
+                users._admit_authentication_attempt(user=self.env.uid),
+            ):
                 pass
             other.rollback()
-        with self._attempt("9.9.9.9"), users._assert_can_auth(user=self.env.uid):
+        with (
+            self._attempt("9.9.9.9"),
+            users._admit_authentication_attempt(user=self.env.uid),
+        ):
             pass
         self.assertEqual(self._failures("9.9.9.9"), 0, "a refusal is not a failure")
 
@@ -1016,7 +1022,10 @@ class TestLoginCooldown(TransactionCase):
         for _ in range(2):
             self._fail_once(users, "8.8.4.4")
             self.assertEqual(self._failures("8.8.4.4"), 1)
-            with self._attempt("8.8.4.4"), users._assert_can_auth(user=self.env.uid):
+            with (
+                self._attempt("8.8.4.4"),
+                users._admit_authentication_attempt(user=self.env.uid),
+            ):
                 pass
             self.assertEqual(self._failures("8.8.4.4"), 0)
 
@@ -1027,13 +1036,16 @@ class TestLoginCooldown(TransactionCase):
         users = self.env["res.users"]
         for _ in range(5):
             self._fail_once(users, "1.1.1.1")
-        with self._attempt("1.1.1.1"), users._assert_can_auth(user=self.env.uid):
+        with (
+            self._attempt("1.1.1.1"),
+            users._admit_authentication_attempt(user=self.env.uid),
+        ):
             pass
 
     def test_no_request_is_noop(self):
         users = self.env["res.users"]
         with patch(self._REQUEST, None):
-            with users._assert_can_auth(user=self.env.uid):
+            with users._admit_authentication_attempt(user=self.env.uid):
                 pass
 
     @mute_logger("odoo.addons.base.models.res_users")
@@ -1050,7 +1062,7 @@ class TestLoginCooldown(TransactionCase):
             patch(self._REQUEST, failed),
             no_second_cursor(),
             self.assertRaises(AccessDenied),
-            users._assert_can_auth(user=self.env.uid),
+            users._admit_authentication_attempt(user=self.env.uid),
         ):
             raise AccessDenied
         self.assertEqual(self._failures("9.9.9.9"), 0)
@@ -1061,7 +1073,7 @@ class TestLoginCooldown(TransactionCase):
         with (
             patch(self._REQUEST, succeeded),
             no_second_cursor(),
-            users._assert_can_auth(user=self.env.uid),
+            users._admit_authentication_attempt(user=self.env.uid),
         ):
             pass
         self.assertEqual(self._failures("9.9.9.9"), 1)
@@ -1077,7 +1089,7 @@ class TestLoginCooldown(TransactionCase):
         with (
             self._attempt("9.9.9.9"),
             self.assertRaises(AccessDenied),
-            users._assert_can_auth(user=login),
+            users._admit_authentication_attempt(user=login),
         ):
             pass
 
@@ -1182,7 +1194,7 @@ class TestLoginCooldown(TransactionCase):
             self._attempt("203.0.113.51") as request,
             patch.object(type(users), "_clear_login_failures") as clear,
         ):
-            with users._assert_can_auth(user=self.env.uid):
+            with users._admit_authentication_attempt(user=self.env.uid):
                 pass
             self.assertEqual(request.after_release, [])
         clear.assert_not_called()
@@ -1339,13 +1351,13 @@ class TestCheckUidPasswdCacheContract(TransactionCase):
         Users = self.env["res.users"]
         user = new_test_user(self.env, login="rut3_orm", password="old-password")
 
-        Users._check_uid_passwd(user.id, "old-password")
+        Users._authenticate_rpc_credentials(user.id, "old-password")
 
         user.password = "new-password"
 
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(user.id, "old-password")
-        Users._check_uid_passwd(user.id, "new-password")
+            Users._authenticate_rpc_credentials(user.id, "old-password")
+        Users._authenticate_rpc_credentials(user.id, "new-password")
 
     def test_becoming_a_service_principal_ends_cached_password_access(self):
         Users = self.env["res.users"]
@@ -1362,7 +1374,7 @@ class TestCheckUidPasswdCacheContract(TransactionCase):
         Users = self.env["res.users"]
         user = new_test_user(self.env, login="rut3_rawsql", password="old-password")
 
-        Users._check_uid_passwd(user.id, "old-password")
+        Users._authenticate_rpc_credentials(user.id, "old-password")
 
         new_hash = Users._get_crypt_context().hash("new-password")
         self.env.flush_all()
@@ -1371,10 +1383,10 @@ class TestCheckUidPasswdCacheContract(TransactionCase):
         )
         self.env.invalidate_all()
 
-        Users._check_uid_passwd(user.id, "old-password")
+        Users._authenticate_rpc_credentials(user.id, "old-password")
         self.env.registry.clear_cache()
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(user.id, "old-password")
+            Users._authenticate_rpc_credentials(user.id, "old-password")
 
 
 @tagged("post_install", "-at_install")
@@ -2075,7 +2087,7 @@ class TestCredentialsBindToSelf(TransactionCase):
             AccessDenied,
             msg="the caller's own password must not authenticate another record",
         ):
-            victim.with_user(caller)._check_credentials(
+            victim.with_user(caller)._authenticate_credentials(
                 {
                     "login": caller.login,
                     "password": "Ru!Caller12345",
@@ -2085,7 +2097,7 @@ class TestCredentialsBindToSelf(TransactionCase):
             )
 
         self.assertEqual(
-            victim.with_user(caller)._check_credentials(
+            victim.with_user(caller)._authenticate_credentials(
                 {
                     "login": victim.login,
                     "password": "Ru!Victim12345",
@@ -2101,7 +2113,7 @@ class TestCredentialsBindToSelf(TransactionCase):
         user = self._user("ru_cred_uid")
         public = self.env.ref("base.public_user")
 
-        result = user.with_user(public)._check_credentials(
+        result = user.with_user(public)._authenticate_credentials(
             {"login": user.login, "password": self.PASSWORD, "type": "password"},
             {"interactive": True},
         )
@@ -2115,7 +2127,7 @@ class TestCredentialsBindToSelf(TransactionCase):
     def test_a_multi_record_check_is_refused(self):
         two = self._user("ru_cred_a") | self._user("ru_cred_b")
         with self.assertRaises(ValueError):
-            two._check_credentials(
+            two._authenticate_credentials(
                 {"login": "x", "password": self.PASSWORD, "type": "password"},
                 {"interactive": True},
             )
@@ -2264,7 +2276,7 @@ class TestPasswordWriteIsBatched(TransactionCase):
 
         for user in users:
             self.assertEqual(
-                user._check_credentials(
+                user._authenticate_credentials(
                     {
                         "login": user.login,
                         "password": "Ru!Batch12345",
@@ -2404,7 +2416,7 @@ class TestLoginPath(TransactionCase):
         )
         with self.assertRaises(AccessDenied):
             self._login(password=key)
-        auth = self.user.with_user(self.user)._check_credentials(
+        auth = self.user.with_user(self.user)._authenticate_credentials(
             {**self.credential, "password": key}, {"interactive": False}
         )
         self.assertEqual(
@@ -2428,7 +2440,7 @@ class TestLoginPath(TransactionCase):
         with patch.object(
             PasswordStore, "match_and_update", side_effect=AssertionError
         ):
-            auth = self.user.with_user(self.user)._check_credentials(
+            auth = self.user.with_user(self.user)._authenticate_credentials(
                 {**self.credential, "password": key}, {"interactive": False}
             )
         self.assertEqual(auth["auth_method"], "apikey")

@@ -723,7 +723,9 @@ class TestExpenses(TestExpenseCommon):
         self.assertEqual(
             expense.tax_ids,
             product.supplier_taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(expense.company_id)
+                self.env["account.tax"]._get_domain_company_compatible(
+                    expense.company_id
+                )
             ),
         )
         self.assertEqual(expense.account_id, product._get_product_accounts()["expense"])

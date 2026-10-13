@@ -283,7 +283,7 @@ class TestHrAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a, b = cls.companies["a"], cls.companies["b"]
         users = cls.users
@@ -325,7 +325,7 @@ class TestHrAccessMatrix(AccessMatrixCase):
         return {
             "nationality_other": env["resource.nationality"].create(
                 {
-                    "partner_id": emp_other.partner_id._ensure_private_facet().id,
+                    "partner_id": emp_other.partner_id._get_or_create_private_facet().id,
                     "country_id": env.ref("base.mx").id,
                 }
             ),

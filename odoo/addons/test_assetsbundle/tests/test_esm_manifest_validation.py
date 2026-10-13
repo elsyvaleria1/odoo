@@ -237,7 +237,7 @@ class TestBrokenManifestDoesNotTakeThePageDown(BaseCase):
 
 
 class TestEsmManifestShapeGuards(BaseCase):
-    def _build_with(self, esm):
+    def _prepare_registry_with_manifest(self, esm):
         from odoo.modules import Manifest
         from odoo.tools.assets import esm_registry as reg
 
@@ -249,49 +249,63 @@ class TestEsmManifestShapeGuards(BaseCase):
 
     def test_a_non_mapping_esm_key_is_refused(self):
         with self.assertRaisesRegex(TypeError, "manifest 'esm' must be a dict"):
-            self._build_with(["web.assets_web"])
+            self._prepare_registry_with_manifest(["web.assets_web"])
 
     def test_an_unknown_esm_key_is_refused(self):
         with self.assertRaisesRegex(ValueError, "unknown 'esm' manifest keys"):
-            self._build_with({"bundels": ["a.b"]})
+            self._prepare_registry_with_manifest({"bundels": ["a.b"]})
 
     def test_bundles_as_a_bare_string_is_refused(self):
         with self.assertRaisesRegex(TypeError, "'esm.bundles' must be a list"):
-            self._build_with({"bundles": "web.assets_web"})
+            self._prepare_registry_with_manifest({"bundles": "web.assets_web"})
 
     def test_standalone_bundles_as_a_bare_string_is_refused(self):
         with self.assertRaisesRegex(TypeError, "must be\\s+a list"):
-            self._build_with({"bundles": ["a.b"], "standalone_bundles": "a.b"})
+            self._prepare_registry_with_manifest(
+                {"bundles": ["a.b"], "standalone_bundles": "a.b"}
+            )
 
     def test_a_relationship_mapping_must_be_a_mapping(self):
         with self.assertRaisesRegex(TypeError, "must be a dict"):
-            self._build_with({"bundles": ["a.b"], "dynamic_children": ["a.b"]})
+            self._prepare_registry_with_manifest(
+                {"bundles": ["a.b"], "dynamic_children": ["a.b"]}
+            )
 
     def test_relationship_children_must_be_a_list(self):
         with self.assertRaisesRegex(TypeError, "must be a\\s+list of bundle names"):
-            self._build_with({"bundles": ["a.b"], "dynamic_children": {"a.b": "a.c"}})
+            self._prepare_registry_with_manifest(
+                {"bundles": ["a.b"], "dynamic_children": {"a.b": "a.c"}}
+            )
 
     def test_a_well_formed_declaration_builds(self):
-        registry = self._build_with({"bundles": ["a.b"], "standalone_bundles": ["a.b"]})
+        registry = self._prepare_registry_with_manifest(
+            {"bundles": ["a.b"], "standalone_bundles": ["a.b"]}
+        )
         self.assertIn("a.b", registry.bundles)
         self.assertIn("a.b", registry.standalone_bundles)
 
     def test_runtime_bundles_as_a_bare_string_is_refused(self):
         with self.assertRaisesRegex(TypeError, "must be\\s+a list"):
-            self._build_with({"bundles": ["a.b"], "runtime_bundles": "a.b"})
+            self._prepare_registry_with_manifest(
+                {"bundles": ["a.b"], "runtime_bundles": "a.b"}
+            )
 
     def test_a_runtime_bundle_must_be_a_registered_bundle(self):
         with self.assertRaisesRegex(ValueError, "runtime_bundles entry 'a.c'"):
-            self._build_with({"bundles": ["a.b"], "runtime_bundles": ["a.c"]})
+            self._prepare_registry_with_manifest(
+                {"bundles": ["a.b"], "runtime_bundles": ["a.c"]}
+            )
 
     def test_runtime_bundles_needs_no_parent(self):
-        registry = self._build_with({"bundles": ["a.b"], "runtime_bundles": ["a.b"]})
+        registry = self._prepare_registry_with_manifest(
+            {"bundles": ["a.b"], "runtime_bundles": ["a.b"]}
+        )
         self.assertIn("a.b", registry.runtime_bundle_names)
         self.assertEqual(registry.dynamic_children, {})
         self.assertEqual(registry.dynamic_bundle_names, frozenset())
 
     def test_a_dynamic_child_is_a_runtime_bundle_without_saying_so(self):
-        registry = self._build_with(
+        registry = self._prepare_registry_with_manifest(
             {"bundles": ["a.b", "a.c"], "dynamic_children": {"a.b": ["a.c"]}}
         )
         self.assertIn("a.c", registry.runtime_bundle_names)
@@ -299,7 +313,7 @@ class TestEsmManifestShapeGuards(BaseCase):
 
     def test_a_standalone_bundle_may_not_be_in_a_relationship(self):
         with self.assertRaisesRegex(ValueError, "cannot participate"):
-            self._build_with(
+            self._prepare_registry_with_manifest(
                 {
                     "bundles": ["a.b", "a.c"],
                     "standalone_bundles": ["a.c"],

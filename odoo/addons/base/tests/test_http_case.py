@@ -420,13 +420,17 @@ class TestChromeBrowserConstructionFailure(HttpCase):
     def test_failed_websocket_handshake_leaves_nothing_behind(self):
         real_create_connection = browser_module.websocket.create_connection
 
-        def refused(*args, **kwargs):
+        def _get_connection_with_error_status(*args, **kwargs):
             connection = real_create_connection(*args, **kwargs)
             connection.getstatus = lambda: 500
             return connection
 
         self._assert_failed_construction_cleans_up(
-            patch.object(browser_module.websocket, "create_connection", refused),
+            patch.object(
+                browser_module.websocket,
+                "create_connection",
+                _get_connection_with_error_status,
+            ),
             unittest.SkipTest,
         )
 

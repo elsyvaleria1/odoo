@@ -23,7 +23,7 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-def _find_xsd_attachment(env: Environment, name: str) -> IrAttachmentModel:
+def _get_xsd_attachment(env: Environment, name: str) -> IrAttachmentModel:
     return env["ir.attachment"].search(
         [("name", "=", name), ("res_model", "=", False)], limit=1
     )
@@ -38,7 +38,7 @@ class odoo_resolver(etree.Resolver):
     def resolve(self, url: str, id: object, context: object) -> object:
         for name in dict.fromkeys((url, url.rsplit("/", 1)[-1])):
             attachment_name = f"{self.prefix}.{name}" if self.prefix else name
-            attachment = _find_xsd_attachment(self.env, attachment_name)
+            attachment = _get_xsd_attachment(self.env, attachment_name)
             if attachment:
                 break
         _debug.logic(
@@ -76,7 +76,7 @@ def _pick_xsd(xsd_attachments: Any, xsd_name: str | None, source: str) -> str:
 def check_with_attachment_xsd(
     xml_content: XmlSource, xsd_name: str, env: Environment, prefix: str | None = None
 ) -> None:
-    attachment = _find_xsd_attachment(env, xsd_name)
+    attachment = _get_xsd_attachment(env, xsd_name)
     if not attachment:
         raise FileNotFoundError
     check_with_xsd(
@@ -127,7 +127,7 @@ def check_xml(
 def _upsert_xsd_attachment(
     env: Environment, name: str, content: bytes
 ) -> IrAttachmentModel:
-    fetched_attachment = _find_xsd_attachment(env, name)
+    fetched_attachment = _get_xsd_attachment(env, name)
     _debug.lifecycle(
         "xsd.attachment_upserted",
         name=name,

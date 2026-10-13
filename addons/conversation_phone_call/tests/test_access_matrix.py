@@ -31,7 +31,7 @@ class TestConversationPhoneCallAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         a = cls.companies["a"]
         call = cls.env["phone.call"].create(
             {

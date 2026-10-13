@@ -13,7 +13,9 @@ class TestMarinAccountAccountFixes(AccountTestInvoicingCommon):
     def test_display_name_code_does_not_leak_between_users(self):
         account = self.env["account.account"].search(
             [
-                *self.env["account.account"]._check_company_domain(self.env.company),
+                *self.env["account.account"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("code", "!=", False),
             ],
             limit=1,

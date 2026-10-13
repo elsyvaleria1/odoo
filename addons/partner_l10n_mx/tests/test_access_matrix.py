@@ -31,7 +31,7 @@ class TestPartnerL10nMxAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         state = cls.env["res.country.state"].create(
             {
                 "name": "Matrix State",

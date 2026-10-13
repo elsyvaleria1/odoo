@@ -1254,7 +1254,7 @@ class TestAccelFieldCache(PerfTestCase):
     def setUpClass(cls):
         super().setUpClass()
 
-    def _make_cache(self, n_records=1000):
+    def _prepare_populated_cache(self, n_records=1000):
         from odoo.orm.components.cache import FieldCache
 
         cache = FieldCache()
@@ -1265,12 +1265,12 @@ class TestAccelFieldCache(PerfTestCase):
         return cache, f, ids
 
     def test_01_get_value_hit(self):
-        cache, f, _ = self._make_cache(1000)
+        cache, f, _ = self._prepare_populated_cache(1000)
         timer = _bench(lambda: cache.get_value(f, 500))
         self._log(timer.stats("cache.get_value(hit)", warmup=0))
 
     def test_02_get_value_miss(self):
-        cache, f, _ = self._make_cache(1000)
+        cache, f, _ = self._prepare_populated_cache(1000)
         timer = _bench(lambda: cache.get_value(f, 99999, None))
         self._log(timer.stats("cache.get_value(miss)", warmup=0))
 
@@ -1313,13 +1313,13 @@ class TestAccelFieldCache(PerfTestCase):
         self._log(timer.stats("insert_if_absent(1000)", warmup=0))
 
     def test_06_update_batch_1(self):
-        cache, f, _ = self._make_cache(100)
+        cache, f, _ = self._prepare_populated_cache(100)
         d = cache.get_field_data(f)
         timer = _bench(lambda: d.update(dict.fromkeys((42,), "x")))
         self._log(timer.stats("update_batch(1)", warmup=0))
 
     def test_07_update_batch_100(self):
-        cache, f, ids = self._make_cache(100)
+        cache, f, ids = self._prepare_populated_cache(100)
         d = cache.get_field_data(f)
         timer = _bench(lambda: d.update(dict.fromkeys(ids, "x")))
         self._log(timer.stats("update_batch(100)", warmup=0))
@@ -1334,7 +1334,7 @@ class TestAccelFieldCache(PerfTestCase):
         self._log(timer.stats("update_batch(1000)", warmup=0))
 
     def test_09_invalidate_100(self):
-        cache, f, ids = self._make_cache(1000)
+        cache, f, ids = self._prepare_populated_cache(1000)
         inv_ids = ids[:100]
 
         def bench():

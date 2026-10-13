@@ -21,7 +21,7 @@ class AccountMove(models.Model):
         if not partner_id:
             return 0, False, False
         domain = [
-            *self.env["account.move.line"]._check_company_domain(company_id),
+            *self.env["account.move.line"]._get_domain_company_compatible(company_id),
             ("partner_id", "=", partner_id),
             ("date", ">=", date.today() - timedelta(days=365 * 2)),
         ]

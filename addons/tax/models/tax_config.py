@@ -92,7 +92,7 @@ class TaxConfig(models.Model):
             company.id: self.env["res.country"].browse(filter(None, country_ids))
             for company, country_ids in FiscalPosition._read_group(
                 domain=[
-                    *FiscalPosition._check_company_domain(companies),
+                    *FiscalPosition._get_domain_company_compatible(companies),
                     ("foreign_vat", "!=", False),
                 ],
                 groupby=["company_id"],

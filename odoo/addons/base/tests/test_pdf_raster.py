@@ -9,7 +9,7 @@ from odoo.tests.common import BaseCase
 PNG = b"\x89PNG\r\n\x1a\n"
 
 
-def make_pdf(pages: int = 1, operators: int = 0) -> bytes:
+def prepare_pdf_bytes(pages: int = 1, operators: int = 0) -> bytes:
     content = b"0.1 w 0 0 m 600 800 l 600 0 l 0 800 l S\n" * operators
     objects = [
         b"<< /Type /Catalog /Pages 2 0 R >>",
@@ -37,7 +37,7 @@ def make_pdf(pages: int = 1, operators: int = 0) -> bytes:
 @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
 class TestPdfRaster(BaseCase):
     def test_renders_the_first_page_as_a_png(self):
-        rendering = pdf_raster.render_first_page(make_pdf(pages=3), 400, 280)
+        rendering = pdf_raster.render_first_page(prepare_pdf_bytes(pages=3), 400, 280)
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.RENDERED)
         self.assertTrue(rendering.png.startswith(PNG))
@@ -51,14 +51,14 @@ class TestPdfRaster(BaseCase):
                 self.assertEqual(rendering.png, b"")
 
     def test_a_pdf_without_pages_is_refused(self):
-        rendering = pdf_raster.render_first_page(make_pdf(pages=0), 400, 280)
+        rendering = pdf_raster.render_first_page(prepare_pdf_bytes(pages=0), 400, 280)
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.REFUSED)
 
     def test_an_encrypted_pdf_is_refused(self):
         import pymupdf
 
-        with pymupdf.open(stream=make_pdf(), filetype="pdf") as pdf:
+        with pymupdf.open(stream=prepare_pdf_bytes(), filetype="pdf") as pdf:
             encrypted = pdf.tobytes(
                 encryption=pymupdf.PDF_ENCRYPT_AES_256,
                 owner_pw="owner",
@@ -70,7 +70,7 @@ class TestPdfRaster(BaseCase):
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.REFUSED)
 
     def test_the_cpu_limit_ends_the_render(self):
-        heavy = make_pdf(operators=20_000)
+        heavy = prepare_pdf_bytes(operators=20_000)
         limits = pdf_raster.Limits(cpu_seconds=1)
 
         started = time.monotonic()
@@ -80,7 +80,7 @@ class TestPdfRaster(BaseCase):
         self.assertLess(time.monotonic() - started, 5)
 
     def test_the_wall_limit_ends_the_render(self):
-        heavy = make_pdf(operators=20_000)
+        heavy = prepare_pdf_bytes(operators=20_000)
         limits = pdf_raster.Limits(wall_seconds=0.5)
 
         started = time.monotonic()
@@ -92,14 +92,14 @@ class TestPdfRaster(BaseCase):
     def test_the_memory_limit_fails_the_pdf_not_the_renderer(self):
         limits = pdf_raster.Limits(memory_bytes=1)
 
-        rendering = pdf_raster.render_first_page(make_pdf(), 400, 280, limits)
+        rendering = pdf_raster.render_first_page(prepare_pdf_bytes(), 400, 280, limits)
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.FAILED)
 
     def test_an_oversized_output_fails(self):
         limits = pdf_raster.Limits(output_bytes=16)
 
-        rendering = pdf_raster.render_first_page(make_pdf(), 400, 280, limits)
+        rendering = pdf_raster.render_first_page(prepare_pdf_bytes(), 400, 280, limits)
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.FAILED)
 
@@ -110,7 +110,7 @@ class TestPdfRasterUnavailable(BaseCase):
             patch.object(pdf_raster, "available", return_value=False),
             patch.object(pdf_raster.subprocess, "run") as run,
         ):
-            rendering = pdf_raster.render_first_page(make_pdf(), 400, 280)
+            rendering = pdf_raster.render_first_page(prepare_pdf_bytes(), 400, 280)
 
         self.assertEqual(rendering.outcome, pdf_raster.Outcome.UNAVAILABLE)
         run.assert_not_called()

@@ -15,7 +15,7 @@ from odoo.tools.config import config
 from odoo.tools.sass_embedded import SassCompileError
 
 import odoo.addons
-from .common import asset_file, make_bundle
+from .common import asset_file, prepare_bundle
 from odoo.addons.base.models import assetsbundle as _ab
 from odoo.addons.base.models.assetsbundle import (
     AssetError,
@@ -1674,7 +1674,7 @@ class TestCssCompileErrorReporting(TransactionCase):
     BROKEN_SCSS = ".rule1 ()){\n    color: black;\n}\n"
 
     def _bundle(self, *files, **kw):
-        return make_bundle(self, "test_assetsbundle.csserr", *files, js=False, **kw)
+        return prepare_bundle(self, "test_assetsbundle.csserr", *files, js=False, **kw)
 
     def test_a_sass_error_is_reported_not_raised(self):
         bundle = self._bundle(("/m/static/src/broken.scss", self.BROKEN_SCSS))

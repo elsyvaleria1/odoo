@@ -300,7 +300,7 @@ class AccountGeneralLedgerReportHandler(models.AbstractModel):
                 ._search(
                     [
                         ("display_name", "ilike", options.get("filter_search_bar")),
-                        *self.env["account.account"]._check_company_domain(
+                        *self.env["account.account"]._get_domain_company_compatible(
                             self.env["report.formula"].get_report_company_ids(options)
                         ),
                     ]

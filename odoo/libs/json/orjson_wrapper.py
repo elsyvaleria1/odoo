@@ -5,7 +5,7 @@ import math
 import re
 import uuid
 from collections.abc import Callable
-from typing import Any
+from typing import Any, NoReturn
 
 import orjson as _orjson
 
@@ -145,7 +145,7 @@ def loads(
         try:
             return _json.loads(
                 data.decode(),
-                parse_constant=_refuse_constant,
+                parse_constant=_check_json_constant_allowed,
                 parse_float=_finite_float,
             )
         except ValueError, RecursionError:
@@ -195,7 +195,7 @@ def _orjson_reads_it_rewritten(
     return False
 
 
-def _refuse_constant(name: str) -> Any:
+def _check_json_constant_allowed(name: str) -> NoReturn:
     raise ValueError(f"{name} is not JSON")
 
 

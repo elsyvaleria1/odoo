@@ -151,7 +151,7 @@ def check_model_operation(
         )
 
 
-def safe_context(env: Environment, context: Any) -> dict[str, Any]:
+def get_context_allowed(env: Environment, context: Any) -> dict[str, Any]:
     caller = context if isinstance(context, dict) else {}
     safe = {k: v for k, v in env.context.items() if k in SAFE_CONTEXT_KEYS}
     safe.update((k, v) for k, v in caller.items() if k in SAFE_CONTEXT_KEYS)
@@ -584,10 +584,10 @@ def unknown_field_names(env: Environment, model_name: str, names: Any) -> str:
     return ", ".join(_describe_unknown(name, known) for name in unknown)
 
 
-def _refuse_unknown(
+def _prepare_unknown_fields_error(
     env: Environment, model_name: str, unknown: str, where: str
-) -> None:
-    raise UserError(
+) -> UserError:
+    return UserError(
         env._(
             "Unknown field(s) %(where)s'%(model)s': %(fields)s. Call "
             "fields_get('%(model)s') for the fields this model actually has.",
@@ -613,7 +613,7 @@ def check_requested_fields(
                     _leading_name(name) if kind is PATHS else name for name in container
                 )
     if names and (unknown := unknown_field_names(env, model_name, names)):
-        _refuse_unknown(env, model_name, unknown, env._("on "))
+        raise _prepare_unknown_fields_error(env, model_name, unknown, env._("on "))
 
 
 def check_domain(
@@ -642,7 +642,9 @@ def check_domain(
         ) from e
     names = [_leading_name(str(c.field_expr)) for c in parsed.iter_conditions()]
     if unknown := unknown_field_names(env, model_name, names):
-        _refuse_unknown(env, model_name, unknown, env._("in the domain for "))
+        raise _prepare_unknown_fields_error(
+            env, model_name, unknown, env._("in the domain for ")
+        )
     try:
         parsed.check(model)
     except (ValueError, TypeError) as e:
@@ -686,7 +688,9 @@ def check_order(
                     )
                 )
     if unknown and (described := unknown_field_names(env, model_name, unknown)):
-        _refuse_unknown(env, model_name, described, env._("in the sort order for "))
+        raise _prepare_unknown_fields_error(
+            env, model_name, described, env._("in the sort order for ")
+        )
 
 
 def check_grouping(
@@ -702,7 +706,7 @@ def check_grouping(
                 _leading_name(str(c.field_expr)) for c in parsed.iter_conditions()
             )
     if unknown := unknown_field_names(env, model_name, [n for n in names if n]):
-        _refuse_unknown(
+        raise _prepare_unknown_fields_error(
             env, model_name, unknown, env._("in the group specification for ")
         )
 
@@ -712,7 +716,7 @@ def check_write_values(
 ) -> None:
     keys = [key for vals in _iter_vals_dicts(method, args, kwargs) for key in vals]
     if unknown := unknown_field_names(env, model_name, keys):
-        _refuse_unknown(env, model_name, unknown, env._("on "))
+        raise _prepare_unknown_fields_error(env, model_name, unknown, env._("on "))
 
 
 def check_field_names(

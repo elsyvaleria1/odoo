@@ -506,7 +506,7 @@ class CredentialCredential(models.Model):
         for record in self:
             if not record.notes:
                 continue
-            matched_names = redact.find_secret_shapes(record.notes)
+            matched_names = redact.get_secret_shape_names(record.notes)
             if not matched_names:
                 continue
             _logger.warning(

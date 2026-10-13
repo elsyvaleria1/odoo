@@ -4,7 +4,7 @@ from unittest.mock import patch
 from odoo import Command
 from odoo.exceptions import ValidationError
 from odoo.tests import tagged
-from odoo.tests.pdf_signing import make_signing_pki, sign_incrementally
+from odoo.tests.pdf_signing import prepare_signing_pki, sign_incrementally
 from odoo.tools.misc import file_open
 
 from odoo.addons.sign.tests.test_sign_controllers import TestSignControllerCommon
@@ -116,7 +116,7 @@ class TestEmsignerResultIsVerified(SignEmsignerCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.pki = make_signing_pki("Genuine Signer")
+        cls.pki = prepare_signing_pki("Genuine Signer")
         cls.other_request = cls.sign_request_emsigner.copy()
 
     def _send(self, sign_request):
@@ -180,7 +180,7 @@ class TestEmsignerResultIsVerified(SignEmsignerCommon):
 
     def test_a_document_nobody_certified_is_refused(self):
         item, sent = self._send(self.sign_request_emsigner)
-        forged = sign_incrementally(sent, make_signing_pki("Genuine Signer"))
+        forged = sign_incrementally(sent, prepare_signing_pki("Genuine Signer"))
 
         self.assertFalse(self._complete(item, forged).get("success"))
         self.assertStillWaiting(item)

@@ -82,7 +82,7 @@ class _InMemoryQuery(Query):
         self._unanswerable: str | None = None
         self._ids = self._matched
 
-    def _refuse(self, reason: str) -> None:
+    def _mark_query_unanswerable(self, reason: str) -> None:
         if self._unanswerable is None and self._matched:
             _debug.logic(
                 "backend.memory.query_unanswerable", table=self.table, reason=reason
@@ -92,7 +92,7 @@ class _InMemoryQuery(Query):
 
     @typing.override
     def _invalidate_ids(self) -> None:
-        self._refuse("a condition, a join or a grouping added in SQL")
+        self._mark_query_unanswerable("a condition, a join or a grouping added in SQL")
 
     @typing.override
     def _drop_ids(self) -> None:
@@ -115,7 +115,7 @@ class _InMemoryQuery(Query):
         if self._order:
             terms = _parse_column_order(self._model, self.table, self._order)
             if terms is None:
-                self._refuse(f"ORDER BY {self._order.code}")
+                self._mark_query_unanswerable(f"ORDER BY {self._order.code}")
                 return
             self._env.flush_query(self._order)
             ids = self._sorted(ids, terms)

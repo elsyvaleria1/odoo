@@ -14,7 +14,7 @@ class AccountFiscalPosition(models.Model):
     _description = "Fiscal Position"
     _order = "sequence"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     name = fields.Char(
         string="Fiscal Position",
@@ -108,7 +108,7 @@ class AccountFiscalPosition(models.Model):
     def _check_foreign_vat_country(self) -> None:
         foreign_vat_positions = self.search(
             [
-                *self._check_company_domain(self.company_id),
+                *self._get_domain_company_compatible(self.company_id),
                 ("foreign_vat", "!=", False),
                 ("country_id", "in", self.country_id.ids),
             ]
@@ -157,7 +157,7 @@ class AccountFiscalPosition(models.Model):
                 and other.country_id == record.country_id
                 and other.foreign_vat not in (False, record.foreign_vat)
                 for other in foreign_vat_positions.filtered_domain(
-                    record._check_company_domain(record.company_id)
+                    record._get_domain_company_compatible(record.company_id)
                 )
             ):
                 _debug.logic(
@@ -360,7 +360,7 @@ class AccountFiscalPosition(models.Model):
     def _get_auto_apply_fiscal_positions(self, company=None):
         company = company or self.env.company
         return self.search(
-            Domain(self._check_company_domain(company))
+            Domain(self._get_domain_company_compatible(company))
             & Domain("auto_apply", "=", True)
         )
 

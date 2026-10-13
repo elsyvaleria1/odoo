@@ -55,7 +55,9 @@ class WizardResPartnerBankAccountCreate(models.TransientModel):
 
     def _get_domain_unlinked_journal(self, journal_type) -> list:
         return [
-            *self.env["account.journal"]._check_company_domain(self.env.company),
+            *self.env["account.journal"]._get_domain_company_compatible(
+                self.env.company
+            ),
             ("type", "=", journal_type),
             ("bank_account_id", "=", False),
         ]

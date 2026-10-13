@@ -55,7 +55,7 @@ class ProductProduct(models.Model):
     ]
     _order = "default_code, name, id"
     _search_visibility_fields = ()
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     product_tmpl_id = fields.Many2one(
         comodel_name="product.template",

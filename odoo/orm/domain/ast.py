@@ -24,10 +24,10 @@ from ._ast_primitives import (
     MAX_DOMAIN_NESTING,
     DomainOptimizationError,
     OptimizationLevel,
-    _check_depth,
     _check_subdomain_nesting,
     _defines_the_condition,
     _freeze_comparand,
+    _get_depth_within_limit,
     _get_nary_subtree_tiebreak,
     _get_nary_value_tiebreak,
     _is_comparand_equal,
@@ -487,7 +487,7 @@ class DomainNot(Domain):
     def __new__(cls, child: Domain) -> Self:
         self = object.__new__(cls)
         object.__setattr__(self, "child", child)
-        object.__setattr__(self, "_depth", _check_depth(child._depth + 1))
+        object.__setattr__(self, "_depth", _get_depth_within_limit(child._depth + 1))
         object.__setattr__(self, "_opt", (OptimizationLevel.NONE, None))
         return self
 
@@ -557,7 +557,7 @@ class DomainNary(Domain):
         object.__setattr__(
             self,
             "_depth",
-            _check_depth(1 + max(child._depth for child in children)),
+            _get_depth_within_limit(1 + max(child._depth for child in children)),
         )
         object.__setattr__(self, "_opt", (OptimizationLevel.NONE, None))
         return self
@@ -913,7 +913,9 @@ class DomainCondition(Domain):
         object.__setattr__(
             self,
             "_depth",
-            _check_depth(value._depth + 1) if isinstance(value, Domain) else 1,
+            _get_depth_within_limit(value._depth + 1)
+            if isinstance(value, Domain)
+            else 1,
         )
         object.__setattr__(self, "_field_instance", None)
         object.__setattr__(self, "_opt", (OptimizationLevel.NONE, None))

@@ -470,7 +470,7 @@ def format_xml_file(
     return True
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=("Format Odoo XML data files with canonical 4-space indentation."),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -510,7 +510,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    args = prepare_argument_parser().parse_args(argv)
     excluded: set[str] = set(args.exclude)
     dry_run = args.dry_run or args.count
     changed = unchanged = skipped = 0

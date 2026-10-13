@@ -36,7 +36,7 @@ class TestTemplateTrustAttacks(TransactionCase):
             }
         )
 
-    def _refuse(self, arch, needle="not available"):
+    def _update_arch_and_check_authoring_denied(self, arch, needle="not available"):
         self.view.write({"arch": arch})
         with self.assertRaisesRegex(AccessError, needle):
             self.view.with_user(self.author)._check_template_authoring()
@@ -46,33 +46,33 @@ class TestTemplateTrustAttacks(TransactionCase):
         self.view.with_user(self.author)._check_template_authoring()
 
     def test_t_att_dict_spread(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             f'<t t-name="base.av_red_host"><p t-att="{{\'x\': {PRIV}}}"/></t>',
             "the name 'env' is not available",
         )
 
     def test_t_options_dict(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             '<t t-name="base.av_red_host">'
             f'<span t-out="1" t-options="{{\'widget\': {PRIV}}}"/></t>',
             "the name 'env' is not available",
         )
 
     def test_t_options_suffix(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             '<t t-name="base.av_red_host">'
             f'<span t-out="1" t-options-widget="{PRIV}"/></t>',
             "the name 'env' is not available",
         )
 
     def test_t_att_name_trick(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             f'<t t-name="base.av_red_host"><p t-att-t-out="{PRIV}"/></t>',
             "the name 'env' is not available",
         )
 
     def test_t_call_with_t_set_body(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             '<t t-name="base.av_red_host">'
             '<t t-call="base.av_red_host">'
             f'<t t-set="x" t-value="{PRIV}"/></t></t>',
@@ -80,19 +80,19 @@ class TestTemplateTrustAttacks(TransactionCase):
         )
 
     def test_t_set_body_element(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             f'<t t-name="base.av_red_host"><t t-set="x"><p t-out="{PRIV}"/></t></t>',
             "the name 'env' is not available",
         )
 
     def test_t_field_object_part_checked(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             f'<t t-name="base.av_red_host"><span t-field="({PRIV}).name"/></t>',
             "the name 'env' is not available",
         )
 
     def test_entity_encoded_expression_still_checked(self):
-        self._refuse(
+        self._update_arch_and_check_authoring_denied(
             '<t t-name="base.av_red_host"><p t-out="&#x65;nv.cr.dbname"/></t>',
             "the name 'env' is not available",
         )

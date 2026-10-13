@@ -15,7 +15,7 @@ class ProductTemplatePosLoad(models.Model):
     @api.model
     def _load_pos_data_domain(self, data, config):
         domain = [
-            *self._check_company_domain(config.company_id),
+            *self._get_domain_company_compatible(config.company_id),
             ("available_in_pos", "=", True),
             ("sale_ok", "=", True),
         ]
@@ -246,7 +246,7 @@ class ProductTemplatePosLoad(models.Model):
         Item = self.env["product.pricelist.item"]
         items = Item.search(
             Domain("pricelist_id", "in", config._get_pos_pricing_pricelists().ids)
-            & Domain(Item._check_company_domain(config.company_id))
+            & Domain(Item._get_domain_company_compatible(config.company_id))
             & (
                 (
                     Domain("product_id", "=", False)
@@ -322,7 +322,7 @@ class ProductTemplatePosLoad(models.Model):
     def _get_pos_tax_data(self, product_tmpls, config) -> dict:
         account_tax = self.env["account.tax"]
         tax_domain = Domain(
-            account_tax._check_company_domain(config.company_id)
+            account_tax._get_domain_company_compatible(config.company_id)
         ) & Domain("id", "in", product_tmpls.taxes_id.ids)
         return {
             "account.tax": account_tax._load_pos_data_read(
@@ -360,7 +360,7 @@ class ProductTemplatePosLoad(models.Model):
             return
         account_tax = self.env["account.tax"]
         taxes_by_company = self._get_taxes_by_company(
-            account_tax.search(account_tax._check_company_domain(company))
+            account_tax.search(account_tax._get_domain_company_compatible(company))
         )
         if len(taxes_by_company) < 2:
             return

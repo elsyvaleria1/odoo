@@ -1797,7 +1797,11 @@ class TestComposerInternals(TestMailComposer):
         portal_user = self._create_portal_user()
         self.test_record.message_subscribe(partner_ids=portal_user.partner_id.ids)
 
-        with patch.object(MailTestTicket, "_check_access", return_value=None):
+        with patch.object(
+            MailTestTicket,
+            "_get_records_forbidden_and_error_factory",
+            return_value=None,
+        ):
             with self.assertRaises(AccessError):
                 self.env["wizard.mail.message.send"].with_user(
                     portal_user

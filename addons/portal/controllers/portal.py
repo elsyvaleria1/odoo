@@ -1044,8 +1044,8 @@ class CustomerPortal(Controller):
         else:
             try:
                 user = request.env.user
-                with user._assert_can_auth(user=user.id):
-                    user._check_credentials(credential, {"interactive": True})
+                with user._admit_authentication_attempt(user=user.id):
+                    user._authenticate_credentials(credential, {"interactive": True})
                 _debug.lifecycle("portal_user_deactivated", user=request.env.uid)
                 request.env.user.sudo()._deactivate_portal_user(**post)
                 request.session.logout()

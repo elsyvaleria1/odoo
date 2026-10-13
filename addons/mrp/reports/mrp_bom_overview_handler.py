@@ -45,7 +45,7 @@ class MrpBomOverviewReportHandler(models.AbstractModel):
             {"id": variant.id, "name": variant.display_name} for variant in variants
         ]
         warehouses = self.env["stock.warehouse"].search(
-            self.env["stock.warehouse"]._check_company_domain(
+            self.env["stock.warehouse"]._get_domain_company_compatible(
                 bom.company_id or self.env.company
             )
         )

@@ -168,7 +168,7 @@ class ResPartner(models.Model):
     ]
     _allow_sudo_commands = False
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     _complete_name_displayed_types = ("invoice", "delivery", "other", "private")
     _display_name_column = "complete_name"
@@ -2484,7 +2484,7 @@ class ResPartner(models.Model):
         self.check_singleton()
         return self._get_private_facets().get(self, self.browse())
 
-    def _ensure_private_facet(self):
+    def _get_or_create_private_facet(self) -> Self:
         self.check_singleton()
         return self._get_private_facet() or self.create(
             {"parent_id": self.id, "type": "private"}

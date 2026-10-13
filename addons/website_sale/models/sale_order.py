@@ -752,7 +752,7 @@ class SaleOrder(models.Model):
             line.product_id.product_template_attribute_value_ids
             + line.product_no_variant_attribute_value_ids
         )
-        company_domain = self.env["product.product"]._check_company_domain(
+        company_domain = self.env["product.product"]._get_domain_company_compatible(
             line.company_id
         )
         return accessory_products.filtered(
@@ -929,7 +929,7 @@ class SaleOrder(models.Model):
             .search(
                 [
                     ("website_published", "=", True),
-                    *self.env["delivery.carrier"]._check_company_domain(
+                    *self.env["delivery.carrier"]._get_domain_company_compatible(
                         self.company_id
                     ),
                 ]

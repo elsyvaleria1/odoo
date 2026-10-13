@@ -31,7 +31,7 @@ _debug = DebugLog(__name__)
 _HEADER_UNSAFE = dict.fromkeys([*range(32), 127], "_")
 
 
-def sanitize_download_name(name: str) -> str:
+def normalize_download_name(name: str) -> str:
     return name.translate(_HEADER_UNSAFE)
 
 
@@ -41,7 +41,7 @@ def prepare_content_disposition_header(
     if disposition_type not in ("attachment", "inline"):
         e = f"Invalid disposition_type: {disposition_type!r}"
         raise ValueError(e)
-    filename = sanitize_download_name(filename)
+    filename = normalize_download_name(filename)
     try:
         filename.encode("ascii")
     except UnicodeEncodeError:

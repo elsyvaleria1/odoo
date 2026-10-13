@@ -1,7 +1,6 @@
-
 import logging
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from odoo import api, fields, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
@@ -20,6 +19,8 @@ from .ir_access_log import kept_on_uninstall
 _logger = logging.getLogger(__name__)
 
 DRIFT_LOG_EVENTS = [("access_drift", "Access row drifted from its file")]
+
+type _DriftIdentity = tuple[str | Literal[False], int | Literal[False], str]
 
 
 class IrAccessLog(models.Model):
@@ -92,7 +93,7 @@ class IrAccessDrift(models.Model):
 
     @api.model
     def _scan(self) -> dict[str, int]:
-        found = self._find()
+        found = self._get_findings_by_identity()
         standing = {
             (drift.xmlid, drift.access_id.id, drift.state): drift
             for drift in self.search([])
@@ -137,7 +138,7 @@ class IrAccessDrift(models.Model):
         )
 
     @api.model
-    def _find(self) -> dict[tuple, dict[str, Any]]:
+    def _get_findings_by_identity(self) -> dict[_DriftIdentity, dict[str, Any]]:
         Access = self.env["ir.access"].with_context(active_test=False)
         names = [
             name
@@ -154,7 +155,7 @@ class IrAccessDrift(models.Model):
 
         before = {row["id"]: row for row in Access.search([]).read(names)}
         xmlids = self._xmlids()
-        found: dict[tuple, dict[str, Any]] = {}
+        found: dict[_DriftIdentity, dict[str, Any]] = {}
         after: dict[int, dict[str, Any]] = {}
         replayed_xmlids: dict[int, str] = {}
         try:

@@ -37,7 +37,7 @@ class ErrorIncidentController(http.Controller):
             return {"state": "unavailable"}
         if not isinstance(stack, str) or not stack.strip():
             return {"state": "unavailable"}
-        if _reports.is_limited(f"uid:{env.uid}"):
+        if not _reports.acquire_request_slot(f"uid:{env.uid}"):
             return {"state": "limited"}
         system = api.Environment(env.cr, api.SUPERUSER_ID, {})
         payload = client_capture_payload(

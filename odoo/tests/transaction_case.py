@@ -402,15 +402,15 @@ def _offline_getaddrinfo(
     return _super_getaddrinfo(_EXTERNAL_TEST_ADDRESS, port, *args, **kwargs)
 
 
-def _raise_test_timeout(
+def _get_timeout_with_minimum(
     timeout: float | tuple[float | None, ...] | None,
 ) -> float | tuple[float | None, ...] | None:
     if isinstance(timeout, tuple):
-        return tuple(_raise_scalar_test_timeout(part) for part in timeout)
-    return _raise_scalar_test_timeout(timeout)
+        return tuple(_get_scalar_timeout_with_minimum(part) for part in timeout)
+    return _get_scalar_timeout_with_minimum(timeout)
 
 
-def _raise_scalar_test_timeout(timeout: float | None) -> float | None:
+def _get_scalar_timeout_with_minimum(timeout: float | None) -> float | None:
     if timeout and timeout < 10:
         return 10
     return timeout
@@ -549,7 +549,7 @@ class BaseCase(TestCase):
     ) -> requests.Response:
         url = urlsplit(r.url)
         timeout = kw.get("timeout")
-        if (raised := _raise_test_timeout(timeout)) != timeout:
+        if (raised := _get_timeout_with_minimum(timeout)) != timeout:
             _debug.logic(
                 "test.http.timeout_raised",
                 host=url.hostname,
@@ -1271,7 +1271,7 @@ class BaseCase(TestCase):
                 f"known_incomplete names {sorted(unknown)}, which are not "
                 f"computed fields of {model._name}"
             )
-        stale = self.findStaleComputedFields(
+        stale = self.get_stale_computed_fields(
             records, probe_fields=probe_fields, computed_fields=computed_fields
         )
         _debug.logic(
@@ -1320,7 +1320,7 @@ class BaseCase(TestCase):
         probes.sort(key=lambda name: fields[name].type == "many2one")
         return probes
 
-    def findStaleComputedFields(
+    def get_stale_computed_fields(
         self,
         records: odoo.models.BaseModel,
         *,

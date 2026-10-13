@@ -293,7 +293,7 @@ class AmazonAccount(models.Model):
         for vals in vals_list:
             location = self.env["stock.location"].search(
                 [
-                    *self.env["stock.location"]._check_company_domain(
+                    *self.env["stock.location"]._get_domain_company_compatible(
                         vals.get("company_id")
                     ),
                     ("id", "in", amazon_locations_ids),
@@ -303,7 +303,7 @@ class AmazonAccount(models.Model):
             if not location:
                 parent_location_data = self.env["stock.warehouse"].search_read(
                     [
-                        *self.env["stock.warehouse"]._check_company_domain(
+                        *self.env["stock.warehouse"]._get_domain_company_compatible(
                             vals.get("company_id")
                         )
                     ],
@@ -324,7 +324,7 @@ class AmazonAccount(models.Model):
 
             team = self.env["team.team"].search(
                 [
-                    *self.env["team.team"]._check_company_domain(
+                    *self.env["team.team"]._get_domain_company_compatible(
                         vals.get("company_id")
                     ),
                     ("id", "in", amazon_teams_ids),
@@ -869,7 +869,9 @@ class AmazonAccount(models.Model):
         contact = (
             self.env["res.partner"].search(
                 [
-                    *self.env["res.partner"]._check_company_domain(self.company_id),
+                    *self.env["res.partner"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("type", "=", "contact"),
                     ("name", "=", buyer_name),
                     ("email", "=", anonymized_email),
@@ -911,7 +913,9 @@ class AmazonAccount(models.Model):
         if not delivery:
             delivery = self.env["res.partner"].search(
                 [
-                    *self.env["res.partner"]._check_company_domain(self.company_id),
+                    *self.env["res.partner"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("parent_id", "=", contact.id),
                     ("type", "=", "delivery"),
                     ("name", "=", shipping_address_name),
@@ -995,7 +999,11 @@ class AmazonAccount(models.Model):
                     )
                 offer.amazon_channel = False
             product_taxes = offer.product_id.taxes_id.filtered_domain(
-                [*self.env["account.tax"]._check_company_domain(self.company_id)]
+                [
+                    *self.env["account.tax"]._get_domain_company_compatible(
+                        self.company_id
+                    )
+                ]
             )
             main_condition = item_data.get("ConditionId")
             sub_condition = item_data.get("ConditionSubtypeId")
@@ -1065,7 +1073,7 @@ class AmazonAccount(models.Model):
                     gift_wrap_product_taxes = (
                         gift_wrap_product.taxes_id.filtered_domain(
                             [
-                                *self.env["account.tax"]._check_company_domain(
+                                *self.env["account.tax"]._get_domain_company_compatible(
                                     self.company_id
                                 )
                             ]
@@ -1120,7 +1128,11 @@ class AmazonAccount(models.Model):
             )
             if shipping_code and shipping_price != 0:
                 shipping_product_taxes = shipping_product.taxes_id.filtered_domain(
-                    [*self.env["account.tax"]._check_company_domain(self.company_id)]
+                    [
+                        *self.env["account.tax"]._get_domain_company_compatible(
+                            self.company_id
+                        )
+                    ]
                 )
                 shipping_taxes = (
                     fiscal_pos.map_tax(shipping_product_taxes)
@@ -1240,7 +1252,7 @@ class AmazonAccount(models.Model):
             .with_context(active_test=False)
             .search(
                 [
-                    *self.env["product.pricelist"]._check_company_domain(
+                    *self.env["product.pricelist"]._get_domain_company_compatible(
                         self.company_id
                     ),
                     ("currency_id", "=", currency.id),
@@ -1281,7 +1293,9 @@ class AmazonAccount(models.Model):
         self.check_singleton()
         product = self.env["product.product"].search(
             [
-                *self.env["product.product"]._check_company_domain(self.company_id),
+                *self.env["product.product"]._get_domain_company_compatible(
+                    self.company_id
+                ),
                 ("default_code", "=", internal_reference),
             ],
             limit=1,

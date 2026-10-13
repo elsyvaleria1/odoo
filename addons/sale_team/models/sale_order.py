@@ -54,7 +54,9 @@ class SaleOrder(models.Model):
                     ._get_default_team(
                         "sale",
                         user_id=user_id,
-                        domain=self.env["team.team"]._check_company_domain(company_id),
+                        domain=self.env["team.team"]._get_domain_company_compatible(
+                            company_id
+                        ),
                     )
                 )
             order.team_id = cached_teams[key]

@@ -1,4 +1,3 @@
-
 import ast
 import typing
 from dataclasses import dataclass, field
@@ -80,52 +79,52 @@ class Proposal:
     split: bool = False
 
 
-def _prefix_tree(elts: list[ast.expr]) -> list[Any]:
+def _get_prefix_tree(elts: list[ast.expr]) -> list[Any]:
     pos = 0
 
-    def take() -> Any:
+    def _take_next_term() -> Any:
         nonlocal pos
         node = elts[pos]
         pos += 1
         if isinstance(node, ast.Constant) and node.value in ("&", "|"):
-            return (node.value, [take(), take()])
+            return (node.value, [_take_next_term(), _take_next_term()])
         if isinstance(node, ast.Constant) and node.value == "!":
-            return ("!", [take()])
+            return ("!", [_take_next_term()])
         return node
 
     terms = []
     while pos < len(elts):
-        terms.append(take())
+        terms.append(_take_next_term())
     return terms
 
 
-def _flat(term: Any, operator: str) -> list[Any]:
+def _get_terms_flat(term: Any, operator: str) -> list[Any]:
     if isinstance(term, tuple) and term[0] == operator:
-        return [leaf for child in term[1] for leaf in _flat(child, operator)]
+        return [leaf for child in term[1] for leaf in _get_terms_flat(child, operator)]
     return [term]
 
 
-def _text(term: Any) -> list[str]:
+def _get_term_tokens(term: Any) -> list[str]:
     if isinstance(term, tuple):
         operator, children = term
         prefix = [repr(operator)] * (1 if operator == "!" else len(children) - 1)
-        return prefix + [item for child in children for item in _text(child)]
+        return prefix + [item for child in children for item in _get_term_tokens(child)]
     return [ast.unparse(term)]
 
 
-def _domain_text(terms: list[Any]) -> str:
+def _get_domain_text(terms: list[Any]) -> str:
     if not terms:
         return ""
     items = ["'&'"] * (len(terms) - 1) + [
-        item for term in terms for item in _text(term)
+        item for term in terms for item in _get_term_tokens(term)
     ]
     return "[" + ", ".join(items) + "]"
 
 
-def _reads_principal(node: Any) -> bool:
+def _has_principal_reference(node: Any) -> bool:
     if isinstance(node, tuple):
-        return any(_reads_principal(child) for child in node[1])
-    if (leaf := _leaf(node)) is not None and (
+        return any(_has_principal_reference(child) for child in node[1])
+    if (leaf := _resolve_domain_leaf(node)) is not None and (
         leaf[0].rsplit(".", 1)[-1] in PRINCIPAL_FIELDS
     ):
         return True
@@ -133,7 +132,7 @@ def _reads_principal(node: Any) -> bool:
     return bool(names & set(PRINCIPAL_NAMES))
 
 
-def _leaf(term: Any) -> tuple[str, str, str] | None:
+def _resolve_domain_leaf(term: Any) -> tuple[str, str, str] | None:
     if isinstance(term, (ast.Tuple, ast.List)) and len(term.elts) == 3:
         path, operator = term.elts[0], term.elts[1]
         if (
@@ -150,7 +149,7 @@ def _leaf(term: Any) -> tuple[str, str, str] | None:
     return None
 
 
-def _predicate(leaf: tuple[str, str, str]) -> Part | None:
+def _resolve_predicate_part(leaf: tuple[str, str, str]) -> Part | None:
     path, operator, value = leaf
     at, _dot, field_name = path.rpartition(".")
     name = PREDICATE_FIELDS.get(field_name)
@@ -164,18 +163,24 @@ def _predicate(leaf: tuple[str, str, str]) -> Part | None:
     return Part("predicate", predicate=name, args=(("at", f"{at}." if at else ""),))
 
 
-def _rung(term: Any) -> Part | None:
-    leaves = [_leaf(leaf) for leaf in _flat(term, "|")]
+def _resolve_rung(term: Any) -> Part | None:
+    leaves = [_resolve_domain_leaf(leaf) for leaf in _get_terms_flat(term, "|")]
     if not leaves or any(leaf is None for leaf in leaves):
         return None
     leaves = typing.cast("list[tuple[str, str, str]]", leaves)
-    if len(leaves) == 1 and (part := _predicate(leaves[0])) is not None:
+    if len(leaves) == 1 and (part := _resolve_predicate_part(leaves[0])) is not None:
         return part
     paths = {path for path, _op, _value in leaves}
     if len(paths) != 1:
         return None
     path = paths.pop()
-    marks = set()
+    return _resolve_rung_from_leaves(path, leaves)
+
+
+def _resolve_rung_from_leaves(
+    path: str, leaves: list[tuple[str, str, str]]
+) -> Part | None:
+    marks: set[str] = set()
     usage = None
     for _path, operator, value in leaves:
         if operator == "=" and value == "False":
@@ -221,18 +226,18 @@ def _rung(term: Any) -> Part | None:
     return None
 
 
-def _conjunction(terms: list[Any]) -> Part | None:
+def _resolve_conjunction_part(terms: list[Any]) -> Part | None:
     rungs, statics = [], []
     for term in terms:
-        if (part := _rung(term)) is not None:
+        if (part := _resolve_rung(term)) is not None:
             rungs.append(part)
-        elif not _reads_principal(term):
+        elif not _has_principal_reference(term):
             statics.append(term)
         else:
             return None
     if len(rungs) > 1:
         return None
-    static = _domain_text(statics)
+    static = _get_domain_text(statics)
     if static:
         try:
             ast.literal_eval(static)
@@ -254,25 +259,27 @@ def _conjunction(terms: list[Any]) -> Part | None:
     )
 
 
-def _dnf(term: Any, limit: int) -> list[list[Any]]:
+def _get_conjunctions(term: Any, limit: int) -> list[list[Any]]:
     if isinstance(term, tuple) and term[0] == "&":
         result: list[list[Any]] = [[]]
         for child in term[1]:
-            result = [a + b for a in result for b in _dnf(child, limit)]
+            result = [a + b for a in result for b in _get_conjunctions(child, limit)]
             if len(result) > limit:
                 raise OverflowError
         return result
     if isinstance(term, tuple) and term[0] == "|":
-        if _rung(term) is not None:
+        if _resolve_rung(term) is not None:
             return [[term]]
-        result = [conj for child in term[1] for conj in _dnf(child, limit)]
+        result = [conj for child in term[1] for conj in _get_conjunctions(child, limit)]
         if len(result) > limit:
             raise OverflowError
         return result
     return [[term]]
 
 
-def propose(domain: str | None, kind: str, split_limit: int = 8) -> Proposal | None:
+def resolve_reach_proposal(
+    domain: str | None, kind: str, split_limit: int = 8
+) -> Proposal | None:
     text = (domain or "").strip()
     if not text:
         return Proposal([Part("all")])
@@ -288,11 +295,11 @@ def propose(domain: str | None, kind: str, split_limit: int = 8) -> Proposal | N
     if compact == "[(0,'=',1)]":
         return Proposal([Part("none")])
     try:
-        terms = _prefix_tree(list(node.elts))
+        terms = _get_prefix_tree(list(node.elts))
     except IndexError:
         return None
-    conjunction = [leaf for term in terms for leaf in _flat(term, "&")]
-    if (part := _conjunction(conjunction)) is not None:
+    conjunction = [leaf for term in terms for leaf in _get_terms_flat(term, "&")]
+    if (part := _resolve_conjunction_part(conjunction)) is not None:
         return Proposal([part])
     if kind != "permission":
         return None
@@ -300,11 +307,12 @@ def propose(domain: str | None, kind: str, split_limit: int = 8) -> Proposal | N
     for term in conjunction[1:]:
         tree = ("&", [tree, term])
     try:
-        conjunctions = _dnf(tree, split_limit)
+        conjunctions = _get_conjunctions(tree, split_limit)
     except OverflowError:
         return None
     parts = [
-        _conjunction([leaf for t in c for leaf in _flat(t, "&")]) for c in conjunctions
+        _resolve_conjunction_part([leaf for t in c for leaf in _get_terms_flat(t, "&")])
+        for c in conjunctions
     ]
     if any(part is None for part in parts):
         return None
@@ -322,26 +330,26 @@ _PRINCIPAL = {
 }
 
 
-def _eval_context() -> dict[str, Any]:
+def _get_eval_context() -> dict[str, Any]:
     p = _PRINCIPAL
 
-    def records(ids: list[int]) -> SimpleNamespace:
+    def _get_record_values(ids: list[int]) -> SimpleNamespace:
         return SimpleNamespace(ids=ids, id=ids[0] if ids else False)
 
     partner = SimpleNamespace(
         id=p["partner"],
         ids=[p["partner"]],
-        commercial_partner_id=records([p["commercial_partner"]]),
+        commercial_partner_id=_get_record_values([p["commercial_partner"]]),
     )
     user = SimpleNamespace(
         id=p["user"],
         ids=[p["user"]],
         partner_id=partner,
-        commercial_partner_id=records([p["commercial_partner"]]),
-        team_ids=records(p["teams"][None]),
-        sale_team_ids=records(p["teams"]["sale"]),
-        purchase_team_ids=records(p["teams"]["purchase"]),
-        employee_ids=records(p["employees"]),
+        commercial_partner_id=_get_record_values([p["commercial_partner"]]),
+        team_ids=_get_record_values(p["teams"][None]),
+        sale_team_ids=_get_record_values(p["teams"]["sale"]),
+        purchase_team_ids=_get_record_values(p["teams"]["purchase"]),
+        employee_ids=_get_record_values(p["employees"]),
     )
     return {
         "user": user,
@@ -388,7 +396,7 @@ def compile_part(part: Part) -> Domain:
     return domain & static
 
 
-def _literals(field: str, operator: str, value: Any) -> list[Any]:
+def _get_condition_literals(field: str, operator: str, value: Any) -> list[Any]:
     if operator in ("child_of", "parent_of") and not isinstance(value, (list, tuple)):
         value = [value]
     if isinstance(value, (list, tuple, set, frozenset)):
@@ -405,22 +413,30 @@ def _literals(field: str, operator: str, value: Any) -> list[Any]:
     return ([(field, "in", values)] if values else []) + [(field, "=", False)]
 
 
-def _dnf_of(domain: Domain, limit: int = 256) -> frozenset[frozenset[Any]]:
+def _get_conjunctions_from_domain(
+    domain: Domain, limit: int = 256
+) -> frozenset[frozenset[Any]]:
     operator = getattr(domain, "OPERATOR", None)
     if operator == "|":
         result: set[frozenset[Any]] = set()
         for child in domain.children:
-            result |= _dnf_of(child, limit)
+            result |= _get_conjunctions_from_domain(child, limit)
         return frozenset(result)
     if operator == "&":
         conjunctions: set[frozenset[Any]] = {frozenset()}
         for child in domain.children:
-            conjunctions = {a | b for a in conjunctions for b in _dnf_of(child, limit)}
+            conjunctions = {
+                a | b
+                for a in conjunctions
+                for b in _get_conjunctions_from_domain(child, limit)
+            }
             if len(conjunctions) > limit:
                 raise OverflowError
         return frozenset(conjunctions)
     if operator == "!":
-        return frozenset({frozenset({("!", _dnf_of(domain.child, limit))})})
+        return frozenset(
+            {frozenset({("!", _get_conjunctions_from_domain(domain.child, limit))})}
+        )
     if domain.is_true():
         return frozenset({frozenset()})
     if domain.is_false():
@@ -429,18 +445,18 @@ def _dnf_of(domain: Domain, limit: int = 256) -> frozenset[frozenset[Any]]:
     field = field.removesuffix(".id") if "." in field else field
     return frozenset(
         frozenset({literal})
-        for literal in _literals(field, domain.operator, domain.value)
+        for literal in _get_condition_literals(field, domain.operator, domain.value)
     )
 
 
-def proves(domain: str | None, proposal: Proposal) -> bool:
+def is_reach_proposal_equivalent(domain: str | None, proposal: Proposal) -> bool:
     old = (
-        Domain(safe_eval(domain, _eval_context()))
+        Domain(safe_eval(domain, _get_eval_context()))
         if (domain or "").strip()
         else Domain.TRUE
     )
     new = Domain.OR([compile_part(part) for part in proposal.parts])
     try:
-        return _dnf_of(old) == _dnf_of(new)
+        return _get_conjunctions_from_domain(old) == _get_conjunctions_from_domain(new)
     except OverflowError:
         return False

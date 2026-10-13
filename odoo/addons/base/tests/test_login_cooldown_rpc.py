@@ -94,11 +94,11 @@ class TestRpcLoginCooldown(TransactionCase):
         self.env["ir.config_parameter"].sudo().set_param("base.rpc_api_key_only", "1")
         self.env.flush_all()
 
-    def _refused(self, message=""):
+    def _get_login_denied_assertion(self, message=""):
         return self.assertRaisesRegex(AccessDenied, message)
 
     def _fail(self, address, uid=None):
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._call("wrong-password", address, uid)
 
     @contextmanager
@@ -116,7 +116,7 @@ class TestRpcLoginCooldown(TransactionCase):
     def test_wrong_passwords_at_the_object_door_cool_the_address_down(self):
         for _ in range(3):
             self._fail("203.0.113.10")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("rpc-target-pw", "203.0.113.10")
         self.assertEqual(
             self._call("rpc-target-pw", "203.0.113.11")["uid"], self.user.id
@@ -135,7 +135,7 @@ class TestRpcLoginCooldown(TransactionCase):
 
     def test_an_uncached_attempt_is_refused_while_another_is_in_flight(self):
         with self._claim_held_elsewhere("203.0.113.30"):
-            with self._refused("in progress"):
+            with self._get_login_denied_assertion("in progress"):
                 self._call("rpc-target-pw", "203.0.113.30")
         self.assertEqual(
             self._call("rpc-target-pw", "203.0.113.30")["uid"], self.user.id
@@ -149,15 +149,15 @@ class TestRpcLoginCooldown(TransactionCase):
             )
         for _ in range(3):
             self._fail("203.0.113.42")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("rpc-target-pw", "203.0.113.42")
 
     def test_guesses_spread_over_addresses_cool_the_account_down(self):
         for i in range(5):
             self._fail(f"198.51.100.{i}")
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._call("rpc-target-pw", "198.51.100.99")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._web_login("rpc_target", "rpc-target-pw", "198.51.100.98")
         self.assertEqual(self._call(self.key, "198.51.100.97")["uid"], self.user.id)
         self.assertEqual(
@@ -169,7 +169,7 @@ class TestRpcLoginCooldown(TransactionCase):
             self._fail(f"198.51.100.{10 + i}")
         self._call(self.key, "198.51.100.20")
         self._fail("198.51.100.21")
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._call("rpc-target-pw", "198.51.100.22")
 
     def test_a_password_success_clears_the_account(self):
@@ -184,33 +184,33 @@ class TestRpcLoginCooldown(TransactionCase):
 
     def test_an_unknown_login_cools_down_like_a_known_one(self):
         for i in range(5):
-            with self._refused():
+            with self._get_login_denied_assertion():
                 self._web_login("nobody_by_that_name", "x", f"192.0.2.{i}")
-            with self._refused():
+            with self._get_login_denied_assertion():
                 self._web_login("rpc_target", "x", f"192.0.2.{20 + i}")
         for login in ("nobody_by_that_name", "rpc_target"):
-            with self._refused("Too many login failures"):
+            with self._get_login_denied_assertion("Too many login failures"):
                 self._web_login(login, "x", "192.0.2.99")
 
     def test_an_unknown_uid_is_refused_as_a_wrong_password_is(self):
         unknown = self.env["res.users"].search([], order="id desc", limit=1).id + 1000
         for _ in range(3):
-            with self._refused():
+            with self._get_login_denied_assertion():
                 self._call("rpc-target-pw", "203.0.113.95", uid=unknown)
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("rpc-target-pw", "203.0.113.95")
 
     def test_a_login_of_any_length_is_counted(self):
         login = secrets.token_hex(5000)
         for _ in range(3):
-            with self._refused():
+            with self._get_login_denied_assertion():
                 self._web_login(login, "x", "203.0.113.90")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._web_login("rpc_target", "rpc-target-pw", "203.0.113.90")
 
     def test_a_password_is_refused_at_the_rpc_doors_when_keys_are_required(self):
         self._require_keys()
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._call("rpc-target-pw", "203.0.113.50")
         self.assertFalse(
             self._authenticate("rpc_target", "rpc-target-pw", "203.0.113.50")
@@ -227,7 +227,7 @@ class TestRpcLoginCooldown(TransactionCase):
     def test_a_cached_password_is_refused_once_keys_are_required(self):
         self._call("rpc-target-pw", "203.0.113.60")
         self._require_keys()
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._call("rpc-target-pw", "203.0.113.60")
 
     def _failures(self, source):
@@ -240,13 +240,13 @@ class TestRpcLoginCooldown(TransactionCase):
             self._fail(f"203.0.113.{70 + i}")
         self.assertEqual(self._failures("203.0.113.70"), 1)
         self.assertEqual(self._failures(f"account:{self.user.id}"), 5)
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._web_login("rpc_target", "rpc-target-pw", "203.0.113.80")
 
     def test_a_valid_key_enters_from_a_cooled_address(self):
         for _ in range(3):
             self._fail("203.0.113.100")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("rpc-target-pw", "203.0.113.100")
         self.assertFalse(
             self._authenticate("rpc_target", "rpc-target-pw", "203.0.113.100")
@@ -255,13 +255,13 @@ class TestRpcLoginCooldown(TransactionCase):
         self.assertEqual(
             self._authenticate("rpc_target", self.key, "203.0.113.100"), self.user.id
         )
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._web_login("rpc_target", "rpc-target-pw", "203.0.113.100")
 
     def test_a_wrong_key_from_a_cooled_address_is_refused_and_counted(self):
         for _ in range(3):
             self._fail("203.0.113.110")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("0" * 40, "203.0.113.110")
         self.assertFalse(self._authenticate("rpc_target", "0" * 40, "203.0.113.110"))
         self.assertEqual(self._failures("203.0.113.110"), 5)
@@ -273,7 +273,7 @@ class TestRpcLoginCooldown(TransactionCase):
         self._call(self.key, "203.0.113.120")
         self.assertEqual(self._failures("203.0.113.120"), 2)
         self._fail("203.0.113.120")
-        with self._refused("Too many login failures"):
+        with self._get_login_denied_assertion("Too many login failures"):
             self._call("rpc-target-pw", "203.0.113.120")
 
     def test_a_login_without_an_account_meets_its_auth_methods_inside_the_gate(self):
@@ -292,7 +292,7 @@ class TestRpcLoginCooldown(TransactionCase):
         self._require_keys()
         self.assertFalse(self._authenticate("nobody_here", "guess", "203.0.113.131"))
         self.assertEqual(len(asked), 3, "not at a door taking keys alone")
-        with self._refused():
+        with self._get_login_denied_assertion():
             self._web_login("nobody_else", "guess", "203.0.113.132")
         self.assertEqual(asked[3:], ["nobody_else"], "interactive, it is asked")
 

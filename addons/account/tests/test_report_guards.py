@@ -262,7 +262,8 @@ class TestAuditAccountStatusAccess(TestAccountReportsCommon):
         super().setUpClass()
         cls.return_type = cls.env["account.return.type"].search([], limit=1)
         cls.account = cls.env["account.account"].search(
-            cls.env["account.account"]._check_company_domain(cls.env.company), limit=1
+            cls.env["account.account"]._get_domain_company_compatible(cls.env.company),
+            limit=1,
         )
         cls.audit = cls.env["account.return"].create(
             {

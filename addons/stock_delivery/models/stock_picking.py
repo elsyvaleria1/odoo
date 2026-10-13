@@ -84,9 +84,13 @@ class StockPicking(models.Model):
     def _compute_allowed_carrier_ids(self) -> None:
         _debug.perf.count("allowed_carriers_compute", pickings=self)
         Carrier = self.env["delivery.carrier"]
-        allowed = Carrier.search(Carrier._check_company_domain(self.company_id))
+        allowed = Carrier.search(
+            Carrier._get_domain_company_compatible(self.company_id)
+        )
         carriers_by_company = {
-            company: allowed.filtered_domain(Carrier._check_company_domain(company))
+            company: allowed.filtered_domain(
+                Carrier._get_domain_company_compatible(company)
+            )
             for company in self.company_id
         }
         for picking in self:

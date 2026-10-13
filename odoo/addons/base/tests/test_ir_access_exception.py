@@ -58,7 +58,9 @@ class TestIrAccessException(TransactionCase):
     def test_it_is_found_while_live_and_not_once_lapsed_or_revoked(self):
         exception = self._create(env_user=self.admin_a)
         Exceptions = self.env["ir.access.exception"]
-        self.assertEqual(Exceptions._find(self.subject, "sod", self.scope), exception)
+        self.assertEqual(
+            Exceptions._get_exception_active(self.subject, "sod", self.scope), exception
+        )
         exception.write(
             {
                 "date_from": fields.Datetime.now() - timedelta(days=20),
@@ -66,11 +68,15 @@ class TestIrAccessException(TransactionCase):
             }
         )
         self.assertEqual(exception.state, "lapsed")
-        self.assertFalse(Exceptions._find(self.subject, "sod", self.scope))
+        self.assertFalse(
+            Exceptions._get_exception_active(self.subject, "sod", self.scope)
+        )
         other = self._create(env_user=self.admin_a)
         other.with_user(self.admin_b).action_revoke("no longer needed")
         self.assertEqual(other.state, "revoked")
-        self.assertFalse(Exceptions._find(self.subject, "sod", self.scope))
+        self.assertFalse(
+            Exceptions._get_exception_active(self.subject, "sod", self.scope)
+        )
 
     def test_each_use_is_logged_and_counted(self):
         exception = self._create(env_user=self.admin_a)

@@ -90,7 +90,7 @@ class ResUsers(models.Model):
     def _get_fields_session_token(self):
         return super()._get_fields_session_token() | {"totp_secret"}
 
-    def _check_credentials(self, credentials, env):
+    def _authenticate_credentials(self, credentials, env):
         if credentials["type"] == "totp":
             self._totp_rate_limit("code_check")
             sudo = self.sudo()
@@ -120,7 +120,7 @@ class ResUsers(models.Model):
                 "auth_method": "totp",
                 "mfa": "default",
             }
-        return super()._check_credentials(credentials, env)
+        return super()._authenticate_credentials(credentials, env)
 
     def _totp_try_setting(self, secret, code) -> bool:
         if self.totp_enabled or self != self.env.user:

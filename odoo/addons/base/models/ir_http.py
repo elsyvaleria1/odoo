@@ -203,7 +203,7 @@ class IrHttp(models.AbstractModel):
             )
 
         if token := get_http_authorization_bearer_token():
-            uid = request.env["res.users.apikeys"]._check_credentials(
+            uid = request.env["res.users.apikeys"]._get_user_id_for_key(
                 scope=scope, key=token
             )
             _debug.logic(
@@ -488,7 +488,7 @@ class IrHttp(models.AbstractModel):
         env.user._issue_login_device()
 
     @classmethod
-    def _check_session_binding(cls, cr: BaseCursor, session: Session) -> bool:
+    def _is_session_binding_valid(cls, cr: BaseCursor, session: Session) -> bool:
         env = api.Environment(cr, session.uid, {})
         return env["auth.user.client"]._is_session_valid(session, fresh_primary_cr=cr)
 

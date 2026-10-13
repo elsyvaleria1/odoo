@@ -9,7 +9,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 from odoo.tools.image import image_data_uri
 
-from odoo.addons.base.models.res_partner_bank_account import sanitize_account_number
+from odoo.addons.base.models.res_partner_bank_account import normalize_account_number
 
 _debug = DebugLog(__name__)
 
@@ -430,7 +430,7 @@ class ResPartnerBankAccount(models.Model):
         }
         for partner_id, acc_number in pairs:
             existing = archived_by_key.get(
-                (partner_id, sanitize_account_number(acc_number))
+                (partner_id, normalize_account_number(acc_number))
             )
             if existing:
                 _debug.logic(

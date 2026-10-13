@@ -42,7 +42,9 @@ class AccountJournal(models.Model):
         ]
         domain = Domain.AND(
             [
-                self.env["account.move"]._check_company_domain(self.env.companies),
+                self.env["account.move"]._get_domain_company_compatible(
+                    self.env.companies
+                ),
                 Domain("state", "=", "draft"),
                 Domain("payment_state", "in", ("not_paid", "partial")),
                 Domain.OR([domain_sale, domain_purchase]),

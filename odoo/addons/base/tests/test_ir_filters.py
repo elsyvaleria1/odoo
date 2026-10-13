@@ -30,14 +30,14 @@ class FiltersCase(TransactionCaseWithUserDemo):
         self.USER_NG = self.env["res.users"].name_search("demo")[0]
         self.USER_ID = self.USER_NG[0]
 
-    def build(self, model, *args):
+    def create_records(self, model, *args):
         Model = self.env[model].with_user(ADMIN_USER_ID)
         Model.create(args)
 
 
 class TestGetFilters(FiltersCase):
     def test_own_filters(self):
-        self.build(
+        self.create_records(
             "ir.filters",
             {"name": "a", "user_ids": [self.USER_ID], "model_id": "ir.filters"},
             {"name": "b", "user_ids": [self.USER_ID], "model_id": "ir.filters"},
@@ -88,7 +88,7 @@ class TestGetFilters(FiltersCase):
         )
 
     def test_global_filters(self):
-        self.build(
+        self.create_records(
             "ir.filters",
             {"name": "a", "user_ids": [], "model_id": "ir.filters"},
             {"name": "b", "user_ids": [], "model_id": "ir.filters"},
@@ -139,7 +139,7 @@ class TestGetFilters(FiltersCase):
         )
 
     def test_no_third_party_filters(self):
-        self.build(
+        self.create_records(
             "ir.filters",
             {"name": "a", "user_ids": [], "model_id": "ir.filters"},
             {

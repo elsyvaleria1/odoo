@@ -532,7 +532,11 @@ class TestMailMessageAccess(MessageAccessCommon):
         with self.assertRaises(AccessError):
             message.with_user(self.user_portal).read(["subject", "body"])
 
-        with patch.object(MailTestSimple, "_check_access", return_value=None):
+        with patch.object(
+            MailTestSimple,
+            "_get_records_forbidden_and_error_factory",
+            return_value=None,
+        ):
             with self.assertRaises(AccessError):
                 message.with_user(self.user_portal).read(["subject", "body"])
 

@@ -21,7 +21,7 @@ class TestProjectEnterpriseHrAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         project = cls.env["project.project"].create(
             {"name": "Members only", "privacy_visibility": "followers"}
         )

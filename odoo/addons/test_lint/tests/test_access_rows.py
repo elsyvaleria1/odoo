@@ -17,19 +17,21 @@ from odoo.addons.base.models.ir_access import (
     REACH_ANCHOR,
     REACH_KINDS,
     domain_group_tests,
-    find_access_cycle,
+    get_access_cycle,
     parse_access_domain,
 )
 from odoo.addons.base.models.ir_access_reach import PRINCIPAL_FIELDS
 
-_CHECK_OVERRIDES = frozenset({"_check_access", "_has_field_access", "_access_domain"})
+_ACCESS_OVERRIDES = frozenset(
+    {"_get_records_forbidden_and_error_factory", "_has_field_access", "_access_domain"}
+)
 _FIELD_OVERRIDES = frozenset(
     {"_has_field_access", "_check_field_access", "_has_write_groups"}
 )
 _SEARCH_ACCESS_NAMES = frozenset(
     {
         "bypass_access",
-        "_check_access",
+        "_get_records_forbidden_and_error_factory",
         "_filtered_access",
         "has_access",
         "check_access",
@@ -73,7 +75,7 @@ def domain_findings(rows):
         f"{row.where()}: {problem}"
         for row in rows
         if row.domain and index.known_model(row.model)
-        for problem in index.validate(row.model, row.domain)
+        for problem in index.get_domain_problems(row.model, row.domain)
     ]
 
 
@@ -122,7 +124,7 @@ def predicate_findings(rows, predicates):
             continue
         findings.extend(
             f"{row.where()}: {predicate.name}: {problem}"
-            for problem in index.validate(row.model, repr(domain))
+            for problem in index.get_domain_problems(row.model, repr(domain))
         )
     return findings
 
@@ -237,14 +239,14 @@ def cycle_findings(rows, models):
             if letter in (row.operation or ""):
                 edges[row.model, operation].update(targets)
     findings = []
-    while cycle := find_access_cycle(edges):
+    while cycle := get_access_cycle(edges):
         findings.append(" -> ".join(f"{model}.{op}" for model, op in cycle))
         model, operation = cycle[0]
         edges[model, operation].discard(cycle[1])
     return findings
 
 
-def _check_overrides(path: str) -> list[str]:
+def _get_override_problems(path: str) -> list[str]:
     try:
         tree = ast.parse(Path(path).read_text(encoding="utf-8"))
     except SyntaxError, UnicodeDecodeError:
@@ -256,7 +258,7 @@ def _check_overrides(path: str) -> list[str]:
         for method in node.body:
             if not isinstance(method, ast.FunctionDef):
                 continue
-            if method.name in _CHECK_OVERRIDES or (
+            if method.name in _ACCESS_OVERRIDES or (
                 method.name == "_search"
                 and _SEARCH_ACCESS_NAMES
                 & {
@@ -271,7 +273,7 @@ def _check_overrides(path: str) -> list[str]:
 def override_findings(paths):
     return [
         finding
-        for found in _parallel.map_items(_check_overrides, list(paths)).values()
+        for found in _parallel.map_items(_get_override_problems, list(paths)).values()
         for finding in found
     ]
 
@@ -928,7 +930,7 @@ class TestAccessRowGatesSeeTheirFaults(lint_case.LintCase):
         path = Path(directory.name) / "m.py"
         path.write_text(
             "class M(models.Model):\n"
-            "    def _check_access(self, operation):\n"
+            "    def _get_records_forbidden_and_error_factory(self, operation):\n"
             "        return None\n"
             "    def _search(self, domain, *, bypass_access=False, **kw):\n"
             "        return super()._search(domain, bypass_access=bypass_access)\n"

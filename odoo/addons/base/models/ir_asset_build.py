@@ -170,11 +170,11 @@ class IrAssetBuild(models.Model):
             action=action,
             superseded=len(replaced),
         )
-        self._sweep(key)
+        self._remove_expired_builds_and_get_count(key)
         return same
 
     @api.model
-    def _find_reusable(
+    def _get_build_reusable(
         self, kind: str, bundle: str, variant: str, source_key: str
     ) -> IrAssetBuild:
         same_sources = (
@@ -214,7 +214,7 @@ class IrAssetBuild(models.Model):
         }
 
     @api.model
-    def _sweep(self, domain: Domain | None = None) -> int:
+    def _remove_expired_builds_and_get_count(self, domain: Domain | None = None) -> int:
         expired = self.search(
             (domain or Domain.TRUE)
             & Domain("state", "=", "superseded")
@@ -274,7 +274,7 @@ class IrAssetBuild(models.Model):
         return len(orphaned)
 
     @api.model
-    def _sweep_orphan_rows(self) -> int:
+    def _remove_orphan_rows_and_get_count(self) -> int:
         IrAttachment = self.env["ir.attachment"].sudo()
         live = self._live_directories()
         candidates = IrAttachment.search_fetch(
@@ -301,8 +301,8 @@ class IrAssetBuild(models.Model):
     @api.autovacuum
     def _gc_asset_builds(self) -> None:
         retired = self._retire_uninstalled()
-        swept = self._sweep()
-        orphans = self._sweep_orphan_rows()
+        swept = self._remove_expired_builds_and_get_count()
+        orphans = self._remove_orphan_rows_and_get_count()
         log_event(
             _attach_log,
             logging.INFO,

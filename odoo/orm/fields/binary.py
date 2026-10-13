@@ -145,7 +145,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
         if isinstance(value, str):
             value = value.encode()
         if validate:
-            self._refuse_svg_upload(value, record.env)
+            self._check_svg_upload_allowed(value, record.env)
         if isinstance(value, bytes):
             return value
         try:
@@ -159,7 +159,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
                 )
             ) from e
 
-    def _refuse_svg_upload(self, value: typing.Any, env: typing.Any) -> None:
+    def _check_svg_upload_allowed(self, value: typing.Any, env: typing.Any) -> None:
         if not isinstance(value, bytes) or not _is_svg_upload(value):
             return
         _debug.logic(
@@ -177,7 +177,7 @@ class Binary(Field[bytes | typing.Literal[False]]):
     ) -> tuple[BaseModel, typing.Any]:
         records, cache_value = super()._mark_dirty_prologue(records, value)
         if records and self.store and not self.attachment:
-            self._refuse_svg_upload(cache_value, records.env)
+            self._check_svg_upload_allowed(cache_value, records.env)
         return records, cache_value
 
     def _get_size_key_positions(self, env: typing.Any) -> tuple[int, ...]:

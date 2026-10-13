@@ -1547,7 +1547,7 @@ class TestPrivilegeGroupSorting(common.TransactionCase):
 
 @common.tagged("at_install", "groups")
 class TestAllUserIdsBatchCost(common.TransactionCase):
-    def _make_groups(self, count, prefix):
+    def _create_groups_and_partners(self, count, prefix):
         base_group = self.env.ref("base.group_user")
         groups = self.env["res.groups"].create(
             [
@@ -1582,8 +1582,8 @@ class TestAllUserIdsBatchCost(common.TransactionCase):
             return statements.count
 
     def test_reading_all_users_count_does_not_scale_with_group_count(self):
-        small = self._make_groups(2, "count small")
-        large = self._make_groups(20, "count large")
+        small = self._create_groups_and_partners(2, "count small")
+        large = self._create_groups_and_partners(20, "count large")
 
         small_cost = self._queries_for(small, "all_users_count")
         large_cost = self._queries_for(large, "all_users_count")
@@ -1596,8 +1596,8 @@ class TestAllUserIdsBatchCost(common.TransactionCase):
         )
 
     def test_reading_all_user_ids_does_not_scale_with_group_count(self):
-        small = self._make_groups(2, "batch small")
-        large = self._make_groups(20, "batch large")
+        small = self._create_groups_and_partners(2, "batch small")
+        large = self._create_groups_and_partners(20, "batch large")
 
         small_cost = self._queries_for(small)
         large_cost = self._queries_for(large)
@@ -1629,7 +1629,7 @@ class TestAllUserIdsBatchCost(common.TransactionCase):
         self.assertIn(user, implying.all_user_ids)
 
     def test_archived_users_follow_the_reading_environment(self):
-        groups = self._make_groups(1, "batch archived")
+        groups = self._create_groups_and_partners(1, "batch archived")
         user = groups.all_user_ids.filtered(lambda u: u.login == "batcharchived0")
         self.assertTrue(user, "the fixture user must be there to archive")
 

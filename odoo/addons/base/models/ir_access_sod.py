@@ -316,7 +316,9 @@ class IrAccessSodRule(models.Model):
             holders &= Function.browse(function_b_id)._get_holder_ids(users, scheduled)
             rule = self.browse(rule_id)
             for user in users.browse(sorted(holders)):
-                exception = self.env["ir.access.exception"]._find(user, "sod", rule)
+                exception = self.env["ir.access.exception"]._get_exception_active(
+                    user, "sod", rule
+                )
                 if exception:
                     exception._record_use(cause)
                     continue
@@ -434,7 +436,7 @@ class IrAccessSodRule(models.Model):
             rule._log_values(user, cause, False)
             for rule_id, user_id in sorted(self._standing_conflicts() - standing)
             for rule, user in [(self.browse(rule_id), Users.browse(user_id))]
-            if not Exception_._find(user, "sod", rule)
+            if not Exception_._get_exception_active(user, "sod", rule)
         ]
         if logs:
             self.env["ir.access.log"]._record(logs)
@@ -486,7 +488,9 @@ class IrAccessSodRule(models.Model):
                 {
                     "rule_id": rule.id,
                     "user_id": user.id,
-                    "exception_id": Exception_._find(user, "sod", rule).id,
+                    "exception_id": Exception_._get_exception_active(
+                        user, "sod", rule
+                    ).id,
                 }
                 for rule, user in self.search([])._get_conflicts()
             ]

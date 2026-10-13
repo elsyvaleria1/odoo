@@ -920,7 +920,7 @@ Every published artifact belongs to an `ir.asset.build` row: its `kind`
 selects another build of the same bundle besides its sources, computed by
 `variant_key` from the assets params, the page scope and the standalone flag --
 the url `directories` it owns, and the `source_key` a process that has not
-compiled yet reuses it by (`_find_reusable`). `_publish` makes a build current
+compiled yet reuses it by (`_get_build_reusable`). `_publish` makes a build current
 and supersedes the previous current build of the same kind, bundle and variant in
 one transaction, on the cursor that wrote its rows; `_one_current_build_per_variant`
 is a partial unique index. Two variants never supersede each other, so the
@@ -928,12 +928,12 @@ page-scoped build of a secondary and its plain build are served side by side.
 
 A file is served while a build that is current, or superseded less than
 `web.esm.gc_grace_days` ago, owns its directory: pages rendered before a rebuild
-keep loading the previous build through that grace. `_sweep` deletes the builds
+keep loading the previous build through that grace. `_remove_expired_builds_and_get_count` deletes the builds
 past it and the files no remaining build owns, at publish time for the variant
 just published and in the autovacuum `_gc_asset_builds` for all, which also
 retires the current builds of bundles no installed addon declares
 (`_retire_uninstalled`) and deletes files no build owns past the grace
-(`_sweep_orphan_rows`). Bridge shims own no build: reuse refreshes them and
+(`_remove_orphan_rows_and_get_count`). Bridge shims own no build: reuse refreshes them and
 `_gc_esm_bridges` collects them by age.
 
 Only a fresh compile changes which build is current. A worker still on older

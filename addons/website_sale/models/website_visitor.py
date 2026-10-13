@@ -32,7 +32,7 @@ class WebsiteVisitor(models.Model):
                 (
                     "product_id",
                     "any",
-                    self.env["product.product"]._check_company_domain(
+                    self.env["product.product"]._get_domain_company_compatible(
                         self.env.companies
                     ),
                 ),

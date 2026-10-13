@@ -4,7 +4,7 @@ from odoo import fields, models
 from odoo.exceptions import UserError
 from odoo.tools import str2bool
 
-from odoo.addons.base.models.ir_module import assert_log_admin_access
+from odoo.addons.base.models.ir_module import wrap_with_admin_access_check
 
 _logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ class WizardIrConfigParameterUpdateCalendarProvider(models.TransientModel):
         ),
     )
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def action_calendar_prepare_external_provider_sync(self) -> None:
         self.check_singleton()
         _logger.info(

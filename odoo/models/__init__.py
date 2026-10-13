@@ -33,8 +33,8 @@ from odoo.orm.registration import (
 )
 
 from odoo.orm.helpers import (
-    check_companies_domain_parent_of,
-    check_company_domain_parent_of,
+    get_domain_companies_parent_of,
+    get_domain_company_parent_of,
     to_record_ids,
 )
 from odoo.orm.parsing import (
@@ -73,10 +73,10 @@ __all__ = [
     "add_field",
     "add_model_to_registry",
     "check_column_name",
-    "check_companies_domain_parent_of",
-    "check_company_domain_parent_of",
     "check_pg_name",
     "fix_import_export_id_paths",
+    "get_domain_companies_parent_of",
+    "get_domain_company_parent_of",
     "is_manual_name",
     "is_model_definition",
     "is_valid_object_name",

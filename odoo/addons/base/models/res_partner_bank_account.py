@@ -10,7 +10,7 @@ from odoo.tools import clean_context
 _debug = DebugLog(__name__)
 
 
-def sanitize_account_number(acc_number: str | bool) -> str | bool:
+def normalize_account_number(acc_number: str | bool) -> str | bool:
     if acc_number:
         return re.sub(r"\W+", "", acc_number).upper()
     return False
@@ -21,7 +21,7 @@ class ResPartnerBankAccount(models.Model):
     _rec_name = "acc_number"
     _description = "Bank Accounts"
     _order = "sequence, id"
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     @api.model
     def _get_account_types_supported(self) -> list[tuple[str, str]]:
@@ -123,7 +123,7 @@ class ResPartnerBankAccount(models.Model):
     @api.depends("acc_number")
     def _compute_sanitized_acc_number(self) -> None:
         for bank in self:
-            bank.sanitized_acc_number = sanitize_account_number(bank.acc_number)
+            bank.sanitized_acc_number = normalize_account_number(bank.acc_number)
 
     @api.depends("acc_number")
     def _compute_acc_type(self) -> None:
@@ -150,9 +150,9 @@ class ResPartnerBankAccount(models.Model):
 
     def _search_acc_number(self, operator: str, value: str | list[str]) -> list:
         if operator in ("in", "not in"):
-            value = [sanitize_account_number(i) for i in value]
+            value = [normalize_account_number(i) for i in value]
         else:
-            value = sanitize_account_number(value)
+            value = normalize_account_number(value)
         _debug.logic(
             "acc_number_search",
             operator=operator,
@@ -237,7 +237,9 @@ class ResPartnerBankAccount(models.Model):
             )
         usable = bank_account.filtered_domain(
             [
-                *self.env["res.partner.bank.account"]._check_company_domain(company),
+                *self.env["res.partner.bank.account"]._get_domain_company_compatible(
+                    company
+                ),
                 ("active", "=", True),
             ]
         )
@@ -262,7 +264,7 @@ class ResPartnerBankAccount(models.Model):
         if "acc_number" in vals:
             vals = {
                 **vals,
-                "sanitized_acc_number": sanitize_account_number(vals["acc_number"]),
+                "sanitized_acc_number": normalize_account_number(vals["acc_number"]),
             }
         return vals
 

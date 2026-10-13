@@ -53,7 +53,7 @@ class ResUsers(models.Model):
             credential["login"] = res[0]
         return super()._login(credential, user_agent_env=user_agent_env)
 
-    def _check_credentials(self, credential, env):
+    def _authenticate_credentials(self, credential, env):
         if credential["type"] == "webauthn":
             webauthn = json_loads(credential["webauthn_response"])
             passkey = (
@@ -83,7 +83,7 @@ class ResUsers(models.Model):
                 "mfa": "skip",
             }
         else:
-            return super()._check_credentials(credential, env)
+            return super()._authenticate_credentials(credential, env)
 
     def _get_fields_session_token(self):
         return super()._get_fields_session_token() | {"auth_passkey_key_ids"}

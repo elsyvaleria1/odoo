@@ -1439,7 +1439,7 @@ class AccountMove(models.Model):
         journal_types = self._get_valid_journal_types()
         company = self.company_id or self.env.company
         domain = [
-            *self.env["account.journal"]._check_company_domain(company),
+            *self.env["account.journal"]._get_domain_company_compatible(company),
             ("type", "in", journal_types),
         ]
 
@@ -1720,9 +1720,9 @@ class AccountMove(models.Model):
             move.bank_account_id = (
                 move.bank_partner_id.bank_account_ids.filtered_domain(
                     [
-                        *self.env["res.partner.bank.account"]._check_company_domain(
-                            move.company_id
-                        ),
+                        *self.env[
+                            "res.partner.bank.account"
+                        ]._get_domain_company_compatible(move.company_id),
                         ("active", "=", True),
                     ]
                 ).sorted(key=_bank_selection_key)[:1]
@@ -2318,7 +2318,7 @@ class AccountMove(models.Model):
     def _get_outstanding_company_domain(self, company):
         return Domain.OR(
             [
-                self.env["account.move.line"]._check_company_domain(company),
+                self.env["account.move.line"]._get_domain_company_compatible(company),
                 Domain("company_id", "child_of", company.id),
             ]
         )
@@ -3952,7 +3952,9 @@ class AccountMove(models.Model):
             "journal_id",
             lambda m: (
                 not m.journal_id.filtered_domain(
-                    self.env["account.journal"]._check_company_domain(m.company_id)
+                    self.env["account.journal"]._get_domain_company_compatible(
+                        m.company_id
+                    )
                 )
             ),
         )
@@ -7957,7 +7959,7 @@ class AccountMove(models.Model):
         journal_type = self._get_domain_invoice_filter_type(move_type) or "general"
         return self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(
+                *self.env["account.journal"]._get_domain_company_compatible(
                     company or self.env.company
                 ),
                 ("type", "=", journal_type),

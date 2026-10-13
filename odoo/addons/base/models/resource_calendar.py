@@ -18,7 +18,7 @@ from odoo.tools.date_utils import localized, to_timezone
 
 from .resource_utils import (
     HOURS_PER_DAY,
-    fill_week,
+    get_work_hours_by_date,
     hours_by_day,
     last_day_of,
     split_at_midnight,
@@ -678,7 +678,9 @@ class ResourceCalendar(models.Model):
         week = week_of(first_day, self.company_id._get_resource_week_start())
         intervals = []
         while week <= last_day:
-            filled = fill_week(week, hours_per_day, hours_per_week, leave_hours)
+            filled = get_work_hours_by_date(
+                week, hours_per_day, hours_per_week, leave_hours
+            )
             for day, hours in filled.items():
                 if hours <= 0 or not first_day <= day <= last_day:
                     continue

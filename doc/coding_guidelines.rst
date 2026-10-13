@@ -5402,7 +5402,7 @@ model no permission row names is readable by the superuser only.
   cycle ``[test_lint access_delegation_acyclic]``.
 * **What a model requires in code** is its ``_access_guard(operation)``, a
   ``Domain`` (usually an ``'access'`` condition) AND-ed with its rows. An
-  override of ``_check_access``, ``_has_field_access``, ``_access_domain`` or an
+  override of ``_get_records_forbidden_and_error_factory``, ``_has_field_access``, ``_access_domain`` or an
   access-filtering ``_search`` outside base is counted
   ``[test_lint access_check_override]`` and only shrinks.
 * **Ask the model, not the store**: ``records.has_access(op)``,

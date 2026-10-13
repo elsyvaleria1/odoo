@@ -570,7 +570,9 @@ class HrExpense(models.Model):
             )
             expense.product_has_tax = bool(
                 expense.product_id.sudo().supplier_taxes_id.filtered_domain(
-                    self.env["account.tax"]._check_company_domain(expense.company_id)
+                    self.env["account.tax"]._get_domain_company_compatible(
+                        expense.company_id
+                    )
                 )
             )
 
@@ -717,7 +719,9 @@ class HrExpense(models.Model):
         for _expense in self.filtered("company_id"):
             expense = _expense.with_company(_expense.company_id)
             expense.tax_ids = expense.product_id.supplier_taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(expense.company_id)
+                self.env["account.tax"]._get_domain_company_compatible(
+                    expense.company_id
+                )
             )
 
     @api.depends("total_amount_currency", "tax_ids")
@@ -810,7 +814,9 @@ class HrExpense(models.Model):
                     "account.payment.channel"
                 ].search(  # noqa: E8507 -- one query per company; expenses sharing one were merged above
                     [
-                        *self.env["account.journal"]._check_company_domain(company),
+                        *self.env["account.journal"]._get_domain_company_compatible(
+                            company
+                        ),
                         ("payment_type", "=", "outbound"),
                         ("journal_id.active", "=", True),
                     ]
@@ -1484,7 +1490,7 @@ class HrExpense(models.Model):
             "tax_ids": [
                 Command.set(
                     product.supplier_taxes_id.filtered_domain(
-                        self.env["account.tax"]._check_company_domain(company)
+                        self.env["account.tax"]._get_domain_company_compatible(company)
                     ).ids
                 )
             ],
@@ -2129,7 +2135,9 @@ class HrExpense(models.Model):
         )
         for company, expenses in employee_expenses.grouped("company_id").items():
             expenses = expenses.with_company(company)
-            company_domain = self.env["account.journal"]._check_company_domain(company)
+            company_domain = self.env["account.journal"]._get_domain_company_compatible(
+                company
+            )
             journal = company.hr_expense_config_id.expense_journal_id or expenses.env[  # noqa: E8507 -- one lookup per company; expenses sharing one were merged above
                 "account.journal"
             ].search([*company_domain, ("type", "=", "purchase")], limit=1)

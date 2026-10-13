@@ -22,7 +22,7 @@ class TestAccessMemoProperty(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.world = access_memo_property.build_world(
+        cls.world = access_memo_property.create_world(
             cls.env, NAMES, "test_access_rights.memo_note", sql=True
         )
 

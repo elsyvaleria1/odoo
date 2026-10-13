@@ -230,7 +230,7 @@ class TestParseBundleName(TransactionCase):
 
 @tagged("assets_manifest")
 class TestAssetsManifest(AddonManifestPatched):
-    def make_asset_view(self, asset_key, t_call_assets_attrs=None):
+    def create_asset_view(self, asset_key, t_call_assets_attrs=None):
         default_attrs = {
             "t-js": "true",
             "t-css": "false",
@@ -644,7 +644,7 @@ class TestAssetsManifest(AddonManifestPatched):
                 "path": "test_assetsbundle/static/src/css/test_cssfile1.css",
             }
         )
-        view = self.make_asset_view(
+        view = self.create_asset_view(
             "test_assetsbundle.irasset2",
             {
                 "t-js": "false",
@@ -938,7 +938,7 @@ class TestAssetsManifest(AddonManifestPatched):
                 "directive": "before",
             }
         )
-        self.make_asset_view(
+        self.create_asset_view(
             "test_assetsbundle.bundle4",
             {
                 "t-js": "true",
@@ -1158,7 +1158,7 @@ class TestAssetsManifest(AddonManifestPatched):
                 "path": "/notinstalled_module/somejsfile.js",
             }
         )
-        self.make_asset_view("test_assetsbundle.irassetsec")
+        self.create_asset_view("test_assetsbundle.irassetsec")
         attach = self.env["ir.attachment"].search(
             [("name", "ilike", "test_assetsbundle.irassetsec")],
             order="create_date DESC",

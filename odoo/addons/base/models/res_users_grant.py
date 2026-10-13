@@ -814,7 +814,7 @@ class ResUsersGrant(models.Model):
                 user_grants._cross_boundaries(self.browse(), user_ending)
                 error = user_grants._cross_boundaries(user_starting, self.browse())
             if error is not None and user_starting:
-                user_starting._refuse_start(error)
+                user_starting._revoke_for_start_error(error)
             _debug.logic(
                 "boundary_refused",
                 user=user.id,
@@ -845,7 +845,7 @@ class ResUsersGrant(models.Model):
             return error
         return None
 
-    def _refuse_start(self, error: Exception) -> None:
+    def _revoke_for_start_error(self, error: Exception) -> None:
         reason = f"refused at its start: {error}"[:255]
         with _marked(_LIFECYCLE):
             self.write(

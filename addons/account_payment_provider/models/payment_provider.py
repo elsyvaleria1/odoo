@@ -50,7 +50,7 @@ class PaymentProvider(models.Model):
         if not pay_method_line:
             pay_method_line = self.env["account.payment.channel"].search(
                 [
-                    *self.env["account.payment.channel"]._check_company_domain(
+                    *self.env["account.payment.channel"]._get_domain_company_compatible(
                         self.company_id
                     ),
                     ("code", "=", self._get_code()),
@@ -75,7 +75,7 @@ class PaymentProvider(models.Model):
             }
             pay_method_line_same_code = self.env["account.payment.channel"].search(
                 [
-                    *self.env["account.payment.channel"]._check_company_domain(
+                    *self.env["account.payment.channel"]._get_domain_company_compatible(
                         self.company_id
                     ),
                     ("code", "=", self._get_code()),

@@ -307,7 +307,7 @@ class TestFollowSessionChain(BaseCase):
         session = self._stored()
         initial_sid = session.sid
         self.store.rotate(session, env=None, soft=True)
-        self.store.delete(session)
+        self.store.remove_session(session)
         with self.assertRaises(SessionExpiredException):
             _follow_session_chain(self.store.get(initial_sid))
 

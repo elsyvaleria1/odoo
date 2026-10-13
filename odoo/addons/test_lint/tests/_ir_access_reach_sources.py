@@ -1,10 +1,11 @@
-
 import csv
 import io
 import json
 import os
 from collections import Counter, defaultdict
+from collections.abc import Container
 from pathlib import Path
+from typing import Any
 
 from lxml import etree
 
@@ -16,7 +17,11 @@ from odoo.orm.models.anchors import (
 )
 
 from odoo.addons.base.models.ir_access import REACH_ANCHOR, filter_reads_user
-from odoo.addons.base.models.ir_access_reach import Part, propose, proves
+from odoo.addons.base.models.ir_access_reach import (
+    Part,
+    is_reach_proposal_equivalent,
+    resolve_reach_proposal,
+)
 
 ROOTS = [
     Path(p)
@@ -195,7 +200,7 @@ def plan():
         if not values["domain"] or values["reach"] not in (None, "", "all"):
             continue
         model = model_name(module.name, values["model"])
-        proposal = propose(values["domain"], values["kind"] or "")
+        proposal = resolve_reach_proposal(values["domain"], values["kind"] or "")
         if values["reach"] == "all" and (
             proposal is None or filter_reads_user(registry, model, values["domain"])
         ):
@@ -218,7 +223,9 @@ def plan():
             and all(p.reach == "all" for p in proposal.parts)
         ):
             continue
-        proven = bool(proposal) and proves(values["domain"], proposal)
+        proven = bool(proposal) and is_reach_proposal_equivalent(
+            values["domain"], proposal
+        )
         if proven and any(
             filter_reads_user(registry, model, p.static) for p in proposal.parts
         ):
@@ -245,20 +252,7 @@ def plan():
         )
         if proven and (model is None or model not in registry):
             unknown_models[model or values["model"]] += 1
-    needs: dict[str, list[Anchor]] = defaultdict(list)
-    for row in rows:
-        if not row["parts"] or row["model"] not in registry:
-            continue
-        for p in row["parts"]:
-            if p["reach"] in ("", "all", "none", "predicate"):
-                continue
-            part = Part(
-                **{
-                    **{k: v for k, v in p.items() if k != "anchor"},
-                    "args": tuple(map(tuple, p.get("args", ()))),
-                }
-            )
-            needs[row["model"]].append(wanted(part))
+    needs = _get_required_anchors_by_model_name(rows, registry)
     keys: dict[str, dict[tuple, str]] = {}
     declarations: dict[str, dict[str, str]] = defaultdict(dict)
     for model, anchors in needs.items():
@@ -325,14 +319,7 @@ def plan():
             if p["reach"] in ("", "all", "none", "predicate"):
                 p["anchor"] = ""
                 continue
-            anchor = wanted(
-                Part(
-                    **{
-                        **{k: v for k, v in p.items() if k != "anchor"},
-                        "args": tuple(map(tuple, p.get("args", ()))),
-                    }
-                )
-            )
+            anchor = wanted(_dict_to_part(p))
             key = keys[row["model"]][
                 (
                     anchor.path,
@@ -344,6 +331,29 @@ def plan():
             ]
             p["anchor"] = "" if key == REACH_ANCHOR.get(p["reach"]) else key
     return rows, declarations, unknown_models
+
+
+def _dict_to_part(values: dict[str, Any]) -> Part:
+    return Part(
+        **{
+            **{name: value for name, value in values.items() if name != "anchor"},
+            "args": tuple(map(tuple, values.get("args", ()))),
+        }
+    )
+
+
+def _get_required_anchors_by_model_name(
+    rows: list[dict[str, Any]], model_names: Container[str]
+) -> dict[str, list[Anchor]]:
+    anchors: dict[str, list[Anchor]] = defaultdict(list)
+    for row in rows:
+        if not row["parts"] or row["model"] not in model_names:
+            continue
+        for values in row["parts"]:
+            if values["reach"] in ("", "all", "none", "predicate"):
+                continue
+            anchors[row["model"]].append(wanted(_dict_to_part(values)))
+    return anchors
 
 
 def _part(p):

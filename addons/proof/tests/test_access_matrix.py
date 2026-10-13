@@ -43,7 +43,7 @@ class TestProofAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         employee_a = cls.users["employee_a"]
         subject = cls.env["res.partner"].create({"name": "matrix subject"})
         method = cls.env.ref("proof.proof_method_password")

@@ -11,7 +11,7 @@ from odoo.tools.assets.esm_registry import external_lib_aliases
 from odoo.tools.json import scriptsafe as json
 from odoo.tools.misc import file_path
 
-from .common import _Mod, make_cursor_readonly
+from .common import _Mod, set_cursor_readonly_until_cleanup
 from odoo.addons.base.models.assetsbundle import AssetsBundle
 
 
@@ -125,12 +125,12 @@ class TestBridgeHashWidth(BridgeRequestBoundCase):
 
 
 class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
-    def _make_cursor_readonly(self):
-        make_cursor_readonly(self)
+    def _set_cursor_readonly_until_cleanup(self):
+        set_cursor_readonly_until_cleanup(self)
 
     def test_escalation_success_returns_canonical_urls(self):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
-        self._make_cursor_readonly()
+        self._set_cursor_readonly_until_cleanup()
         with patch.object(
             BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=True
         ) as escalate:
@@ -144,7 +144,7 @@ class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
 
     def test_escalation_failure_falls_back_to_data_uris(self):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
-        self._make_cursor_readonly()
+        self._set_cursor_readonly_until_cleanup()
         with patch.object(
             BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=False
         ) as escalate:

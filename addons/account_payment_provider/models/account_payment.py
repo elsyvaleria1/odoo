@@ -97,7 +97,7 @@ class AccountPayment(models.Model):
                     .sudo()
                     .search(  # noqa: E8507 -- one query per distinct (company, partner, provider); payments sharing one reuse it
                         [
-                            *self.env["payment.token"]._check_company_domain(
+                            *self.env["payment.token"]._get_domain_company_compatible(
                                 payment.company_id
                             ),
                             ("provider_id.capture_manually", "=", False),
@@ -156,7 +156,9 @@ class AccountPayment(models.Model):
             .sudo()
             .search(
                 [
-                    *self.env["payment.token"]._check_company_domain(self.company_id),
+                    *self.env["payment.token"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("partner_id", "=", self.partner_id.id),
                     ("provider_id.capture_manually", "=", False),
                     (

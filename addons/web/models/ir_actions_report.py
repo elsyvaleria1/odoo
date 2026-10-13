@@ -433,7 +433,7 @@ class OdooURLFetcher:
 
     def cleanup(self) -> None:
         if self._temp_session is not None:
-            root.session_store.delete(self._temp_session)
+            root.session_store.remove_session(self._temp_session)
             self._temp_session = None
 
     def _setup_session(self) -> None:

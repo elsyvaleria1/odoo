@@ -211,10 +211,10 @@ class TestReservationLoad(TransactionCase):
     def test_free_window_ignores_claims_on_nothing(self):
         machine = self._resource(type="material")
         self._claim(machine, allocated_percentage=0)
-        self.assertEqual(machine._find_free_window(self.at, 1)[0], self.at)
+        self.assertEqual(machine._get_window_free(self.at, 1)[0], self.at)
         self._claim(machine, hours=2)
         self.assertEqual(
-            machine._find_free_window(self.at, 1)[0], self.at + timedelta(hours=2)
+            machine._get_window_free(self.at, 1)[0], self.at + timedelta(hours=2)
         )
 
     def test_cleanup_keeps_claims_of_view_models(self):

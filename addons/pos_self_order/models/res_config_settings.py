@@ -321,7 +321,7 @@ class ResConfigSettings(models.TransientModel):
                 )
                 domain = Domain.AND(
                     [
-                        self.env["product.pricelist"]._check_company_domain(
+                        self.env["product.pricelist"]._get_domain_company_compatible(
                             res_config.pos_config_id.company_id
                         ),
                         [("currency_id", "=", currency_id)],

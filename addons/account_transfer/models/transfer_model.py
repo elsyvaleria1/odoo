@@ -33,7 +33,9 @@ class AccountTransferModel(models.Model):
     def _get_default_journal(self):
         return self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("type", "=", "general"),
             ],
             limit=1,

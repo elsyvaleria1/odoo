@@ -82,7 +82,9 @@ class MixinAccountExternalTax(models.AbstractModel):
             tax_group.name: tax_group
             for tax_group in self.env["account.tax.group"].search(
                 [
-                    *self.env["account.tax.group"]._check_company_domain(company),
+                    *self.env["account.tax.group"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("name", "in", tax_group_names.keys()),
                 ]
             )
@@ -134,7 +136,9 @@ class MixinAccountExternalTax(models.AbstractModel):
                 .with_context(active_test=not search_archived_taxes)
                 .search(
                     [
-                        *self.env["account.tax"]._check_company_domain(company),
+                        *self.env["account.tax"]._get_domain_company_compatible(
+                            company
+                        ),
                         (tax_key_field, "in", tax_name),
                         *price_include_override_domain,
                         *type_tax_use_domain,

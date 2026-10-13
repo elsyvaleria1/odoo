@@ -654,7 +654,7 @@ class ResConfigSettings(models.TransientModel):
             )
             pricelists_in_current_currency = self.env["product.pricelist"].search(  # noqa: E8507 -- a transient settings wizard: one record
                 [
-                    *self.env["product.pricelist"]._check_company_domain(
+                    *self.env["product.pricelist"]._get_domain_company_compatible(
                         res_config.pos_config_id.company_id
                     ),
                     ("currency_id", "=", currency_id),

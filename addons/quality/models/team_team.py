@@ -125,4 +125,4 @@ class TeamTeam(models.Model):
         company_id = record.company_id.id or self.env.context.get(
             "default_company_id", self.env.company.id
         )
-        return self._get_quality_team(self._check_company_domain(company_id))
+        return self._get_quality_team(self._get_domain_company_compatible(company_id))

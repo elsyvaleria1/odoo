@@ -8,7 +8,7 @@ from odoo.libs import pdf_raster
 from odoo.tests.common import tagged
 
 from odoo.addons.account.tests.test_account_move_send import TestAccountMoveSendCommon
-from odoo.addons.base.tests.test_pdf_raster import make_pdf
+from odoo.addons.base.tests.test_pdf_raster import prepare_pdf_bytes
 from odoo.addons.document.models.document_document import DocumentsDocument
 from odoo.addons.document_account.tests.common import (
     PDF,
@@ -455,7 +455,7 @@ class TestCaseDocumentsBridgeAccount(DocumentsAccountTestCommon):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_an_embedded_pdf_is_rendered_as_the_thumbnail(self):
-        embedded = base64.b64encode(make_pdf())
+        embedded = base64.b64encode(prepare_pdf_bytes())
         document = self.env["document.document"].create(
             {
                 "name": "invoice.xml",

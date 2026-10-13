@@ -474,7 +474,7 @@ class PosOrderLine(models.Model):
             return self.tax_ids == self.refunded_orderline_id.tax_ids
         fiscal_position = self.order_id.fiscal_position_id
         product_taxes = self.product_id.taxes_id.filtered_domain(
-            self.env["account.tax"]._check_company_domain(self.company_id)
+            self.env["account.tax"]._get_domain_company_compatible(self.company_id)
         )
         return fiscal_position.map_tax(self.tax_ids) == fiscal_position.map_tax(
             product_taxes
@@ -716,7 +716,7 @@ class PosOrderLine(models.Model):
                 self.product_id, self.qty or 1.0, currency=self.currency_id
             )
             self.tax_ids = self.product_id.taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(self.company_id)
+                self.env["account.tax"]._get_domain_company_compatible(self.company_id)
             )
             tax_ids_after_fiscal_position = self.order_id.fiscal_position_id.map_tax(
                 self.tax_ids

@@ -172,9 +172,9 @@ class TestEveryBinary(TransactionCase):
 
     @unittest.skipUnless(can_decode_media(), "PyAV is not installed")
     def test_a_video_is_looked_at_through_its_frames(self):
-        from odoo.tests.media_recordings import build_recording
+        from odoo.tests.media_recordings import prepare_recording_bytes
 
-        video = self._file(build_recording(), "video/x-matroska", "clip.mkv")
+        video = self._file(prepare_recording_bytes(), "video/x-matroska", "clip.mkv")
         looks = _Looks()
         with _only(looks):
             video.action_extract()

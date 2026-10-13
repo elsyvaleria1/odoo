@@ -6,7 +6,7 @@ from odoo.exceptions import AccessError, LockError
 from odoo.tests.common import TransactionCase, tagged
 from odoo.tools import mute_logger
 
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 
 
 class TestORM(TransactionCase):
@@ -75,7 +75,7 @@ class TestORM(TransactionCase):
         )
 
         partner_model = self.env["ir.model"].search([("model", "=", "res.partner")])
-        make_guard_row(
+        create_guard_row(
             self.env,
             partner_model.model,
             str([("id", "!=", p1.id)]),
@@ -570,7 +570,7 @@ class TestReadFormatMany2oneBatch(TransactionCase):
                 {"name": "batch visible child", "parent_id": visible.id},
             ]
         )
-        make_guard_row(
+        create_guard_row(
             self.env,
             "res.partner",
             str([("id", "!=", secret.id)]),

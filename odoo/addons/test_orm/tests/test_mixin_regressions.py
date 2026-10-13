@@ -7,7 +7,7 @@ from odoo.orm.models.field_classes import FieldAccessClasses
 from odoo.tests import TransactionCase, new_test_user
 from odoo.tools import mute_logger
 
-from odoo.addons.base.tests.common import TransactionCaseWithUserDemo, make_guard_row
+from odoo.addons.base.tests.common import TransactionCaseWithUserDemo, create_guard_row
 
 
 class TestLoadBatches(TransactionCase):
@@ -150,7 +150,7 @@ class TestDescendantIds(TransactionCaseWithUserDemo):
         cls.bottom = Cat.create({"name": "orm bottom", "parent": cls.middle.id})
 
     def test_a_rule_hiding_nodes_does_not_cut_the_tree(self):
-        make_guard_row(
+        create_guard_row(
             self.env,
             "test_orm.category",
             str([("id", "=", self.bottom.id)]),

@@ -185,7 +185,7 @@ class TestApprovalAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a, b = cls.companies["a"], cls.companies["b"]
         users = cls.users

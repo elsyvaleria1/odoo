@@ -210,3 +210,4 @@ from . import test_resource_utils
 from . import test_resource_views
 from . import test_resource_asset
 from . import test_template_trust_attacks
+from . import test_method_name_migration

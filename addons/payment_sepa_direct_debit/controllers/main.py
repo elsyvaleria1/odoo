@@ -4,7 +4,7 @@ from odoo.exceptions import ValidationError
 from odoo.http import Controller, request, route
 
 from odoo.addons.account_iban.models.res_partner_bank_account import check_iban
-from odoo.addons.base.models.res_partner_bank_account import sanitize_account_number
+from odoo.addons.base.models.res_partner_bank_account import normalize_account_number
 from odoo.addons.payment import utils as payment_utils
 
 
@@ -31,7 +31,7 @@ class SepaDirectDebitController(Controller):
         tx_sudo._set_pending()
 
     def _normalize_sdd_iban(self, iban) -> str:
-        iban = sanitize_account_number(iban)
+        iban = normalize_account_number(iban)
         check_iban(iban)
         if not iban:
             raise ValidationError(request.env._("Missing or invalid IBAN."))

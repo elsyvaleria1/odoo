@@ -16,7 +16,7 @@ class AccountPaymentTerm(models.Model):
     _name = "account.payment.term"
     _description = "Payment Terms"
     _order = "sequence, id"
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     def _default_line_ids(self):
         return [

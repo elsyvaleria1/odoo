@@ -200,11 +200,11 @@ class Document:
 
     @property
     def rows(self) -> list[list[Any]]:
-        return self._derive(ROWS) or []
+        return self._read_representation(ROWS) or []
 
     @property
     def text(self) -> str:
-        derived = self._derive(TEXT)
+        derived = self._read_representation(TEXT)
         if derived is None and self._falls_back_to_decoding():
             if self.mimetype.startswith(_OPAQUE_MIMETYPE_FAMILIES):
                 decoded = ""
@@ -237,28 +237,28 @@ class Document:
 
     @property
     def tree(self) -> Any:
-        return self._derive(TREE)
+        return self._read_representation(TREE)
 
     @property
     def data_dict(self) -> dict[str, Any] | list[Any] | None:
-        data: dict[str, Any] | list[Any] | None = self._derive(DATA)
+        data: dict[str, Any] | list[Any] | None = self._read_representation(DATA)
         return data
 
     @property
     def images(self) -> list[bytes]:
-        return self._derive(IMAGES) or []
+        return self._read_representation(IMAGES) or []
 
     @property
     def barcodes(self) -> list[str]:
-        return self._derive(BARCODES) or []
+        return self._read_representation(BARCODES) or []
 
     @property
     def children(self) -> list[Document]:
-        return self._derive(CHILDREN) or []
+        return self._read_representation(CHILDREN) or []
 
     @property
     def cues(self) -> list[Any]:
-        return self._derive(CUES) or []
+        return self._read_representation(CUES) or []
 
     def _is_read(self, representation: str, value: Any) -> bool:
         if value is None:
@@ -270,7 +270,9 @@ class Document:
             raise ValueError(f"{representation!r} is not read by name")
         return getattr(self, _PROPERTIES[representation])
 
-    def seed(self, representation: str, value: Any, read_by: str = "") -> None:
+    def update_representation(
+        self, representation: str, value: Any, read_by: str = ""
+    ) -> None:
         if representation not in _PROPERTIES:
             raise ValueError(f"{representation!r} is not read from a document")
         self._derived[representation] = value
@@ -278,7 +280,7 @@ class Document:
         self._read_by[representation] = read_by
         self.errors.pop(representation, None)
 
-    def _seeded(self, representation: str) -> bool:
+    def _acquire_representation_from_options(self, representation: str) -> bool:
         seeder = self.options.get("seeder")
         if seeder is None or representation in self._derived:
             return False
@@ -286,7 +288,7 @@ class Document:
         if found is None:
             return False
         value, read_by = found
-        self.seed(representation, value, read_by)
+        self.update_representation(representation, value, read_by)
         return True
 
     def provides(self, representation: str) -> bool:
@@ -294,7 +296,7 @@ class Document:
             raise ValueError(f"Unknown representation {representation!r}")
         if representation not in _PROPERTIES:
             return False
-        if self._seeded(representation):
+        if self._acquire_representation_from_options(representation):
             return self._is_read(representation, self._derived[representation])
         cheap = [
             answer
@@ -307,9 +309,9 @@ class Document:
             return any(cheap)
         return self._is_read(representation, self.read(representation))
 
-    def _derive(self, representation: str) -> Any:
+    def _read_representation(self, representation: str) -> Any:
         ceiling = self.read_up_to
-        self._seeded(representation)
+        self._acquire_representation_from_options(representation)
         if representation in self._derived:
             cached = self._derived[representation]
             if self._is_read(representation, cached) or ceiling <= self._derived_at.get(

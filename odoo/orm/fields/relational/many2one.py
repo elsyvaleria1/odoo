@@ -207,7 +207,7 @@ class Many2one(_Relational):
             id_ = value._ids[0] if value._ids else None
         elif isinstance(value, tuple):
             if validate:
-                self._reject_command_tuple(value)
+                self._check_value_is_not_command_tuple(value)
             id_ = (value[0] or None) if value else None
         elif isinstance(value, dict):
             comodel = record.env[self._get_comodel_name()]
@@ -320,7 +320,7 @@ class Many2one(_Relational):
             record_id = value.id
             return record_id if isinstance(record_id, (int, NewId)) else False
         if isinstance(value, tuple):
-            self._reject_command_tuple(value)
+            self._check_value_is_not_command_tuple(value)
             return value[0] if value else False
         if isinstance(value, dict):
             return typing.cast(
@@ -329,7 +329,7 @@ class Many2one(_Relational):
             )
         raise ValueError(f"Wrong value for {self}: {value!r}")
 
-    def _reject_command_tuple(self, value: tuple[typing.Any, ...]) -> None:
+    def _check_value_is_not_command_tuple(self, value: tuple[typing.Any, ...]) -> None:
         if len(value) == 3 and isinstance(value[0], int):
             if value[0] in Command._value2member_map_:
                 raise ValueError(

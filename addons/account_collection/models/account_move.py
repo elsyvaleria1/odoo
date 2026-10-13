@@ -15,7 +15,7 @@ class AccountMove(models.Model):
         company = self.company_id[:1] or self.env.company
         return self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(company),
+                *self.env["account.journal"]._get_domain_company_compatible(company),
                 ("is_collection_custody", "=", True),
             ],
             limit=1,

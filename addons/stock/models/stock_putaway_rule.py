@@ -145,7 +145,9 @@ class StockPutawayRule(models.Model):
             return self.env.context.get("active_id")
         if not self.env.user.has_group("stock.group_stock_multi_warehouses"):
             wh = self.env["stock.warehouse"].search(
-                self.env["stock.warehouse"]._check_company_domain(self.env.company),
+                self.env["stock.warehouse"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 limit=1,
             )
             input_loc, __ = wh._get_input_output_locations()

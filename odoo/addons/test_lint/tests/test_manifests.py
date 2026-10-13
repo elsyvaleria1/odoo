@@ -36,7 +36,9 @@ class ManifestLinter(LintCase):
             elif outcome:
                 shape.append(f"{manifest.name}: the fixer would rewrite it")
             value.extend(
-                checker.findings(manifest.name, manifest.declared, Path(manifest.path))
+                checker.get_findings(
+                    manifest.name, manifest.declared, Path(manifest.path)
+                )
             )
         _logger.info("checked %s manifests", checked)
         self.assertTrue(checked, "the scan reached no manifests at all")
@@ -138,7 +140,7 @@ class TestManifestChecker(BaseCase):
             "license": "LGPL-3",
             "depends": ["base"],
         }
-        return self.checker.findings("thing", {**base, **data}, self.module)
+        return self.checker.get_findings("thing", {**base, **data}, self.module)
 
     def test_a_canonical_manifest_has_no_finding(self):
         self.assertEqual(
@@ -243,7 +245,7 @@ class TestManifestChecker(BaseCase):
             self._findings(countries=["mx"]),
         )
         self.assertEqual(
-            self.checker.findings(
+            self.checker.get_findings(
                 "l10n_thing",
                 {"name": "T", "category": "Sales", "countries": ["mx"]},
                 self.module,

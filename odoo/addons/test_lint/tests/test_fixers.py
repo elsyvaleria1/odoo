@@ -1556,7 +1556,7 @@ class TestFixerScope(LintCase):
             with self.subTest(fixer=module.__name__):
                 defaults = [
                     action.default
-                    for action in module.build_parser()._actions
+                    for action in module.prepare_argument_parser()._actions
                     if action.dest == "exclude"
                 ]
                 self.assertTrue(defaults, "no --exclude option to inspect")

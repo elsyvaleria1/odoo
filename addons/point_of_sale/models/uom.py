@@ -13,7 +13,7 @@ class UomUom(models.Model):
     @api.model
     def _load_pos_data_fields(self, config):
         taxes = self.env["account.tax"].search(
-            self.env["account.tax"]._check_company_domain(config.company_id.id)
+            self.env["account.tax"]._get_domain_company_compatible(config.company_id.id)
         )
         product_uom_fields = taxes._eval_taxes_computation_prepare_product_uom_fields()
         return sorted(

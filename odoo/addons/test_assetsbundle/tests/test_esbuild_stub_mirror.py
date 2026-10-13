@@ -26,7 +26,7 @@ class TestEsbuildCompilerAddonFlagsSeam(BaseCase):
         self.assertIs(compiler._addon_flags_provider, sentinel)
 
 
-def _build_probe_stub_mirror(tmp, files, stubs):
+def _write_probe_stub_mirror(tmp, files, stubs):
     odoo_root = Path(tmp)
     src_root = odoo_root / "addons" / "probe" / "static" / "src"
     for relpath, content in files.items():
@@ -46,8 +46,8 @@ class TestSecondaryStubMirror(BaseCase):
     NESTED = "@probe/core/network/rpc"
     SIBLING = "@probe/core/network/model_mutation"
 
-    def _build_mirror(self, tmp):
-        stub_root, src_root, targets = _build_probe_stub_mirror(
+    def _write_mirror(self, tmp):
+        stub_root, src_root, targets = _write_probe_stub_mirror(
             tmp,
             {
                 "core/network.js": "export const face = 'REAL_FACE';",
@@ -63,7 +63,7 @@ class TestSecondaryStubMirror(BaseCase):
 
     def test_the_alias_target_leaves_room_for_submodules(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real, targets = self._build_mirror(tmp)
+            stub_root, _real, targets = self._write_mirror(tmp)
 
             target = targets[f"--alias:{self.FACE}"]
             self.assertEqual(target, str(stub_root / "probe" / "core" / "network"))
@@ -75,7 +75,7 @@ class TestSecondaryStubMirror(BaseCase):
 
     def test_an_unstubbed_submodule_still_reaches_the_real_file(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real, _targets = self._build_mirror(tmp)
+            stub_root, _real, _targets = self._write_mirror(tmp)
 
             mirrored = stub_root / "probe/core/network/model_mutation.js"
 
@@ -84,7 +84,7 @@ class TestSecondaryStubMirror(BaseCase):
 
     def test_a_nested_stub_shadows_without_writing_through(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, real, _targets = self._build_mirror(tmp)
+            stub_root, real, _targets = self._write_mirror(tmp)
 
             self.assertEqual(
                 (stub_root / "probe/core/network/rpc.js").read_text(),
@@ -98,7 +98,7 @@ class TestSecondaryStubMirror(BaseCase):
     @unittest.skipUnless(_get_esbuild_path(), "esbuild binary not available")
     def test_esbuild_resolves_face_and_submodule_together(self):
         with tempfile.TemporaryDirectory() as tmp:
-            _stub_root, _real, targets = self._build_mirror(tmp)
+            _stub_root, _real, targets = self._write_mirror(tmp)
             entry = Path(tmp) / "entry.js"
             entry.write_text(
                 f"import {{ face }} from '{self.FACE}';\n"
@@ -132,8 +132,8 @@ class TestDeepStubMirror(BaseCase):
     FACE = "@probe/core/network"
     DEEP = "@probe/core/network/plugins/core"
 
-    def _build_mirror(self, tmp):
-        stub_root, src_root, _targets = _build_probe_stub_mirror(
+    def _write_mirror(self, tmp):
+        stub_root, src_root, _targets = _write_probe_stub_mirror(
             tmp,
             {
                 "core/network.js": "export const face = 'REAL_FACE';",
@@ -150,7 +150,7 @@ class TestDeepStubMirror(BaseCase):
 
     def test_a_deeply_nested_stub_does_not_overwrite_the_real_module(self):
         with tempfile.TemporaryDirectory() as tmp:
-            _stub_root, real = self._build_mirror(tmp)
+            _stub_root, real = self._write_mirror(tmp)
 
             self.assertEqual(
                 (real / "network" / "plugins" / "core.js").read_text(),
@@ -160,7 +160,7 @@ class TestDeepStubMirror(BaseCase):
 
     def test_the_deeply_nested_shim_still_lands_in_the_mirror(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real = self._build_mirror(tmp)
+            stub_root, _real = self._write_mirror(tmp)
 
             self.assertEqual(
                 (stub_root / "probe/core/network/plugins/core.js").read_text(),
@@ -169,7 +169,7 @@ class TestDeepStubMirror(BaseCase):
 
     def test_unstubbed_neighbours_at_every_depth_reach_the_real_files(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real = self._build_mirror(tmp)
+            stub_root, _real = self._write_mirror(tmp)
 
             for rel, expected in (
                 ("probe/core/network/rpc.js", "export const rpc = 'REAL_RPC';"),
@@ -201,8 +201,8 @@ class TestBarePackageStubMirror(BaseCase):
     SUB = "@probe/core/network"
     ADDON_ALIAS = "--alias:@probe=./addons/probe/static/src"
 
-    def _build_mirror(self, tmp, stubs=None):
-        return _build_probe_stub_mirror(
+    def _write_mirror(self, tmp, stubs=None):
+        return _write_probe_stub_mirror(
             tmp,
             {
                 "index.js": "export const face = 'REAL_INDEX';",
@@ -213,7 +213,7 @@ class TestBarePackageStubMirror(BaseCase):
 
     def test_the_bare_specifier_gets_a_shim_and_an_alias(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real, targets = self._build_mirror(tmp)
+            stub_root, _real, targets = self._write_mirror(tmp)
 
             self.assertEqual(targets[f"--alias:{self.BARE}"], str(stub_root / "probe"))
             self.assertEqual(
@@ -223,7 +223,7 @@ class TestBarePackageStubMirror(BaseCase):
 
     def test_the_addon_static_src_is_still_reachable_beside_the_shim(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, _real, _targets = self._build_mirror(tmp)
+            stub_root, _real, _targets = self._write_mirror(tmp)
 
             self.assertEqual(
                 (stub_root / "probe" / "core" / "network.js").read_text(),
@@ -232,7 +232,7 @@ class TestBarePackageStubMirror(BaseCase):
 
     def test_a_bare_stub_alongside_a_sub_path_stub_writes_both(self):
         with tempfile.TemporaryDirectory() as tmp:
-            stub_root, real, _targets = self._build_mirror(
+            stub_root, real, _targets = self._write_mirror(
                 tmp,
                 stubs={
                     self.BARE: "export const face = 'SHIM_INDEX';",
@@ -256,7 +256,7 @@ class TestBarePackageStubMirror(BaseCase):
     @unittest.skipUnless(_get_esbuild_path(), "esbuild binary not available")
     def test_esbuild_prefers_the_shim_over_the_packages_index(self):
         with tempfile.TemporaryDirectory() as tmp:
-            _stub_root, _real, targets = self._build_mirror(tmp)
+            _stub_root, _real, targets = self._write_mirror(tmp)
             entry = Path(tmp) / "entry.js"
             entry.write_text(
                 f"import {{ face }} from '{self.BARE}';\n"

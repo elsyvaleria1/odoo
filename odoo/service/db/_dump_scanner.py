@@ -1,4 +1,3 @@
-
 from __future__ import annotations
 
 import logging
@@ -15,7 +14,7 @@ from .._env import get_env_int
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
-    from typing import IO, NoReturn
+    from typing import IO
 
     from _typeshed import SupportsRead
 
@@ -467,16 +466,16 @@ class _RestoreTarget:
         return (_unquote(schema), _unquote(relation)) in self.extension_relations
 
 
-def _raise_refusal(hit: tuple[int, str]) -> NoReturn:
+def _prepare_dump_command_error(hit: tuple[int, str]) -> RuntimeError:
     lineno, command = hit
     if not command.startswith("\\"):
-        raise RuntimeError(
+        return RuntimeError(
             f"Refusing to restore: the dump's SQL sets {command!r} (line "
             f"{lineno}), which changes how a quoted string is escaped and "
             f"can desynchronize this scanner from what psql actually runs. "
             f"A backup produced by Odoo's own dump never needs this setting."
         )
-    raise RuntimeError(
+    return RuntimeError(
         f"Refusing to restore: the dump's SQL contains the psql "
         f"meta-command {command!r} (line {lineno}), which would run with "
         f"this server's OS/database privileges. A backup produced by Odoo's "
@@ -605,7 +604,7 @@ class _PortableSqlWriter:
     def _feed(self, text: str) -> None:
         hit = self.scanner.feed(text)
         if hit is not None:
-            _raise_refusal(hit)
+            raise _prepare_dump_command_error(hit)
 
     def _get_drop_reason(self, text: str) -> str | None:
         if match := _CLUSTER_BOUND_STATEMENT_RE.match(text):

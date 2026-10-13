@@ -856,7 +856,9 @@ class AccountReturnType(models.Model):
             .with_context(active_test=False)
             .search(
                 [
-                    *self.env["account.return"]._check_company_domain(main_company),
+                    *self.env["account.return"]._get_domain_company_compatible(
+                        main_company
+                    ),
                     ("tax_unit_id", "=", tax_unit.id if tax_unit else None),
                     ("date_from", "=", period_start),
                     ("date_to", "=", period_end),
@@ -1158,7 +1160,7 @@ class AccountReturnType(models.Model):
         has_foreign_fiscal_pos = bool(
             self.env["account.fiscal.position"].search_count(
                 [
-                    *self.env["account.fiscal.position"]._check_company_domain(
+                    *self.env["account.fiscal.position"]._get_domain_company_compatible(
                         self.env.company.id
                     ),
                     ("foreign_vat", "!=", False),

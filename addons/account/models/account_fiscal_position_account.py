@@ -7,7 +7,7 @@ class AccountFiscalPositionAccount(models.Model):
     _merge_clash_policy = "drop"
     _rec_name = "position_id"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     position_id = fields.Many2one(
         comodel_name="account.fiscal.position",

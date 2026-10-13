@@ -7,6 +7,7 @@ import sys
 import threading
 import traceback
 from collections.abc import Callable
+from typing import NoReturn
 
 from .worker_thread import describe_thread_work
 
@@ -71,7 +72,7 @@ class MemoryWatch:
         self.limit = limit
         self.interval = interval
         self._rss = rss
-        self._abort = abort or self._abort_process
+        self._abort = abort or self._exit_process_for_memory_limit
         self._next = 0
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
@@ -125,7 +126,7 @@ class MemoryWatch:
             self._thread.join()
 
     @staticmethod
-    def _abort_process() -> None:
+    def _exit_process_for_memory_limit() -> NoReturn:
         for handler in logging.getLogger().handlers:
             handler.flush()
         faulthandler.dump_traceback(all_threads=True)

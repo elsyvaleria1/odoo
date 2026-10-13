@@ -225,7 +225,7 @@ class _RequestServeMixin(RequestState):
                     cr = registry.cursor(
                         readonly=True,
                         pin_key=self.session.sid,
-                        before_replica=self._session_binding_check(registry),
+                        before_replica=self._get_session_binding_updater(registry),
                     )
                 with _debug.perf("http.registry.signaling", cr=cr, db=db):
                     self.registry = registry.check_signaling(cr)
@@ -275,18 +275,20 @@ class _RequestServeMixin(RequestState):
                 cr.close()
             raise
 
-    def _session_binding_check(self, registry: Registry) -> Callable[[], None] | None:
+    def _get_session_binding_updater(
+        self, registry: Registry
+    ) -> Callable[[], None] | None:
         if self.session.uid is None:
             return None
-        return functools.partial(self._check_session_binding_on_primary, registry)
+        return functools.partial(self._update_session_binding_from_primary, registry)
 
-    def _check_session_binding_on_primary(self, registry: Registry) -> None:
+    def _update_session_binding_from_primary(self, registry: Registry) -> None:
         session = self.session
         with (
             _debug.perf("http.session.binding_precheck", db=registry.db_name) as span,
             registry.cursor(readonly=True, primary=True) as cr,
         ):
-            valid = get_ir_http(registry)._check_session_binding(cr, session)
+            valid = get_ir_http(registry)._is_session_binding_valid(cr, session)
             span.set(valid=valid)
         self.scratch.session_binding = (session.sid, session.uid, valid)
 
@@ -360,7 +362,7 @@ class _RequestServeMixin(RequestState):
                 and not settled
                 and isinstance(exc, psycopg.errors.ReadOnlySqlTransaction)
             ):
-                self._prepare_promotion(participant, exc)
+                self._promote_cursor_to_readwrite(participant, exc)
                 return _PROMOTE
             _debug.logic(
                 "http.serve.transaction_failed",
@@ -395,7 +397,7 @@ class _RequestServeMixin(RequestState):
             self._flush_session()
         return response
 
-    def _prepare_promotion(
+    def _promote_cursor_to_readwrite(
         self, participant: RequestRetryParticipant, exc: BaseException
     ) -> None:
         _logger.warning(

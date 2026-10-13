@@ -3,7 +3,11 @@ import sys
 import warnings
 from pathlib import Path
 
-from .libs.native import assert_fresh, assert_optimised, native_required
+from .libs.native import (
+    check_extension_fresh,
+    check_extension_optimised,
+    is_native_required,
+)
 from .release import MIN_PY_VERSION
 
 if sys.version_info[:2] < MIN_PY_VERSION:
@@ -15,7 +19,7 @@ if sys.version_info[:2] < MIN_PY_VERSION:
 try:
     import odoo_rust
 except ImportError as exc:
-    if native_required():
+    if is_native_required():
         raise ImportError(
             "The 'odoo_rust' native extension is not importable and "
             "ODOO_REQUIRE_NATIVE (or CI) is set, so the pure-Python fallbacks are "
@@ -38,8 +42,8 @@ except ImportError as exc:
 _CRATES = Path(__file__).resolve().parents[1] / "crates"
 
 if odoo_rust is not None:
-    assert_fresh(odoo_rust, _CRATES / "odoo_rust")
-    assert_optimised(odoo_rust)
+    check_extension_fresh(odoo_rust, _CRATES / "odoo_rust")
+    check_extension_optimised(odoo_rust)
 
 
 if gc.get_threshold()[0] in (700, 2000):

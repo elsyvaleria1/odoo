@@ -483,7 +483,7 @@ class AccountAnalyticApplicability(models.Model):
     _name = "account.analytic.applicability"
     _description = "Analytic Plan's Applicabilities"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     analytic_plan_id = fields.Many2one(
         comodel_name="account.analytic.plan",

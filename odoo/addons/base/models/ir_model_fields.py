@@ -804,7 +804,7 @@ class IrModelFields(models.Model):
         popped = [
             pop_field(self.env.registry[record.model], record.name) for record in self
         ]
-        self.pool.refresh_field_depends(self.env, code_dependents)
+        self.pool.reset_field_depends(self.env, code_dependents)
         return popped
 
     def _drop_columns(self) -> bool:

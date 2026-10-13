@@ -89,7 +89,7 @@ class TestMolecularScreeningAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         compound = env["molecular.compound"].create_from_molblock(ACETONITRILE)
         structure = compound.structure_ids

@@ -49,7 +49,7 @@ class TestWalletTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         issuer = env["res.partner"].create({"name": "matrix issuer"})
         records = {}

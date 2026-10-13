@@ -71,7 +71,7 @@ class TestWebCwvMetric(TransactionCase):
         obs._limiter.clear()
         self.addCleanup(obs._limiter.clear)
         for i in range(obs._limiter.max_keys + 500):
-            obs._limiter.is_limited(f"flood:{i}")
+            obs._limiter.acquire_request_slot(f"flood:{i}")
         self.assertLessEqual(
             len(obs._limiter._state),
             obs._limiter.max_keys,

@@ -426,7 +426,7 @@ def compile_predicate(
     )
 
 
-def find_access_cycle(
+def get_access_cycle(
     edges: Mapping[tuple[str, str], Iterable[tuple[str, str]]],
 ) -> list[tuple[str, str]] | None:
     done: set[tuple[str, str]] = set()
@@ -1073,7 +1073,7 @@ class IrAccess(models.Model):
                 for operation, letter in OPERATION_LETTER.items():
                     if letter in row.operation:
                         edges[model_name, operation].update(targets)
-        return find_access_cycle(edges)
+        return get_access_cycle(edges)
 
     @api.model_create_multi
     def create(self, vals_list: list[ValuesType]) -> Self:

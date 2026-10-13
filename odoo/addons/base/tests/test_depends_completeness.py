@@ -84,7 +84,7 @@ class TestDependsSweep(TransactionCase):
         for _model_name, records in self._sweepable_models(unreadable):
             savepoint = self.env.cr.savepoint(flush=False)
             try:
-                stale = self.findStaleComputedFields(records)
+                stale = self.get_stale_computed_fields(records)
             finally:
                 savepoint.rollback()
                 savepoint.close(rollback=False)
@@ -145,7 +145,7 @@ class TestDependsSweep(TransactionCase):
             registry.__dict__.pop("_field_triggers", None)
             registry._get_field_triggers()
             self.env.invalidate_all()
-            stale = self.findStaleComputedFields(
+            stale = self.get_stale_computed_fields(
                 child + other,
                 computed_fields=["commercial_partner_id"],
                 probe_fields=["parent_id"],

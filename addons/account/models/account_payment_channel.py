@@ -8,7 +8,7 @@ class AccountPaymentChannel(models.Model):
     _name = "account.payment.channel"
     _description = "Payment Channel"
     _order = "sequence, id"
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     name = fields.Char(
         compute="_compute_name",

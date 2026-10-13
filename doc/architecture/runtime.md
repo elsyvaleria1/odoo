@@ -34,7 +34,7 @@ executes **`odoo/init.py`**, the framework bootstrap, in this order:
 |---|---|---|
 | 1 | enforce `MIN_PY_VERSION` | `SystemExit` naming the required version |
 | 2 | import the `odoo_rust` native extension | a hard, explained `ImportError` when `ODOO_REQUIRE_NATIVE` or `CI` is set; otherwise a `RuntimeWarning` and the process runs on the pure-Python twins behind `odoo/libs/accel.py` (slower, not wrong) |
-| 3 | `assert_fresh`: compare `odoo_rust.__source_crc__` against the crate on disk; `assert_optimised`: require the `release` profile (`odoo/libs/native.py`) | refuses to start when the built extension is **stale**, naming the rebuild command, or is a debug build. Skipped when the crate directory is absent (an installed wheel) or `ODOO_SKIP_RUST_FRESHNESS_CHECK` / `ODOO_ALLOW_DEBUG_RUST` is set. The sibling `odoo_lint` extension is checked the same way, but at *its* import site in `odoo/libs/lint/scan.py` — it is not a runtime dependency and a server that never runs a lint gate never loads it |
+| 3 | `check_extension_fresh`: compare `odoo_rust.__source_crc__` against the crate on disk; `check_extension_optimised`: require the `release` profile (`odoo/libs/native.py`) | refuses to start when the built extension is **stale**, naming the rebuild command, or is a debug build. Skipped when the crate directory is absent (an installed wheel) or `ODOO_SKIP_RUST_FRESHNESS_CHECK` / `ODOO_ALLOW_DEBUG_RUST` is set. The sibling `odoo_lint` extension is checked the same way, but at *its* import site in `odoo/libs/lint/scan.py` — it is not a runtime dependency and a server that never runs a lint gate never loads it |
 | 4 | retune the GC threshold set | — |
 | 5 | `_monkeypatches.patch_init()` | anything that must be patched before third-party modules load has to run from here |
 
@@ -569,7 +569,7 @@ plan that weighed the alternative (one slot holding the truth, visibility applie
 on the way out) is no longer in the vault.
 
 **A read verdict holds for the transaction until something it read changes.**
-`AccessMixin._check_access("read")` answers from `Transaction.access_memo`, per
+`AccessMixin._get_records_forbidden_and_error_factory("read")` answers from `Transaction.access_memo`, per
 access key (`Environment._read_access_key`: the uid, sudo, and the context values
 the record rules read) and model: the model's ACL verdict under `0`, each
 record's rule verdict under its id. A miss evaluates only the unknown ids; the
@@ -580,7 +580,7 @@ facts the x2many slots follow), by `invalidate_model` / `invalidate_recordset` o
 the model or of what its rule reads, by `invalidate_all`, and wholesale when the
 registry clears a cache (`Registry.cache_epoch`: a rule, an access right, a group
 or a membership written). Only `read` is cached, and a model's own
-`_check_access` override still runs around it. `tests/perf`
+`_get_records_forbidden_and_error_factory` override still runs around it. `tests/perf`
 `partner_read_check_repeated_1000` counts the rule evaluations of a thousand
 checks of one record, and they are the first check's; before, every check
 evaluated the rule (160-199 µs each, 2026-09-22). A standing property checks

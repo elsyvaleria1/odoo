@@ -13,7 +13,7 @@ from odoo.tools import escape_psql
 from odoo.tools.assets.fingerprint import pipeline_fingerprint
 from odoo.tools.misc import file_path
 
-from .common import asset_file, make_cursor_readonly
+from .common import asset_file, set_cursor_readonly_until_cleanup
 from odoo.addons.base.models.assetsbundle import (
     ANY_UNIQUE,
     AssetAttachmentStore,
@@ -144,8 +144,8 @@ class TestSaveAttachmentGuard(TransactionCase):
 
 
 class TestAuditReadonlyAsymmetry(TransactionCase):
-    def _make_cursor_readonly(self):
-        make_cursor_readonly(self)
+    def _set_cursor_readonly_until_cleanup(self):
+        set_cursor_readonly_until_cleanup(self)
 
     def test_save_attachment_ignores_readonly_flag(self):
         bundle = AssetsBundle(
@@ -154,7 +154,7 @@ class TestAuditReadonlyAsymmetry(TransactionCase):
             env=self.env,
             css=False,
         )
-        self._make_cursor_readonly()
+        self._set_cursor_readonly_until_cleanup()
         attachment = bundle.save_attachment("min.js", "/* ro */")
         self.assertTrue(attachment.exists())
 
@@ -901,7 +901,7 @@ class TestEsmAssetGc(TransactionCase):
         digest = "deed" * 8
         aged = self._mk(f"{digest}.js", f"/web/assets/esm/bridges/{digest}.js", 6)
         before = aged.write_date
-        make_cursor_readonly(self)
+        set_cursor_readonly_until_cleanup(self)
         manager = BridgeShimManager(self.env, "test_assetsbundle.gc_probe", [])
         with patch("odoo.tools.assets.esm_bridges.cache_hash", return_value=digest):
             manager._persist_bridge_shims({"@probe/spec": "export const p = 1;\n"})

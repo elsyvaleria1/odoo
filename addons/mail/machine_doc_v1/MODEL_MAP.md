@@ -48,7 +48,7 @@ has them (suggested-recipients, partner resolution, low-level tracking).
 | File | `_name` / `_inherit` | Kind | Role |
 |------|----------------------|------|------|
 | `mail_message.py` | `mail.message` (inh `mixin.bus.listener`) | M | Core message record |
-| `mail_message_access.py` | inh `mail.message` | M | The access rule and nothing else — `_check_access`, `_search`, `_get_forbidden_access` and its `_discard_*` rounds. Split out of `mail_message.py` so the rule has one home |
+| `mail_message_access.py` | inh `mail.message` | M | The access rule and nothing else — `_get_records_forbidden_and_error_factory`, `_search`, `_get_forbidden_access` and its `_discard_*` rounds. Split out of `mail_message.py` so the rule has one home |
 | `mail_message_store.py` | inh `mail.message` | M | The client payload — `_to_store` and its defaults |
 | `mail_mail.py` | `mail.mail` (**`_inherits`** `mail.message` via `mail_message_id`) | M | Outgoing email record + send queue |
 | `mail_followers.py` | `mail.followers` | M | Document followers (per res_model/res_id) |
@@ -303,7 +303,7 @@ Methods: `create`, `write`, `unlink`, `_get_with_access`, `mark_all_as_read`,
 `_filtered_empty()`, `_get_message_id(values)`.
 
 > **`mail.message` is spread over three files** — `mail_message.py` (the model),
-> `mail_message_access.py` (`_check_access`, `_search`, `_get_forbidden_access` + its
+> `mail_message_access.py` (`_get_records_forbidden_and_error_factory`, `_search`, `_get_forbidden_access` + its
 > `_discard_*` rounds) and `mail_message_store.py` (`_to_store`), plus
 > `discuss/mail_message.py` for the Discuss extensions. The access rule is written twice by
 > design — forward as SQL in `_get_search_reach_domain` (the owning record's access through

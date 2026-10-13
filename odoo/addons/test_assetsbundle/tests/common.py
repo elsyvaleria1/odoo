@@ -19,7 +19,7 @@ def asset_file(url, content, last_modified=1.0):
     }
 
 
-def make_bundle(case, name, *file_specs, **kwargs):
+def prepare_bundle(case, name, *file_specs, **kwargs):
     from odoo.addons.base.models.assetsbundle import AssetsBundle
 
     return AssetsBundle(
@@ -27,7 +27,7 @@ def make_bundle(case, name, *file_specs, **kwargs):
     )
 
 
-def make_cursor_readonly(case):
+def set_cursor_readonly_until_cleanup(case):
     cr = case.env.cr
     original = cr._readonly
     cr._readonly = True

@@ -191,7 +191,7 @@ class TestHttpSession(TestHttpBase):
         self.assertEqual(
             successor[:STORED_SESSION_BYTES], predecessor[:STORED_SESSION_BYTES]
         )
-        store.delete(store.get(predecessor))
+        store.remove_session(store.get(predecessor))
         self._set_session_cookie(predecessor)
         minted = self.db_url_open("/test_http/csrf-token").text
         self.assertNotIn(predecessor, store, "the stale cookie is not resurrected")

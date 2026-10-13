@@ -45,14 +45,14 @@ class DictBackend:
         self._roots[table] = root
         self._children[root].append(table)
 
-    def _members(self, table: str) -> list[str]:
+    def _get_table_names(self, table: str) -> list[str]:
         return [table, *self._children.get(table, ())]
 
-    def _sequence_key(self, table: str) -> str:
+    def _get_sequence_key(self, table: str) -> str:
         return self._roots.get(table, table)
 
-    def _find(self, table: str, id_: int) -> dict[str, Any] | None:
-        for member in self._members(table):
+    def _get_row(self, table: str, id_: int) -> dict[str, Any] | None:
+        for member in self._get_table_names(table):
             row = self._tables.get(member, {}).get(id_)
             if row is not None:
                 return row
@@ -117,7 +117,7 @@ class DictBackend:
         self, table: str, columns: list[str], rows: list[tuple[Any, ...]]
     ) -> list[int]:
         tbl = self._tables.setdefault(table, {})
-        key = self._sequence_key(table)
+        key = self._get_sequence_key(table)
         new_ids: list[int] = []
         for row in rows:
             self._sequences[key] += 1
@@ -128,7 +128,7 @@ class DictBackend:
 
     def put_rows(self, table: str, rows: list[dict[str, Any]]) -> None:
         tbl = self._tables.setdefault(table, {})
-        key = self._sequence_key(table)
+        key = self._get_sequence_key(table)
         seq = self._sequences[key]
         for row in rows:
             id_ = row["id"]
@@ -140,12 +140,12 @@ class DictBackend:
         self, table: str, updates: list[tuple[int, dict[str, Any]]]
     ) -> None:
         for id_, values in updates:
-            row = self._find(table, id_)
+            row = self._get_row(table, id_)
             if row is not None:
                 row.update(values)
 
     def remove_rows(self, table: str, ids: list[int]) -> None:
-        for member in self._members(table):
+        for member in self._get_table_names(table):
             tbl = self._tables.get(member)
             if tbl is None:
                 continue
@@ -153,31 +153,31 @@ class DictBackend:
                 tbl.pop(id_, None)
 
     def get_row(self, table: str, id_: int) -> dict[str, Any] | None:
-        row = self._find(table, id_)
+        row = self._get_row(table, id_)
         return dict(row) if row is not None else None
 
     def get_rows(self, table: str, ids: list[int]) -> dict[int, dict[str, Any]]:
         result: dict[int, dict[str, Any]] = {}
         for id_ in ids:
-            row = self._find(table, id_)
+            row = self._get_row(table, id_)
             if row is not None:
                 result[id_] = dict(row)
         return result
 
     def get_existing_ids(self, table: str, ids: list[int]) -> set[int]:
-        return {id_ for id_ in ids if self._find(table, id_) is not None}
+        return {id_ for id_ in ids if self._get_row(table, id_) is not None}
 
     def get_table_ids(self, table: str) -> list[int]:
         ids: list[int] = []
-        for member in self._members(table):
+        for member in self._get_table_names(table):
             ids.extend(self._tables.get(member, {}).keys())
         return ids
 
     def get_row_count(self, table: str) -> int:
-        return sum(len(self._tables.get(m, {})) for m in self._members(table))
+        return sum(len(self._tables.get(m, {})) for m in self._get_table_names(table))
 
     def allocate_next_id(self, table: str) -> int:
-        key = self._sequence_key(table)
+        key = self._get_sequence_key(table)
         self._sequences[key] += 1
         return self._sequences[key]
 

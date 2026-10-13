@@ -17,7 +17,7 @@ __all__ = [
     "MASK",
     "REGISTERED_PATTERNS",
     "dump_masked",
-    "find_secret_shapes",
+    "get_secret_shape_names",
     "is_sensitive_key",
     "mask_data",
     "mask_text",
@@ -175,7 +175,7 @@ def is_sensitive_key(key: object) -> bool:
     ) is not None or _has_sensitive_word(text)
 
 
-def find_secret_shapes(text: str) -> list[str]:
+def get_secret_shape_names(text: str) -> list[str]:
     if not text:
         return []
     return [name for name, pattern in _SECRET_SHAPES if pattern.search(text)]

@@ -46,7 +46,7 @@ class TestCalendarSyncAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         Account = cls.env["calendar.sync.account"]
         cls.startClassPatcher(
             patch.object(

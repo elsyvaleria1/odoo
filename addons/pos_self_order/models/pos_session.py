@@ -25,7 +25,9 @@ class PosSession(models.Model):
             .sudo()
             .search_count(
                 [
-                    *self.env["pos.config"]._check_company_domain(self.env.company),
+                    *self.env["pos.config"]._get_domain_company_compatible(
+                        self.env.company
+                    ),
                     "|",
                     ("self_ordering_mode", "=", "kiosk"),
                     ("self_ordering_mode", "=", "mobile"),

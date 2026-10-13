@@ -564,16 +564,16 @@ class WizardResPartnerMerge(models.TransientModel):
         names: dict[int, str] = {}
         root: dict[int, int] = {}
 
-        def find(node: int) -> int:
+        def _compress_path_and_get_root(node: int) -> int:
             while root.setdefault(node, node) != node:
                 root[node] = root[root[node]]
                 node = root[node]
             return node
 
-        def clusters() -> dict[int, list[int]]:
+        def _compress_paths_and_get_clusters() -> dict[int, list[int]]:
             members: dict[int, list[int]] = {}
             for node in root:
-                members.setdefault(find(node), []).append(node)
+                members.setdefault(_compress_path_and_get_root(node), []).append(node)
             return members
 
         after = (0, 0)
@@ -599,7 +599,10 @@ class WizardResPartnerMerge(models.TransientModel):
                     continue
                 if similarity_ratio(left_name, right_name) < threshold:
                     continue
-                left_root, right_root = find(left_id), find(right_id)
+                left_root, right_root = (
+                    _compress_path_and_get_root(left_id),
+                    _compress_path_and_get_root(right_id),
+                )
                 if left_root != right_root:
                     root[max(left_root, right_root)] = min(left_root, right_root)
             if len(pairs) < SIMILAR_NAME_PAIR_BATCH:
@@ -611,7 +614,7 @@ class WizardResPartnerMerge(models.TransientModel):
                 maximum_group
                 and sum(
                     1
-                    for members in clusters().values()
+                    for members in _compress_paths_and_get_clusters().values()
                     if len(members) >= 2 and max(members) < boundary
                 )
                 >= maximum_group
@@ -620,7 +623,7 @@ class WizardResPartnerMerge(models.TransientModel):
 
         groups = [
             (min(members), sorted(members))
-            for members in clusters().values()
+            for members in _compress_paths_and_get_clusters().values()
             if len(members) >= 2 and (boundary is None or max(members) < boundary)
         ]
         groups.sort()

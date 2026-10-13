@@ -4,7 +4,7 @@ from odoo import Command, models
 from odoo.exceptions import RedirectWarning, UserError
 from odoo.tools import float_compare
 
-from odoo.addons.base.models.res_partner_bank_account import sanitize_account_number
+from odoo.addons.base.models.res_partner_bank_account import normalize_account_number
 
 FR_IBAN_LEN = 27
 FR_BNP_LOCAL_LEN = 11
@@ -249,7 +249,7 @@ class AccountJournal(models.Model):
     def _find_additional_data(self, currency_code, account_number):
         company_currency = self.env.company.currency_id
         currency = None
-        sanitized_account_number = sanitize_account_number(account_number)
+        sanitized_account_number = normalize_account_number(account_number)
 
         if currency_code:
             currency = self.env["res.currency"].search(
@@ -358,7 +358,7 @@ class AccountJournal(models.Model):
                 line_vals["journal_id"] = journal.id
                 unique_import_id = line_vals.get("unique_import_id")
                 if unique_import_id:
-                    sanitized_account_number = sanitize_account_number(account_number)
+                    sanitized_account_number = normalize_account_number(account_number)
                     account_prefix = (
                         f"{sanitized_account_number}-"
                         if sanitized_account_number

@@ -53,7 +53,7 @@ class TestPortalControllerRobustness(HttpCase):
             "Password change returned HTTP %s; verifying exact credentials",
             response.status_code,
         )
-        self.portal_user.with_user(self.portal_user)._check_credentials(
+        self.portal_user.with_user(self.portal_user)._authenticate_credentials(
             {
                 "login": self.portal_user.login,
                 "password": new_password,
@@ -62,7 +62,7 @@ class TestPortalControllerRobustness(HttpCase):
             {"interactive": True},
         )
         with self.assertRaises(AccessDenied):
-            self.portal_user.with_user(self.portal_user)._check_credentials(
+            self.portal_user.with_user(self.portal_user)._authenticate_credentials(
                 {
                     "login": self.portal_user.login,
                     "password": new_password.strip(),
@@ -105,7 +105,7 @@ class TestPortalControllerRobustness(HttpCase):
             "The new password and its confirmation must be identical.", response.text
         )
         _logger.debug("Whitespace confirmation mismatch was rejected")
-        self.portal_user.with_user(self.portal_user)._check_credentials(
+        self.portal_user.with_user(self.portal_user)._authenticate_credentials(
             {
                 "login": self.portal_user.login,
                 "password": "portal_robustness",

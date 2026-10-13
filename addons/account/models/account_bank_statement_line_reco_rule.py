@@ -255,7 +255,9 @@ class AccountBankStatementLine(models.Model):
         if existing.search_count(
             [
                 ("name", "=", name),
-                *self.env["account.journal"]._check_company_domain(journal.company_id),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    journal.company_id
+                ),
             ],
             limit=1,
         ):

@@ -188,7 +188,7 @@ class TestCurrencyTable(TestAccountReportsCommon):
         equity_unaffected_account = self.env["account.account"].search(
             [
                 ("account_type", "=", "equity_unaffected"),
-                *self.env["account.account"]._check_company_domain(
+                *self.env["account.account"]._get_domain_company_compatible(
                     self.company_eur_data["company"]
                 ),
             ],

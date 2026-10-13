@@ -27,7 +27,7 @@ class TestStockBarcodeAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         return {
             "operation_type_a": cls.env.ref("stock.picking_type_in"),
             "operation_type_b": cls.env["stock.picking.type"].search(

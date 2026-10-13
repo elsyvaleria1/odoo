@@ -129,7 +129,7 @@ class WizardHrExpenseSplitLine(models.TransientModel):
             self.tax_ids = self.tax_ids
         else:
             self.tax_ids = self.product_id.supplier_taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(self.company_id)
+                self.env["account.tax"]._get_domain_company_compatible(self.company_id)
             )
 
     @api.depends("product_id")
@@ -138,7 +138,9 @@ class WizardHrExpenseSplitLine(models.TransientModel):
             split.product_has_tax = (
                 split.product_id
                 and split.product_id.sudo().supplier_taxes_id.filtered_domain(
-                    self.env["account.tax"]._check_company_domain(split.company_id)
+                    self.env["account.tax"]._get_domain_company_compatible(
+                        split.company_id
+                    )
                 )
             )
 

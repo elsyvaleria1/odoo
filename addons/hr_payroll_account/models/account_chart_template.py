@@ -61,7 +61,7 @@ class AccountChartTemplate(models.AbstractModel):
             for code in account_codes:
                 account = AccountAccount.with_company(company).search(
                     [
-                        *AccountAccount._check_company_domain(company),
+                        *AccountAccount._get_domain_company_compatible(company),
                         ("code", "=like", "%s%%" % code),
                     ],
                     limit=1,
@@ -138,7 +138,7 @@ class AccountChartTemplate(models.AbstractModel):
         demo_data = super()._prepare_demo_data(company)
         if not self.env["account.account"].search_count(
             [
-                *self.env["account.account"]._check_company_domain(company),
+                *self.env["account.account"]._get_domain_company_compatible(company),
                 ("code", "=", "123456"),
             ],
             limit=1,

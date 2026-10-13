@@ -65,7 +65,7 @@ class TestVoiceAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         a, b = cls.companies["a"], cls.companies["b"]
         terms = cls.env["speech.vocabulary.form"]
         return {

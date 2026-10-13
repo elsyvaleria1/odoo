@@ -222,7 +222,7 @@ class AccountAccount(models.Model):
     def get_account_group(self, account_types) -> list:
         data = self._read_group(
             [
-                *self._check_company_domain(self.env.company),
+                *self._get_domain_company_compatible(self.env.company),
                 ("account_type", "in", account_types),
             ],
             ["account_type"],

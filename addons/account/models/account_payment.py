@@ -1041,7 +1041,7 @@ class AccountPayment(models.Model):
             Account.with_company(self.company_id)
             .search(
                 [
-                    *Account._check_company_domain(self.company_id),
+                    *Account._get_domain_company_compatible(self.company_id),
                     ("account_type", "in", self._get_counterpart_account_types()),
                 ],
                 limit=1,

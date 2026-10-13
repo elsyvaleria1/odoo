@@ -143,7 +143,7 @@ def scan(
 
 
 @functools.cache
-def findings() -> dict[str, list[Finding]]:
+def get_findings() -> dict[str, list[Finding]]:
     by_rule = scan(data_files(), sibling_data_files(), context())
     _logger.info(
         "scanned %s XML data files and %s outside odoo, %s finding(s) across %s "

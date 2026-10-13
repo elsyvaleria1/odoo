@@ -96,10 +96,10 @@ class LazyModuleNames:
         return str(self.records.sudo().mapped("display_name"))
 
 
-def assert_log_admin_access[T](method: T, /) -> T:
+def wrap_with_admin_access_check[T](method: T, /) -> T:
 
     @functools.wraps(method)
-    def check_and_log(self, *args: Any, **kwargs: Any) -> Any:
+    def _call_method_with_admin_access_check(self, *args: Any, **kwargs: Any) -> Any:
         user = self.env.user
         origin = request.httprequest.remote_addr if request else "n/a"
         allowed = self.env.is_admin()
@@ -118,7 +118,7 @@ def assert_log_admin_access[T](method: T, /) -> T:
             raise AccessDenied
         return method(self, *args, **kwargs)
 
-    return check_and_log
+    return _call_method_with_admin_access_check
 
 
 GROUP_HIERARCHY_FIELDS = frozenset(("name", "privilege_ids"))
@@ -718,7 +718,7 @@ class IrModuleModule(models.Model):
             dep.state in UNSATISFIABLE_DEPENDENCY_STATES for dep in self.dependencies_id
         )
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_install(self) -> dict[str, Any]:
         env_no_prefetch = self.env(
             context=dict(self.env.context, prefetch_fields=False)
@@ -823,7 +823,7 @@ class IrModuleModule(models.Model):
 
         return dict(ACTION_DICT, name=self.env._("Install"))
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_immediate_install(self) -> dict[str, Any]:
         _logger.info("User #%d triggered module installation", self.env.uid)
         if request:
@@ -832,7 +832,7 @@ class IrModuleModule(models.Model):
             self.env.registry[self._name].button_install
         )
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     @api.model
     def button_reset_state(self) -> bool:
         to_install = self.search([("state", "=", "to install")])
@@ -850,7 +850,7 @@ class IrModuleModule(models.Model):
             self.sudo().search_count([("state", "in", PENDING_STATES)], limit=1)
         )
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def module_uninstall(self) -> bool:
         modules_to_remove = self.mapped("name")
         _debug.lifecycle("module_uninstall", modules=modules_to_remove)
@@ -1114,14 +1114,14 @@ class IrModuleModule(models.Model):
             "params": {"menu_id": menu.id},
         }
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_immediate_uninstall(self) -> dict[str, Any]:
         _logger.info("User #%d triggered module uninstallation", self.env.uid)
         return self._button_immediate_function(
             self.env.registry[self._name].button_uninstall
         )
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_uninstall(self) -> dict[str, Any]:
         un_installable_modules = set(config["server_wide_modules"]) & set(
             self.mapped("name")
@@ -1161,7 +1161,7 @@ class IrModuleModule(models.Model):
         (self + deps).write({"state": "to remove"})
         return dict(ACTION_DICT, name=self.env._("Uninstall"))
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_uninstall_wizard(self) -> dict[str, Any]:
         return {
             "type": "ir.actions.act_window",
@@ -1172,7 +1172,7 @@ class IrModuleModule(models.Model):
             "context": {"default_module_ids": self.ids},
         }
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_immediate_upgrade(self) -> dict[str, Any]:
         return self._button_immediate_function(
             self.env.registry[self._name].button_upgrade
@@ -1351,7 +1351,7 @@ class IrModuleModule(models.Model):
         _debug.logic("upgrade.uninstalled_dependencies", count=len(names))
         return names
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def button_upgrade(self) -> dict[str, Any] | None:
         if not self:
             _debug.logic("upgrade.skipped", reason="empty_recordset")
@@ -1408,7 +1408,7 @@ class IrModuleModule(models.Model):
         _debug.lifecycle("create", modules=modules.mapped("name"))
         return modules
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     @api.model
     def update_list(self) -> UpdateListResult:
         from odoo.addons.base.models.assetsbundle import AssetsBundle

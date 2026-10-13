@@ -144,7 +144,7 @@ class TestStockAccess(TransactionCase):
         own.domain = "[('name', '=', 'edited')]"
         public.domain = "[('name', '=', 'kept by the administrator')]"
 
-        found = self.env["ir.access.drift"]._find()
+        found = self.env["ir.access.drift"]._get_findings_by_identity()
 
         states = {
             values["xmlid"]: values["state"]

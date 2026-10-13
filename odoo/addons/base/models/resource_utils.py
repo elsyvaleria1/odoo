@@ -46,7 +46,7 @@ def _utc_intervals(intervals: Intervals) -> Intervals:
     )
 
 
-def find_available_interval(
+def get_interval_available(
     anchor: datetime,
     duration: timedelta,
     intervals_getter: Callable[[datetime, datetime], tuple[Intervals, Intervals]],
@@ -174,7 +174,7 @@ def week_of(day: date, week_start: int) -> date:
     return day - timedelta(days=(day.weekday() - week_start) % 7)
 
 
-def fill_week(
+def get_work_hours_by_date(
     first_day: date,
     hours_per_day: float,
     hours_per_week: float,

@@ -40,7 +40,7 @@ class AccountReturn(models.Model):
     _inherit = ["mixin.mail.thread.main.attachment", "mixin.mail.activity"]
     _description = "Accounting Return"
     _order = "is_completed, date_deadline, name, id"
-    _check_company_domain = check_company_domain_account_return
+    _get_domain_company_compatible = check_company_domain_account_return
 
     active = fields.Boolean(
         default=True,
@@ -297,7 +297,7 @@ class AccountReturn(models.Model):
         for record in records:
             if record.return_type_category == "audit":
                 accounts = self.env["account.account"].search_fetch(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
-                    domain=self.env["account.account"]._check_company_domain(
+                    domain=self.env["account.account"]._get_domain_company_compatible(
                         record.company_ids
                     ),
                     field_names=["id"],
@@ -308,7 +308,7 @@ class AccountReturn(models.Model):
                 )
                 previous_return = self.env["account.return"].search(  # noqa: E8507 -- audit returns are created one or two at a time; every probe is keyed by the return's own companies and period
                     domain=[
-                        *self.env["account.return"]._check_company_domain(
+                        *self.env["account.return"]._get_domain_company_compatible(
                             record.company_id
                         ),
                         ("tax_unit_id", "=", record.tax_unit_id.id),
@@ -332,7 +332,7 @@ class AccountReturn(models.Model):
                     )
                 period_lines_query = self.env["account.move.line"]._search(
                     [
-                        *self.env["account.move.line"]._check_company_domain(
+                        *self.env["account.move.line"]._get_domain_company_compatible(
                             record.company_ids
                         ),
                         ("date", ">=", record.date_from),
@@ -345,7 +345,7 @@ class AccountReturn(models.Model):
                     SQL("account_account.id = account_move_line.account_id")
                 )
                 accounts_query = self.env["account.account"]._search(
-                    self.env["account.account"]._check_company_domain(
+                    self.env["account.account"]._get_domain_company_compatible(
                         record.company_ids
                     )
                 )
@@ -717,7 +717,7 @@ class AccountReturn(models.Model):
 
         if journal_id:
             journal = self.env["account.journal"].browse(journal_id)
-            domain += self.env["account.return"]._check_company_domain(
+            domain += self.env["account.return"]._get_domain_company_compatible(
                 journal.company_id
             )
 
@@ -1123,7 +1123,9 @@ class AccountReturn(models.Model):
             .sudo()
             ._read_group(
                 domain=[
-                    *self.env["account.tax"]._check_company_domain(self.company_ids),
+                    *self.env["account.tax"]._get_domain_company_compatible(
+                        self.company_ids
+                    ),
                     ("country_id", "=", country.id),
                     *self._get_domain_amount_to_pay_additional_tax(),
                 ],
@@ -1996,7 +1998,7 @@ class AccountReturn(models.Model):
         self.check_singleton()
 
         tax_with_incomplete_group_domain = [
-            *self.env["account.tax"]._check_company_domain(self.company_ids),
+            *self.env["account.tax"]._get_domain_company_compatible(self.company_ids),
             "|",
             ("tax_group_id.tax_payable_account_id", "=", False),
             ("tax_group_id.tax_receivable_account_id", "=", False),
@@ -2136,9 +2138,9 @@ class AccountReturn(models.Model):
         if not move_vals_lines:
             rep_ln_in = self.env["account.tax.repartition.line"].search(
                 [
-                    *self.env["account.tax.repartition.line"]._check_company_domain(
-                        company
-                    ),
+                    *self.env[
+                        "account.tax.repartition.line"
+                    ]._get_domain_company_compatible(company),
                     ("account_id.active", "=", True),
                     ("repartition_type", "=", "tax"),
                     ("document_type", "=", "invoice"),
@@ -2148,9 +2150,9 @@ class AccountReturn(models.Model):
             )
             rep_ln_out = self.env["account.tax.repartition.line"].search(
                 [
-                    *self.env["account.tax.repartition.line"]._check_company_domain(
-                        company
-                    ),
+                    *self.env[
+                        "account.tax.repartition.line"
+                    ]._get_domain_company_compatible(company),
                     ("account_id.active", "=", True),
                     ("repartition_type", "=", "tax"),
                     ("document_type", "=", "invoice"),

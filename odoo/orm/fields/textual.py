@@ -330,11 +330,15 @@ class BaseString(Field[str | typing.Literal[False]]):
         return _translation.get_fallback_langs(self, env)
 
     @override
-    def _get_cache_impl(self, env: Environment) -> MutableMapping[IdType, typing.Any]:
-        if self.translate is True:
-            return super()._get_cache_impl(env)
-        cache = super()._get_cache_impl(env)
-        if not self.translate or env.context.get("prefetch_langs"):
+    def _get_cache_uncached(
+        self, env: Environment
+    ) -> MutableMapping[IdType, typing.Any]:
+        cache = super()._get_cache_uncached(env)
+        if (
+            self.translate is True
+            or not self.translate
+            or env.context.get("prefetch_langs")
+        ):
             return cache
         lang = self.get_translation_lang(env)
         return LangProxyDict(self, cache, lang)

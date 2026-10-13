@@ -296,7 +296,7 @@ _validated_bytecode_cache: dict[tuple[object, ...], bool] = {}
 _VALIDATED_CACHE_MAX = 8192
 
 
-def assert_no_dunder_name(code_obj: CodeType, expr: str) -> None:
+def check_names_allowed(code_obj: CodeType, expr: str) -> None:
     for name in (*code_obj.co_names, *code_obj.co_freevars, *code_obj.co_cellvars):
         if "__" in name or name in _UNSAFE_ATTRIBUTES:
             raise NameError("Access to forbidden name %r (%r)" % (name, expr))
@@ -305,7 +305,7 @@ def assert_no_dunder_name(code_obj: CodeType, expr: str) -> None:
 _formatter_parse = string.Formatter().parse
 
 
-def assert_no_dunder_format_field(code_obj: CodeType, expr: str) -> None:
+def check_format_fields_allowed(code_obj: CodeType, expr: str) -> None:
     if not _FORMAT_METHOD_NAMES.intersection(code_obj.co_names):
         return
     for const in code_obj.co_consts:
@@ -326,7 +326,7 @@ _FORMAT_METHOD_NAMES = frozenset(("format", "format_map"))
 _GUARD_LOADS = frozenset(("LOAD_NAME", "LOAD_GLOBAL"))
 
 
-def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
+def check_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
     bound = {*code_obj.co_varnames, *code_obj.co_cellvars, *code_obj.co_freevars}
     if _GUARD_FORMAT_NAME not in bound and _GUARD_FORMAT_NAME not in code_obj.co_names:
         return
@@ -344,7 +344,7 @@ def assert_format_guard_not_bound(code_obj: CodeType, expr: str) -> None:
 _field_name_split = _string.formatter_field_name_split
 
 
-def _reject_attribute_fields(field_name: str) -> None:
+def _check_format_field_has_no_attributes(field_name: str) -> None:
     _first, rest = _field_name_split(field_name)
     for is_attr, key in rest:
         if is_attr:
@@ -361,7 +361,7 @@ class _StrictFormatter(string.Formatter):
         args: Sequence[typing.Any],
         kwargs: Mapping[str, typing.Any],
     ) -> typing.Any:
-        _reject_attribute_fields(field_name)
+        _check_format_field_has_no_attributes(field_name)
         return super().get_field(field_name, args, kwargs)
 
 
@@ -373,7 +373,7 @@ class _StrictEscapeFormatter(EscapeFormatter):
         args: Sequence[typing.Any],
         kwargs: Mapping[str, typing.Any],
     ) -> typing.Any:
-        _reject_attribute_fields(field_name)
+        _check_format_field_has_no_attributes(field_name)
         return super().get_field(field_name, args, kwargs)
 
 
@@ -443,7 +443,7 @@ class _FormatGuardTransform(ast.NodeTransformer):
         return node
 
 
-def _may_call_format(expr: str) -> bool:
+def _can_expression_call_format(expr: str) -> bool:
     return "format" in expr or not expr.isascii()
 
 
@@ -453,12 +453,12 @@ def _guard_format_tree[T: ast.AST](tree: T) -> T:
 
 
 def guard_format_calls(expr: str) -> str:
-    if not _may_call_format(expr):
+    if not _can_expression_call_format(expr):
         return expr
     return ast.unparse(_guard_format_tree(ast.parse(expr, mode="eval")))
 
 
-def assert_valid_codeobj(
+def check_code_object(
     allowed_codes: frozenset[int] | set[int],
     code_obj: CodeType,
     expr: str | bytes,
@@ -483,9 +483,9 @@ def assert_valid_codeobj(
             return
 
     expr_text = expr.decode() if isinstance(expr, bytes) else expr
-    assert_no_dunder_name(code_obj, expr_text)
-    assert_no_dunder_format_field(code_obj, expr_text)
-    assert_format_guard_not_bound(code_obj, expr_text)
+    check_names_allowed(code_obj, expr_text)
+    check_format_fields_allowed(code_obj, expr_text)
+    check_format_guard_not_bound(code_obj, expr_text)
 
     code_codes = {i.opcode for i in dis.get_instructions(code_obj)}
     if not allowed_codes >= code_codes:
@@ -501,7 +501,7 @@ def assert_valid_codeobj(
         )
 
     for const in nested_code:
-        assert_valid_codeobj(allowed_codes, const, "lambda", memoise=memoise)
+        check_code_object(allowed_codes, const, "lambda", memoise=memoise)
 
     if cacheable:
         if len(_validated_bytecode_cache) >= _VALIDATED_CACHE_MAX:
@@ -541,7 +541,7 @@ def compile_codeobj(
             expr = expr.decode()
         if mode == "eval":
             expr = expr.strip()
-        if guard_format and _may_call_format(expr):
+        if guard_format and _can_expression_call_format(expr):
             parsed = (
                 ast.parse(expr, filename or "", "eval")
                 if mode == "eval"
@@ -560,13 +560,13 @@ def compile_codeobj(
 
 def const_eval(expr: str) -> typing.Any:
     c = compile_codeobj(expr)
-    assert_valid_codeobj(_CONST_OPCODES, c, expr)
+    check_code_object(_CONST_OPCODES, c, expr)
     return unsafe_eval(c)
 
 
 def expr_eval(expr: str) -> typing.Any:
     c = compile_codeobj(expr)
-    assert_valid_codeobj(_EXPR_OPCODES, c, expr)
+    check_code_object(_EXPR_OPCODES, c, expr)
     return unsafe_eval(c)
 
 
@@ -647,7 +647,7 @@ def _compile_checked(
         expr_len=len(expr),
     ):
         code = compile_codeobj(expr, filename=filename, mode=mode, guard_format=True)
-        assert_valid_codeobj(_SAFE_OPCODES, code, expr, memoise=False)
+        check_code_object(_SAFE_OPCODES, code, expr, memoise=False)
     return code
 
 

@@ -39,7 +39,7 @@ class TestCopyDataContract(TransactionCase):
         for partner, vals in zip(partners, vals_list, strict=True):
             self.assertIn(partner.name, vals["name"])
 
-    def _make_parent(self, name):
+    def _create_parent_action(self, name):
         model_id = self.env["ir.model"]._get_id("res.partner")
         return self.env["ir.actions.server"].create(
             {
@@ -60,7 +60,7 @@ class TestCopyDataContract(TransactionCase):
         )
 
     def test_already_copied_o2m_lines_never_reach_the_child_copy_data(self):
-        parent = self._make_parent("Copy Parent")
+        parent = self._create_parent_action("Copy Parent")
         line = parent.child_ids
         self.assertTrue(line, "the fixture needs a copied one2many line")
 
@@ -87,7 +87,7 @@ class TestCopyDataContract(TransactionCase):
         self.assertTrue(all(vals is not None for vals in vals_list))
 
     def test_normal_o2m_lines_are_still_copied(self):
-        parent = self._make_parent("Copy Parent Kept")
+        parent = self._create_parent_action("Copy Parent Kept")
         copy = parent.copy()
         self.assertEqual(len(copy.child_ids), 1)
         self.assertEqual(copy.child_ids.name, "Copy Parent Kept (copy)")

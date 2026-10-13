@@ -29,7 +29,9 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 ("end_date", "=", False),
                 ("end_date", ">=", self.payment_date),
                 ("partner_id", "in", moves_to_pay.partner_id.commercial_partner_id.ids),
-                *self.env["sdd.mandate"]._check_company_domain(moves_to_pay.company_id),
+                *self.env["sdd.mandate"]._get_domain_company_compatible(
+                    moves_to_pay.company_id
+                ),
             ],
             groupby=["partner_id"],
         )

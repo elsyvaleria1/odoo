@@ -185,7 +185,9 @@ class AccountMove(models.Model):
         ):
             if not self.env.context.get("default_journal_id"):
                 journal_domain = [
-                    *self.env["account.journal"]._check_company_domain(self.company_id),
+                    *self.env["account.journal"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("type", "=", "purchase"),
                     ("currency_id", "=", currency_id.id),
                 ]

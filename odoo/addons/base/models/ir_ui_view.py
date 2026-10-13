@@ -510,7 +510,7 @@ class IrUiView(models.Model):
                 data["arch_updated"] = False
             _debug.lifecycle("arch_written", view=view.id, arch_fs=arch_fs)
             view.write(data)
-        self._validate()
+        self._request_view_validation()
         self.invalidate_recordset(["arch"])
 
     @api.depends("arch")
@@ -746,7 +746,7 @@ class IrUiView(models.Model):
         if full:
             full._check_xml()
         if partial:
-            partial._validate(partial=True)
+            partial._request_view_validation(partial=True)
 
     def _check_deferred_now(self) -> None:
         scope = self.env.context.get("ir_ui_view_validation_scope")
@@ -757,7 +757,7 @@ class IrUiView(models.Model):
         pending.partial, scope.partial = scope.partial, pending.partial
         self._check_validation_scope(pending)
 
-    def _validate(self, *, partial: bool = False) -> None:
+    def _request_view_validation(self, *, partial: bool = False) -> None:
         scope = self.env.context.get("ir_ui_view_validation_scope")
         if scope is not None:
             (scope.partial if partial else scope.full).update(self._ids)
@@ -1164,7 +1164,7 @@ class IrUiView(models.Model):
             inheriting=sum(1 for v in vals_list if v.get("inherit_id")),
             types=sorted({v.get("type") for v in vals_list if v.get("type")}),
         )
-        result._validate(partial=True)
+        result._request_view_validation(partial=True)
         return result
 
     def _get_parent_types(self, vals_list: list[dict[str, Any]]) -> dict[int, str]:
@@ -1333,7 +1333,7 @@ class IrUiView(models.Model):
         if deferred:
             _debug.logic("write.validation_deferred", views=self.ids)
         else:
-            self._validate()
+            self._request_view_validation()
         return res
 
     def _write_recombining(self, vals: dict[str, Any]) -> bool:
@@ -1350,7 +1350,7 @@ class IrUiView(models.Model):
                 combined_before=combined_before,
             )
             if combined_before:
-                self._refuse_recombination(error)
+                self._handle_recombination_error(error)
             res = super().write(vals)
         return res
 
@@ -1381,7 +1381,7 @@ class IrUiView(models.Model):
             return False
         return True
 
-    def _refuse_recombination(self, error: Exception) -> None:
+    def _handle_recombination_error(self, error: Exception) -> None:
         if not self.env.context.get("ir_ui_view_loading_records"):
             raise error
         _logger.warning(
@@ -1771,7 +1771,7 @@ class IrUiView(models.Model):
                 node.set("data-oe-field", "arch")
         return specs_tree
 
-    def _validates_whole(self) -> bool:
+    def _is_whole_view_validation_requested(self) -> bool:
         validate_view_ids = self.env.context.get("validate_view_ids")
         return bool(validate_view_ids) and (
             validate_view_ids is True or self.id in validate_view_ids
@@ -1839,7 +1839,7 @@ class IrUiView(models.Model):
                     "data-oe-field": "arch",
                 }
             )
-        validates_whole = self._validates_whole()
+        validates_whole = self._is_whole_view_validation_requested()
 
         queue = collections.deque(
             sorted(hierarchy[self], key=lambda v: v.mode == "primary")
@@ -2201,12 +2201,12 @@ class IrUiView(models.Model):
         for ref in (*ids, *xmlids):
             if ref not in view_by_ref:
                 _debug.logic("views_by_ref.missing", ref=ref)
-                error = self._missing_template_error(ref)
+                error = self._prepare_missing_template_error(ref)
                 self._get_cached_template_info(ref, _error=error)
                 view_by_ref[ref] = error
         return view_by_ref
 
-    def _missing_template_error(self, ref: int | str) -> MissingError:
+    def _prepare_missing_template_error(self, ref: int | str) -> MissingError:
         if isinstance(ref, int):
             return MissingError(
                 self.env._("Template does not exist or has been deleted: %s", ref)
@@ -2431,7 +2431,7 @@ class IrUiView(models.Model):
                 node.set("can_create", str(model.has_access("create")))
                 node.set("can_write", str(model.has_access("write")))
                 continue
-            self._deny_missing_actions(
+            self._update_action_attributes_for_access(
                 node,
                 model,
                 (("create", "create"), ("delete", "unlink"), ("edit", "write")),
@@ -2439,7 +2439,7 @@ class IrUiView(models.Model):
             if node.tag == "kanban":
                 group_by_field = model._fields.get(node.get("default_group_by"))
                 if group_by_field and group_by_field.type == "many2one":
-                    self._deny_missing_actions(
+                    self._update_action_attributes_for_access(
                         node,
                         model.env[group_by_field.comodel_name],
                         (
@@ -2451,7 +2451,7 @@ class IrUiView(models.Model):
         return count
 
     @staticmethod
-    def _deny_missing_actions(
+    def _update_action_attributes_for_access(
         node: _Element, model: models.BaseModel, actions: tuple[tuple[str, str], ...]
     ) -> None:
         for action, operation in actions:

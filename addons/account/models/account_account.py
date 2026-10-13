@@ -48,7 +48,7 @@ class AccountAccount(models.Model):
     _description = "Account"
     _order = "code, placeholder_code"
     _check_company_auto = True
-    _check_company_domain = models.check_companies_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_companies_parent_of
 
     name = fields.Char(
         string="Account Name",
@@ -627,7 +627,7 @@ class AccountAccount(models.Model):
         assert all(field_name in self._fields for field_name in field_names)
 
         all_accounts = self.search_read(
-            domain=self._check_company_domain(self.env.company),
+            domain=self._get_domain_company_compatible(self.env.company),
             fields=["code", *field_names],
             order="code",
         )
@@ -1448,7 +1448,7 @@ class AccountAccount(models.Model):
             self.env["account.tax.repartition.line"]._read_group(
                 domain=[
                     ("account_id", "in", self.ids),
-                    *self.env["account.tax"]._check_company_domain(
+                    *self.env["account.tax"]._get_domain_company_compatible(
                         self.env.company,
                     ),
                 ],
@@ -1754,7 +1754,7 @@ class AccountAccount(models.Model):
 
     def _frequent_partner_lines_query(self, company_id, partner_ids, move_type, limit):
         domain = [
-            *self.env["account.move.line"]._check_company_domain(company_id),
+            *self.env["account.move.line"]._get_domain_company_compatible(company_id),
             ("partner_id", "in", list(partner_ids)),
             ("account_id.active", "=", True),
             (

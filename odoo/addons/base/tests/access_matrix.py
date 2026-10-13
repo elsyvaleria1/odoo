@@ -187,7 +187,7 @@ class AccessMatrixCase(TransactionCase):
             name: cls._persona_user(name, persona)
             for name, persona in cls.personas.items()
         }
-        cls.records = cls.build()
+        cls.records = cls.create_matrix_records()
         empty = sorted(
             name
             for name, record in cls.records.items()
@@ -224,7 +224,7 @@ class AccessMatrixCase(TransactionCase):
         )
 
     @classmethod
-    def build(cls) -> dict:
+    def create_matrix_records(cls) -> dict:
         return {}
 
     def _principal(self, persona_name: str):

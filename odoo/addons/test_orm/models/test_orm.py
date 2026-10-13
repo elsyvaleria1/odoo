@@ -1532,8 +1532,8 @@ class TestOrmAttachment(models.Model):
             bypass_access=bypass_access,
         )
 
-    def _check_access(self, operation):
-        return super()._check_access(operation)
+    def _get_records_forbidden_and_error_factory(self, operation):
+        return super()._get_records_forbidden_and_error_factory(operation)
 
     def modified(self, fnames, *args, **kwargs):
         if not self:

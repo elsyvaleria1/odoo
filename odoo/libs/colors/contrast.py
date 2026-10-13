@@ -70,7 +70,7 @@ def _oklch_to_linear(
     )
 
 
-def _in_gamut(lightness: float, chroma: float, hue: float) -> bool:
+def _is_in_gamut(lightness: float, chroma: float, hue: float) -> bool:
     return all(
         -1e-6 <= channel <= 1 + 1e-6
         for channel in _oklch_to_linear(lightness, chroma, hue)
@@ -79,11 +79,11 @@ def _in_gamut(lightness: float, chroma: float, hue: float) -> bool:
 
 def oklch_to_rgb(lightness: float, chroma: float, hue: float) -> tuple[int, int, int]:
     lightness = min(max(lightness, 0.0), 1.0)
-    if not _in_gamut(lightness, chroma, hue):
+    if not _is_in_gamut(lightness, chroma, hue):
         low, high = 0.0, chroma
         for _ in range(_SEARCH_STEPS):
             middle = (low + high) / 2
-            if _in_gamut(lightness, middle, hue):
+            if _is_in_gamut(lightness, middle, hue):
                 low = middle
             else:
                 high = middle

@@ -187,7 +187,7 @@ def _restore_list(items: list[Any], snapshot: list[Any]) -> None:
     list.__setitem__(items, slice(None), snapshot)
 
 
-def _delete_at(items: list[Any], index: int) -> None:
+def _remove_item_at_index(items: list[Any], index: int) -> None:
     list.__delitem__(items, index)
 
 
@@ -311,7 +311,7 @@ class JournaledList(list[Any]):
             size = len(self)
             position = operator.index(index)
             position = max(position + size, 0) if position < 0 else min(position, size)
-            self._log.record(_delete_at, self, position)
+            self._log.record(_remove_item_at_index, self, position)
         list.insert(self, index, value)
 
     @override

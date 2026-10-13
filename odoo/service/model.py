@@ -149,7 +149,7 @@ def call_kw(
         return _call_kw(model, name, args, kwargs)
     api_scope.check_call(model.env, rules, model._get_model_name(), name, args, kwargs)
     kwargs = dict(kwargs)
-    kwargs["context"] = api_scope.safe_context(model.env, kwargs.get("context"))
+    kwargs["context"] = api_scope.get_context_allowed(model.env, kwargs.get("context"))
     with api_scope.enforcing(rules):
         result = _call_kw(model, name, args, kwargs)
     return api_scope.filter_result(
@@ -317,7 +317,7 @@ def dispatch(dispatch_method: str, params: Sequence[typing.Any]) -> typing.Any:
         ):
             scope_id = api.Environment(cr, api.SUPERUSER_ID, {})[
                 "res.users"
-            ]._check_uid_passwd(uid, passwd)
+            ]._authenticate_rpc_credentials(uid, passwd)
         context: dict[str, int] = {"api_scope_id": scope_id} if scope_id else {}
         with registry.cursor() as cr:
             res = execute_cr(cr, uid, model, model_method, args, kw, context=context)

@@ -138,7 +138,7 @@ Every model carries `AccessMixin` (`orm/models/mixins/access.py`), so checks are
 methods on the recordset: model-level permissions per CRUD operation,
 record-level rules contributing a domain, field-level (`_has_field_access`,
 `check_field_access_rights`) and multi-company (`_check_company`).
-`_check_access(operation)` returns the accessible subset plus the callable that
+`_get_records_forbidden_and_error_factory(operation)` returns the forbidden subset plus the callable that
 explains the refusal, so one code path serves both filtering and raising. The
 answers themselves -- may this model be touched, which records may this user
 read -- come from `registry.access_policy`, the one object that names the

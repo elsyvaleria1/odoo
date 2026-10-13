@@ -26,7 +26,7 @@ __all__ = [
     "RequestHead",
     "ResponseHead",
     "encode_chunk",
-    "find_head",
+    "get_request_head_span",
     "parse_request_head",
     "prepare_response_head",
 ]
@@ -96,7 +96,7 @@ class RequestHead:
         return self.chunked or bool(self.content_length)
 
 
-def find_head(
+def get_request_head_span(
     buffer: bytes | bytearray, limits: HeadLimits, scanned: int = 0
 ) -> tuple[int, int] | None:
     start = 0
@@ -106,7 +106,7 @@ def find_head(
     ):
         start += 1
     if start > _MAX_LEADING_EMPTY_BYTES:
-        raise _bad("too many empty lines before the request line")
+        raise _prepare_bad_request_error("too many empty lines before the request line")
     match = _HEAD_END.search(buffer, max(start, scanned - 3))
     if match is None:
         if size - start > limits.max_head_bytes:
@@ -123,7 +123,7 @@ def find_head(
     return start, match.end()
 
 
-def _bad(detail: str) -> ProtocolError:
+def _prepare_bad_request_error(detail: str) -> ProtocolError:
     return ProtocolError(HTTPStatus.BAD_REQUEST, detail)
 
 
@@ -132,7 +132,7 @@ def _split_lines(raw: bytes) -> list[bytes]:
     for line in raw.split(b"\n"):
         stripped = line.removesuffix(b"\r")
         if b"\r" in stripped:
-            raise _bad("bare CR in request head")
+            raise _prepare_bad_request_error("bare CR in request head")
         out.append(stripped)
     while out and not out[-1]:
         out.pop()
@@ -142,7 +142,7 @@ def _split_lines(raw: bytes) -> list[bytes]:
 def _parse_version(version: bytes) -> tuple[int, int]:
     match = _VERSION.match(version)
     if match is None:
-        raise _bad("malformed HTTP version")
+        raise _prepare_bad_request_error("malformed HTTP version")
     major, minor = int(match.group(1)), int(match.group(2))
     if major != 1:
         raise ProtocolError(
@@ -159,13 +159,13 @@ def _parse_fields(lines: list[bytes], limits: HeadLimits) -> list[tuple[str, str
     fields = []
     for line in lines:
         if line[:1] in (b" ", b"\t"):
-            raise _bad("obsolete line folding")
+            raise _prepare_bad_request_error("obsolete line folding")
         name, sep, value = line.partition(b":")
         if not sep or not _TOKEN.match(name):
-            raise _bad("malformed header field name")
+            raise _prepare_bad_request_error("malformed header field name")
         value = value.strip(b" \t")
         if _FORBIDDEN_IN_VALUE.search(value):
-            raise _bad("control character in header field value")
+            raise _prepare_bad_request_error("control character in header field value")
         fields.append((name.decode("ascii"), value.decode("latin-1")))
     return fields
 
@@ -187,10 +187,10 @@ def _parse_content_length(values: list[str]) -> int | None:
         return None
     lengths = set(_list_items(values))
     if len(lengths) != 1:
-        raise _bad("conflicting Content-Length values")
+        raise _prepare_bad_request_error("conflicting Content-Length values")
     (length,) = lengths
     if not _CONTENT_LENGTH.match(length.encode("latin-1")):
-        raise _bad("malformed Content-Length")
+        raise _prepare_bad_request_error("malformed Content-Length")
     return int(length)
 
 
@@ -199,17 +199,19 @@ def _parse_transfer_coding(values: list[str], version: tuple[int, int]) -> bool:
         return False
     codings = _tokens(values)
     if version == (1, 0):
-        raise _bad("Transfer-Encoding in an HTTP/1.0 request")
+        raise _prepare_bad_request_error("Transfer-Encoding in an HTTP/1.0 request")
     if "" in codings or codings[-1] != "chunked" or codings.count("chunked") > 1:
-        raise _bad("chunked must be the final transfer coding, applied once")
+        raise _prepare_bad_request_error(
+            "chunked must be the final transfer coding, applied once"
+        )
     if len(codings) > 1:
         raise ProtocolError(HTTPStatus.NOT_IMPLEMENTED, "unsupported transfer coding")
     return True
 
 
-def _check_host(host: str) -> str:
+def _get_host_allowed(host: str) -> str:
     if _FORBIDDEN_IN_HOST.search(host.encode("latin-1")):
-        raise _bad("malformed Host")
+        raise _prepare_bad_request_error("malformed Host")
     return host
 
 
@@ -218,14 +220,14 @@ def _split_target(method: bytes, target: bytes) -> tuple[bytes, bytes, str | Non
         authority = None
         rest = target
     elif (absolute := _ABSOLUTE_FORM.match(target)) is not None:
-        authority = _check_host(absolute.group(2).decode("latin-1"))
+        authority = _get_host_allowed(absolute.group(2).decode("latin-1"))
         rest = absolute.group(3)
     elif target == b"*" and method == b"OPTIONS":
         return b"*", b"", None
     elif method == b"CONNECT":
         raise ProtocolError(HTTPStatus.NOT_IMPLEMENTED, "CONNECT is not supported")
     else:
-        raise _bad("unsupported request-target form")
+        raise _prepare_bad_request_error("unsupported request-target form")
     rest = rest.partition(b"#")[0]
     path, _, query = rest.partition(b"?")
     return path or b"/", query, authority
@@ -234,7 +236,7 @@ def _split_target(method: bytes, target: bytes) -> tuple[bytes, bytes, str | Non
 def _decode_path(path: bytes) -> str:
     decoded = unquote_to_bytes(path)
     if b"\x00" in decoded:
-        raise _bad("NUL in request path")
+        raise _prepare_bad_request_error("NUL in request path")
     head = decoded.translate(None, b"\t\r\n")
     if head[1:2] in (b"/", b"\\"):
         decoded = b"/" + head.lstrip(b"/\\")
@@ -252,26 +254,26 @@ def _parse_expectation(values: list[str], version: tuple[int, int]) -> bool:
 def parse_request_head(raw: bytes, limits: HeadLimits) -> RequestHead:
     lines = _split_lines(raw)
     if not lines:
-        raise _bad("empty request head")
+        raise _prepare_bad_request_error("empty request head")
     parts = lines[0].split(b" ")
     if len(parts) != 3:
-        raise _bad("malformed request line")
+        raise _prepare_bad_request_error("malformed request line")
     method, target, version_bytes = parts
     if not _TOKEN.match(method):
-        raise _bad("malformed method")
+        raise _prepare_bad_request_error("malformed method")
     if not target or _FORBIDDEN_IN_TARGET.search(target):
-        raise _bad("malformed request-target")
+        raise _prepare_bad_request_error("malformed request-target")
     version = _parse_version(version_bytes)
     fields = _parse_fields(lines[1:], limits)
 
     hosts = _values(fields, "host")
     if len(hosts) > 1 or (version == (1, 1) and not hosts):
-        raise _bad("an HTTP/1.1 request needs exactly one Host")
+        raise _prepare_bad_request_error("an HTTP/1.1 request needs exactly one Host")
     path, query, authority = _split_target(method, target)
     if authority is not None:
         host: str | None = authority
     else:
-        host = _check_host(hosts[0]) if hosts else None
+        host = _get_host_allowed(hosts[0]) if hosts else None
 
     content_length = _parse_content_length(_values(fields, "content-length"))
     chunked = _parse_transfer_coding(_values(fields, "transfer-encoding"), version)

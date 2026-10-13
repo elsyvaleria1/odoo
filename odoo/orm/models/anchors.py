@@ -3,7 +3,7 @@ from __future__ import annotations
 import typing
 from dataclasses import dataclass
 
-from ..helpers import check_companies_domain_parent_of, check_company_domain_parent_of
+from ..helpers import get_domain_companies_parent_of, get_domain_company_parent_of
 
 if typing.TYPE_CHECKING:
     from collections.abc import Mapping
@@ -103,8 +103,8 @@ def infer_company_variant(
         )
     hierarchy = anchor.hierarchy
     if hierarchy is None:
-        check = getattr(model_cls, "_check_company_domain", None)
-        parent_of = (check_company_domain_parent_of, check_companies_domain_parent_of)
+        check = getattr(model_cls, "_get_domain_company_compatible", None)
+        parent_of = (get_domain_company_parent_of, get_domain_companies_parent_of)
         hierarchy = "parent_of" if check in parent_of else ""
     return Anchor(anchor.path, anchor.kind, shared, hierarchy, anchor.usage)
 

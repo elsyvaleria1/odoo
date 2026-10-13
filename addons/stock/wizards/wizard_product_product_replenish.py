@@ -97,7 +97,8 @@ class WizardProductProductReplenish(models.TransientModel):
             res["company_id"] = company.id
         if "warehouse_id" in fields and "warehouse_id" not in res:
             warehouse = self.env["stock.warehouse"].search(
-                [*self.env["stock.warehouse"]._check_company_domain(company)], limit=1
+                [*self.env["stock.warehouse"]._get_domain_company_compatible(company)],
+                limit=1,
             )
             res["warehouse_id"] = warehouse.id
         if "route_id" in fields and "route_id" not in res and product_tmpl_id:
@@ -205,7 +206,7 @@ class WizardProductProductReplenish(models.TransientModel):
         domain = Domain.AND(
             [
                 self._get_domain_allowed_route(),
-                self.env["stock.route"]._check_company_domain(company),
+                self.env["stock.route"]._get_domain_company_compatible(company),
             ]
         )
         if product_tmpl_id.route_ids:

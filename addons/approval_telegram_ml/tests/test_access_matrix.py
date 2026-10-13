@@ -22,7 +22,7 @@ class TestApprovalAiTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         parameters = cls.env["ir.config_parameter"]
         key = "smart_approval.confidence_threshold"
         parameters.set_param(key, "0.8")

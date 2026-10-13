@@ -9,6 +9,10 @@ class ResConfigSettings(models.TransientModel):
     @api.depends("company_id")
     def _compute_has_amazon_account(self) -> None:
         self.has_amazon_account = self.env["amazon.account"].search_count(
-            [*self.env["amazon.account"]._check_company_domain(self.env.company)],
+            [
+                *self.env["amazon.account"]._get_domain_company_compatible(
+                    self.env.company
+                )
+            ],
             limit=1,
         )

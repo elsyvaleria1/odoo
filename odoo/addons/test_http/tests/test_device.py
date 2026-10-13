@@ -721,7 +721,7 @@ class TestDevice(TestHttpBase):
         )
         devices, logs = self.get_devices_logs(self.user_admin)
         self.assertEqual((len(devices), len(logs)), (1, 2))
-        odoo.http.root.session_store.delete(session)
+        odoo.http.root.session_store.remove_session(session)
         self._sweep_real_store()
         self.assertFalse(devices.active)
         self.assertEqual(

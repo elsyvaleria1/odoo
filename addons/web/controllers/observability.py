@@ -67,7 +67,7 @@ def _read_beacon_payload(prefix: str) -> dict[str, Any] | Response:
     _debug.lifecycle(
         "beacon_received", prefix=prefix, bytes=len(request.httprequest.data or b"")
     )
-    if _limiter.is_limited(_get_client_rate_key(prefix)):
+    if not _limiter.acquire_request_slot(_get_client_rate_key(prefix)):
         _debug.logic(
             "beacon_rejected", prefix=prefix, reason="rate_limited", status=429
         )

@@ -4,7 +4,7 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Any, Literal, Self
+from typing import Any, Literal, NamedTuple, Self
 
 from dateutil.relativedelta import relativedelta
 
@@ -33,6 +33,12 @@ LINK_AUDIENCES = [
     ("organizations", "These people's organizations"),
 ]
 NAMED_AUDIENCES = frozenset({"partners", "organizations"})
+
+
+class _ReusableLink[T: models.BaseModel](NamedTuple):
+    link: T
+    token: str | None
+
 
 LINK_CAUSES = [
     ("share", "Shared by hand"),
@@ -442,7 +448,7 @@ class AccessLink(models.Model):
         return tokens
 
     @api.model
-    def _find_reusable(
+    def _get_link_and_token_reusable(
         self,
         record: models.BaseModel,
         *,
@@ -454,7 +460,7 @@ class AccessLink(models.Model):
         cause_record: models.BaseModel | None = None,
         date_to: datetime | None = None,
         waive_expiry: bool = False,
-    ) -> tuple[Self, str | None]:
+    ) -> _ReusableLink[Self]:
         record.check_singleton()
         self._check_may_issue(record, role)
         partner = partner or self.env["res.partner"]
@@ -505,8 +511,8 @@ class AccessLink(models.Model):
             link=found.id if token else None,
         )
         if not token:
-            return self.browse(), None
-        return found.with_env(self.env), token
+            return _ReusableLink(self.browse(), None)
+        return _ReusableLink(found.with_env(self.env), token)
 
     @api.model
     def _issue(
@@ -523,7 +529,7 @@ class AccessLink(models.Model):
         waive_expiry: bool = False,
     ) -> tuple[Self, str]:
         date_to = self._get_issue_date_to(record, cause, date_to)
-        reusable, token = self._find_reusable(
+        reusable, token = self._get_link_and_token_reusable(
             record,
             partner=partner,
             role=role,

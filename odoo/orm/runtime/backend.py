@@ -59,13 +59,13 @@ def _unwrap_json(value: typing.Any) -> typing.Any:
             json_loads(
                 bytes(dumped),
                 parse_float=Decimal,
-                parse_constant=_reject_json_constant,
+                parse_constant=_check_json_constant_allowed,
             )
         )
     return value
 
 
-def _reject_json_constant(value: str) -> typing.NoReturn:
+def _check_json_constant_allowed(value: str) -> typing.NoReturn:
     raise InvalidTextRepresentation(f"Invalid JSON token: {value}")
 
 

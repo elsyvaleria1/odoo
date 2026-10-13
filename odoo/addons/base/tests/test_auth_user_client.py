@@ -326,7 +326,7 @@ class TestDeviceModel(DeviceCase):
 
 
 class TestUpdateRevoked(DeviceCase):
-    def _sweep(self, live, budget=float("inf")):
+    def _update_revoked_sessions(self, live, budget=float("inf")):
         store = SimpleNamespace(
             get_missing_session_identifiers=lambda identifiers: (
                 set(identifiers) - set(live)
@@ -351,7 +351,9 @@ class TestUpdateRevoked(DeviceCase):
             sessions=("sid_rdev_recent",), last_activity=datetime.now()
         )
 
-        self.assertEqual(self._sweep(live={"sid_rdev_live"}), (1, False))
+        self.assertEqual(
+            self._update_revoked_sessions(live={"sid_rdev_live"}), (1, False)
+        )
 
         self.assertFalse(gone.active)
         self.assertTrue(live.active)
@@ -360,7 +362,7 @@ class TestUpdateRevoked(DeviceCase):
     def test_batches_cover_every_candidate(self):
         devices = [self._device(sessions=(f"sid_rdev_{n}",)) for n in range(7)]
         with patch.object(auth_user_client, "_REVOKE_SWEEP_BATCH", 2):
-            result = self._sweep(live={"sid_rdev_1", "sid_rdev_4"})
+            result = self._update_revoked_sessions(live={"sid_rdev_1", "sid_rdev_4"})
         self.assertEqual(result, (5, False))
         self.assertEqual(
             [device.active for device in devices],
@@ -371,7 +373,9 @@ class TestUpdateRevoked(DeviceCase):
         self._device(sessions=("sid_rdev_x",))
         self._device(sessions=("sid_rdev_y",))
         with patch.object(auth_user_client, "_REVOKE_SWEEP_BATCH", 1):
-            self.assertEqual(self._sweep(live=(), budget=0), (1, True))
+            self.assertEqual(
+                self._update_revoked_sessions(live=(), budget=0), (1, True)
+            )
 
 
 class TestRevokedRetention(DeviceCase):

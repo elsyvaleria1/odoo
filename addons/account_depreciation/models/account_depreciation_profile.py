@@ -128,7 +128,7 @@ class AccountDepreciationProfile(models.Model):
                 continue
             journal = AccountJournal.search(  # noqa: E8507 -- one search per distinct company, not per profile
                 [
-                    *AccountJournal._check_company_domain(company),
+                    *AccountJournal._get_domain_company_compatible(company),
                     ("type", "=", "general"),
                 ],
                 limit=1,

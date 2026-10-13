@@ -9,7 +9,7 @@ from odoo.tools.assets import esm_graph
 from odoo.tools.json import scriptsafe as json
 from odoo.tools.misc import file_path
 
-from .common import FileTouchable, asset_file, make_bundle
+from .common import FileTouchable, asset_file, prepare_bundle
 from odoo.addons.base.models.assetsbundle import (
     AssetsBundle,
     XMLAsset,
@@ -377,7 +377,7 @@ class TestTemplateBlockFollowsModuleCode(BaseCase):
 
 class TestTemplateInheritance(TransactionCase):
     def _bundle(self, *templates):
-        return make_bundle(
+        return prepare_bundle(
             self,
             "test_assetsbundle.inherit",
             *((f"/m/static/src/t{i}.xml", t) for i, t in enumerate(templates)),

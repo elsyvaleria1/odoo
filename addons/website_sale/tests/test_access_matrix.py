@@ -298,7 +298,7 @@ class TestWebsiteSaleAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         customer_c, customer_d = cls.partners["customer_c"], cls.partners["customer_d"]

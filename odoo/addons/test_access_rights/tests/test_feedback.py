@@ -4,7 +4,7 @@ from odoo.fields import Command
 from odoo.tests import TransactionCase
 from odoo.tools.misc import mute_logger
 
-from odoo.addons.base.tests.common import make_access_row, make_guard_row
+from odoo.addons.base.tests.common import create_access_row, create_guard_row
 
 
 class Feedback(TransactionCase):
@@ -110,8 +110,8 @@ class TestACLFeedback(Feedback):
         cls.env["ir.access"].search(
             [("model_id.model", "=", model), ("kind", "=", "permission")]
         ).unlink()
-        make_access_row(cls.env, model, cls.group1, operation="r", name="read")
-        make_access_row(
+        create_access_row(cls.env, model, cls.group1, operation="r", name="read")
+        create_access_row(
             cls.env, model, cls.group0, operation="cr", name="create-and-read"
         )
         cls.record = cls.env["test_access_right.some_obj"].create({"val": 5})
@@ -186,10 +186,10 @@ class TestIRRuleFeedback(Feedback):
         )
         cls.maxDiff = None
 
-    def _make_rule(self, name, domain, global_=False, attr="write"):
+    def _replace_access_for_operation(self, name, domain, global_=False, attr="write"):
         letter = {"read": "r", "write": "u", "create": "c", "unlink": "d"}[attr]
         if global_:
-            return make_guard_row(
+            return create_guard_row(
                 self.env, self.model.model, domain, operation=letter, name=name
             )
         group = self.env.ref("base.group_user")
@@ -203,7 +203,7 @@ class TestIRRuleFeedback(Feedback):
         ):
             if letter in row.operation:
                 row.write({f"for_{attr}": False})
-        return make_access_row(
+        return create_access_row(
             self.env,
             self.model.model,
             group,
@@ -213,7 +213,7 @@ class TestIRRuleFeedback(Feedback):
         )
 
     def test_local(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]')
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]')
         with self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -283,8 +283,8 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_locals(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]')
-        self._make_rule("rule 1", '[("val", "=", 78)]')
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]')
+        self._replace_access_for_operation("rule 1", '[("val", "=", 78)]')
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -309,7 +309,7 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_debug_names_refused_records_to_access_administrators_only(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]')
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]')
         named = "- %s, %s (%s: %s)" % (
             self.record._description,
             self.record.sudo().display_name,
@@ -328,8 +328,8 @@ If you really, really need access, perhaps you can win over your friendly admini
         self.assertIn(named, ctx.exception.args[0])
 
     def test_globals_all(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]', global_=True)
-        self._make_rule("rule 1", '[("val", "=", 78)]', global_=True)
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]', global_=True)
+        self._replace_access_for_operation("rule 1", '[("val", "=", 78)]', global_=True)
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -354,8 +354,8 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_globals_any(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]', global_=True)
-        self._make_rule("rule 1", '[(1, "=", 1)]', global_=True)
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]', global_=True)
+        self._replace_access_for_operation("rule 1", '[(1, "=", 1)]', global_=True)
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -379,10 +379,10 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_combination(self):
-        self._make_rule("rule 0", '[("val", "=", 42)]', global_=True)
-        self._make_rule("rule 1", '[(1, "=", 1)]', global_=True)
-        self._make_rule("rule 2", '[(0, "=", 1)]')
-        self._make_rule("rule 3", '[("val", "=", 55)]')
+        self._replace_access_for_operation("rule 0", '[("val", "=", 42)]', global_=True)
+        self._replace_access_for_operation("rule 1", '[(1, "=", 1)]', global_=True)
+        self._replace_access_for_operation("rule 2", '[(0, "=", 1)]')
+        self._replace_access_for_operation("rule 3", '[("val", "=", 55)]')
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -408,8 +408,10 @@ If you really, really need access, perhaps you can win over your friendly admini
         )
 
     def test_warn_company_no_access(self):
-        self._make_rule("rule 0", "[('company_id', '=', user.company_id.id)]")
-        self._make_rule("rule 1", '[("val", "=", 0)]', global_=True)
+        self._replace_access_for_operation(
+            "rule 0", "[('company_id', '=', user.company_id.id)]"
+        )
+        self._replace_access_for_operation("rule 1", '[("val", "=", 0)]', global_=True)
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             self.record.write({"val": 1})
         self.assertEqual(
@@ -434,7 +436,7 @@ If you really, really need access, perhaps you can win over your friendly admini
 
     def test_warn_company_no_company_field(self):
         ChildModel = self.env["test_access_right.child"].sudo()
-        make_guard_row(
+        create_guard_row(
             self.env,
             ChildModel._name,
             '[("parent_id.company_id", "=", user.company_id.id)]',
@@ -474,7 +476,7 @@ If you really, really need access, perhaps you can win over your friendly admini
             {"name": "Brosse Inc."}
         )
         self.user.sudo().company_ids = [Command.link(self.record.company_id.id)]
-        self._make_rule(
+        self._replace_access_for_operation(
             "rule 0", "[('company_id', '=', user.company_id.id)]", attr="read"
         )
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
@@ -529,7 +531,9 @@ This seems to be a multi-company issue, you might be able to access the record b
             Command.link(company_1.id),
             Command.link(company_2.id),
         ]
-        self._make_rule("rule 0", "[('company_id', '=', False)]", attr="read")
+        self._replace_access_for_operation(
+            "rule 0", "[('company_id', '=', False)]", attr="read"
+        )
         self.env.invalidate_all()
         with self.debug_mode(), self.assertRaises(AccessError) as ctx:
             _ = records.with_user(self.user).read(["val"])

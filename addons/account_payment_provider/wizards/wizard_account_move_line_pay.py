@@ -39,7 +39,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
                     .sudo()
                     .search(  # noqa: E8507 -- a transient wizard: one record
                         [
-                            *self.env["payment.token"]._check_company_domain(
+                            *self.env["payment.token"]._get_domain_company_compatible(
                                 wizard.company_id
                             ),
                             ("partner_id", "in", token_partners.ids),

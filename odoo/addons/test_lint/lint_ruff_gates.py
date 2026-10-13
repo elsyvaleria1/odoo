@@ -31,7 +31,7 @@ def ignores(repo: str) -> str:
     return f"lint.extend-per-file-ignores = {{{body}}}"
 
 
-def findings(ruff: str, root: Path, repo: str, *extra: str) -> list[dict]:
+def get_findings(ruff: str, root: Path, repo: str, *extra: str) -> list[dict]:
     from odoo.libs.json import loads as json_loads
 
     result = subprocess.run(
@@ -125,10 +125,10 @@ def main() -> int:
         scanned.append(repo)
         rows = [
             row
-            for row in findings(args.ruff, root, repo, "--select", "E85")
+            for row in get_findings(args.ruff, root, repo, "--select", "E85")
             if row["code"] not in UNSUPPRESSABLE
         ]
-        rows += findings(
+        rows += get_findings(
             args.ruff, root, repo, "--select", ",".join(UNSUPPRESSABLE), "--ignore-noqa"
         )
         for row in rows:

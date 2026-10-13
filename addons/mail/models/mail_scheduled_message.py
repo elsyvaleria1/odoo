@@ -155,7 +155,10 @@ class MailScheduledMessage(models.Model):
 
     @api.model
     def _access_owner_reach(self, Owner: models.BaseModel) -> typing.Any:
-        if type(Owner)._check_access is models.BaseModel._check_access:
+        if (
+            type(Owner)._get_records_forbidden_and_error_factory
+            is models.BaseModel._get_records_forbidden_and_error_factory
+        ):
             return Owner._mail_access_domain("create")
         return CONCRETE
 

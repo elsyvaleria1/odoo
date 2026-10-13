@@ -23,7 +23,7 @@ class TestBaseModuleWizards(TransactionCase):
             groups="base.group_user",
         )
 
-    def _make_module(self, name, state, **vals):
+    def _create_module_record(self, name, state, **vals):
         module = self.Module.create(
             dict({"name": name, "shortdesc": name.upper()}, **vals)
         )
@@ -40,7 +40,7 @@ class TestBaseModuleWizards(TransactionCase):
             wizard.with_user(self.plain_user).upgrade_module()
 
     def test_upgrade_module_allows_admin_until_apply(self):
-        mod = self._make_module("wizard_upg_root", "to install")
+        mod = self._create_module_record("wizard_upg_root", "to install")
         self._add_dependency(mod, "wizard_upg_missing_dep")
 
         wizard = self.env["wizard.ir.module.module.apply.scheduled"].create({})
@@ -66,9 +66,9 @@ class TestBaseModuleWizards(TransactionCase):
         new.assert_not_called()
 
     def test_upgrade_module_cancel_reverts_schedule(self):
-        to_upgrade = self._make_module("wizard_cancel_upg", "to upgrade")
-        to_remove = self._make_module("wizard_cancel_rem", "to remove")
-        to_install = self._make_module("wizard_cancel_ins", "to install")
+        to_upgrade = self._create_module_record("wizard_cancel_upg", "to upgrade")
+        to_remove = self._create_module_record("wizard_cancel_rem", "to remove")
+        to_install = self._create_module_record("wizard_cancel_ins", "to install")
 
         wizard = self.env["wizard.ir.module.module.apply.scheduled"].create({})
         wizard.with_user(self.admin).upgrade_module_cancel()
@@ -78,8 +78,10 @@ class TestBaseModuleWizards(TransactionCase):
         self.assertEqual(to_install.state, "uninstalled")
 
     def test_uninstall_actual_set_covers_hidden_dependent(self):
-        root = self._make_module("wizard_uninst_root", "installed", application=True)
-        tech_dep = self._make_module(
+        root = self._create_module_record(
+            "wizard_uninst_root", "installed", application=True
+        )
+        tech_dep = self._create_module_record(
             "wizard_uninst_tech", "installed", application=False
         )
         self._add_dependency(tech_dep, "wizard_uninst_root")
@@ -96,7 +98,9 @@ class TestBaseModuleWizards(TransactionCase):
         self.assertLessEqual(set(wizard.impacted_module_ids.ids), set(actual.ids))
 
     def test_uninstall_model_ids_recompute_trigger(self):
-        root = self._make_module("wizard_model_root", "installed", application=True)
+        root = self._create_module_record(
+            "wizard_model_root", "installed", application=True
+        )
         wizard = (
             self.env["wizard.ir.module.module.uninstall"]
             .with_user(self.admin)

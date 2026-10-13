@@ -887,7 +887,7 @@ class AccountEdiXmlUbl_Bis3(models.AbstractModel):
             return False
         PaymentTerm = self.env["account.payment.term"]
         return PaymentTerm.search(
-            PaymentTerm._check_company_domain(company_id)
+            PaymentTerm._get_domain_company_compatible(company_id)
             & Domain("name", "=", payment_term_name),
             limit=1,
         )

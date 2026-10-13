@@ -364,7 +364,7 @@ class TestKeysAndScopes(TransactionCase):
     def test_a_key_bound_to_a_scope_opens_that_door_alone(self):
         bound = self._generate("rpc")
         other = self._generate("other_door")
-        check = self.keys._check_credentials
+        check = self.keys._get_user_id_for_key
         self.assertEqual(check(scope="rpc", key=bound), self.user.id)
         self.assertIsNone(check(scope="other_door", key=bound))
         self.assertEqual(check(scope="other_door", key=other), self.user.id)
@@ -372,7 +372,7 @@ class TestKeysAndScopes(TransactionCase):
 
     def test_an_unbound_key_opens_the_rpc_door_alone(self):
         unbound = new_unbound_test_api_key(self.user)
-        check = self.keys._check_credentials
+        check = self.keys._get_user_id_for_key
         self.assertIsNone(check(scope="other_door", key=unbound))
         self.assertEqual(check(scope="rpc", key=unbound), self.user.id)
 
@@ -385,10 +385,10 @@ class TestKeysAndScopes(TransactionCase):
     def test_a_key_bound_to_an_archived_scope_opens_nothing(self):
         key = self._generate("other_door")
         self.assertEqual(
-            self.keys._check_credentials(scope="other_door", key=key), self.user.id
+            self.keys._get_user_id_for_key(scope="other_door", key=key), self.user.id
         )
         self.other_door.action_archive()
-        self.assertIsNone(self.keys._check_credentials(scope="other_door", key=key))
+        self.assertIsNone(self.keys._get_user_id_for_key(scope="other_door", key=key))
 
     def test_an_archived_rpc_scope_closes_the_rpc_door_to_every_key(self):
         bound = self._generate("rpc")
@@ -397,13 +397,15 @@ class TestKeysAndScopes(TransactionCase):
         Users = self.env["res.users"]
         for key in (bound, unbound):
             with self.assertRaises(AccessDenied):
-                Users._check_uid_passwd(self.user.id, key)
-        self.assertIsNone(Users._check_uid_passwd(self.user.id, "scope_key_user"))
+                Users._authenticate_rpc_credentials(self.user.id, key)
+        self.assertIsNone(
+            Users._authenticate_rpc_credentials(self.user.id, "scope_key_user")
+        )
 
     def test_a_key_bound_to_another_door_is_refused_at_the_rpc_door(self):
         key = self._generate("other_door")
         with self.assertRaises(AccessDenied):
-            self.env["res.users"]._check_uid_passwd(self.user.id, key)
+            self.env["res.users"]._authenticate_rpc_credentials(self.user.id, key)
         with self.assertRaises(AccessDenied):
             self.env["res.users"]._login(
                 {"login": "scope_key_user", "password": key, "type": "password"},
@@ -413,7 +415,8 @@ class TestKeysAndScopes(TransactionCase):
     def test_an_unbound_key_enters_the_rpc_door_under_rpc(self):
         key = new_unbound_test_api_key(self.user)
         self.assertEqual(
-            self.env["res.users"]._check_uid_passwd(self.user.id, key), self.rpc.id
+            self.env["res.users"]._authenticate_rpc_credentials(self.user.id, key),
+            self.rpc.id,
         )
         auth = self.env["res.users"]._login(
             {"login": "scope_key_user", "password": key, "type": "password"},
@@ -428,7 +431,7 @@ class TestKeysAndScopes(TransactionCase):
         with self.assertRaisesRegex(UserError, "never_seen"):
             self._generate("never_seen")
         with self.assertRaisesRegex(UserError, "never_seen"):
-            self.keys._check_credentials(scope="never_seen", key="0" * 40)
+            self.keys._get_user_id_for_key(scope="never_seen", key="0" * 40)
         with self.assertRaisesRegex(UserError, "never_seen"):
             Scope._get_declared("never_seen")
         self.assertFalse(
@@ -442,11 +445,11 @@ class TestKeysAndScopes(TransactionCase):
         ).unlink()
         self.env.registry.clear_cache()
         with self.assertRaisesRegex(UserError, "other_door"):
-            self.keys._check_credentials(scope="other_door", key=key)
+            self.keys._get_user_id_for_key(scope="other_door", key=key)
         with self.assertRaisesRegex(UserError, "other_door"):
             self._generate("other_door")
         with self.assertRaises(AccessDenied):
-            self.env["res.users"]._check_uid_passwd(self.user.id, key)
+            self.env["res.users"]._authenticate_rpc_credentials(self.user.id, key)
 
     def test_a_scope_keeps_its_key(self):
         with self.assertRaisesRegex(UserError, "key"):
@@ -461,17 +464,23 @@ class TestKeysAndScopes(TransactionCase):
     def test_the_rpc_password_check_names_the_rpc_scope_for_a_key(self):
         key = self._generate("rpc")
         Users = self.env["res.users"]
-        self.assertEqual(Users._check_uid_passwd(self.user.id, key), self.rpc.id)
-        self.assertIsNone(Users._check_uid_passwd(self.user.id, "scope_key_user"))
+        self.assertEqual(
+            Users._authenticate_rpc_credentials(self.user.id, key), self.rpc.id
+        )
+        self.assertIsNone(
+            Users._authenticate_rpc_credentials(self.user.id, "scope_key_user")
+        )
 
     def test_a_user_without_a_password_still_enters_rpc_with_a_key(self):
         key = self._generate("rpc")
         self.user._clear_password()
         self.env.flush_all()
         Users = self.env["res.users"]
-        self.assertEqual(Users._check_uid_passwd(self.user.id, key), self.rpc.id)
+        self.assertEqual(
+            Users._authenticate_rpc_credentials(self.user.id, key), self.rpc.id
+        )
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(self.user.id, "anything")
+            Users._authenticate_rpc_credentials(self.user.id, "anything")
 
 
 @tagged("post_install", "-at_install")

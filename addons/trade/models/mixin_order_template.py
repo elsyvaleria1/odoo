@@ -68,7 +68,9 @@ class MixinOrderTemplate(models.AbstractModel):
                 )
 
             authorized_products = restricted_products.filtered_domain(
-                self.env["product.product"]._check_company_domain(template.company_id)
+                self.env["product.product"]._get_domain_company_compatible(
+                    template.company_id
+                )
             )
             if unauthorized_products := restricted_products - authorized_products:
                 unaccessible_companies = unauthorized_products.company_id

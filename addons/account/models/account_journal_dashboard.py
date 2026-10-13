@@ -577,7 +577,9 @@ class AccountJournal(models.Model):
             for journal, count in self.env[model]._read_group(
                 domain=Domain.AND(
                     (
-                        self.env[model]._check_company_domain(self.env.companies),
+                        self.env[model]._get_domain_company_compatible(
+                            self.env.companies
+                        ),
                         Domain("journal_id", "in", self.ids),
                         domain,
                     )
@@ -623,7 +625,7 @@ class AccountJournal(models.Model):
     def _get_misc_operations_totals(self, date_limits):
         base_domain = Domain(
             [
-                *self.env["account.move.line"]._check_company_domain(
+                *self.env["account.move.line"]._get_domain_company_compatible(
                     self.env.companies
                 ),
                 ("statement_line_id", "=", False),
@@ -1038,7 +1040,9 @@ class AccountJournal(models.Model):
     def _get_draft_sales_purchases_query(self):
         return self.env["account.move"]._search(
             [
-                *self.env["account.move"]._check_company_domain(self.env.companies),
+                *self.env["account.move"]._get_domain_company_compatible(
+                    self.env.companies
+                ),
                 ("journal_id", "in", self.ids),
                 ("state", "=", "draft"),
                 (
@@ -1098,7 +1102,9 @@ class AccountJournal(models.Model):
         assert journal_type in ("sale", "purchase")
         query = self.env["account.move"]._search(
             [
-                *self.env["account.move"]._check_company_domain(self.env.companies),
+                *self.env["account.move"]._get_domain_company_compatible(
+                    self.env.companies
+                ),
                 ("journal_id", "in", self.ids),
                 ("payment_state", "in", ("not_paid", "partial")),
                 (
@@ -1119,7 +1125,9 @@ class AccountJournal(models.Model):
     def _get_to_check_payment_query(self) -> tuple:
         query = self.env["account.move"]._search(
             [
-                *self.env["account.move"]._check_company_domain(self.env.companies),
+                *self.env["account.move"]._get_domain_company_compatible(
+                    self.env.companies
+                ),
                 ("journal_id", "in", self.ids),
                 ("checked", "=", False),
                 ("state", "=", "posted"),
@@ -1663,7 +1671,7 @@ class AccountJournal(models.Model):
     def show_sequence_holes(self):
         has_sequence_holes = self._query_has_sequence_holes()
         domain = Domain(
-            self.env["account.move"]._check_company_domain(self.env.companies)
+            self.env["account.move"]._get_domain_company_compatible(self.env.companies)
         )
         domain &= Domain.OR(
             Domain("journal_id", "=", journal_id)

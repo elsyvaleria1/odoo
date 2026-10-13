@@ -466,7 +466,9 @@ class IrModelFieldsSelection(models.Model):
 
     def _process_ondelete(self) -> None:
 
-        def safe_write(records: Any, fname: str, value: Any) -> None:
+        def _update_records_with_sql_fallback(
+            records: Any, fname: str, value: Any
+        ) -> None:
             if not records:
                 return
             try:
@@ -555,14 +557,16 @@ class IrModelFieldsSelection(models.Model):
                     if callable(ondelete):
                         ondelete(records)
                     elif ondelete == "set null":
-                        safe_write(records, field.name, False)
+                        _update_records_with_sql_fallback(records, field.name, False)
                     elif ondelete == "set default":
                         default = field.convert_to_write(
                             field.default(company_model), company_model
                         )
-                        safe_write(records, field.name, default)
+                        _update_records_with_sql_fallback(records, field.name, default)
                     elif ondelete.startswith("set "):
-                        safe_write(records, field.name, ondelete.removeprefix("set "))
+                        _update_records_with_sql_fallback(
+                            records, field.name, ondelete.removeprefix("set ")
+                        )
                     elif ondelete == "cascade":
                         records.unlink()
                     else:

@@ -550,7 +550,7 @@ class MixinCompanySplit(models.AbstractModel):
         for field in check_company_fields:
             corecord = self[field.name]
             filtered_corecord = corecord.filtered_domain(
-                corecord._check_company_domain(base_company),
+                corecord._get_domain_company_compatible(base_company),
             )
             write_vals[field.name] = (
                 filtered_corecord.id

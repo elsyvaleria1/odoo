@@ -80,7 +80,7 @@ class ProductTemplate(models.Model):
     _description = "Product"
     _order = "is_featured desc, name"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     company_id = fields.Many2one(
         comodel_name="res.company",

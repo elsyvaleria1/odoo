@@ -1191,7 +1191,7 @@ class MrpWorkorder(models.Model):
                         "product_id": self.product_id.id,
                         "trace_ids": self.production_id.trace_producing_ids.ids,
                         "team_id": self.env["team.team"]._get_quality_team(
-                            self.env["team.team"]._check_company_domain(
+                            self.env["team.team"]._get_domain_company_compatible(
                                 self.company_id.id
                                 or self.env.context.get(
                                     "default_company_id", self.env.company.id

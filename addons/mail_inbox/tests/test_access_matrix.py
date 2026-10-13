@@ -22,7 +22,7 @@ class TestMailInboxAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         domain = cls.env["mail.alias.domain"].create(
             {"name": "matrix-inbox.example.com"}
         )

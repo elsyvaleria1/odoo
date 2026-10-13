@@ -69,10 +69,12 @@ class WizardAccountMoveReverse(models.TransientModel):
     @api.depends("move_ids")
     def _compute_available_journal_ids(self) -> None:
         Journal = self.env["account.journal"]
-        journals = Journal.search(Journal._check_company_domain(self.company_id))
+        journals = Journal.search(
+            Journal._get_domain_company_compatible(self.company_id)
+        )
         for record in self:
             allowed = journals.filtered_domain(
-                Journal._check_company_domain(record.company_id)
+                Journal._get_domain_company_compatible(record.company_id)
             )
             if record.move_ids:
                 types = record.move_ids.journal_id.mapped("type")

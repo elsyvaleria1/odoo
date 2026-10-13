@@ -14,7 +14,7 @@ DISABLED_MAIL_CONTEXT = {
 }
 
 
-def make_access_row(
+def create_access_row(
     env,
     model_name,
     group="base.group_everyone",
@@ -51,8 +51,10 @@ def make_access_row(
     return row.sudo(False)
 
 
-def make_guard_row(env, model_name, domain, group=None, *, operation="crud", **kwargs):
-    return make_access_row(
+def create_guard_row(
+    env, model_name, domain, group=None, *, operation="crud", **kwargs
+):
+    return create_access_row(
         env,
         model_name,
         group or "base.group_everyone",

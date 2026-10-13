@@ -494,7 +494,7 @@ class AccountReconcileModel(models.Model):
         if not self:
             return StatementLine
         return StatementLine.search(
-            Domain(StatementLine._check_company_domain(self.company_id))
+            Domain(StatementLine._get_domain_company_compatible(self.company_id))
             & Domain("is_reconciled", "=", False)
         )
 
@@ -523,7 +523,9 @@ class AccountReconcileModel(models.Model):
         if not statement_lines:
             return
         freed_lines = self._clear_statement_line_proposals(statement_lines)
-        company_models = self.search(self._check_company_domain(self.company_id))
+        company_models = self.search(
+            self._get_domain_company_compatible(self.company_id)
+        )
         _debug.pipeline(
             "_refresh_statement_line_proposals_over_line",
             models=self,
@@ -544,7 +546,7 @@ class AccountReconcileModel(models.Model):
 
     def _get_proposal_order(self, companies) -> list:
         return self.search(
-            self._check_company_domain(companies),
+            self._get_domain_company_compatible(companies),
             order="created_automatically ASC NULLS FIRST, sequence ASC, id ASC",
         ).ids
 

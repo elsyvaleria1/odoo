@@ -56,7 +56,7 @@ class TestIrActionsServer(DocumentsAccountActionsServerCommon):
                 journal_folder_name = self.journal_type_labels[expected_journal.type]
                 journal_folder = self.env["document.document"].search(
                     [
-                        *self.env["account.journal"]._check_company_domain(
+                        *self.env["account.journal"]._get_domain_company_compatible(
                             self.env.company
                         ),
                         ("name", "=", journal_folder_name),

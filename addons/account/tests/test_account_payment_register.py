@@ -351,7 +351,9 @@ class TestAccountPaymentRegister(AccountTestInvoicingCommon, PaymentCommon):
     def get_wizard_available_journals(cls, wizard):
         return wizard.available_journal_ids.filtered_domain(
             [
-                *cls.env["account.journal"]._check_company_domain(wizard.company_id),
+                *cls.env["account.journal"]._get_domain_company_compatible(
+                    wizard.company_id
+                ),
             ]
         )
 

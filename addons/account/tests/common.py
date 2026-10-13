@@ -326,7 +326,9 @@ class AccountTestInvoicingCommon(ProductCommon):
         for model in ("account.tax", "account.tax.group"):
             cls.env.add_to_compute(
                 cls.env[model]._fields["country_id"],
-                cls.env[model].search(cls.env[model]._check_company_domain(company)),
+                cls.env[model].search(
+                    cls.env[model]._get_domain_company_compatible(company)
+                ),
             )
 
     @classmethod
@@ -445,12 +447,12 @@ class AccountTestInvoicingCommon(ProductCommon):
     @classmethod
     def collect_company_accounting_data(cls, company):
         AccountAccount = cls.env["account.account"].with_company(company)
-        account_company_domain = cls.env["account.account"]._check_company_domain(
-            company
-        )
-        journal_company_domain = cls.env["account.journal"]._check_company_domain(
-            company
-        )
+        account_company_domain = cls.env[
+            "account.account"
+        ]._get_domain_company_compatible(company)
+        journal_company_domain = cls.env[
+            "account.journal"
+        ]._get_domain_company_compatible(company)
         return {
             "company": company,
             "currency": company.currency_id,

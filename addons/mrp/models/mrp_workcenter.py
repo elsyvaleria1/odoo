@@ -17,7 +17,7 @@ from odoo.tools.misc import get_lang
 
 from odoo.addons.base.models.resource_utils import (
     SlotIntervals,
-    find_available_interval,
+    get_interval_available,
 )
 
 _debug = DebugLog(__name__)
@@ -810,7 +810,7 @@ class MrpWorkcenter(models.Model):
         blocked,
         reservations_to_ignore,
     ) -> tuple | None:
-        return find_available_interval(
+        return get_interval_available(
             start_datetime,
             timedelta(minutes=duration),
             lambda start, stop: self._get_intervals_available_and_occupied(
@@ -832,7 +832,7 @@ class MrpWorkcenter(models.Model):
         blocked,
         reservations_to_ignore,
     ) -> tuple | None:
-        return find_available_interval(
+        return get_interval_available(
             start_datetime,
             timedelta(minutes=duration),
             lambda start, stop: self._get_intervals_available_and_occupied(

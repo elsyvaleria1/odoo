@@ -89,7 +89,7 @@ def record_values(rng: random.Random, users, companies, earlier_ids) -> dict:
     }
 
 
-def build_world(env, model_name: str, rng: random.Random, *, records: int):
+def create_world(env, model_name: str, rng: random.Random, *, records: int):
     groups = env["res.groups"].create([{"name": f"property {i}"} for i in range(5)])
     companies = env["res.company"].browse(env.company.id) | env["res.company"].create(
         {"name": "property B"}
@@ -174,7 +174,7 @@ def divergences(env, model_name: str, docs, users, companies) -> tuple[list, lis
 
 def run(env, model_name: str, *, seed: int, rounds: int, records: int) -> dict:
     rng = random.Random(seed)
-    groups, companies, users, docs = build_world(env, model_name, rng, records=records)
+    groups, companies, users, docs = create_world(env, model_name, rng, records=records)
     everyone = env.ref("base.group_everyone", raise_if_not_found=False) or env[
         "res.groups"
     ].create({"name": "everyone"})

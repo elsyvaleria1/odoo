@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from odoo.libs.native import assert_fresh, assert_optimised
+from odoo.libs.native import check_extension_fresh, check_extension_optimised
 
 __all__ = ["scan_byte_patterns", "scan_regex_patterns"]
 
@@ -15,7 +15,7 @@ except ImportError as exc:
         "`maturin build --release --manifest-path crates/odoo_lint/Cargo.toml`."
     ) from exc
 
-assert_fresh(
+check_extension_fresh(
     odoo_lint,
     Path(__file__).resolve().parents[3] / "crates" / "odoo_lint",
     rebuild_hint=(
@@ -24,7 +24,7 @@ assert_fresh(
     ),
 )
 
-assert_optimised(odoo_lint)
+check_extension_optimised(odoo_lint)
 
 scan_byte_patterns = odoo_lint.scan_byte_patterns
 scan_regex_patterns = odoo_lint.scan_regex_patterns

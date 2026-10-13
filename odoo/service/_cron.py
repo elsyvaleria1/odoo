@@ -48,7 +48,7 @@ __all__ = [
     "get_cron_databases",
     "open_cron_listener",
     "order_notified_first",
-    "sweep_database",
+    "run_jobs_for_database",
     "wait_for_notifies",
 ]
 
@@ -238,7 +238,7 @@ def wait_for_notifies(
     return woken
 
 
-def sweep_database(
+def run_jobs_for_database(
     db_name: str,
     process_jobs: typing.Callable[[str], object],
     logger: logging.Logger,

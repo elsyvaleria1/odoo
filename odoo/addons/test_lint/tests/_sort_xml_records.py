@@ -604,7 +604,7 @@ def sort_xml_file(
     return True
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Sort Odoo XML <record> <field> children and normalize element "
@@ -648,7 +648,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    args = prepare_argument_parser().parse_args(argv)
 
     model_filter: set[str] | None = set(args.models) if args.models else None
     excluded: set[str] = set(args.exclude)

@@ -4,7 +4,7 @@ from unittest.mock import patch
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 from odoo.tools import mute_logger
 
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 
 
 @tagged("post_install", "-at_install")
@@ -51,7 +51,7 @@ class TestAttachmentOwnerReach(TransactionCase):
             author = rng.choice([cls.env.user, cls.user, cls.other])
             rows.append(Attachment.with_user(author).sudo().create(values).id)
         cls.attachments = Attachment.browse(rows)
-        make_guard_row(
+        create_guard_row(
             cls.env,
             "ir.attachment",
             f"[('id', 'not in', {rows[:5]})]",

@@ -110,7 +110,9 @@ class TestUnaffectedEarningsAccount(AccountTestInvoicingCommon):
             .with_company(company)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(company),
+                    *self.env["account.account"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("account_type", "=", "equity_unaffected"),
                 ],
                 limit=1,

@@ -3515,14 +3515,14 @@ class HrEmployee(models.Model):
                 )
                 to_move.partner_id = party.id
 
-    def _check_access(self, operation):
+    def _get_records_forbidden_and_error_factory(self, operation):
         if (
             operation == "read"
             and self.env.context.get("_allow_read_hr_employee")
             is _ALLOW_READ_HR_EMPLOYEE
         ):
             return None
-        return super()._check_access(operation)
+        return super()._get_records_forbidden_and_error_factory(operation)
 
     @api.depends_context("uid")
     @api.depends("parent_id")

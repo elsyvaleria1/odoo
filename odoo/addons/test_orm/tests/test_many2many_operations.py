@@ -11,26 +11,26 @@ class TestMany2manyCommands(TransactionCase):
         cls.cat_b = Category.create({"name": "M2M Beta"})
         cls.cat_c = Category.create({"name": "M2M Gamma"})
 
-    def _make_discussion(self, **kwargs):
+    def _create_discussion(self, **kwargs):
         vals = {"name": "Test M2M Discussion"}
         vals.update(kwargs)
         return self.env["test_orm.discussion"].create(vals)
 
     def test_link_command(self):
-        disc = self._make_discussion(categories=[Command.link(self.cat_a.id)])
+        disc = self._create_discussion(categories=[Command.link(self.cat_a.id)])
         self.assertEqual(disc.categories, self.cat_a)
 
         disc.write({"categories": [Command.link(self.cat_b.id)]})
         self.assertEqual(disc.categories, self.cat_a | self.cat_b)
 
     def test_link_duplicate(self):
-        disc = self._make_discussion(categories=[Command.link(self.cat_a.id)])
+        disc = self._create_discussion(categories=[Command.link(self.cat_a.id)])
         disc.write({"categories": [Command.link(self.cat_a.id)]})
         self.assertEqual(len(disc.categories), 1)
         self.assertEqual(disc.categories, self.cat_a)
 
     def test_link_multiple(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),
@@ -40,7 +40,7 @@ class TestMany2manyCommands(TransactionCase):
         self.assertEqual(len(disc.categories), 3)
 
     def test_unlink_command(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),
@@ -50,12 +50,12 @@ class TestMany2manyCommands(TransactionCase):
         self.assertEqual(disc.categories, self.cat_b)
 
     def test_unlink_nonexistent(self):
-        disc = self._make_discussion(categories=[Command.link(self.cat_a.id)])
+        disc = self._create_discussion(categories=[Command.link(self.cat_a.id)])
         disc.write({"categories": [Command.unlink(self.cat_c.id)]})
         self.assertEqual(disc.categories, self.cat_a)
 
     def test_clear_command(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),
@@ -66,18 +66,18 @@ class TestMany2manyCommands(TransactionCase):
         self.assertFalse(disc.categories)
 
     def test_clear_empty(self):
-        disc = self._make_discussion()
+        disc = self._create_discussion()
         disc.write({"categories": [Command.clear()]})
         self.assertFalse(disc.categories)
 
     def test_set_command(self):
-        disc = self._make_discussion(categories=[Command.link(self.cat_a.id)])
+        disc = self._create_discussion(categories=[Command.link(self.cat_a.id)])
         disc.write({"categories": [Command.set([self.cat_b.id, self.cat_c.id])]})
         self.assertEqual(disc.categories, self.cat_b | self.cat_c)
         self.assertNotIn(self.cat_a, disc.categories)
 
     def test_set_empty(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),
@@ -87,7 +87,7 @@ class TestMany2manyCommands(TransactionCase):
         self.assertFalse(disc.categories)
 
     def test_set_idempotent(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),
@@ -97,7 +97,7 @@ class TestMany2manyCommands(TransactionCase):
         self.assertEqual(disc.categories, self.cat_a | self.cat_b)
 
     def test_create_command(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.create({"name": "Created Cat"}),
             ]
@@ -106,7 +106,7 @@ class TestMany2manyCommands(TransactionCase):
         self.assertEqual(disc.categories.name, "Created Cat")
 
     def test_create_multiple(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.create({"name": "Cat X"}),
                 Command.create({"name": "Cat Y"}),
@@ -117,13 +117,13 @@ class TestMany2manyCommands(TransactionCase):
 
     def test_delete_command(self):
         cat_temp = self.env["test_orm.category"].create({"name": "Temporary"})
-        disc = self._make_discussion(categories=[Command.link(cat_temp.id)])
+        disc = self._create_discussion(categories=[Command.link(cat_temp.id)])
         disc.write({"categories": [Command.delete(cat_temp.id)]})
         self.assertFalse(disc.categories)
         self.assertFalse(cat_temp.exists())
 
     def test_combined_commands(self):
-        disc = self._make_discussion(
+        disc = self._create_discussion(
             categories=[
                 Command.link(self.cat_a.id),
                 Command.link(self.cat_b.id),

@@ -22,7 +22,7 @@ from odoo.addons.base.models import (
     ir_model_fields_selection,
 )
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG, upsert_en
-from odoo.addons.base.tests.common import make_access_row
+from odoo.addons.base.tests.common import create_access_row
 
 
 @contextmanager
@@ -937,7 +937,7 @@ class TestIrModelFieldsTranslation(HttpCase):
 
 @tagged("-at_install", "post_install")
 class TestIrModelFields(TransactionCase):
-    def _make_manual_field(self, stem, **vals):
+    def _create_model_and_manual_field(self, stem, **vals):
         model = self.env["ir.model"].create(
             {"model": f"x_imf_{stem}", "name": f"IMF test {stem}"}
         )
@@ -953,7 +953,7 @@ class TestIrModelFields(TransactionCase):
         return self.env[model.model], field
 
     def test_a_stored_compute_added_to_a_table_with_rows_is_computed_for_them(self):
-        Model, _field = self._make_manual_field("newcol", ttype="integer")
+        Model, _field = self._create_model_and_manual_field("newcol", ttype="integer")
         rows = Model.create([{"x_newcol": 2}, {"x_newcol": 5}])
         rows.flush_recordset()
         self.env["ir.model.fields"].create(
@@ -973,13 +973,13 @@ class TestIrModelFields(TransactionCase):
         )
 
     def test_empty_write_skips_registry_setup(self):
-        _model, field = self._make_manual_field("empty")
+        _model, field = self._create_model_and_manual_field("empty")
         with patch.object(self.env.registry, "setup_models") as mock_setup:
             self.assertTrue(field.write({}))
         mock_setup.assert_not_called()
 
     def test_label_translate_write_skips_registry_setup(self):
-        Model, field = self._make_manual_field("label")
+        Model, field = self._create_model_and_manual_field("label")
         with patch.object(self.env.registry, "setup_models") as mock_setup:
             field.write({"field_description": "Renamed Label"})
         mock_setup.assert_not_called()
@@ -989,7 +989,7 @@ class TestIrModelFields(TransactionCase):
         )
 
     def test_field_rename_preserves_column_index_and_data(self):
-        Model, field = self._make_manual_field("rename", index=True)
+        Model, field = self._create_model_and_manual_field("rename", index=True)
         table = Model._table
         record = Model.create({"x_rename": "kept"})
         record.flush_recordset()
@@ -1016,7 +1016,7 @@ class TestIrModelFields(TransactionCase):
         self.assertEqual(record.x_renamed, "kept")
 
     def test_field_rename_single_prepare_update_pass(self):
-        _Model, field = self._make_manual_field("renonce")
+        _Model, field = self._create_model_and_manual_field("renonce")
         cls = type(self.env["ir.model.fields"])
         original = cls._prepare_update
         calls = []
@@ -1030,7 +1030,7 @@ class TestIrModelFields(TransactionCase):
         self.assertEqual(len(calls), 1)
 
     def test_field_rename_sets_up_the_registry_once(self):
-        _Model, field = self._make_manual_field("setuponce")
+        _Model, field = self._create_model_and_manual_field("setuponce")
         self.env.flush_all()
         original = type(self.env.registry).setup_models
         calls = []
@@ -1082,7 +1082,7 @@ class TestIrModelFields(TransactionCase):
         self.assertEqual(self.env[Model._name].browse(record.id).x_pending, 3)
 
     def test_rename_blocked_by_a_view_restores_the_registry(self):
-        Model, field = self._make_manual_field("viewkept")
+        Model, field = self._create_model_and_manual_field("viewkept")
         self.env["ir.ui.view"].create(
             {
                 "name": "viewkept form",
@@ -1094,7 +1094,7 @@ class TestIrModelFields(TransactionCase):
             field.write({"name": "x_viewkept2"})
         self.assertIn(field.name, self.env.registry[Model._name]._fields)
 
-    def _make_binary_record(self, stem):
+    def _create_model_and_binary_record(self, stem):
         model = self.env["ir.model"].create(
             {"model": f"x_imf_{stem}", "name": f"IMF binary {stem}"}
         )
@@ -1118,7 +1118,9 @@ class TestIrModelFields(TransactionCase):
         return Model, field, record, attachments
 
     def test_binary_field_rename_carries_its_attachments(self):
-        Model, field, record, attachments = self._make_binary_record("binren")
+        Model, field, record, attachments = self._create_model_and_binary_record(
+            "binren"
+        )
 
         field.write({"name": "x_binren2"})
 
@@ -1127,12 +1129,16 @@ class TestIrModelFields(TransactionCase):
         self.assertEqual(record.x_binren2, b"aGVsbG8=")
 
     def test_binary_field_unlink_removes_its_attachments(self):
-        _Model, field, _record, attachments = self._make_binary_record("bindel")
+        _Model, field, _record, attachments = self._create_model_and_binary_record(
+            "bindel"
+        )
         field.unlink()
         self.assertFalse(attachments.exists())
 
     def test_binary_field_unlink_at_uninstall_keeps_its_attachments(self):
-        _Model, field, _record, attachments = self._make_binary_record("binkeep")
+        _Model, field, _record, attachments = self._create_model_and_binary_record(
+            "binkeep"
+        )
         field.with_context(**{MODULE_UNINSTALL_FLAG: True}).unlink()
         self.assertTrue(attachments.exists())
 
@@ -1157,7 +1163,7 @@ class TestIrModelFields(TransactionCase):
                     "translate": True,
                 }
             )
-        _Model, field = self._make_manual_field("translw")
+        _Model, field = self._create_model_and_manual_field("translw")
         with self.assertRaises(ValidationError):
             field.write({"translate": True})
 
@@ -1194,7 +1200,7 @@ class TestIrModelFields(TransactionCase):
             )
 
     def test_all_manual_field_data_immutable(self):
-        self._make_manual_field("frozen")
+        self._create_model_and_manual_field("frozen")
         data = self.env["ir.model.fields"]._get_manual_field_data_by_model()
         self.assertIn("x_imf_frozen", data)
         with self.assertRaises((TypeError, NotImplementedError)):
@@ -1239,7 +1245,7 @@ class TestIrModelFields(TransactionCase):
         self.assertIn("Relation table names", str(cm.exception))
 
     def test_help_added_by_translate_only_write_is_visible(self):
-        Model, field = self._make_manual_field("addhelp")
+        Model, field = self._create_model_and_manual_field("addhelp")
         model_name = Model._name
         self.assertIsNone(Model._fields[field.name].help)
 
@@ -1254,7 +1260,7 @@ class TestIrModelFields(TransactionCase):
         )
 
     def test_a_label_write_is_visible_to_an_environment_without_a_language(self):
-        Model, field = self._make_manual_field("nolang")
+        Model, field = self._create_model_and_manual_field("nolang")
         field.write({"field_description": "Relabelled"})
         no_lang = self.env(context={**self.env.context, "lang": False})
         self.assertEqual(
@@ -1263,7 +1269,7 @@ class TestIrModelFields(TransactionCase):
         )
 
     def test_presence_preserving_label_write_still_skips_setup(self):
-        Model, field = self._make_manual_field("keepfast", help="Tip")
+        Model, field = self._create_model_and_manual_field("keepfast", help="Tip")
         with patch.object(self.env.registry, "setup_models") as mock_setup:
             field.write({"field_description": "Renamed", "help": "Tip 2"})
         mock_setup.assert_not_called()
@@ -1288,7 +1294,7 @@ class TestIrModelFields(TransactionCase):
                 "groups": [Command.set([group.id])],
             }
         )
-        make_access_row(self.env, model.model, "base.group_user", name="imf sec acl")
+        create_access_row(self.env, model.model, "base.group_user", name="imf sec acl")
         self.env.flush_all()
         self.env.registry.setup_models(self.env.cr, [model.model])
 
@@ -1362,7 +1368,7 @@ class TestIrModelFields(TransactionCase):
         self.assertEqual(model_vals, expected_model_vals)
 
     def test_unrelated_broken_view_does_not_block_field_deletion(self):
-        _Model, field = self._make_manual_field("ab_cd")
+        _Model, field = self._create_model_and_manual_field("ab_cd")
         bait = self.env["ir.ui.view"].create(
             {
                 "name": "IMF wildcard bait",
@@ -1396,7 +1402,7 @@ class TestIrModelFields(TransactionCase):
         field.unlink()
 
     def test_related_view_still_blocks_field_deletion(self):
-        Model, field = self._make_manual_field("guard")
+        Model, field = self._create_model_and_manual_field("guard")
         self.env["ir.ui.view"].create(
             {
                 "name": "IMF real reference",
@@ -1619,7 +1625,7 @@ class TestIrModelFields(TransactionCase):
         self.assertIn(field.name, self.env[model.model]._fields)
 
     def test_check_depends_on_a_model_outside_the_registry(self):
-        _Model, field = self._make_manual_field("depsmodel")
+        _Model, field = self._create_model_and_manual_field("depsmodel")
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE ir_model_fields SET model = %s, depends = %s WHERE id = %s",
@@ -1630,12 +1636,12 @@ class TestIrModelFields(TransactionCase):
             field._check_depends()
 
     def test_write_rejects_an_unknown_field_name(self):
-        _Model, field = self._make_manual_field("badkey")
+        _Model, field = self._create_model_and_manual_field("badkey")
         with self.assertRaises(ValueError):
             field.write({"no_such_field": 1})
 
     def test_write_rejects_a_model_change_spelled_as_model(self):
-        _Model, field = self._make_manual_field("modelkey")
+        _Model, field = self._create_model_and_manual_field("modelkey")
         with self.assertRaises(UserError):
             field.write({"model": "res.partner"})
 
@@ -1680,7 +1686,7 @@ class TestIrModelFields(TransactionCase):
         self.assertFalse(self.env.cr.fetchall())
 
     def test_prepare_update_does_not_rebuild_the_whole_registry(self):
-        _Model, field = self._make_manual_field("scoped")
+        _Model, field = self._create_model_and_manual_field("scoped")
         self.env.flush_all()
         scopes = []
         original = type(self.env.registry).setup_models
@@ -1853,7 +1859,7 @@ class TestIrModelFields(TransactionCase):
             row["field_description"] = "mutated"
 
     def test_rename_without_registry_model_raises_user_error(self):
-        _Model, field = self._make_manual_field("noreg")
+        _Model, field = self._create_model_and_manual_field("noreg")
         model_cls = self.env.registry.models.pop("x_imf_noreg")
         try:
             with self.assertRaises(UserError):
@@ -2052,7 +2058,7 @@ class TestIrModelRelationReflection(TransactionCase):
 @tagged("-at_install", "post_install")
 class TestIrModelFieldsSelection(TransactionCase):
     def test_writing_an_unknown_attribute_is_a_value_error(self):
-        _model, field = self._make_selection_field("unknown_attr")
+        _model, field = self._create_model_and_selection_field("unknown_attr")
         with self.assertRaises(ValueError):
             field.selection_ids[:1].write({"no_such_attribute": 1})
 
@@ -2068,7 +2074,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         with patch.object(BaseModel, "write", guarded_write):
             yield
 
-    def _make_selection_field(
+    def _create_model_and_selection_field(
         self, stem, *, company_dependent=False, values=None, ttype="selection"
     ):
         values = values or [("draft", "Draft"), ("done", "Done")]
@@ -2110,7 +2116,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         return self.env.cr.fetchone()[0]
 
     def test_selection_value_rename_normal(self):
-        Model, field = self._make_selection_field("plain")
+        Model, field = self._create_model_and_selection_field("plain")
         record = Model.create({"x_plain": "draft"})
         record.flush_recordset()
 
@@ -2124,7 +2130,9 @@ class TestIrModelFieldsSelection(TransactionCase):
     def test_selection_value_rename_company_dependent(self):
         company_a = self.env.company
         company_b = self.env["res.company"].create({"name": "SEL Co B"})
-        Model, field = self._make_selection_field("cdep", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "cdep", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(
@@ -2143,7 +2151,9 @@ class TestIrModelFieldsSelection(TransactionCase):
     def test_selection_value_rename_company_dependent_other_value_untouched(self):
         company_a = self.env.company
         company_b = self.env["res.company"].create({"name": "SEL Co C"})
-        Model, field = self._make_selection_field("keep", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "keep", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(
@@ -2160,13 +2170,13 @@ class TestIrModelFieldsSelection(TransactionCase):
         )
 
     def test_selection_value_rename_same_value_batch_rejected(self):
-        _model, field = self._make_selection_field("batch")
+        _model, field = self._create_model_and_selection_field("batch")
         self.assertEqual(len(field.selection_ids), 2)
         with self.assertRaises(UserError):
             field.selection_ids.write({"value": "merged"})
 
     def test_selection_label_rename_skips_registry_setup(self):
-        Model, field = self._make_selection_field("label")
+        Model, field = self._create_model_and_selection_field("label")
         draft = field.selection_ids.filtered(lambda s: s.value == "draft")
         with patch.object(self.env.registry, "setup_models") as mock_setup:
             draft.write({"name": "Brouillon"})
@@ -2177,7 +2187,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         )
 
     def test_selection_label_rename_reaches_the_untranslated_labels(self):
-        Model, field = self._make_selection_field("labelen")
+        Model, field = self._create_model_and_selection_field("labelen")
         field.selection_ids.filtered(lambda s: s.value == "draft").write(
             {"name": "Brouillon"}
         )
@@ -2194,14 +2204,14 @@ class TestIrModelFieldsSelection(TransactionCase):
         )
 
     def test_selection_value_rename_triggers_registry_setup(self):
-        _model, field = self._make_selection_field("setup")
+        _model, field = self._create_model_and_selection_field("setup")
         draft = field.selection_ids.filtered(lambda s: s.value == "draft")
         with patch.object(self.env.registry, "setup_models") as mock_setup:
             draft.write({"value": "pending"})
         mock_setup.assert_called()
 
     def test_selection_ondelete_bypass_on_recoverable_error(self):
-        Model, field = self._make_selection_field("ondok")
+        Model, field = self._create_model_and_selection_field("ondok")
         record = Model.create({"x_ondok": "draft"})
         record.flush_recordset()
         draft = field.selection_ids.filtered(lambda s: s.value == "draft")
@@ -2214,7 +2224,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertFalse(record.x_ondok)
 
     def test_selection_ondelete_propagates_programming_error(self):
-        Model, field = self._make_selection_field("ondbug")
+        Model, field = self._create_model_and_selection_field("ondbug")
         record = Model.create({"x_ondbug": "draft"})
         record.flush_recordset()
         draft = field.selection_ids.filtered(lambda s: s.value == "draft")
@@ -2228,15 +2238,15 @@ class TestIrModelFieldsSelection(TransactionCase):
         return self.env[model._name]._fields[f"x_{stem}"]
 
     def test_ondelete_set_null(self):
-        Model, field = self._make_selection_field("pnull")
+        Model, field = self._create_model_and_selection_field("pnull")
         record = Model.create({"x_pnull": "draft"})
         record.flush_recordset()
         field.selection_ids.filtered(lambda s: s.value == "draft").unlink()
         record.invalidate_recordset(["x_pnull"])
         self.assertFalse(record.x_pnull)
 
-    def _make_reference_field(self, stem, *, company_dependent=False):
-        return self._make_selection_field(
+    def _create_model_and_reference_field(self, stem, *, company_dependent=False):
+        return self._create_model_and_selection_field(
             stem,
             company_dependent=company_dependent,
             values=[("res.partner", "Partner"), ("res.users", "User")],
@@ -2247,7 +2257,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         return self._read_jsonb(model, field, record)
 
     def test_option_unlink_discards_its_default(self):
-        Model, field = self._make_selection_field("defdel")
+        Model, field = self._create_model_and_selection_field("defdel")
         self.env["ir.default"].set(Model._name, field.name, "done")
 
         field.selection_ids.filtered(lambda s: s.value == "done").unlink()
@@ -2276,7 +2286,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertIsNone(self.env["ir.default"]._get("res.users", field.name))
 
     def test_option_unlink_at_uninstall_discards_its_default(self):
-        Model, field = self._make_selection_field("defuni")
+        Model, field = self._create_model_and_selection_field("defuni")
         self.env["ir.default"].set(Model._name, field.name, "done")
 
         field.selection_ids.filtered(lambda s: s.value == "done").with_context(
@@ -2286,7 +2296,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertIsNone(self.env["ir.default"]._get(Model._name, field.name))
 
     def test_option_value_rename_renames_its_default(self):
-        Model, field = self._make_selection_field("defren")
+        Model, field = self._create_model_and_selection_field("defren")
         self.env["ir.default"].set(Model._name, field.name, "done")
 
         field.selection_ids.filtered(lambda s: s.value == "done").write(
@@ -2299,7 +2309,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(self.env[Model._name].create({}).x_defren, "finished")
 
     def test_reference_option_value_rename_rewrites_stored_values(self):
-        Model, field = self._make_reference_field("refren")
+        Model, field = self._create_model_and_reference_field("refren")
         partner = self.env["res.partner"].create({"name": "Ref"})
         record = Model.create({field.name: f"res.partner,{partner.id}"})
         record.flush_recordset()
@@ -2316,7 +2326,9 @@ class TestIrModelFieldsSelection(TransactionCase):
 
     def test_reference_option_value_rename_company_dependent(self):
         company = self.env.company
-        Model, field = self._make_reference_field("refrencd", company_dependent=True)
+        Model, field = self._create_model_and_reference_field(
+            "refrencd", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(
@@ -2333,7 +2345,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         )
 
     def test_reference_option_unlink_nulls_stored_values(self):
-        Model, field = self._make_reference_field("refdel")
+        Model, field = self._create_model_and_reference_field("refdel")
         partner = self.env["res.partner"].create({"name": "Ref"})
         record = Model.create({field.name: f"res.partner,{partner.id}"})
         other = Model.create({field.name: f"res.users,{self.env.uid}"})
@@ -2348,7 +2360,9 @@ class TestIrModelFieldsSelection(TransactionCase):
 
     def test_reference_option_unlink_company_dependent(self):
         company = self.env.company
-        Model, field = self._make_reference_field("refdelcd", company_dependent=True)
+        Model, field = self._create_model_and_reference_field(
+            "refdelcd", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(Model, field, record, {company.id: "res.partner,7"})
@@ -2376,7 +2390,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(option.name, "Other (relabelled)")
 
     def test_ondelete_set_constant(self):
-        Model, field = self._make_selection_field("pset")
+        Model, field = self._create_model_and_selection_field("pset")
         record = Model.create({"x_pset": "draft"})
         record.flush_recordset()
         with patch.object(
@@ -2387,7 +2401,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(record.x_pset, "done")
 
     def test_ondelete_set_default(self):
-        Model, field = self._make_selection_field("pdef")
+        Model, field = self._create_model_and_selection_field("pdef")
         record = Model.create({"x_pdef": "draft"})
         record.flush_recordset()
         field_obj = self._field_obj(Model, "pdef")
@@ -2400,7 +2414,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(record.x_pdef, "done")
 
     def test_ondelete_cascade(self):
-        Model, field = self._make_selection_field("pcasc")
+        Model, field = self._create_model_and_selection_field("pcasc")
         record = Model.create({"x_pcasc": "draft"})
         record.flush_recordset()
         with patch.object(
@@ -2410,7 +2424,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertFalse(record.exists())
 
     def test_ondelete_callable(self):
-        Model, field = self._make_selection_field("pcall")
+        Model, field = self._create_model_and_selection_field("pcall")
         record = Model.create({"x_pcall": "draft"})
         record.flush_recordset()
         seen = []
@@ -2428,7 +2442,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(record.x_pcall, "done")
 
     def test_ondelete_resolves_values_in_one_batch(self):
-        Model, field = self._make_selection_field(
+        Model, field = self._create_model_and_selection_field(
             "pbatch", values=[("a", "A"), ("b", "B"), ("c", "C")]
         )
         records = Model.create([{"x_pbatch": v} for v in ("a", "b", "c")])
@@ -2450,7 +2464,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertEqual(records.mapped("x_pbatch"), [False, False, False])
 
     def test_update_selection_returns_none(self):
-        Model, field = self._make_selection_field("updret")
+        Model, field = self._create_model_and_selection_field("updret")
         result = self.env["ir.model.fields.selection"]._update_selection(
             Model._name,
             field.name,
@@ -2464,7 +2478,9 @@ class TestIrModelFieldsSelection(TransactionCase):
 
     def test_ondelete_set_null_company_dependent(self):
         company = self.env.company
-        Model, field = self._make_selection_field("pcd", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "pcd", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(Model, field, record, {company.id: "draft"})
@@ -2476,7 +2492,9 @@ class TestIrModelFieldsSelection(TransactionCase):
 
     def test_ondelete_company_dependent_outside_env_companies(self):
         other = self.env["res.company"].create({"name": "SEL-P4 other"})
-        Model, field = self._make_selection_field("outscope", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "outscope", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(Model, field, record, {other.id: "draft"})
@@ -2495,7 +2513,9 @@ class TestIrModelFieldsSelection(TransactionCase):
     @mute_logger("odoo.addons.base.models.ir_model_fields_selection")
     def test_ondelete_orm_bypass_preserves_other_companies(self):
         other = self.env["res.company"].create({"name": "SEL-C3 other"})
-        Model, field = self._make_selection_field("bypass", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "bypass", company_dependent=True
+        )
         record = Model.create({})
         record.flush_recordset()
         self._set_jsonb(
@@ -2516,7 +2536,9 @@ class TestIrModelFieldsSelection(TransactionCase):
         self.assertFalse(stored.get(str(self.env.company.id)))
 
     def test_ondelete_tolerates_non_object_jsonb(self):
-        Model, field = self._make_selection_field("scalar", company_dependent=True)
+        Model, field = self._create_model_and_selection_field(
+            "scalar", company_dependent=True
+        )
         polluted = Model.create({})
         healthy = Model.create({})
         Model.flush_model()
@@ -2546,7 +2568,7 @@ class TestIrModelFieldsSelection(TransactionCase):
         )
 
     def test_reordering_keeps_translations(self):
-        _model, field = self._make_selection_field(
+        _model, field = self._create_model_and_selection_field(
             "reorder_tr", values=[("a", "Alpha"), ("b", "Beta")]
         )
         self.env.flush_all()
@@ -2697,7 +2719,7 @@ class TestIrModelData(TransactionCase):
         self.assertTrue(xid1.noupdate)
         self.assertFalse(xid2.noupdate)
 
-    def _make_param_xid(self, name, noupdate=False):
+    def _create_parameter_and_xmlid(self, name, noupdate=False):
         param = self.env["ir.config_parameter"].create(
             {"key": f"imd.{name}", "value": "x"}
         )
@@ -2713,7 +2735,7 @@ class TestIrModelData(TransactionCase):
         return param, xid
 
     def test_noupdate_only_write_skips_default_cache_clear(self):
-        _param, xid = self._make_param_xid("imd_p1_noupdate_only")
+        _param, xid = self._create_parameter_and_xmlid("imd_p1_noupdate_only")
 
         with patch.object(
             self.env.registry, "clear_cache", wraps=self.env.registry.clear_cache
@@ -2741,7 +2763,9 @@ class TestIrModelData(TransactionCase):
         )
 
     def test_toggle_noupdate_batches_writes(self):
-        param, _xid_a = self._make_param_xid("imd_p2_toggle_a", noupdate=False)
+        param, _xid_a = self._create_parameter_and_xmlid(
+            "imd_p2_toggle_a", noupdate=False
+        )
         for name, noupdate in (
             ("imd_p2_toggle_b", False),
             ("imd_p2_toggle_c", True),

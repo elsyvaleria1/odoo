@@ -1057,7 +1057,7 @@ class _PackageLoader:
 
     def run_post_init_hook(self) -> None:
         if self.operation in ("install", "upgrade"):
-            self.env["res.company"]._seed_configurations(self.name)
+            self.env["res.company"]._sync_configurations(self.name)
         if self.operation == "install":
             if post_init := self.package.manifest.get("post_init_hook"):
                 with _debug.perf(
@@ -1641,7 +1641,7 @@ class _ModuleLoader:
             with _debug.perf("modules.bootstrap.initialize", cr=cr, db=cr.dbname):
                 modules_db.initialize(cr)
         else:
-            self.refuse_database_older_than_upgradable()
+            self.check_database_upgradable()
             self.upgrade_base_ahead_of_database()
             if "base" in self.reinit_modules:
                 self.registry.loading.reinit_modules.add("base")
@@ -1671,7 +1671,7 @@ class _ModuleLoader:
             raise ImportError(msg)
         return True
 
-    def refuse_database_older_than_upgradable(self) -> None:
+    def check_database_upgradable(self) -> None:
         if not self.update_module:
             return
         if too_old := get_modules_older_than_upgradable(self.cr):

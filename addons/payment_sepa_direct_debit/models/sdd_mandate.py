@@ -80,7 +80,7 @@ class SddMandate(models.Model):
             .sudo()
             ._read_group(
                 [
-                    *self.env["payment.provider"]._check_company_domain(
+                    *self.env["payment.provider"]._get_domain_company_compatible(
                         self.company_id
                     ),
                     ("custom_mode", "=", "sepa_direct_debit"),

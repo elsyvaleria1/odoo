@@ -93,7 +93,7 @@ class IrActionsServer(models.Model):
     @api.depends_context("company")
     def _compute_documents_account_suitable_journal_ids(self) -> None:
         company_journals = self.env["account.journal"].search(
-            self.env["account.journal"]._check_company_domain(self.env.company)
+            self.env["account.journal"]._get_domain_company_compatible(self.env.company)
         )
         if not company_journals:
             _debug.logic(

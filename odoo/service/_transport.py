@@ -29,7 +29,7 @@ from odoo.libs.http1 import (
     RequestHead,
     ResponseHead,
     encode_chunk,
-    find_head,
+    get_request_head_span,
     parse_request_head,
     prepare_response_head,
 )
@@ -503,7 +503,9 @@ def _error_response(
 def _read_head(conn: Connection, limits: TransportLimits) -> tuple[int, int] | None:
     deadline = time.monotonic() + limits.head_timeout
     scanned = 0
-    while (span := find_head(conn.source.buffer, limits.head, scanned)) is None:
+    while (
+        span := get_request_head_span(conn.source.buffer, limits.head, scanned)
+    ) is None:
         scanned = len(conn.source.buffer)
         remaining = deadline - time.monotonic()
         if remaining <= 0:
@@ -630,7 +632,7 @@ def _run_exchange(
         return Outcome.CLOSE
     except BodyError as exc:
         _close_iterable(iterable)
-        _refuse_body(exchange, exc)
+        _send_body_error_response(exchange, exc)
         conn.close(linger=limits.linger_seconds)
         return Outcome.CLOSE
     except Exception as exc:
@@ -686,7 +688,7 @@ def _run_exchange(
     return _settle(exchange, limits, allow_keep_alive=allow_keep_alive)
 
 
-def _refuse_body(exchange: Exchange, exc: BodyError) -> None:
+def _send_body_error_response(exchange: Exchange, exc: BodyError) -> None:
     head = exchange.head
     _debug.logic(
         "httpd.body_refused",
@@ -851,9 +853,9 @@ __all__ = (
     "ServerIdentity",
     "TransportLimits",
     "WSGIApp",
-    "find_head",
     "get_access_log_level",
     "get_http_socket_timeout",
+    "get_request_head_span",
     "log_access",
     "prepare_wsgi_environ",
     "serve_one",

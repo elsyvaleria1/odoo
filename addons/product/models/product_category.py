@@ -11,7 +11,7 @@ class ProductCategory(models.Model):
     _parent_name = "parent_id"
     _rec_name = "complete_name"
     _order = "complete_name"
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     name = fields.Char(
         index="trigram",

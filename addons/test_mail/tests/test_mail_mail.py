@@ -140,7 +140,9 @@ class TestMailMail(MailCommon):
         )
 
         with patch.object(
-            self.env.registry["ir.attachment"], "_check_access", _patched_check_access
+            self.env.registry["ir.attachment"],
+            "_get_records_forbidden_and_error_factory",
+            _patched_check_access,
         ):
             self.assertEqual(mail.restricted_attachment_count, 2)
             self.assertEqual(len(mail.unrestricted_attachment_ids), 2)

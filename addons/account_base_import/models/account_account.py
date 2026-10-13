@@ -24,7 +24,7 @@ class AccountAccount(models.Model):
 
             if not {"id", ".id"} & set(fields) and "code" in fields:
                 accounts = self.search_fetch(
-                    domain=self._check_company_domain(self.env.company),
+                    domain=self._get_domain_company_compatible(self.env.company),
                     field_names=["code"],
                 )
                 account_id_by_code = {account.code: account.id for account in accounts}

@@ -62,7 +62,7 @@ class TestRuleScriptAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         script = cls.env["rule.script"].create(
             {"code": "matrix.round", "name": "Round"}
         )

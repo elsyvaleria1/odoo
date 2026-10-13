@@ -48,7 +48,9 @@ class ResConfigSettings(models.TransientModel):
                     if enabled_only
                     else ("state", "!=", "disabled")
                 ],
-                self.env["payment.provider"]._check_company_domain(self.company_id),
+                self.env["payment.provider"]._get_domain_company_compatible(
+                    self.company_id
+                ),
             ]
         )
 
@@ -91,7 +93,9 @@ class ResConfigSettings(models.TransientModel):
         provider = new_env["payment.provider"].search(
             [
                 ("code", "=", provider_code),
-                *self.env["payment.provider"]._check_company_domain(self.env.company),
+                *self.env["payment.provider"]._get_domain_company_compatible(
+                    self.env.company
+                ),
             ],
             limit=1,
         )

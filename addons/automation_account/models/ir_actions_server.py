@@ -815,7 +815,7 @@ class IrActionsServer(models.Model):
     def _get_workflow_taxes(self, company) -> models.Model:
         self.check_singleton()
         Tax = self.env["account.tax"].with_company(company)
-        company_domain = Tax._check_company_domain(company)
+        company_domain = Tax._get_domain_company_compatible(company)
         own = self.workflow_tax_ids.filtered_domain(company_domain)
         foreign = self.workflow_tax_ids - own
         namesakes = Tax.search(

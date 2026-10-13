@@ -356,7 +356,9 @@ class Monetary(Field[float]):
         currency: ResCurrencyProtocol = (
             record[:1]
             .with_prefetch(record._prefetch_ids)
-            .with_env(record.env._derive(su=True, prefetch_fields=False))
+            .with_env(
+                record.env._get_or_create_environment(su=True, prefetch_fields=False)
+            )
         )[currency_field_name]
         return currency
 
@@ -436,7 +438,7 @@ class Monetary(Field[float]):
             root_id = values[path[0]]
             if isinstance(root_id, int):
                 root_env = (
-                    record.env._derive(su=True)
+                    record.env._get_or_create_environment(su=True)
                     if currency_field.compute_sudo
                     else record.env
                 )
@@ -478,7 +480,7 @@ class Monetary(Field[float]):
         if value and validate:
             currency_field = self._get_currency_field_name(record)
             currency = record.with_env(
-                record.env._derive(su=True, prefetch_fields=False)
+                record.env._get_or_create_environment(su=True, prefetch_fields=False)
             )[currency_field]
             if len(currency) > 1:
                 raise ValueError(

@@ -81,7 +81,10 @@ class MixinOwnerAccess(models.AbstractModel):
         if field is None or field.type != "many2one":
             return False
         comodel = type(self.env[field.comodel_name])
-        return comodel._check_access is models.BaseModel._check_access
+        return (
+            comodel._get_records_forbidden_and_error_factory
+            is models.BaseModel._get_records_forbidden_and_error_factory
+        )
 
     @api.model
     def _access_guard(self, operation: str) -> Domain:
@@ -96,8 +99,8 @@ class MixinOwnerAccess(models.AbstractModel):
             owner |= Domain(field.name, "=", self.env.uid)
         return guard & owner
 
-    def _check_access(self, operation: str) -> tuple | None:
-        result = super()._check_access(operation)
+    def _get_records_forbidden_and_error_factory(self, operation: str) -> tuple | None:
+        result = super()._get_records_forbidden_and_error_factory(operation)
         if not self or self.env.su or self._access_owner_delegates():
             return result
         candidates = self - result[0] if result else self

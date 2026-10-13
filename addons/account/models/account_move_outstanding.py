@@ -52,7 +52,7 @@ class AccountMove(models.Model):
                 "in",
                 self.env["account.journal"]._search(
                     [
-                        *self.env["account.journal"]._check_company_domain(
+                        *self.env["account.journal"]._get_domain_company_compatible(
                             self.company_id.id
                         ),
                         ("type", "=", "bank"),

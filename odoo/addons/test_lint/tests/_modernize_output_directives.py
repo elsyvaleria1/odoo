@@ -95,7 +95,7 @@ def modernize_xml_file(path: Path, *, dry_run: bool = False) -> bool | None:
     return True
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description="Rename the deprecated t-esc output directive to t-out.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -127,7 +127,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    args = prepare_argument_parser().parse_args(argv)
     changed = unchanged = skipped = 0
     for xml_file in _pretty_xml.iter_target_files(args.roots, set(args.exclude)):
         result = modernize_xml_file(xml_file, dry_run=args.dry_run)

@@ -47,7 +47,7 @@ from ._cron import (
     CronListener,
     CronSchedule,
     ListenerKind,
-    sweep_database,
+    run_jobs_for_database,
     wait_for_notifies,
 )
 from ._env import get_env_int
@@ -653,7 +653,7 @@ class WorkerCron(Worker):
             db_count=self.db_count,
         )
 
-        sweep_database(
+        run_jobs_for_database(
             db_name,
             self._run_jobs_for_database,
             self.logger,
@@ -765,7 +765,9 @@ class WorkerStream(WorkerCron):
                 return
         db_name = self.db_queue.popleft()
         self.setproctitle(db_name)
-        sweep_database(db_name, self._run_jobs_for_database, self.logger, release=False)
+        run_jobs_for_database(
+            db_name, self._run_jobs_for_database, self.logger, release=False
+        )
 
     @override
     def stop(self) -> None:

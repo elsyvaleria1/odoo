@@ -32,7 +32,7 @@ class TestStockShipmentTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         credential = env["credential.credential"].create(
             {

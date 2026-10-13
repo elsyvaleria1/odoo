@@ -95,7 +95,7 @@ class PosConfig(models.Model):
                 self.minimal_employee_ids -= employee
 
     def _employee_domain(self, user_id):
-        domain = self._check_company_domain(self.company_id)
+        domain = self._get_domain_company_compatible(self.company_id)
         _debug.logic(
             "pos_employee_domain",
             config=self,

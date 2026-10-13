@@ -3,7 +3,12 @@ import zlib
 from collections.abc import Mapping
 from pathlib import Path
 
-__all__ = ["assert_fresh", "assert_optimised", "native_required", "source_crc"]
+__all__ = [
+    "check_extension_fresh",
+    "check_extension_optimised",
+    "is_native_required",
+    "source_crc",
+]
 
 SKIP_ENV = "ODOO_SKIP_RUST_FRESHNESS_CHECK"
 
@@ -33,7 +38,9 @@ def source_crc(crate: Path) -> str:
     return f"{zlib.crc32(blob):08x}"
 
 
-def assert_fresh(module: object, crate: Path, *, rebuild_hint: str = "") -> None:
+def check_extension_fresh(
+    module: object, crate: Path, *, rebuild_hint: str = ""
+) -> None:
     if not crate.is_dir() or os.environ.get(SKIP_ENV):
         return
 
@@ -61,13 +68,13 @@ def assert_fresh(module: object, crate: Path, *, rebuild_hint: str = "") -> None
 REQUIRE_ENV = "ODOO_REQUIRE_NATIVE"
 
 
-def native_required(environ: Mapping[str, str] | None = None) -> bool:
+def is_native_required(environ: Mapping[str, str] | None = None) -> bool:
     env = os.environ if environ is None else environ
     value = env.get(REQUIRE_ENV, env.get("CI", ""))
     return value.strip().lower() not in ("", "0", "false", "no")
 
 
-def assert_optimised(module: object) -> None:
+def check_extension_optimised(module: object) -> None:
     if os.environ.get(ALLOW_DEBUG_ENV):
         return
     profile = getattr(module, "__profile__", None)

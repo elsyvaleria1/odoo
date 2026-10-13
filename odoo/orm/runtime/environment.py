@@ -673,7 +673,7 @@ class Environment(Mapping[str, "BaseModel"]):
     ]:
         return {}
 
-    def _derive(
+    def _get_or_create_environment(
         self, *, su: bool | None = None, **overrides: typing.Any
     ) -> Environment:
         key = (su, tuple(sorted(overrides.items())))

@@ -9,7 +9,7 @@ ASS_HEADER = (
 )
 
 
-def build_recording(
+def prepare_recording_bytes(
     seconds: int = 3,
     *,
     video: bool = True,
@@ -64,7 +64,7 @@ def build_recording(
     return out.getvalue()
 
 
-def build_container(
+def prepare_container_bytes(
     format: str,
     video_codec: str,
     audio_codec: str,
@@ -117,7 +117,7 @@ def build_container(
     return out.getvalue()
 
 
-def build_audio_with_cover(seconds: int = 1) -> bytes:
+def prepare_audio_with_cover_bytes(seconds: int = 1) -> bytes:
     import av
     import numpy as np
 

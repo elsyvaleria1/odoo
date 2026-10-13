@@ -42,7 +42,7 @@ class PaymentProvider(models.Model):
     _description = "Payment Provider"
     _order = "module_state, state desc, sequence, name"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
     _credential_holder_field = "provider_credential_id"
     _credential_purpose = "payment:provider"
 
@@ -577,7 +577,9 @@ class PaymentProvider(models.Model):
     ):
         providers = self.env["payment.provider"].search(
             [
-                *self.env["payment.provider"]._check_company_domain(company_id),
+                *self.env["payment.provider"]._get_domain_company_compatible(
+                    company_id
+                ),
                 ("state", "in", ["enabled", "test"]),
             ]
         )

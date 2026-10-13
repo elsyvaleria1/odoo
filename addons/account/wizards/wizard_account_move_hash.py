@@ -228,7 +228,9 @@ class WizardAccountMoveHash(models.TransientModel):
             last_move = self.env["account.move"].browse(chain["last_move_id"])
             or_domains.append(
                 [
-                    *self.env["account.move"]._check_company_domain(self.company_id),
+                    *self.env["account.move"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("journal_id", "=", last_move.journal_id.id),
                     ("sequence_prefix", "=", last_move.sequence_prefix),
                     ("sequence_number", "<=", last_move.sequence_number),

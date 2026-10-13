@@ -511,7 +511,7 @@ class ResPartner(models.Model):
     @api.model
     def _get_domain_supplier_bill(self) -> list:
         return [
-            *self.env["account.move"]._check_company_domain(self.env.company),
+            *self.env["account.move"]._get_domain_company_compatible(self.env.company),
             ("move_type", "in", ("in_invoice", "in_refund")),
         ]
 
@@ -526,7 +526,9 @@ class ResPartner(models.Model):
         self._compute_move_count_by_partner(
             "customer_invoice_count",
             [
-                *self.env["account.move"]._check_company_domain(self.env.company),
+                *self.env["account.move"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("move_type", "in", ("out_invoice", "out_refund")),
             ],
         )
@@ -1065,7 +1067,10 @@ class ResPartner(models.Model):
 
         static_domain = Domain.OR(
             [
-                [*self._check_company_domain(company), ("company_id", "!=", False)],
+                [
+                    *self._get_domain_company_compatible(company),
+                    ("company_id", "!=", False),
+                ],
                 [("company_id", "=", False)],
             ]
         )

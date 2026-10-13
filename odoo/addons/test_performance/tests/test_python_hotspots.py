@@ -47,7 +47,7 @@ class TestPythonHotspots(TransactionCase):
         from odoo.tools import safe_eval as safe_eval_module
         from odoo.tools.safe_eval import (
             _SAFE_OPCODES,
-            assert_valid_codeobj,
+            check_code_object,
             compile_codeobj,
         )
 
@@ -60,7 +60,7 @@ class TestPythonHotspots(TransactionCase):
 
         def bench():
             local_cache.clear()
-            assert_valid_codeobj(_SAFE_OPCODES, codes[idx[0]], exprs[idx[0]])
+            check_code_object(_SAFE_OPCODES, codes[idx[0]], exprs[idx[0]])
             idx[0] += 1
 
         self._bench("safe_eval: validate bytecode (cold)", bench)
@@ -68,16 +68,16 @@ class TestPythonHotspots(TransactionCase):
     def test_01_safe_eval_validate_cached(self):
         from odoo.tools.safe_eval import (
             _SAFE_OPCODES,
-            assert_valid_codeobj,
+            check_code_object,
             compile_codeobj,
         )
 
         expr = "partner_id and name == 'test' or value > 50"
         code = compile_codeobj(expr)
-        assert_valid_codeobj(_SAFE_OPCODES, code, expr)
+        check_code_object(_SAFE_OPCODES, code, expr)
         self._bench(
             "safe_eval: validate bytecode (cached)",
-            lambda: assert_valid_codeobj(_SAFE_OPCODES, code, expr),
+            lambda: check_code_object(_SAFE_OPCODES, code, expr),
         )
 
     def test_01_safe_eval_full(self):

@@ -177,7 +177,7 @@ class ResUsersApikeys(models.Model):
         _debug.logic("apikey_rejected", scope=scope, candidates=len(candidates))
         return None
 
-    def _check_credentials(self, *, scope: str, key: str) -> int | None:
+    def _get_user_id_for_key(self, *, scope: str, key: str) -> int | None:
         if not scope or not key:
             _debug.logic("apikey_check_refused", reason="missing_scope_or_key")
             msg = "scope and key required"

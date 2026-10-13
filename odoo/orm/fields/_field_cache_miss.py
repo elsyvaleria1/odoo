@@ -44,7 +44,7 @@ def _run_batch_then_single(
     return True
 
 
-def missing_record_error(env: Environment, record: object) -> MissingError:
+def prepare_missing_record_error(env: Environment, record: object) -> MissingError:
     return MissingError(
         "\n".join(
             [
@@ -107,7 +107,7 @@ def get_cache_miss_from_storage(
             su=env.su,
             uid=env.uid,
         )
-        raise missing_record_error(env, record) from None
+        raise prepare_missing_record_error(env, record) from None
     return value
 
 

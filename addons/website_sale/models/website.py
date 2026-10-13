@@ -844,7 +844,9 @@ class Website(models.Model):
             self.env.user
             and not self.env.user._is_public()
             and self.env.user.partner_id.filtered_domain(
-                self.env["res.partner"]._check_company_domain(self.company_id.id)
+                self.env["res.partner"]._get_domain_company_compatible(
+                    self.company_id.id
+                )
             )
         ):
             partner_sudo = self.env.user.partner_id

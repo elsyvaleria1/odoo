@@ -22,7 +22,7 @@ class TestImLivechatTelegramAccessMatrix(AccessMatrixCase):
         Cell(
             "mail.message",
             "message",
-            finding="mail.message decides by its document in _check_access, which "
+            finding="mail.message decides by its document in _get_records_forbidden_and_error_factory, which "
             "its rows' domain and explanation do not follow",
             livechat_user_a="rc",
             livechat_manager_a="rc",
@@ -52,7 +52,7 @@ class TestImLivechatTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         script = cls.env["chatbot.script"].create({"title": "matrix bot"})
         step = cls.env["chatbot.script.step"].create(
             {

@@ -59,7 +59,7 @@ def _certificate(
     )
 
 
-def make_signing_pki(
+def prepare_signing_pki(
     signer_name: str = "Test Signer",
     not_before: datetime.datetime = _START,
     not_after: datetime.datetime = _END,

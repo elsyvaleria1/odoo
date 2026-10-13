@@ -114,11 +114,15 @@ class MailMessage(models.Model):
         for record_operation, records in operation_res_ids.items():
             forbidden_doc_ids = set()
             try:
-                operation_result = records._check_access(record_operation)
+                operation_result = records._get_records_forbidden_and_error_factory(
+                    record_operation
+                )
             except MissingError:
                 existing = records.exists()
                 forbidden_doc_ids = set((records - existing).ids)
-                operation_result = existing._check_access(record_operation)
+                operation_result = existing._get_records_forbidden_and_error_factory(
+                    record_operation
+                )
             if operation_result:
                 forbidden_doc_ids |= set(operation_result[0]._ids)
             allowed_ids += [
@@ -154,10 +158,10 @@ class MailMessage(models.Model):
             }
         return allowed_ids
 
-    def _check_access(
+    def _get_records_forbidden_and_error_factory(
         self, operation: str
     ) -> tuple[api.Self, Callable[[], Exception]] | None:
-        result = super()._check_access(operation)
+        result = super()._get_records_forbidden_and_error_factory(operation)
         if not self:
             return result
 

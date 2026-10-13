@@ -21,7 +21,7 @@ class TestStockPickingBatchAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         a = cls.companies["a"]
         return {
             "batch_a": cls.env["stock.picking.batch"]

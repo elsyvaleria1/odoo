@@ -4,7 +4,7 @@ import copy
 import re
 from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, NamedTuple
 
 from odoo.libs.xml import is_layout_whitespace, merge_attribute_value
 
@@ -18,6 +18,11 @@ _INDENTATION = re.compile(r"\n[ \t]*$")
 
 class PatchError(ValueError):
     pass
+
+
+class _NodeLocation(NamedTuple):
+    parent: Node
+    child_index: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,11 +70,11 @@ class Applied:
         return node.origin if managed is None else managed[1]
 
 
-def _parent_of(root: Node, target: Node) -> tuple[Node, int]:
+def _get_parent_and_child_index(root: Node, target: Node) -> _NodeLocation:
     for _path, node in root.walk():
         for index, child in enumerate(node.children):
             if child is target:
-                return node, index
+                return _NodeLocation(node, index)
     raise PatchError(f"node {target.id!r} has no parent")
 
 
@@ -100,22 +105,26 @@ def apply_one(result: Applied, patch: Patch, ids: dict[str, Node]) -> None:
         parent, index = (
             (target, len(target.children))
             if patch.op == "inside"
-            else _parent_of(result.root, target)
+            else _get_parent_and_child_index(result.root, target)
         )
-        trailing = _open(parent, index, patch.text, bool(patch.content))
+        trailing = _update_text_and_get_trailing_whitespace(
+            parent, index, patch.text, bool(patch.content)
+        )
         content = _materialise(result.root, ids, placed)
         index = (
-            len(target.children) if patch.op == "inside" else _index_of(parent, target)
+            len(target.children)
+            if patch.op == "inside"
+            else _get_child_index(parent, target)
         )
-        _fill(parent, index, content, trailing)
+        _insert_nodes_with_tail(parent, index, content, trailing)
         return
     if patch.op == "replace" and target is not result.root:
-        parent, index = _parent_of(result.root, target)
+        parent, index = _get_parent_and_child_index(result.root, target)
         empty = _is_empty(patch)
         if not is_layout_whitespace(patch.text):
             _append_text(parent, index, patch.text)
         content = _materialise(result.root, ids, placed)
-        _replace(parent, _index_of(parent, target), content, empty)
+        _replace_node(parent, _get_child_index(parent, target), content, empty)
         return
     content = _materialise(result.root, ids, placed)
     if patch.op == "replace_inner":
@@ -128,7 +137,7 @@ def apply_one(result: Applied, patch: Patch, ids: dict[str, Node]) -> None:
         if "t-name" in target.attrs and "t-name" not in result.root.attrs:
             result.root.attrs["t-name"] = target.attrs["t-name"]
     else:
-        parent, index = _parent_of(result.root, target)
+        parent, index = _get_parent_and_child_index(result.root, target)
         following = target.tail
         target.tail = None
         _insert(parent, index + 1, content, patch.text)
@@ -136,7 +145,7 @@ def apply_one(result: Applied, patch: Patch, ids: dict[str, Node]) -> None:
         last.tail = (last.tail or "") + (following or "") or None
 
 
-def _index_of(parent: Node, child: Node) -> int:
+def _get_child_index(parent: Node, child: Node) -> int:
     return next(i for i, node in enumerate(parent.children) if node is child)
 
 
@@ -159,7 +168,7 @@ def _is_empty(patch: Patch) -> bool:
     )
 
 
-def _replace(parent: Node, index: int, content: list[Node], empty: bool) -> None:
+def _replace_node(parent: Node, index: int, content: list[Node], empty: bool) -> None:
     target = parent.children[index]
     parent.children[index : index + 1] = content
     if content and is_layout_whitespace(content[-1].tail):
@@ -169,10 +178,17 @@ def _replace(parent: Node, index: int, content: list[Node], empty: bool) -> None
 
 
 def _insert(parent: Node, index: int, content: list[Node], text: str | None) -> None:
-    _fill(parent, index, content, _open(parent, index, text, bool(content)))
+    _insert_nodes_with_tail(
+        parent,
+        index,
+        content,
+        _update_text_and_get_trailing_whitespace(parent, index, text, bool(content)),
+    )
 
 
-def _open(parent: Node, index: int, text: str | None, has_content: bool) -> str:
+def _update_text_and_get_trailing_whitespace(
+    parent: Node, index: int, text: str | None, has_content: bool
+) -> str:
     if index:
         previous = parent.children[index - 1]
         before = previous.tail or ""
@@ -190,7 +206,9 @@ def _open(parent: Node, index: int, text: str | None, has_content: bool) -> str:
     return trailing
 
 
-def _fill(parent: Node, index: int, content: list[Node], trailing: str) -> None:
+def _insert_nodes_with_tail(
+    parent: Node, index: int, content: list[Node], trailing: str
+) -> None:
     parent.children[index:index] = content
     if content:
         last = content[-1]
@@ -207,14 +225,14 @@ def _check_moves(ids: dict[str, Node], patch: Patch, target: Node) -> None:
                 f"patch {patch.op!r} from {patch.origin!r}: "
                 f"nothing to move at {item.target!r}"
             )
-        if _within(target, moved):
+        if _is_within_subtree(target, moved):
             raise PatchError(
                 f"patch {patch.op!r} from {patch.origin!r}: "
                 f"{item.target!r} cannot move into itself"
             )
 
 
-def _within(node: Node, ancestor: Node) -> bool:
+def _is_within_subtree(node: Node, ancestor: Node) -> bool:
     return any(descendant is node for _path, descendant in ancestor.walk())
 
 
@@ -235,7 +253,7 @@ def _materialise(
             content.append(item)
             continue
         moved = ids[item.target]
-        parent, index = _parent_of(root, moved)
+        parent, index = _get_parent_and_child_index(root, moved)
         _leave_tail(parent, index)
         del parent.children[index]
         moved.tail = item.tail

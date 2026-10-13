@@ -141,7 +141,7 @@ def _watch_source(image: PILImage) -> _SourceStream | None:
     return stream
 
 
-def _refuse_truncated(image: PILImage, stream: _SourceStream | None) -> None:
+def _check_image_complete(image: PILImage, stream: _SourceStream | None) -> None:
     if stream is None:
         return
     truncated = stream.starved
@@ -160,7 +160,7 @@ def _refuse_truncated(image: PILImage, stream: _SourceStream | None) -> None:
 def _load_whole(image: PILImage) -> None:
     stream = _watch_source(image)
     image.load()
-    _refuse_truncated(image, stream)
+    _check_image_complete(image, stream)
 
 
 def _checked_frames(image: PILImage) -> Iterator[PILImage]:
@@ -169,7 +169,7 @@ def _checked_frames(image: PILImage) -> Iterator[PILImage]:
         if stream is not None:
             stream.starved = False
         yield frame
-        _refuse_truncated(frame, stream)
+        _check_image_complete(frame, stream)
 
 
 @contextlib.contextmanager
@@ -413,7 +413,7 @@ class ImageProcess:
         assert size is not None, "an operation reached an image-less process"
         return size
 
-    def validate(self) -> Self:
+    def decode_pixels(self) -> Self:
         if not self._decoded or (self.animated and not self.animated_frames):
             self._decode_upright()
         return self
@@ -643,7 +643,7 @@ class ImageProcess:
             )
         if self._image:
 
-            def fill(frame: PILImage) -> PILImage:
+            def _get_frame_colorized(frame: PILImage) -> PILImage:
                 if frame.mode == "P":
                     frame = frame.convert("RGBA")
                 filled = Image.new("RGB", frame.size, color)
@@ -651,7 +651,7 @@ class ImageProcess:
                 filled.paste(frame, mask=mask)
                 return filled
 
-            self._apply(fill)
+            self._apply(_get_frame_colorized)
         return self
 
     def add_padding(self, padding: int) -> Self:
@@ -715,7 +715,7 @@ def image_process(
     ):
         image = processor(source, verify_resolution)
         if verify_resolution:
-            image.validate()
+            image.decode_pixels()
         if size:
             if crop:
                 center_x = 0.5

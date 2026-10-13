@@ -32,7 +32,7 @@ class Node:
         for index, child in enumerate(self.children):
             yield from child.walk((*path, index))
 
-    def find(self, kind: str) -> Iterator[Node]:
+    def get_nodes_of_kind(self, kind: str) -> Iterator[Node]:
         for _path, node in self.walk():
             if node.kind == kind:
                 yield node

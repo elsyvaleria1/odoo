@@ -187,7 +187,7 @@ Two separate things inflate the numbers, so check both before believing one:
    The access-check share is
    real but small: since `a7450df423d [IMP] core: checking/testing/filtering
    access on records`, record rules are evaluated **in Python against the
-   records** (`write -> check_access -> _check_access -> filtered_domain`) rather
+   records** (`write -> check_access -> _get_records_forbidden_and_error_factory -> filtered_domain`) rather
    than folded into SQL, so a non-superuser write fetches whatever field the rule
    names when it is not already cached. `TestBaseMailPerformance.test_write_mail_simple`
    (2 > 1) is exactly and only that, and is **not** a mail defect.

@@ -241,7 +241,10 @@ class Base(models.AbstractModel):
 
     @api.model
     def _mail_message_read_reach(self) -> Domain:
-        if type(self)._check_access is models.BaseModel._check_access:
+        if (
+            type(self)._get_records_forbidden_and_error_factory
+            is models.BaseModel._get_records_forbidden_and_error_factory
+        ):
             return self._mail_access_domain("read")
         return self._record_access_domain("read")
 

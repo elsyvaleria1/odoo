@@ -624,7 +624,7 @@ class MaintenanceOrder(models.Model):
             desired = order.date_scheduled_start
             hours = order.duration or 1
             if refuse_taken_window:
-                window = resources._find_free_window(desired, hours)
+                window = resources._get_window_free(desired, hours)
                 if not window or window[0] != desired:
                     raise UserError(
                         self.env._(
@@ -636,7 +636,7 @@ class MaintenanceOrder(models.Model):
             first = None
             missing = False
             for occurrence in order._get_occurrences_to_book():
-                window = resources._find_free_window(occurrence, hours)
+                window = resources._get_window_free(occurrence, hours)
                 if not window:
                     missing = True
                     break

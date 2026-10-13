@@ -37,7 +37,9 @@ class PosConfig(models.Model):
 
     def _get_default_warehouse(self):
         return self.env["stock.warehouse"].search(
-            self.env["stock.warehouse"]._check_company_domain(self.env.company),
+            self.env["stock.warehouse"]._get_domain_company_compatible(
+                self.env.company
+            ),
             limit=1,
         )
 
@@ -53,7 +55,9 @@ class PosConfig(models.Model):
     def _default_invoice_journal_id(self):
         return self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("type", "=", "sale"),
             ],
             limit=1,
@@ -61,7 +65,9 @@ class PosConfig(models.Model):
 
     def _default_payment_method_ids(self):
         domain = [
-            *self.env["pos.payment.method"]._check_company_domain(self.env.company),
+            *self.env["pos.payment.method"]._get_domain_company_compatible(
+                self.env.company
+            ),
             ("split_transactions", "=", False),
             "|",
             ("journal_id", "=", False),
@@ -1123,7 +1129,9 @@ class PosConfig(models.Model):
 
     def _get_or_create_company_warehouse(self, company, name):
         Warehouse = self.env["stock.warehouse"]
-        warehouse = Warehouse.search(Warehouse._check_company_domain(company), limit=1)
+        warehouse = Warehouse.search(
+            Warehouse._get_domain_company_compatible(company), limit=1
+        )
         if warehouse:
             return warehouse
         _debug.logic("company_warehouse_created", company=company.id, config=name)
@@ -2002,7 +2010,7 @@ class PosConfig(models.Model):
     def get_pos_kanban_view_state(self) -> dict:
         has_pos_config = bool(
             self.env["pos.config"].search_count(
-                self._check_company_domain(self.env.company),
+                self._get_domain_company_compatible(self.env.company),
                 limit=1,
             )
         )

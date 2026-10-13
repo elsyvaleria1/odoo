@@ -10,7 +10,7 @@ from odoo.tools.translate import get_lang_iso_codes, get_module_po_path
 
 @tagged("post_install", "-at_install")
 class TestBaseLanguageWizardsAudit(TransactionCase):
-    def _make_model_export(self, domain):
+    def _create_model_export_wizard(self, domain):
         partner_model = self.env["ir.model"].search(
             [("model", "=", "res.partner")], limit=1
         )
@@ -25,22 +25,22 @@ class TestBaseLanguageWizardsAudit(TransactionCase):
         )
 
     def test_blexp1_syntax_error_domain_raises_usererror(self):
-        wizard = self._make_model_export("[(1,2")
+        wizard = self._create_model_export_wizard("[(1,2")
         with self.assertRaises(UserError):
             wizard.action_export_language_file()
 
     def test_blexp1_type_error_domain_raises_usererror(self):
-        wizard = self._make_model_export("{[]:1}")
+        wizard = self._create_model_export_wizard("{[]:1}")
         with self.assertRaises(UserError):
             wizard.action_export_language_file()
 
     def test_blexp1_non_list_domain_raises_usererror(self):
-        wizard = self._make_model_export("42")
+        wizard = self._create_model_export_wizard("42")
         with self.assertRaises(UserError):
             wizard.action_export_language_file()
 
     def test_blexp_happy_path_empty_domain_produces_file(self):
-        wizard = self._make_model_export("[]")
+        wizard = self._create_model_export_wizard("[]")
         wizard.action_export_language_file()
         self.assertEqual(wizard.state, "get")
         self.assertTrue(wizard.name)

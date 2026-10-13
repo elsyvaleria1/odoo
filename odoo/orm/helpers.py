@@ -103,7 +103,7 @@ def _get_ancestor_company_ids(self: BaseModel, company_ids: list[int]) -> list[i
     return ancestor_ids
 
 
-def check_company_domain_parent_of(
+def get_domain_company_parent_of(
     self: BaseModel,
     companies: BaseModel | list[int] | int | str,
 ) -> Domain:
@@ -136,7 +136,7 @@ def check_company_domain_parent_of(
     )
 
 
-def check_companies_domain_parent_of(
+def get_domain_companies_parent_of(
     self: BaseModel,
     companies: BaseModel | list[int] | int | str,
 ) -> Domain:

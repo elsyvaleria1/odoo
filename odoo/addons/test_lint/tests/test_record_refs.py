@@ -3,6 +3,7 @@ import functools
 import io
 import logging
 import re
+from collections.abc import Iterator
 from pathlib import Path
 
 from lxml import etree
@@ -59,7 +60,7 @@ def _is_optional_field_ref(element):
     return (record.get("forcecreate") or "").strip().lower() in ("false", "0")
 
 
-def _references_of(module, element):
+def _get_record_references(module: str, element: etree._Element) -> Iterator[str]:
     def qualified(xmlid):
         return _qualify(module, xmlid)
 
@@ -83,17 +84,23 @@ def _references_of(module, element):
             group = group.strip().removeprefix("-").removeprefix("!")
             if group:
                 yield qualified(group)
-    for attribute in _REF_ATTRIBUTES:
-        source = element.get(attribute) or ""
-        optional = {m.group(1) for m in _RE_REF_CALL_OPTIONAL.finditer(source)}
-        for match in _RE_REF_CALL.finditer(source):
-            if match.group(1) not in optional:
-                yield qualified(match.group(1))
+    yield from _get_attribute_record_references(module, element)
     if _is_markup(element):
         markup = etree.tostring(element, encoding="unicode")
         for match in _RE_PCT_REF.finditer(markup):
             if match.group(0) != "%%":
                 yield qualified(match.group(1))
+
+
+def _get_attribute_record_references(
+    module: str, element: etree._Element
+) -> Iterator[str]:
+    for attribute in _REF_ATTRIBUTES:
+        source = element.get(attribute) or ""
+        optional = {m.group(1) for m in _RE_REF_CALL_OPTIONAL.finditer(source)}
+        for match in _RE_REF_CALL.finditer(source):
+            if match.group(1) not in optional:
+                yield _qualify(module, match.group(1))
 
 
 class TestRecordReferences(lint_case.LintCase):
@@ -151,7 +158,7 @@ class TestRecordReferences(lint_case.LintCase):
 
     @classmethod
     def _collect_reference(cls, module, path, element):
-        for xmlid in _references_of(module, element):
+        for xmlid in _get_record_references(module, element):
             cls.references.append((xmlid, path, element.sourceline))
 
     @classmethod
@@ -307,7 +314,7 @@ class TestRecordReferences(lint_case.LintCase):
             xmlid.removeprefix("base.")
             for element in root.iter()
             if not callable(element.tag)
-            for xmlid in _references_of("base", element)
+            for xmlid in _get_record_references("base", element)
         }
         self.assertEqual(
             collected,

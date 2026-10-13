@@ -236,7 +236,7 @@ class One2many(_RelationalMulti):
             lines=len(lines),
         )
 
-    def _assign_current_value(self, recs: BaseModel) -> None:
+    def _update_cache_from_current_value(self, recs: BaseModel) -> None:
         protected = recs.env.core.get_protected_ids(self)
         if not protected:
             return
@@ -290,7 +290,7 @@ class One2many(_RelationalMulti):
                 self._update_cache(recs, ())
                 self._update_cache(recs[-1], browse_lines(delta.set_ids)._ids)
             else:
-                self._assign_current_value(recs)
+                self._update_cache_from_current_value(recs)
             for ref, vals in delta.created:
                 for record in recs:
                     link(record, comodel.new(vals, ref=ref))

@@ -26,7 +26,7 @@ def debug_scope(module_name: str) -> str:
     parts = module_name.split(".")
     if parts[:2] == ["odoo", "addons"] and len(parts) >= 3:
         parts = parts[2:]
-        if len(parts) >= 3 and parts[1] in _ADDON_LAYERS and not _shadowed(parts):
+        if len(parts) >= 3 and parts[1] in _ADDON_LAYERS and not _is_shadowed(parts):
             del parts[1]
         return ".".join(parts)
     if parts[0] == "odoo" and len(parts) > 1:
@@ -34,7 +34,7 @@ def debug_scope(module_name: str) -> str:
     return ".".join(parts)
 
 
-def _shadowed(parts: list[str]) -> bool:
+def _is_shadowed(parts: list[str]) -> bool:
     package = sys.modules.get(f"odoo.addons.{parts[0]}")
     roots = getattr(package, "__path__", None) or ()
     earlier = _ADDON_LAYERS[: _ADDON_LAYERS.index(parts[1])]

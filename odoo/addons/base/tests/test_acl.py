@@ -9,8 +9,8 @@ from odoo.tools.misc import mute_logger
 
 from odoo.addons.base.tests.common import (
     TransactionCaseWithUserDemo,
-    make_access_row,
-    make_guard_row,
+    create_access_row,
+    create_guard_row,
 )
 
 
@@ -265,7 +265,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         )
 
     def test_a_rule_evaluated_record_by_record_fetches_the_batch_once(self):
-        make_guard_row(
+        create_guard_row(
             self.env,
             "res.partner",
             "[('company_id', 'in', [False] + company_ids)]",
@@ -289,15 +289,15 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         group_user = self.env.ref("base.group_user")
         partners_demo = self.env["res.partner"].with_user(self.user_demo)
 
-        row1 = make_access_row(self.env, "res.partner", group_user, name="row1")
+        row1 = create_access_row(self.env, "res.partner", group_user, name="row1")
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
         row1.domain = "[(1,'=',1)]"
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
         row1.domain = "[]"
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
 
-        row2 = make_access_row(self.env, "res.partner", group_user, name="row2")
-        row3 = make_access_row(self.env, "res.partner", group_user, name="row3")
+        row2 = create_access_row(self.env, "res.partner", group_user, name="row2")
+        row3 = create_access_row(self.env, "res.partner", group_user, name="row3")
         self.assertTrue(partners_demo.search([]), "Demo user should see some partner.")
 
         self.env.ref("base.res_company_rule_employee").write(
@@ -326,7 +326,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         self.assertTrue(partners_demo.search([]), "Demo user should see some partners.")
 
     def test_the_superuser_is_bound_by_no_row(self):
-        make_guard_row(self.env, "res.partner", "[('id', '=', False)]")
+        create_guard_row(self.env, "res.partner", "[('id', '=', False)]")
         self.assertTrue(
             self.env(su=True)["res.partner"].search_count([]),
             "The superuser must read past every guard.",
@@ -339,7 +339,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
 
     def test_a_row_binds_only_its_operations(self):
         partner = self.env["res.partner"].create({"name": "unlink-only guard"})
-        make_guard_row(self.env, "res.partner", "[('id', '=', False)]", operation="d")
+        create_guard_row(self.env, "res.partner", "[('id', '=', False)]", operation="d")
         demo_partner = partner.with_user(self.user_demo)
         self.assertEqual(demo_partner._filtered_access("unlink"), demo_partner.browse())
         for mode in ("read", "write"):
@@ -355,7 +355,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         return registry_loading(self.env.registry, loading)
 
     def _restricting_row_from(self, module, name):
-        return make_guard_row(
+        return create_guard_row(
             self.env,
             "res.partner",
             "[('id', '=', False)]",
@@ -418,7 +418,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
 
         with self._registry_loading(True):
             self.assertNotIn(row.id, self._partner_row_ids())
-            hand_written = make_guard_row(
+            hand_written = create_guard_row(
                 self.env,
                 "res.partner",
                 "[('id', '!=', False)]",
@@ -448,7 +448,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
     @mute_logger("odoo.addons.base.models.ir_access", "odoo.models")
     def test_the_debug_access_error_names_the_blamed_row(self):
         partner = self.env["res.partner"].create({"name": "T3 partner"})
-        make_guard_row(
+        create_guard_row(
             self.env,
             "res.partner",
             "[('id', '=', False)]",
@@ -481,19 +481,19 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         group_user = self.env.ref("base.group_user")
         partner = self.env["res.partner"].create({"name": "composition partner"})
         self._partner_rows(kind="permission").active = False
-        make_access_row(
+        create_access_row(
             self.env, "res.partner", group_user, domain="[('id', '=', False)]"
         )
         with self.assertRaises(AccessError):
             partner.with_user(self.user_demo).check_access("read")
-        make_access_row(self.env, "res.partner", group_user, name="allow everything")
+        create_access_row(self.env, "res.partner", group_user, name="allow everything")
         partner.with_user(self.user_demo).check_access("read")
 
     def test_a_member_guard_is_not_widened_by_a_permission(self):
         group_user = self.env.ref("base.group_user")
         partner = self.env["res.partner"].create({"name": "composition partner"})
-        make_access_row(self.env, "res.partner", group_user, name="allow everything")
-        make_guard_row(
+        create_access_row(self.env, "res.partner", group_user, name="allow everything")
+        create_guard_row(
             self.env,
             "res.partner",
             "[('id', '=', False)]",
@@ -510,7 +510,7 @@ class TestAccessRows(TransactionCaseWithUserDemo):
 
     def test_a_member_guard_binds_only_its_own_group(self):
         partner = self.env["res.partner"].create({"name": "composition partner"})
-        make_guard_row(
+        create_guard_row(
             self.env,
             "res.partner",
             "[('id', '=', False)]",
@@ -523,7 +523,9 @@ class TestAccessRows(TransactionCaseWithUserDemo):
         window = self.env["ir.actions.act_window"].search([], limit=1)
         demo_window = window.with_user(self.env.ref("base.user_admin"))
         self.assertTrue(demo_window.has_access("read"))
-        make_guard_row(self.env, "ir.actions.actions", "[('id', '!=', %d)]" % window.id)
+        create_guard_row(
+            self.env, "ir.actions.actions", "[('id', '!=', %d)]" % window.id
+        )
         self.assertFalse(demo_window.has_access("read"))
 
 
@@ -565,13 +567,13 @@ class TestIrAccess(TransactionCaseWithUserDemo):
         self.assertIn(
             everyone, self.env["res.groups"].search([("all_user_ids", "in", user.ids)])
         )
-        make_access_row(self.env, "res.partner.industry", operation="r")
+        create_access_row(self.env, "res.partner.industry", operation="r")
         self.assertTrue(
             self.env["res.partner.industry"].with_user(user).has_access("read")
         )
 
     def test_unticking_every_operation_is_refused(self):
-        row = make_access_row(self.env, "res.partner.tag", operation="r")
+        row = create_access_row(self.env, "res.partner.tag", operation="r")
         with self.assertRaisesRegex(ValidationError, "at least one operation"):
             row.write({"for_read": False})
         self.assertEqual(row.operation, "r")
@@ -695,7 +697,7 @@ class TestIrAccess(TransactionCaseWithUserDemo):
         group_b.with_context(lang="fr_FR").name = "ZZZ_mike"
 
         for group in (group_a, group_b):
-            make_access_row(self.env, model_partner.model, group, operation="r")
+            create_access_row(self.env, model_partner.model, group, operation="r")
 
         Access = self.env["ir.access"].with_context(lang="fr_FR")
         names = Access._group_names_with_access("res.partner", "read")
@@ -713,7 +715,7 @@ class TestAccessWhileLoading(TransactionCaseWithUserDemo):
 
     def setUp(self):
         super().setUp()
-        make_access_row(
+        create_access_row(
             self.env,
             self.MODEL,
             "base.group_user",

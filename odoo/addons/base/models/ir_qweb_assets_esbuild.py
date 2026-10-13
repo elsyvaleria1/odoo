@@ -553,7 +553,7 @@ class IrQweb(models.AbstractModel):
         build = (
             self.env["ir.asset.build"]
             .sudo()
-            ._find_reusable("bundle", bundle, variant, source_key)
+            ._get_build_reusable("bundle", bundle, variant, source_key)
         )
         if not build:
             _debug.perf.count("esbuild_index_miss", bundle=bundle, reason="no_build")

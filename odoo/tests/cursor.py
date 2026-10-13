@@ -265,7 +265,7 @@ class TestCursor(BaseCursor):
         self._release_wrapped_cursor()
         self._closed = True
 
-    def _refuse_if_revoked(self) -> None:
+    def _check_cursor_not_revoked(self) -> None:
         if self._revoked_by is not None:
             raise psycopg.InterfaceError(f"Test cursor revoked: {self._revoked_by}")
 
@@ -322,7 +322,7 @@ class TestCursor(BaseCursor):
         self, name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
     ) -> Any:
         with self._connection_guard:
-            self._refuse_if_revoked()
+            self._check_cursor_not_revoked()
             if self._closed:
                 raise psycopg.InterfaceError("Cursor already closed")
             self._check_savepoint()
@@ -395,7 +395,7 @@ class TestCursor(BaseCursor):
     @override
     def commit(self) -> None:
         with self._connection_guard:
-            self._refuse_if_revoked()
+            self._check_cursor_not_revoked()
             self.flush()
             self._close_savepoint(rollback=self.readonly)
             self.commit_count += 1
@@ -433,7 +433,7 @@ class TestCursor(BaseCursor):
         return getattr(self._cursor, name)
 
     def _results(self) -> Cursor:
-        self._refuse_if_revoked()
+        self._check_cursor_not_revoked()
         return self._cursor
 
     @override

@@ -15,7 +15,7 @@ class TestAccessTokenHash(TransactionCase):
         )
 
     def _check(self, token):
-        return self.user.with_user(self.user)._check_credentials(
+        return self.user.with_user(self.user)._authenticate_credentials(
             {"type": "oauth_token", "token": token}, {"interactive": True}
         )
 

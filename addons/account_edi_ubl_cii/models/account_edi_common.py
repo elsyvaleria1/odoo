@@ -671,7 +671,9 @@ class AccountEdiCommon(models.AbstractModel):
         if tax_amounts:
             for tax in self.env["account.tax"].search(
                 [
-                    *self.env["account.tax"]._check_company_domain(record.company_id),
+                    *self.env["account.tax"]._get_domain_company_compatible(
+                        record.company_id
+                    ),
                     ("amount", "in", list(tax_amounts)),
                     ("amount_type", "=", "percent"),
                     ("type_tax_use", "=", tax_type),
@@ -1031,7 +1033,7 @@ class AccountEdiCommon(models.AbstractModel):
 
     def _get_fixed_tax(self, company_id, fixed_tax_vals):
         base_domain = [
-            *self.env["account.tax"]._check_company_domain(company_id),
+            *self.env["account.tax"]._get_domain_company_compatible(company_id),
             ("amount_type", "=", "fixed"),
             ("amount", "=", fixed_tax_vals["amount"]),
         ]
@@ -1055,7 +1057,9 @@ class AccountEdiCommon(models.AbstractModel):
         for tax_node in line_values.pop("tax_nodes"):
             amount = float(tax_node.text)
             domain = [
-                *self.env["account.tax"]._check_company_domain(record.company_id),
+                *self.env["account.tax"]._get_domain_company_compatible(
+                    record.company_id
+                ),
                 ("amount_type", "=", "percent"),
                 ("type_tax_use", "=", tax_type),
                 ("amount", "=", amount),

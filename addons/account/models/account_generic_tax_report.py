@@ -221,7 +221,9 @@ class AccountGenericTaxReportHandler(models.AbstractModel):
         self, report, options, options_by_column_group
     ):
         company_ids = report.get_report_company_ids(options)
-        company_domain = self.env["account.tax"]._check_company_domain(company_ids)
+        company_domain = self.env["account.tax"]._get_domain_company_compatible(
+            company_ids
+        )
         company_where_query = (
             self.env["account.tax"]
             .with_context(active_test=False)

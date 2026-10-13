@@ -583,7 +583,7 @@ class ResCompany(models.Model):
         }
 
     @api.model
-    def _seed_configurations(self, module: str) -> None:
+    def _sync_configurations(self, module: str) -> None:
         declared = [
             field.comodel_name
             for field in self._config_link_fields().values()

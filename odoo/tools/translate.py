@@ -218,14 +218,16 @@ class _XmlNodeTranslator:
         self.serialize = serialize
 
     @staticmethod
-    def _nonspace(text: str | None) -> bool:
+    def _has_nonspace_text(text: str | None) -> bool:
         return bool(text) and not space_pattern.fullmatch(text or "")
 
     @staticmethod
     def _is_force_inline(node: etree._Element) -> bool:
         return "o_translate_inline" in node.attrib.get("class", "").split()
 
-    def _translatable(self, node: etree._Element, force_inline: bool = False) -> bool:
+    def _is_node_translatable(
+        self, node: etree._Element, force_inline: bool = False
+    ) -> bool:
         force_inline = force_inline or self._is_force_inline(node)
         return (
             (force_inline or node.tag in TRANSLATED_ELEMENTS)
@@ -233,7 +235,7 @@ class _XmlNodeTranslator:
                 key.startswith("t-") or key == "groups" or key.endswith(".translate")
                 for key in node.attrib
             )
-            and all(self._translatable(child, force_inline) for child in node)
+            and all(self._is_node_translatable(child, force_inline) for child in node)
         )
 
     def _has_translatable_attrib(
@@ -249,19 +251,21 @@ class _XmlNodeTranslator:
             for key, val in child.attrib.items()
         )
 
-    def _hastext(
+    def _has_translatable_text(
         self, node: etree._Element, pos: int = 0, force_inline: bool = False
     ) -> bool:
         force_inline = force_inline or self._is_force_inline(node)
         while True:
-            if self._nonspace(node[pos - 1].tail if pos else node.text):
+            if self._has_nonspace_text(node[pos - 1].tail if pos else node.text):
                 return True
-            if pos >= len(node) or not self._translatable(node[pos], force_inline):
+            if pos >= len(node) or not self._is_node_translatable(
+                node[pos], force_inline
+            ):
                 return False
             child = node[pos]
-            if self._has_translatable_attrib(node, child) or self._hastext(
-                child, 0, force_inline
-            ):
+            if self._has_translatable_attrib(
+                node, child
+            ) or self._has_translatable_text(child, 0, force_inline):
                 return True
             pos += 1
 
@@ -282,7 +286,7 @@ class _XmlNodeTranslator:
     def _translate_run(self, node: etree._Element, pos: int) -> int:
         div = etree.Element("div")
         div.text = (node[pos - 1].tail if pos else node.text) or ""
-        while pos < len(node) and self._translatable(
+        while pos < len(node) and self._is_node_translatable(
             node[pos], self._is_force_inline(node)
         ):
             div.append(node[pos])
@@ -295,10 +299,11 @@ class _XmlNodeTranslator:
             result_elem = parse_html(f"<div>{result}</div>")
             result_elem.tag = "span"
             if (
-                self._translatable(result_elem)
-                and self._hastext(result_elem)
-                and sanitize_translated_fragment(div, result_elem)
+                self._is_node_translatable(result_elem)
+                and self._has_translatable_text(result_elem)
+                and _is_translated_text_markup_allowed(div, result_elem)
             ):
+                _remove_foreign_translation_attributes(div, result_elem)
                 div = result_elem
                 if pos:
                     node[pos - 1].tail = div.text
@@ -312,7 +317,7 @@ class _XmlNodeTranslator:
 
     def _translate_attribs(self, node: etree._Element) -> None:
         for key, val in node.attrib.items():
-            if not self._nonspace(val):
+            if not self._has_nonspace_text(val):
                 continue
             if not (
                 is_translatable_attrib(key, node)
@@ -332,7 +337,7 @@ class _XmlNodeTranslator:
 
         pos = 0
         while True:
-            if self._hastext(node, pos):
+            if self._has_translatable_text(node, pos):
                 pos = self._translate_run(node, pos)
 
             if pos >= len(node):
@@ -391,7 +396,7 @@ def _iter_term_elements(node: etree._Element) -> Iterator[etree._Element]:
     return (el for el in node.iter() if isinstance(el.tag, str))
 
 
-def _text_tag_names(node: etree._Element) -> set[str]:
+def _get_tag_names_in_text(node: etree._Element) -> set[str]:
     names: set[str] = set()
     for el in _iter_term_elements(node):
         for text in (el.text, el.tail):
@@ -400,7 +405,7 @@ def _text_tag_names(node: etree._Element) -> set[str]:
     return names
 
 
-def _strip_foreign_attributes(
+def _remove_foreign_translation_attributes(
     orig_node: etree._Element, new_node: etree._Element
 ) -> None:
     orig_pairs = {
@@ -419,13 +424,10 @@ def _strip_foreign_attributes(
             del el.attrib[key]
 
 
-def sanitize_translated_fragment(
+def _is_translated_text_markup_allowed(
     orig_node: etree._Element, new_node: etree._Element
 ) -> bool:
-    if not _text_tag_names(new_node) <= _text_tag_names(orig_node):
-        return False
-    _strip_foreign_attributes(orig_node, new_node)
-    return True
+    return _get_tag_names_in_text(new_node) <= _get_tag_names_in_text(orig_node)
 
 
 def xml_term_adapter(term_en: str) -> Callable[[str], str | None]:
@@ -445,8 +447,9 @@ def xml_term_adapter(term_en: str) -> Callable[[str], str | None]:
 
     def adapter(term: str) -> str | None:
         new_node = parse_xml(f"<div>{term}</div>")
-        if not sanitize_translated_fragment(orig_node, new_node):
+        if not _is_translated_text_markup_allowed(orig_node, new_node):
             return None
+        _remove_foreign_translation_attributes(orig_node, new_node)
         try:
             for orig_n, new_n in same_struct_iter(orig_node, new_node):
                 for k in [k for k in new_n.attrib if k in MODIFIER_ATTRS]:

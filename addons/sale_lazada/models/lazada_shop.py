@@ -239,7 +239,7 @@ class LazadaShop(models.Model):
         for vals in vals_list:
             company_id = vals.get("company_id") or self.env.company.id
             parent_warehouse = self.env["stock.warehouse"].search_read(
-                self.env["stock.warehouse"]._check_company_domain(company_id),
+                self.env["stock.warehouse"]._get_domain_company_compatible(company_id),
                 ["view_location_id"],
                 limit=1,
             )
@@ -249,7 +249,9 @@ class LazadaShop(models.Model):
             if parent_warehouse:
                 location = self.env["stock.location"].search(
                     [
-                        *self.env["stock.location"]._check_company_domain(company_id),
+                        *self.env["stock.location"]._get_domain_company_compatible(
+                            company_id
+                        ),
                         ("name", "=", location_name),
                         (
                             "location_id",
@@ -1077,7 +1079,9 @@ class LazadaShop(models.Model):
         pricelist = self.env["product.pricelist"].search(
             [
                 ("currency_id", "=", currency.id),
-                *self.env["product.pricelist"]._check_company_domain(self.company_id),
+                *self.env["product.pricelist"]._get_domain_company_compatible(
+                    self.company_id
+                ),
             ],
             limit=1,
         )

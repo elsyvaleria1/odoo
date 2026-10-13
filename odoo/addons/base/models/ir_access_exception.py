@@ -342,7 +342,7 @@ class IrAccessException(models.Model):
         )
 
     @api.model
-    def _find(self, user, kind: str, scope) -> Self:
+    def _get_exception_active(self, user, kind: str, scope) -> Self:
         if not user or not scope:
             return self.browse()
         return (

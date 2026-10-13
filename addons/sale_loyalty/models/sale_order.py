@@ -739,7 +739,7 @@ class SaleOrder(models.Model):
         return [
             ("active", "=", True),
             ("sale_ok", "=", True),
-            *self.env["loyalty.program"]._check_company_domain(
+            *self.env["loyalty.program"]._get_domain_company_compatible(
                 [self.company_id.id, self.company_id.parent_id.id]
             ),
             "|",
@@ -759,7 +759,7 @@ class SaleOrder(models.Model):
         return [
             ("active", "=", True),
             ("program_id.sale_ok", "=", True),
-            *self.env["loyalty.program"]._check_company_domain(
+            *self.env["loyalty.program"]._get_domain_company_compatible(
                 [self.company_id.id, self.company_id.parent_id.id]
             ),
             "|",

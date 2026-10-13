@@ -83,14 +83,14 @@ def _reexec_server() -> None:
     os.execve(sys.executable, args, os.environ)  # noqa: S606 -- Replaces this server with the current Python executable on restart.
 
 
-def _find_assertion_report(dbname: str) -> OdooTestResult | None:
+def _get_assertion_report_if_present(dbname: str) -> OdooTestResult | None:
     from odoo.tests.result import assertion_report
 
     return assertion_report(dbname)
 
 
 def _get_assertion_report(dbname: str) -> OdooTestResult:
-    report = _find_assertion_report(dbname)
+    report = _get_assertion_report_if_present(dbname)
     if report is None:
         raise RuntimeError(
             f"no assertion report for {dbname!r}: test_enable is off in the "
@@ -378,7 +378,7 @@ def preload_registries(dbnames: list[str] | None) -> int:
                 )
             if (
                 settings.test_enable
-                and (report := _find_assertion_report(dbname)) is not None
+                and (report := _get_assertion_report_if_present(dbname)) is not None
             ):
                 report.record_abort(f"{type(exc).__name__}: {exc}")
             _debug.logic("service.preload_failed", db=dbname)

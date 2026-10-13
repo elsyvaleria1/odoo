@@ -105,7 +105,7 @@ class TestKnowledgeAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         users = cls.users
         articles = env["knowledge.article"]

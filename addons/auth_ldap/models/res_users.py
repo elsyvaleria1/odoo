@@ -34,9 +34,9 @@ class ResUsers(models.Model):
         self.env.cr.execute(SQL("SELECT 1 FROM res_users WHERE %s LIMIT 1", condition))
         return self.env.cr.fetchone() is not None
 
-    def _check_credentials(self, credential, env):
+    def _authenticate_credentials(self, credential, env):
         try:
-            return super()._check_credentials(credential, env)
+            return super()._authenticate_credentials(credential, env)
         except AccessDenied:
             if not (credential["type"] == "password" and credential.get("password")):
                 raise

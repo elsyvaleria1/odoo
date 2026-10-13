@@ -28,7 +28,7 @@ class TestSaleTenderTeamAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         env["team.team"].create(

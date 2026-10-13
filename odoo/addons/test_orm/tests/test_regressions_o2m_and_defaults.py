@@ -5,7 +5,7 @@ from odoo.tests.common import TransactionCase, new_test_user
 
 
 class TestOne2manyClearArchived(TransactionCase):
-    def _make_family(self):
+    def _create_family(self):
         Category = self.env["res.partner.tag"]
         parent = Category.create({"name": "parent"})
         active = Category.create({"name": "active child", "parent_id": parent.id})
@@ -16,7 +16,7 @@ class TestOne2manyClearArchived(TransactionCase):
         return parent, active, archived
 
     def test_clear_detaches_archived_lines(self):
-        parent, active, archived = self._make_family()
+        parent, active, archived = self._create_family()
         parent.write({"child_ids": [Command.clear()]})
         self.env.flush_all()
         self.env.invalidate_all()
@@ -29,7 +29,7 @@ class TestOne2manyClearArchived(TransactionCase):
             )
 
     def test_set_detaches_archived_lines(self):
-        parent, _active, archived = self._make_family()
+        parent, _active, archived = self._create_family()
         keeper = self.env["res.partner.tag"].create(
             {"name": "keeper", "parent_id": parent.id}
         )

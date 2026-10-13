@@ -92,7 +92,7 @@ class SassImporter:
         raise NotImplementedError
 
 
-def _supports_embedded(sass_path: str) -> bool:
+def _is_embedded_protocol_supported(sass_path: str) -> bool:
     try:
         proc = subprocess.run(
             [sass_path, "--embedded"],
@@ -121,7 +121,7 @@ _sass_binary: SassBinary | None = None
 def _get_sass_binary() -> SassBinary | None:
     global _sass_binary  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
     if _sass_binary is None:
-        _sass_binary = _find_sass_binary()
+        _sass_binary = _get_sass_binary_uncached()
     return _sass_binary
 
 
@@ -130,7 +130,7 @@ def get_sass_path() -> str | None:
     return None if binary is None else binary.path
 
 
-def _find_sass_binary() -> SassBinary | None:
+def _get_sass_binary_uncached() -> SassBinary | None:
     node_modules = Path(odoo.__path__[0]).parent / "node_modules"
     candidates: list[str] = []
     system_sass = shutil.which("sass")
@@ -140,7 +140,7 @@ def _find_sass_binary() -> SassBinary | None:
         str(p) for p in node_modules.glob("sass-embedded-*/dart-sass/sass")
     )
     for candidate in candidates:
-        if _supports_embedded(candidate):
+        if _is_embedded_protocol_supported(candidate):
             _debug.logic("sass.binary_chosen", path=candidate, probed=len(candidates))
             return SassBinary(candidate, embedded=True)
     fallback = shutil.which("sass", path=str(node_modules / ".bin"))
@@ -581,13 +581,13 @@ class OdooSassImporter(SassImporter):
         if not any(
             path == root or path.startswith(root + os.sep) for root in self._roots
         ):
-            self._refuse(url)
+            raise self._prepare_url_outside_roots_error(url)
         return resolved
 
     @staticmethod
-    def _refuse(url: str) -> None:
+    def _prepare_url_outside_roots_error(url: str) -> ValueError:
         _debug.logic("sass.load_outside_roots", url=url)
-        raise ValueError(f"{url!r} is outside the addons and may not be loaded")
+        return ValueError(f"{url!r} is outside the addons and may not be loaded")
 
     @override
     def canonicalize(self, url: str, from_import: bool) -> str | None:
@@ -602,7 +602,7 @@ class OdooSassImporter(SassImporter):
             or relative.startswith("/")
             or Path(os.path.normpath(relative)).parts[:1] == ("..",)
         ):
-            self._refuse(url)
+            raise self._prepare_url_outside_roots_error(url)
 
         *parent_parts, filename = relative.split("/")
         parent_path_str = str(Path(*parent_parts)) if parent_parts else ""

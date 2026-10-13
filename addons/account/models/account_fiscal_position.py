@@ -33,7 +33,7 @@ class AccountFiscalPosition(models.Model):
         AccountTax = self.env["account.tax"]
         country_taxes = AccountTax.search(
             [
-                *AccountTax._check_company_domain(self.company_id),
+                *AccountTax._get_domain_company_compatible(self.company_id),
                 ("country_id", "in", self.country_id.ids),
             ]
         )
@@ -44,7 +44,9 @@ class AccountFiscalPosition(models.Model):
                 or country_taxes.filtered_domain(
                     [("country_id", "=", fiscal_position.country_id.id)]
                 ).filtered_domain(
-                    AccountTax._check_company_domain(fiscal_position.company_id)
+                    AccountTax._get_domain_company_compatible(
+                        fiscal_position.company_id
+                    )
                 )
             ):
                 fiscal_position.foreign_vat_header_mode = False
@@ -85,7 +87,7 @@ class AccountFiscalPosition(models.Model):
             "account.account_tax_fiscal_position_view_tree", raise_if_not_found=False
         )
         domain = [
-            *self.env["account.tax"]._check_company_domain(self.company_id),
+            *self.env["account.tax"]._get_domain_company_compatible(self.company_id),
             "|",
             ("id", "in", self.tax_ids.ids),
             ("fiscal_position_ids", "=", False),

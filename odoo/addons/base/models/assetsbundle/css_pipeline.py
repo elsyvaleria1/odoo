@@ -275,7 +275,7 @@ class CssPipeline:
         bundle = self._bundle
         seen_imports: set[str] = set()
 
-        def sanitize_import(matchobj: re.Match) -> str:
+        def _remove_duplicate_and_forbidden_imports(matchobj: re.Match) -> str:
             rule, ref = matchobj.group("rule", "ref")
             line = f'@{rule} "{ref}"{matchobj.group("tail")}'
             if line in seen_imports:
@@ -300,7 +300,7 @@ class CssPipeline:
 
         source = _rewrite_css_outside_strings(
             self.rx_preprocess_imports,
-            sanitize_import,
+            _remove_duplicate_and_forbidden_imports,
             source,
             _SCSS_STATEMENT_SPANS,
         )

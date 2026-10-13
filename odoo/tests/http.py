@@ -344,7 +344,7 @@ class HttpCase(TransactionCase):
     ) -> Any:
         if getattr(self, "session", None):
             _debug.logic("test.http.session_replaced", test=_tag(self))
-            odoo.http.root.session_store.delete(self.session)
+            odoo.http.root.session_store.remove_session(self.session)
 
         _debug.pipeline(
             "test.http.authenticate",
@@ -371,7 +371,7 @@ class HttpCase(TransactionCase):
             self.cr.flush()
             self.cr.clear()
 
-            def patched_check_credentials(
+            def authenticate_test_credentials(
                 self: Any, credential: dict[str, Any], env: api.Environment
             ) -> dict[str, Any]:
                 return {
@@ -382,8 +382,8 @@ class HttpCase(TransactionCase):
 
             with (
                 patch(
-                    "odoo.addons.base.models.res_users.ResUsersPatchedInTest._check_credentials",
-                    new=patched_check_credentials,
+                    "odoo.addons.base.models.res_users.ResUsersPatchedInTest._authenticate_credentials",
+                    new=authenticate_test_credentials,
                 ),
                 _debug.perf("test.http.authenticate_user", cr=self.cr, user=user),
             ):

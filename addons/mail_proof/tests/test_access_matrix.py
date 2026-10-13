@@ -18,7 +18,7 @@ class TestMailProofAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         return {
             "code_mail": cls.env["mail.mail"].create(
                 {"subject": "Your confirmation code", "email_to": "a@example.com"}

@@ -2,7 +2,7 @@ from odoo import Command, fields
 from odoo.exceptions import AccessError
 from odoo.tests import common, new_test_user
 
-from odoo.addons.base.tests.common import make_access_row
+from odoo.addons.base.tests.common import create_access_row
 
 
 class TestPrivateReadGroup(common.TransactionCase):
@@ -1069,7 +1069,7 @@ class TestPrivateReadGroup(common.TransactionCase):
         Task.create({"name": "Super Mario Bros."})
         group_user = self.env.ref("base.group_user")
         for model in ("test_read_group.task", "test_read_group.user"):
-            make_access_row(self.env, model, group_user, operation="r")
+            create_access_row(self.env, model, group_user, operation="r")
         task_as_user = Task.with_user(self.base_user)
 
         task_as_user._read_group([], groupby=["user_ids"], aggregates=["__count"])

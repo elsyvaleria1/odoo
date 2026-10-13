@@ -55,6 +55,11 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
+class _RpcCredentialMetadata(typing.NamedTuple):
+    key_expiration: datetime.datetime | None
+    scope_id: int | None
+
+
 class GroupState(typing.NamedTuple):
     group_ids: tuple[int, ...]
     scopes: frozendict
@@ -265,9 +270,9 @@ class ResUsers(models.Model):
 
     @api.model
     @tools.ormcache("uid", "passwd_hash")  # noqa: E8540 -- a credential check, which no group changes
-    def _check_uid_passwd_cached(
+    def _authenticate_rpc_credentials_cached(
         self, uid: int, passwd: str, passwd_hash: str, keys_only: bool = False
-    ) -> tuple[datetime.datetime | None, int | None]:
+    ) -> _RpcCredentialMetadata:
         user = self.with_user(uid).env.user
         if not (user.exists() and user.active):
             _debug.logic("uid_passwd_refused", uid=uid, reason="inactive_or_unknown")
@@ -278,15 +283,17 @@ class ResUsers(models.Model):
             "password": passwd,
             "type": "password",
         }
-        result = user._check_credentials(
+        result = user._authenticate_credentials(
             credential, {"interactive": False, "api_key_only": keys_only}
         )
         _debug.perf.count(
             "uid_passwd_cached", uid=uid, method=result.get("auth_method")
         )
         if result.get("auth_method") == "apikey":
-            return result["api_key_expiration"], result["api_scope_id"]
-        return None, None
+            return _RpcCredentialMetadata(
+                result["api_key_expiration"], result["api_scope_id"]
+            )
+        return _RpcCredentialMetadata(None, None)
 
     @tools.ormcache("self.id", "sid")
     def _get_session_token(self, sid: str) -> str | None:
@@ -497,7 +504,7 @@ class ResUsers(models.Model):
     def _get_dummy_password_hash(self) -> str:
         return self._get_crypt_context().hash(uuid.uuid4().hex)
 
-    def _check_company_domain(self, companies: Self | str | None) -> Domain:
+    def _get_domain_company_compatible(self, companies: Self | str | None) -> Domain:
         if not companies:
             return Domain.TRUE
         company_ids = (
@@ -921,7 +928,7 @@ class ResUsers(models.Model):
             env.get("api_key_only") or self._is_rpc_api_key_only()
         )
 
-    def _check_credentials(
+    def _authenticate_credentials(
         self, credential: dict[str, Any], env: dict[str, Any]
     ) -> dict[str, Any]:
         self.check_singleton()
@@ -955,9 +962,9 @@ class ResUsers(models.Model):
         if self._password_allowed(env):
             if "interactive" not in env:
                 _logger.warning(
-                    "_check_credentials without 'interactive' env key, assuming interactive login. \
+                    "_authenticate_credentials without 'interactive' env key, assuming interactive login. \
                     Check calls and overrides to ensure the 'interactive' key is properly set in \
-                    all _check_credentials environments"
+                    all _authenticate_credentials environments"
                 )
 
             valid, replacement = self._password_store().match_and_update(
@@ -1601,7 +1608,7 @@ class ResUsers(models.Model):
             limit=1,
         )
         try:
-            with self._assert_can_auth(
+            with self._admit_authentication_attempt(
                 user=user.id or login, interactive=interactive
             ) as attempt:
                 if not user:
@@ -1609,15 +1616,17 @@ class ResUsers(models.Model):
                     if not interactive and (
                         attempt.keys_only or self._rpc_passwords_refused()
                     ):
-                        self._deny_login(credential)
+                        self._spend_password_cost(credential)
+                        raise self._prepare_login_denied_error()
                     auth_info = self._login_unknown(credential, user_agent_env)
                 else:
                     user = user.with_user(user).sudo()
                     if user.principal_type == "service" and interactive:
                         _debug.logic("login_refused", uid=user.id, reason="service")
-                        self._deny_login(credential)
+                        self._spend_password_cost(credential)
+                        raise self._prepare_login_denied_error()
                     _debug.pipeline("login_credentials_check", uid=user.id, ip=ip)
-                    auth_info = user._check_credentials(
+                    auth_info = user._authenticate_credentials(
                         credential,
                         {**(user_agent_env or {}), "api_key_only": True}
                         if attempt.keys_only
@@ -1645,12 +1654,16 @@ class ResUsers(models.Model):
     def _login_unknown(
         self, credential: dict[str, Any], user_agent_env: dict[str, Any]
     ) -> dict[str, Any]:
-        self._deny_login(credential)
+        self._spend_password_cost(credential)
+        raise self._prepare_login_denied_error()
 
     @api.model
-    def _deny_login(self, credential: dict[str, Any]) -> typing.NoReturn:
+    def _spend_password_cost(self, credential: dict[str, Any]) -> None:
         self._password_store().spend(self, credential.get("password") or "")
-        raise AccessDenied
+
+    @api.model
+    def _prepare_login_denied_error(self) -> AccessDenied:
+        return AccessDenied()
 
     def authenticate(
         self, credential: dict[str, Any], user_agent_env: dict[str, Any]
@@ -1675,21 +1688,21 @@ class ResUsers(models.Model):
         return auth_info
 
     @api.model
-    def _check_uid_passwd(self, uid: int, passwd: str) -> int | None:
+    def _authenticate_rpc_credentials(self, uid: int, passwd: str) -> int | None:
         if not passwd:
             _debug.logic("uid_passwd_refused", uid=uid, reason="empty")
             raise AccessDenied
         passwd_hash = sha256(passwd.encode()).hexdigest()
-        cache = type(self)._check_uid_passwd_cached.__cache__
+        cache = type(self)._authenticate_rpc_credentials_cached.__cache__
         cached = (
             cache.key(self, uid, passwd, passwd_hash)
             in self.pool.ormcache_lrus[cache.cache_name]
         )
-        with self._assert_can_auth(
+        with self._admit_authentication_attempt(
             user=uid, interactive=False, claim=not cached
         ) as attempt:
             keys_only = attempt.keys_only or self._rpc_passwords_refused()
-            key_expiration, scope_id = self._check_uid_passwd_cached(
+            key_expiration, scope_id = self._authenticate_rpc_credentials_cached(
                 uid, passwd, passwd_hash, keys_only=keys_only
             )
             attempt.by_key = scope_id is not None
@@ -1758,8 +1771,8 @@ class ResUsers(models.Model):
             "password": old_passwd,
             "type": "password",
         }
-        with self._assert_can_auth(user=user.id):
-            user._check_credentials(credential, {"interactive": True})
+        with self._admit_authentication_attempt(user=user.id):
+            user._authenticate_credentials(credential, {"interactive": True})
 
         user._change_password(new_passwd)
         return True
@@ -1951,7 +1964,7 @@ class ResUsers(models.Model):
             "other_sessions_ended", user=self.id, keeps_current=keeps_current
         )
 
-    def _assert_group_query_allowed(self) -> None:
+    def _check_group_query_allowed(self) -> None:
         if not (
             self.env.su
             or self == self.env.user
@@ -2017,7 +2030,7 @@ class ResUsers(models.Model):
             return False
 
         self.check_singleton()
-        self._assert_group_query_allowed()
+        self._check_group_query_allowed()
 
         positives = []
         negatives = []
@@ -2042,7 +2055,7 @@ class ResUsers(models.Model):
     @api.readonly
     def has_group(self, group_ext_id: str) -> bool:
         self.check_singleton()
-        self._assert_group_query_allowed()
+        self._check_group_query_allowed()
         return self._has_group_effective(group_ext_id)
 
     def _has_group(self, group_ext_id: str) -> bool:
@@ -2051,7 +2064,7 @@ class ResUsers(models.Model):
 
     def has_any_group_id(self, group_ids: collections.abc.Collection[int]) -> bool:
         self.check_singleton()
-        self._assert_group_query_allowed()
+        self._check_group_query_allowed()
 
         group_ids = set(group_ids)
         if not (request and request.session.debug):
@@ -2220,7 +2233,7 @@ class ResUsers(models.Model):
         )
 
     @contextlib.contextmanager
-    def _assert_can_auth(
+    def _admit_authentication_attempt(
         self,
         user: int | str | None = None,
         *,

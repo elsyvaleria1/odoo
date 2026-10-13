@@ -895,7 +895,7 @@ class IrQweb(models.AbstractModel):
         build = (
             lookup.env["ir.asset.build"]
             .sudo()
-            ._find_reusable("group", group, variant, source_key)
+            ._get_build_reusable("group", group, variant, source_key)
         )
         if not build:
             _debug.logic("runtime_group_miss", group=group, reason="no_build")

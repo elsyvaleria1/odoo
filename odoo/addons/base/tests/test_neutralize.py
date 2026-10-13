@@ -48,7 +48,7 @@ class TestNeutralizeQueries(BaseCase):
 
         self.addCleanup(_restore)
 
-    def _make_module(self, name, neutralize_sql=None):
+    def _create_module_directory(self, name, neutralize_sql=None):
         d = Path(self._tmp.name, name)
         (d / "data").mkdir(parents=True)
         (d / "__manifest__.py").write_text(
@@ -60,10 +60,12 @@ class TestNeutralizeQueries(BaseCase):
 
     def test_empty_and_whitespace_files_are_skipped(self):
         modules = [
-            self._make_module("probe_empty", ""),
-            self._make_module("probe_blank", "  \n\t\n"),
-            self._make_module("probe_real", "UPDATE res_users SET active = active;\n"),
-            self._make_module("probe_none"),
+            self._create_module_directory("probe_empty", ""),
+            self._create_module_directory("probe_blank", "  \n\t\n"),
+            self._create_module_directory(
+                "probe_real", "UPDATE res_users SET active = active;\n"
+            ),
+            self._create_module_directory("probe_none"),
         ]
         queries = list(neutralize.get_neutralization_queries(modules))
         self.assertEqual(queries, ["UPDATE res_users SET active = active;"])

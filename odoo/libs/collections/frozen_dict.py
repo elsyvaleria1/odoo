@@ -24,57 +24,57 @@ class FrozenList[T](list[T]):
     def __reduce__(self) -> tuple[type[Self], tuple[list[T]]]:
         return (type(self), (list(self),))
 
-    def _refuse(self, operation: str) -> NoReturn:
+    def _prepare_mutation_error(self, operation: str) -> TypeError:
         msg = f"'{type(self).__name__}' object does not support {operation}"
-        raise TypeError(msg)
+        return TypeError(msg)
 
     @override
     def __setitem__(self, key: Any, value: Any, /) -> NoReturn:
-        self._refuse("item assignment")
+        raise self._prepare_mutation_error("item assignment")
 
     @override
     def __delitem__(self, key: Any, /) -> NoReturn:
-        self._refuse("item deletion")
+        raise self._prepare_mutation_error("item deletion")
 
     @override
     def __iadd__(self, value: Iterable[T], /) -> NoReturn:  # type: ignore[override]  # Mutation is always refused, including widened lists.
-        self._refuse("+=")
+        raise self._prepare_mutation_error("+=")
 
     @override
     def __imul__(self, value: Any, /) -> NoReturn:
-        self._refuse("*=")
+        raise self._prepare_mutation_error("*=")
 
     @override
     def append(self, value: T, /) -> NoReturn:
-        self._refuse("append")
+        raise self._prepare_mutation_error("append")
 
     @override
     def extend(self, values: Iterable[T], /) -> NoReturn:
-        self._refuse("extend")
+        raise self._prepare_mutation_error("extend")
 
     @override
     def insert(self, index: Any, value: T, /) -> NoReturn:
-        self._refuse("insert")
+        raise self._prepare_mutation_error("insert")
 
     @override
     def remove(self, value: T, /) -> NoReturn:
-        self._refuse("remove")
+        raise self._prepare_mutation_error("remove")
 
     @override
     def pop(self, index: Any = -1, /) -> NoReturn:
-        self._refuse("pop")
+        raise self._prepare_mutation_error("pop")
 
     @override
     def clear(self) -> NoReturn:
-        self._refuse("clear")
+        raise self._prepare_mutation_error("clear")
 
     @override
     def sort(self, *args: Any, **kwargs: Any) -> NoReturn:
-        self._refuse("sort")
+        raise self._prepare_mutation_error("sort")
 
     @override
     def reverse(self) -> NoReturn:
-        self._refuse("reverse")
+        raise self._prepare_mutation_error("reverse")
 
 
 def freehash(arg: Any) -> int:

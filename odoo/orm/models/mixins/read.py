@@ -419,7 +419,7 @@ class ReadMixin(_ModelStubs):
             self._ids,
         )
         rules_applied = any(field.column_type for field in fields_to_fetch)
-        if rules_applied and self._known_readable():
+        if rules_applied and self._has_cached_read_access():
             rules_applied = False
             query = self._as_query(ordered=False)
         elif rules_applied:
@@ -428,7 +428,9 @@ class ReadMixin(_ModelStubs):
             try:
                 if not in_prefetch_batch:
                     self.check_access("read")
-                elif not self.env.su and self._check_access("read"):
+                elif not self.env.su and self._get_records_forbidden_and_error_factory(
+                    "read"
+                ):
                     _debug.logic(
                         "read.fetch.prefetch_batch_denied",
                         model=self._name,

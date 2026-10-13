@@ -62,7 +62,7 @@ class TestActivityRights(TestActivityCommon):
 
         with patch.object(
             MailTestActivity,
-            "_check_access",
+            "_get_records_forbidden_and_error_factory",
             autospec=True,
             side_effect=_employee_no_access,
         ):

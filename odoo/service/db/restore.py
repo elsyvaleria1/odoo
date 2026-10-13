@@ -8,7 +8,7 @@ import tempfile
 import threading
 import zipfile
 from pathlib import Path
-from typing import IO, Literal, NoReturn
+from typing import IO, TYPE_CHECKING, Any, Literal, NoReturn
 
 import odoo.api
 import odoo.db
@@ -277,7 +277,9 @@ def _stream_custom_archive(
             raise _prepare_timeout_error(db, timeout)
         if psql_code != 0:
             psql_err.seek(0)
-            _raise_psql_failure(db, psql_code, psql_err.read().decode(errors="replace"))
+            raise _prepare_psql_failure_error(
+                db, psql_code, psql_err.read().decode(errors="replace")
+            )
         if reader_code != 0:
             reader_err.seek(0)
             _debug.logic("database.restore.archive_unreadable", returncode=reader_code)
@@ -295,10 +297,10 @@ def _prepare_timeout_error(db: str, timeout: float) -> RuntimeError:
     )
 
 
-def _raise_psql_failure(db: str, returncode: int, stderr: str) -> NoReturn:
+def _prepare_psql_failure_error(db: str, returncode: int, stderr: str) -> RuntimeError:
     _logger.error("RESTORE DB %r failed:\n%s", db, stderr)
     _debug.logic("database.restore.psql_failed", db=db, returncode=returncode)
-    raise RuntimeError(f"Couldn't restore database {db!r}:\n{stderr.strip()}")
+    return RuntimeError(f"Couldn't restore database {db!r}:\n{stderr.strip()}")
 
 
 def _run_psql(db: str, sql_path: str) -> None:
@@ -324,7 +326,7 @@ def _run_psql(db: str, sql_path: str) -> None:
         _debug.logic("database.restore.timed_out", db=db, timeout=timeout)
         raise _prepare_timeout_error(db, timeout) from e
     if r.returncode != 0:
-        _raise_psql_failure(db, r.returncode, r.stderr)
+        raise _prepare_psql_failure_error(db, r.returncode, r.stderr)
 
 
 def _finalize_restored_db(

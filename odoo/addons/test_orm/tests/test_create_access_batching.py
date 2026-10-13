@@ -1,6 +1,6 @@
 from odoo.tests import TransactionCase, counting_statements
 
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 
 
 class CreateAccessBatchingCase(TransactionCase):
@@ -17,7 +17,7 @@ class CreateAccessBatchingCase(TransactionCase):
         cls.targets = cls.env["test_orm.bypass.target"].create(
             [{"name": f"t{i}"} for i in range(200)]
         )
-        make_guard_row(
+        create_guard_row(
             cls.env,
             "test_orm.bypass.target",
             "[('name', '!=', 'nope')]",

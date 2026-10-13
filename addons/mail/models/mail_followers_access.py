@@ -67,10 +67,10 @@ class MailFollowers(models.Model):
             **kwargs,
         )
 
-    def _check_access(
+    def _get_records_forbidden_and_error_factory(
         self, operation: str
     ) -> tuple[api.Self, Callable[[], Exception]] | None:
-        result = super()._check_access(operation)
+        result = super()._get_records_forbidden_and_error_factory(operation)
         if not self or operation != "read" or self.env.is_superuser():
             return result
 

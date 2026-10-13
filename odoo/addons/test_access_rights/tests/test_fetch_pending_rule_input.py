@@ -36,7 +36,7 @@ class TestFetchPendingRuleInput(TransactionCase):
         self.env.invalidate_all()
         return self.doc.with_user(self.user)
 
-    def _refused(self, read) -> bool:
+    def _call_read_and_get_access_denied(self, read) -> bool:
         try:
             read()
         except AccessError:
@@ -46,12 +46,16 @@ class TestFetchPendingRuleInput(TransactionCase):
     def test_a_record_the_pending_value_refuses_is_not_fetched(self):
         doc = self._as_user()
         self.line.amount = 0
-        self.assertTrue(self._refused(lambda: doc.fetch(["name", "total"])))
+        self.assertTrue(
+            self._call_read_and_get_access_denied(lambda: doc.fetch(["name", "total"]))
+        )
 
     def test_a_record_the_pending_value_refuses_is_not_read(self):
         doc = self._as_user()
         self.line.amount = 0
-        self.assertTrue(self._refused(lambda: doc.read(["name", "total"])))
+        self.assertTrue(
+            self._call_read_and_get_access_denied(lambda: doc.read(["name", "total"]))
+        )
 
     def test_a_record_the_pending_value_admits_is_read(self):
         self.line.amount = 0

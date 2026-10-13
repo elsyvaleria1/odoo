@@ -41,7 +41,7 @@ _RECOVERY_EXCEPTIONS: tuple[type[Exception], ...] = (
 )
 
 
-def _integrity_error_to_validation_error(
+def _prepare_integrity_validation_error(
     env: Environment, exc: IntegrityError
 ) -> ValidationError:
     table_name = exc.diag.table_name
@@ -210,7 +210,7 @@ def retrying[T](
                 if isinstance(exc, IntegrityError):
                     translated = None
                     with suppress(Exception):
-                        translated = _integrity_error_to_validation_error(env, exc)
+                        translated = _prepare_integrity_validation_error(env, exc)
                     _debug.logic(
                         "retrying.integrity_error",
                         constraint=exc.diag.constraint_name,

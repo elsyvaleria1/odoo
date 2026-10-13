@@ -32,7 +32,7 @@ from ...domain.constants import (
     SUBDOMAIN_OPERATORS,
 )
 from ...primitives import COLLECTION_TYPES, PREFETCH_MAX, Command, IdType, NewId
-from .._field_cache_miss import missing_record_error
+from .._field_cache_miss import prepare_missing_record_error
 from ..base import Field, _logger
 from ._commands import CommandDelta, as_commands
 
@@ -192,7 +192,7 @@ class _Relational(Field["BaseModel"]):
                 remaining.fetch([self.name])
                 field_cache = self._get_cache(env)
                 if record_id not in field_cache:
-                    raise missing_record_error(env, record_id) from None
+                    raise prepare_missing_record_error(env, record_id) from None
             else:
                 remaining = object.__new__(records.__class__)
                 remaining.env = env
@@ -244,15 +244,19 @@ class _Relational(Field["BaseModel"]):
     def _related_domain(
         self,
     ) -> DomainType | str | Callable[[BaseModel], DomainType | str | None] | None:
-        def validated(domain: DomainType | str) -> DomainType | str | None:
+        def _get_domain_allowed_for_related_field(
+            domain: DomainType | str,
+        ) -> DomainType | str | None:
             if isinstance(domain, str) and not self.inherited:
                 return None
             return domain
 
         if callable(self.domain):
-            return lambda recs: validated(self.domain(recs.env[self.model_name]))
+            return lambda recs: _get_domain_allowed_for_related_field(
+                self.domain(recs.env[self.model_name])
+            )
         else:
-            return validated(self.domain)
+            return _get_domain_allowed_for_related_field(self.domain)
 
     _related_context = property(attrgetter("context"))
 
@@ -289,15 +293,15 @@ class _Relational(Field["BaseModel"]):
                     )
                 )
                 return domain
-            company_domain = env[self._get_comodel_name()]._check_company_domain(
-                companies=unquote(cids)
-            )
+            company_domain = env[
+                self._get_comodel_name()
+            ]._get_domain_company_compatible(companies=unquote(cids))
             if not field_to_check:
                 return f"{company_domain} + {domain or []}"
             else:
-                no_company_domain = env[self._get_comodel_name()]._check_company_domain(
-                    companies=""
-                )
+                no_company_domain = env[
+                    self._get_comodel_name()
+                ]._get_domain_company_compatible(companies="")
                 return f"({field_to_check} and {company_domain} or {no_company_domain}) + ({domain or []})"
         return domain
 
@@ -558,7 +562,9 @@ class _RelationalMulti(_Relational):
             )
 
     @override
-    def _get_cache_impl(self, env: Environment) -> MutableMapping[IdType, typing.Any]:
+    def _get_cache_uncached(
+        self, env: Environment
+    ) -> MutableMapping[IdType, typing.Any]:
         core = env.core
         return _ScopedSlot(
             core.get_context_data(self, env.get_cache_key(self)),

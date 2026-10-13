@@ -152,7 +152,10 @@ class ProductProduct(models.Model):
     ):
         domain = Domain.OR(
             [
-                [*self._check_company_domain(company), ("company_id", "!=", False)],
+                [
+                    *self._get_domain_company_compatible(company),
+                    ("company_id", "!=", False),
+                ],
                 [("company_id", "=", False)],
             ]
         )

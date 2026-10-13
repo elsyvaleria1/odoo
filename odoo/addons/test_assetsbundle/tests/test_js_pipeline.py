@@ -10,7 +10,7 @@ from odoo.tools.assets.esm_registry import esm_registry
 from odoo.tools.assets.js_scan import rjsmin_misreads
 from odoo.tools.json import scriptsafe as json
 
-from .common import asset_file, make_bundle
+from .common import asset_file, prepare_bundle
 from odoo.addons.base.models.assetsbundle import (
     AssetsBundle,
     JavascriptAsset,
@@ -31,7 +31,7 @@ class TestModuleSyntaxGuard(TransactionCase):
     BUNDLE = "test_assetsbundle.legacy_guard"
 
     def _legacy_bundle(self, name=None):
-        return make_bundle(
+        return prepare_bundle(
             self,
             name or self.BUNDLE,
             ("/test_assetsbundle/static/src/mod.js", MODULE_JS),
@@ -162,7 +162,7 @@ class TestModuleSyntaxGuard(TransactionCase):
 
 class TestTemplateIifeAsiGuard(TransactionCase):
     def _bundle(self, name, debug=False):
-        return make_bundle(
+        return prepare_bundle(
             self,
             name,
             ("/test/audit_g10_asi.js", UNTERMINATED_JS),

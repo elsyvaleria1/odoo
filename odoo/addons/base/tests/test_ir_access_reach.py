@@ -1,14 +1,19 @@
 from odoo.tests import BaseCase
 
-from odoo.addons.base.models.ir_access_reach import Part, Proposal, propose, proves
+from odoo.addons.base.models.ir_access_reach import (
+    Part,
+    Proposal,
+    is_reach_proposal_equivalent,
+    resolve_reach_proposal,
+)
 
 
 class TestReachRecognizer(BaseCase):
     def assert_converts(self, domain, *parts, kind="permission"):
-        proposal = propose(domain, kind)
+        proposal = resolve_reach_proposal(domain, kind)
         self.assertIsNotNone(proposal, domain)
         self.assertEqual(proposal.parts, list(parts))
-        self.assertTrue(proves(domain, proposal), domain)
+        self.assertTrue(is_reach_proposal_equivalent(domain, proposal), domain)
 
     def test_the_rungs(self):
         self.assert_converts("[(1, '=', 1)]", Part("all"))
@@ -83,7 +88,7 @@ class TestReachRecognizer(BaseCase):
 
     def test_a_guard_is_never_split(self):
         self.assertIsNone(
-            propose(
+            resolve_reach_proposal(
                 "['|', ('user_id', '=', user.id), ('create_uid', '=', user.id)]",
                 "guard",
             )
@@ -99,7 +104,7 @@ class TestReachRecognizer(BaseCase):
             "[] if user.has_group('base.group_user') else [('id', '=', 1)]",
         ):
             with self.subTest(domain=domain):
-                self.assertIsNone(propose(domain, "permission"))
+                self.assertIsNone(resolve_reach_proposal(domain, "permission"))
 
     def test_the_proof_refuses_a_misreading(self):
         domain = "[('user_id', '=', user.id)]"
@@ -111,9 +116,11 @@ class TestReachRecognizer(BaseCase):
             Part("all"),
         ):
             with self.subTest(part=wrong):
-                self.assertFalse(proves(domain, Proposal([wrong])))
+                self.assertFalse(
+                    is_reach_proposal_equivalent(domain, Proposal([wrong]))
+                )
         self.assertFalse(
-            proves(
+            is_reach_proposal_equivalent(
                 "[('company_id', 'in', company_ids)]",
                 Proposal([Part("company", "company", "company_id", unset=True)]),
             )
@@ -159,10 +166,12 @@ class TestReachRecognizer(BaseCase):
 
     def test_a_field_reading_the_user_is_never_a_fixed_filter(self):
         self.assertIsNone(
-            propose("[('is_self', '=', True), ('state', '=', 'x')]", "permission")
+            resolve_reach_proposal(
+                "[('is_self', '=', True), ('state', '=', 'x')]", "permission"
+            )
         )
         self.assertIsNone(
-            propose(
+            resolve_reach_proposal(
                 "[('user_id', '=', user.id), ('message_is_follower', '=', True)]",
                 "permission",
             )

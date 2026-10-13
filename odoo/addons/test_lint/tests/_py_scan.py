@@ -23,8 +23,8 @@ __all__ = [
     "Source",
     "corpus",
     "cross_unit_violations",
-    "findings",
-    "findings_by_repository",
+    "get_findings",
+    "get_findings_by_repository",
     "is_test_path",
     "report",
     "scan_many",
@@ -62,10 +62,10 @@ def _repository_of_path() -> dict[str, str]:
     return {source.path: source.repo for source in corpus()}
 
 
-def findings_by_repository(rule: str) -> dict[str, list[Finding]]:
+def get_findings_by_repository(rule: str) -> dict[str, list[Finding]]:
     repos = _repository_of_path()
     by_repo: dict[str, list[Finding]] = {}
-    for finding in findings().get(rule, []):
+    for finding in get_findings().get(rule, []):
         by_repo.setdefault(repos.get(finding.path, "odoo"), []).append(finding)
     return by_repo
 
@@ -127,7 +127,7 @@ def cross_unit_violations(units: list, repo_of) -> list:
 
 
 @functools.cache
-def findings() -> dict[str, list[Finding]]:
+def get_findings() -> dict[str, list[Finding]]:
     rows, units, jobs = _scan()
 
     by_rule: dict[str, list[Finding]] = {}
@@ -162,7 +162,7 @@ def model_class_scale() -> tuple[int, int]:
 
 
 def report(rule: str, header: str) -> str:
-    found = sorted(findings().get(rule, []), key=lambda f: f.sort_key)
+    found = sorted(get_findings().get(rule, []), key=lambda f: f.sort_key)
     if not found:
         return ""
     return f"{len(found)} {header}:\n  " + "\n  ".join(map(str, found))

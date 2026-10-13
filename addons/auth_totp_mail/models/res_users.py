@@ -149,7 +149,7 @@ class ResUsers(models.Model):
             self._get_mfa_type() == "totp_mail" or super()._is_rpc_api_key_only()
         )
 
-    def _check_credentials(self, credentials, env):
+    def _authenticate_credentials(self, credentials, env):
         if credentials["type"] == "totp_mail":
             self._totp_rate_limit("code_check")
             user = self.sudo()
@@ -171,7 +171,7 @@ class ResUsers(models.Model):
                 "mfa": "default",
             }
         else:
-            return super()._check_credentials(credentials, env)
+            return super()._authenticate_credentials(credentials, env)
 
     def _get_totp_mail_key(self):
         self.check_singleton()

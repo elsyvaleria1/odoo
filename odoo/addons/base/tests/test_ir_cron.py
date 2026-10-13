@@ -41,10 +41,10 @@ from odoo.addons.base.models.ir_cron import (
     IrCron,
     ReadyJob,
 )
-from odoo.addons.base.tests.common import TransactionCaseWithUserDemo, make_guard_row
+from odoo.addons.base.tests.common import TransactionCaseWithUserDemo, create_guard_row
 
 
-def make_job(cron, **overrides):
+def prepare_job_row(cron, **overrides):
     fields_ = {
         "id": cron.id,
         "cron_name": cron.cron_name,
@@ -1422,12 +1422,12 @@ class TestIrCronAcquireLock(BaseCase):
             cr.commit()
         self.addCleanup(self._drop_partner, partner_id)
 
-        def refuse():
+        def _check_commit_allowed():
             raise UserError("refused when the run commits")
 
         def run(action):
             action.env["res.partner"].browse(partner_id).name = "written by the run"
-            action.env.cr.precommit.add(refuse)
+            action.env.cr.precommit.add(_check_commit_allowed)
 
         IrCronModel = self.registry["ir.cron"]
         with (
@@ -1843,7 +1843,7 @@ class TestIrCronUpdateFailureCount(TransactionCase, CronMixinCase):
         return self.env["ir.cron"]._get_now()
 
     def _apply(self, status, **job_overrides):
-        job = make_job(self.cron, **job_overrides)
+        job = prepare_job_row(self.cron, **job_overrides)
         Cron = self.env["ir.cron"]
         Cron._write_job_row(job, Cron._prepare_failure_vals(job, status))
         self.cron.invalidate_recordset()
@@ -2204,7 +2204,7 @@ class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):
             [job.id for job in ready],
             "the trigger is due, so the job is ready",
         )
-        self.env["ir.cron"]._remove_triggers_due(make_job(self.cron))
+        self.env["ir.cron"]._remove_triggers_due(prepare_job_row(self.cron))
         self.assertFalse(
             trigger.exists(),
             "the delete window and the readiness window must be the same clock, "
@@ -2309,7 +2309,7 @@ class TestIrCronRunLoopContract(TransactionCase, CronMixinCase):
         )
 
     def test_direct_trigger_honours_record_rules(self):
-        make_guard_row(
+        create_guard_row(
             self.env,
             "ir.cron",
             "[(0, '=', 1)]",
@@ -2325,7 +2325,7 @@ class TestIrCronDeactivationNotice(TransactionCase, CronMixinCase):
     def test_the_notice_names_the_failures_that_happened(self):
         cron = self.env["ir.cron"].create(self._get_cron_data(self.env))
         messages = []
-        job = make_job(
+        job = prepare_job_row(
             cron,
             failure_count=MIN_FAILURE_COUNT_BEFORE_DEACTIVATION + 6,
             first_failure_date=self.env.cr.now()
@@ -2366,7 +2366,7 @@ class TestIrCronAttemptConvergence(TransactionCase, CronMixinCase):
         job=None,
     ):
         return IrCron._resolve_attempt(
-            job if job is not None else make_job(self.cron),
+            job if job is not None else prepare_job_row(self.cron),
             success=success,
             done=done,
             remaining=remaining,
@@ -2446,7 +2446,7 @@ class TestIrCronAttemptConvergence(TransactionCase, CronMixinCase):
                 )
 
     def test_a_self_deactivating_job_marks_the_job_row(self):
-        job = make_job(self.cron)
+        job = prepare_job_row(self.cron)
         status = self._resolve(
             ir_cron._Watermark(),
             success=True,

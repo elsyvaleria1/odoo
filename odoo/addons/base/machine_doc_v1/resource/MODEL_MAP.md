@@ -52,7 +52,7 @@
   it declares; `_notify_kind_models` hands every write on. `_check_required_identifiers`
   refuses only where the kind enforces them (`SKIP_IDENTITY_CHECK` defers it).
 - Occupancy and slots: `_get_reservation_status`, `_get_slot_intervals_batch`,
-  `_get_slot_intervals`, `_find_free_window`.
+  `_get_slot_intervals`, `_get_window_free`.
 - Calendar resolution: `_get_work_schedule`, `_get_valid_work_intervals`,
   `_get_calendars_validity_within_period` (hr overrides it),
   `_get_unavailable_intervals` (`exclude_bookings`), `_normalize_calendar_vals`.
@@ -296,7 +296,7 @@ create).
 - `res.company`: `resource_calendar_ids`, `resource_config_id`, `resource_calendar_id`, `resource_week_start`.
 - `res.partner`: `resource_ids`; `place_of_birth`, `country_of_birth` and `nationality_ids`,
   held on a person's private facet; `_get_resources`, `_get_or_create_resources`,
-  `_get_private_facet`, `_ensure_private_facet`.
+  `_get_private_facet`, `_get_or_create_private_facet`.
 - `res.users`: `resource_ids`, `resource_calendar_id` (the schedule of the resource in the
   current company); `_get_enabled_asset_kinds`, `_get_hidden_asset_kinds` (an asset
   manager sees every kind).

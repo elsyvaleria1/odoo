@@ -290,7 +290,7 @@ class TestUi(TestPointOfSaleHttpCommon, OnlinePaymentCommon):
     def compute_tax(self, product, price, qty=1, taxes=None):
         if not taxes:
             taxes = product.taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(self.env.company)
+                self.env["account.tax"]._get_domain_company_compatible(self.env.company)
             )
         currency = self.pos_config.currency_id
         res = taxes.compute_all(price, currency, qty, product=product)

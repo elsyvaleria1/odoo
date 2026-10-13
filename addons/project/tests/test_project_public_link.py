@@ -191,7 +191,7 @@ class TestFindReusableLink(TestProjectCommon):
         cls.Link = cls.env["access.link"]
 
     def _find(self, **kwargs):
-        return self.Link._find_reusable(self.project_pigs, **kwargs)
+        return self.Link._get_link_and_token_reusable(self.project_pigs, **kwargs)
 
     def test_nothing_issued_finds_nothing_and_issues_nothing(self) -> None:
         links = self.Link._record_links(self.project_pigs)

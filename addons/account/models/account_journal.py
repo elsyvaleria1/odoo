@@ -147,7 +147,7 @@ class AccountJournal(models.Model):
         "mixin.mail.activity",
     ]
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
     _rec_names_search = ["name", "code"]
 
     def _default_inbound_payment_methods(self):
@@ -592,7 +592,7 @@ class AccountJournal(models.Model):
             .sudo()
             .search(
                 [
-                    *self.env["payment.provider"]._check_company_domain(
+                    *self.env["payment.provider"]._get_domain_company_compatible(
                         self.company_id
                     ),
                     ("code", "in", tuple(electronic_names)),
@@ -1476,7 +1476,7 @@ class AccountJournal(models.Model):
 
     @api.model
     def _get_payment_journal_domain(self, company) -> Domain:
-        return self._check_company_domain(company) & Domain(
+        return self._get_domain_company_compatible(company) & Domain(
             "type", "in", LIQUIDITY_TYPES
         )
 
@@ -1559,7 +1559,9 @@ class AccountJournal(models.Model):
             self.env["account.journal"]
             .with_context(active_test=False)
             ._read_group(
-                domain=self.env["account.journal"]._check_company_domain(company),
+                domain=self.env["account.journal"]._get_domain_company_compatible(
+                    company
+                ),
                 aggregates=["code:array_agg"],
             )
         )
@@ -1673,7 +1675,7 @@ class AccountJournal(models.Model):
         Account = self.env["account.account"].with_company(company)
         return Account.search(
             [
-                *Account._check_company_domain(company),
+                *Account._get_domain_company_compatible(company),
                 ("account_type", "in", JOURNAL_TYPES["credit"]["account_types"]),
             ]
         )
@@ -1692,7 +1694,7 @@ class AccountJournal(models.Model):
             self.env["account.account"]
             .with_company(company)
             .search(
-                self.env["account.account"]._check_company_domain(company),
+                self.env["account.account"]._get_domain_company_compatible(company),
                 limit=1,
             )
         )
@@ -1988,7 +1990,7 @@ class AccountJournal(models.Model):
                 )
             self = self.env["account.journal"].search(
                 [
-                    *self.env["account.journal"]._check_company_domain(
+                    *self.env["account.journal"]._get_domain_company_compatible(
                         self.env.company
                     ),
                     ("type", "=", journal_type),

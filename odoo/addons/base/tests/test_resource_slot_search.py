@@ -6,7 +6,7 @@ from odoo.exceptions import AccessError
 from odoo.libs.intervals import Intervals
 from odoo.tests import TransactionCase, new_test_user, tagged
 
-from ..models.resource_utils import find_available_interval
+from ..models.resource_utils import get_interval_available
 
 
 @tagged("post_install", "-at_install")
@@ -31,8 +31,8 @@ class TestSlotSearch(TransactionCase):
         window = Intervals([(start, stop, self.records)])
         return self.available & window, self.occupied & window
 
-    def _find(self, duration=timedelta(hours=1), **kwargs):
-        return find_available_interval(
+    def _get_interval_available(self, duration=timedelta(hours=1), **kwargs):
+        return get_interval_available(
             kwargs.pop("anchor", self.anchor),
             duration,
             self._intervals,
@@ -43,13 +43,13 @@ class TestSlotSearch(TransactionCase):
 
     def test_forward_duration_spans_calendar_pauses(self):
         self.assertEqual(
-            self._find(timedelta(hours=6)),
+            self._get_interval_available(timedelta(hours=6)),
             (self.anchor, self.anchor + timedelta(days=1, hours=2)),
         )
 
     def test_backward_duration_spans_calendar_pauses(self):
         self.assertEqual(
-            self._find(
+            self._get_interval_available(
                 timedelta(hours=6),
                 anchor=self.anchor + timedelta(days=1, hours=4),
                 forward=False,
@@ -71,7 +71,7 @@ class TestSlotSearch(TransactionCase):
             ]
         )
         self.assertEqual(
-            self._find(timedelta(hours=6)),
+            self._get_interval_available(timedelta(hours=6)),
             (self.anchor + timedelta(days=1), self.anchor + timedelta(days=2, hours=2)),
         )
 
@@ -86,7 +86,7 @@ class TestSlotSearch(TransactionCase):
             ]
         )
         self.assertEqual(
-            self._find(
+            self._get_interval_available(
                 timedelta(hours=6),
                 anchor=self.anchor + timedelta(days=2, hours=4),
                 forward=False,
@@ -102,13 +102,13 @@ class TestSlotSearch(TransactionCase):
             [(self.anchor, self.anchor + timedelta(hours=2), self.records)]
         )
         self.assertEqual(
-            self._find(blocked=blocked),
+            self._get_interval_available(blocked=blocked),
             (self.anchor + timedelta(hours=2), self.anchor + timedelta(hours=3)),
         )
 
     def test_backward_respects_earliest_placement(self):
         self.assertIsNone(
-            self._find(
+            self._get_interval_available(
                 timedelta(hours=4),
                 anchor=self.anchor + timedelta(hours=4),
                 forward=False,
@@ -117,7 +117,11 @@ class TestSlotSearch(TransactionCase):
         )
 
     def test_duration_never_rounds_past_a_working_interval(self):
-        self.assertIsNone(self._find(timedelta(hours=4, microseconds=1), iterations=1))
+        self.assertIsNone(
+            self._get_interval_available(
+                timedelta(hours=4, microseconds=1), iterations=1
+            )
+        )
 
     def test_invalid_search_parameters(self):
         for values in (
@@ -126,12 +130,13 @@ class TestSlotSearch(TransactionCase):
             {"iterations": 0},
         ):
             with self.subTest(values=values), self.assertRaises(ValueError):
-                self._find(**values)
+                self._get_interval_available(**values)
 
     def test_forward_starts_at_a_later_earliest_bound(self):
         earliest = self.anchor + timedelta(days=2)
         self.assertEqual(
-            self._find(earliest=earliest), (earliest, earliest + timedelta(hours=1))
+            self._get_interval_available(earliest=earliest),
+            (earliest, earliest + timedelta(hours=1)),
         )
 
     def test_working_duration_uses_elapsed_time_across_dst(self):
@@ -146,7 +151,9 @@ class TestSlotSearch(TransactionCase):
                 )
             ]
         )
-        self.assertIsNone(self._find(timedelta(hours=3), iterations=1))
+        self.assertIsNone(
+            self._get_interval_available(timedelta(hours=3), iterations=1)
+        )
 
 
 @tagged("post_install", "-at_install")

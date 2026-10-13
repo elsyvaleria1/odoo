@@ -87,7 +87,7 @@ class TestStockFleetTraceGpsGeoengineAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         batch = env["stock.picking.batch"].with_company(a).create({"company_id": a.id})

@@ -2461,7 +2461,7 @@ class IrAttachment(models.Model):
                         dropped += 1
                         continue
                     try:
-                        if not self._sweep_stored_file(
+                        if not self._remove_stored_file_if_marker_unchanged(
                             fname, Path(full_path), filepath, seen
                         ):
                             continue
@@ -2494,7 +2494,7 @@ class IrAttachment(models.Model):
             return None
 
     @api.model
-    def _sweep_stored_file(
+    def _remove_stored_file_if_marker_unchanged(
         self, fname: str, full_path: Path, marker: Path, seen: int | None
     ) -> bool:
         aside = self._get_filestore_dir("gc") / fname
@@ -2615,13 +2615,15 @@ class IrAttachment(models.Model):
             outside.extend(att for att, res_id in pairs if res_id not in within)
         return outside
 
-    def _check_access(self, operation: str) -> tuple[Self, Callable] | None:
-        res = super()._check_access(operation)
+    def _get_records_forbidden_and_error_factory(
+        self, operation: str
+    ) -> tuple[Self, Callable] | None:
+        res = super()._get_records_forbidden_and_error_factory(operation)
         remaining = self
-        error_func = None
+        prepare_access_error = None
         forbidden_ids = OrderedSet()
         if res:
-            forbidden, error_func = res
+            forbidden, prepare_access_error = res
             if forbidden == self:
                 _debug.logic(
                     "check_access",
@@ -2705,9 +2707,9 @@ class IrAttachment(models.Model):
         if forbidden_ids:
             forbidden = self.browse(forbidden_ids)
             forbidden.invalidate_recordset(SECURITY_FIELDS)
-            if error_func is None:
+            if prepare_access_error is None:
 
-                def error_func():
+                def prepare_access_error():
                     return AccessError(
                         self.env._(
                             "Sorry, you are not allowed to access this document. "
@@ -2720,7 +2722,7 @@ class IrAttachment(models.Model):
                         )
                     )
 
-            return forbidden, error_func
+            return forbidden, prepare_access_error
         return None
 
     @api.constrains("res_model", "res_id")

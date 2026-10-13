@@ -9,7 +9,7 @@ from odoo.tests.common import TransactionCase
 from odoo.tools import mute_logger
 
 from odoo.addons.base.models import ir_access
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 
 
 class TestRules(TransactionCase):
@@ -65,7 +65,7 @@ class TestRules(TransactionCase):
         allowed = self.allowed.with_env(env)
         forbidden = self.forbidden.with_env(env)
 
-        make_guard_row(
+        create_guard_row(
             self.env,
             "test_access_right.some_obj",
             "[(0, '=', 1)]",
@@ -219,7 +219,7 @@ class TestRules(TransactionCase):
 
         forbidden_user = self.forbidden.with_env(env)
         mixed_bad = new_record | forbidden_user
-        result = mixed_bad._check_access("read")
+        result = mixed_bad._get_records_forbidden_and_error_factory("read")
         self.assertIsNotNone(result, "real-forbidden record should still trip the rule")
         forbidden_records = result[0]
         self.assertIn(forbidden_user, forbidden_records)
@@ -319,7 +319,7 @@ class TestRules(TransactionCase):
         self.assertEqual(search_result, ChildModel)
 
     def test_domain_constrains(self):
-        rule = make_guard_row(
+        rule = create_guard_row(
             self.env, "test_access_right.some_obj", "[]", name="Test record rule"
         )
         invalid_domains = [
@@ -340,7 +340,7 @@ class TestRules(TransactionCase):
             rule.domain = domain
 
     def test_domain_constraint_lets_an_unexpected_error_through(self):
-        rule = make_guard_row(
+        rule = create_guard_row(
             self.env, "test_access_right.some_obj", "[]", name="Test record rule"
         )
         with (

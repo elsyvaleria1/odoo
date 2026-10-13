@@ -831,7 +831,7 @@ class InMemoryBackend(
         return None
 
     @staticmethod
-    def _refuse_what_sql_cannot_compile(
+    def _check_search_compiles_to_sql(
         model: ModelLike, domain: Domain, order: str | None
     ) -> None:
         query = Query(model.env, model._table, model._table_sql)
@@ -853,7 +853,7 @@ class InMemoryBackend(
         check_access: bool = True,
         prof: typing.Any = None,
     ) -> Query:
-        self._refuse_what_sql_cannot_compile(model, domain, order)
+        self._check_search_compiles_to_sql(model, domain, order)
         searched_fnames = flush_search_dependencies(
             typing.cast("BaseModel", model), domain, order
         )

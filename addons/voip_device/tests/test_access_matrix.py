@@ -33,7 +33,7 @@ class TestDeviceVoipAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         carrier = cls.users["carrier"]
         cls.env["device.device"].create(
             {

@@ -18,7 +18,7 @@ from odoo.libs.http1 import (
     HeadLimits,
     LengthReader,
     ProtocolError,
-    find_head,
+    get_request_head_span,
     parse_request_head,
 )
 
@@ -137,7 +137,7 @@ def mutate(rng: random.Random, original: bytes) -> bytes:
 def _find(buffer: bytearray, scanned: int):
     def outcome(*args):
         try:
-            return find_head(buffer, HEAD, *args), None
+            return get_request_head_span(buffer, HEAD, *args), None
         except ProtocolError as exc:
             return None, exc
 
@@ -146,7 +146,7 @@ def _find(buffer: bytearray, scanned: int):
     assert (incremental, getattr(failure, "status", None)) == (
         full,
         getattr(full_failure, "status", None),
-    ), f"find_head from {scanned} disagrees with a full scan"
+    ), f"get_request_head_span from {scanned} disagrees with a full scan"
     if failure is not None:
         raise failure
     return incremental

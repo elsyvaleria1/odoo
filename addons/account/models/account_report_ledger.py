@@ -479,9 +479,9 @@ class AccountReport(models.Model):
         for group in all_journal_groups:
             group_journals = all_journals - group.excluded_journal_ids
             if group.company_id:
-                company_domain = self.env["account.journal"]._check_company_domain(
-                    group.company_id
-                )
+                company_domain = self.env[
+                    "account.journal"
+                ]._get_domain_company_compatible(group.company_id)
                 group_journals = group_journals.filtered_domain(company_domain)
 
             selected = (
@@ -972,7 +972,8 @@ class AccountReport(models.Model):
             return
         company_ids = self.get_report_company_ids(options)
         if self.filter_hierarchy != "never" and self.env["account.group"].search_count(
-            self.env["account.group"]._check_company_domain(company_ids), limit=1
+            self.env["account.group"]._get_domain_company_compatible(company_ids),
+            limit=1,
         ):
             options["display_hierarchy_filter"] = True
             if "hierarchy" in previous_options:
@@ -1212,7 +1213,7 @@ class AccountReport(models.Model):
             .with_context(active_test=False)
             .search(
                 [
-                    *self.env["account.journal"]._check_company_domain(
+                    *self.env["account.journal"]._get_domain_company_compatible(
                         self.get_report_company_ids(options)
                     ),
                     *(additional_domain or []),
@@ -1224,7 +1225,7 @@ class AccountReport(models.Model):
     def _get_filter_journal_groups(self, options):
         return self.env["account.journal.group"].search(
             [
-                *self.env["account.journal.group"]._check_company_domain(
+                *self.env["account.journal.group"]._get_domain_company_compatible(
                     self.get_report_company_ids(options)
                 ),
             ],
@@ -1654,7 +1655,7 @@ class AccountReport(models.Model):
         return rslt
 
     def _map_account_codes_formulas(self, options, formulas) -> tuple[dict, dict]:
-        prefilter = self.env["account.account"]._check_company_domain(
+        prefilter = self.env["account.account"]._get_domain_company_compatible(
             self.get_report_company_ids(options)
         )
 
@@ -2343,7 +2344,9 @@ class AccountReport(models.Model):
         if options.get("date") and options.get("all_entries") is not None:
             domain = (
                 Domain(
-                    self.env["account.move"]._check_company_domain(report_company_ids)
+                    self.env["account.move"]._get_domain_company_compatible(
+                        report_company_ids
+                    )
                 )
                 & Domain("state", "=", "draft")
                 & Domain("date", "<=", options["date"]["date_to"])
@@ -2426,7 +2429,7 @@ class AccountReport(models.Model):
             account.code: account.name
             for account in self.env["account.account"].search(
                 [
-                    *self.env["account.account"]._check_company_domain(
+                    *self.env["account.account"]._get_domain_company_compatible(
                         self.env.company
                     ),
                     ("code", "in", account_codes),

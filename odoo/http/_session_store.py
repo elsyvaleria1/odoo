@@ -195,7 +195,7 @@ class SessionStore(ABC):
             self._unlink(sid)
         _debug.lifecycle("http.session.removed", sid=sid[:8])
 
-    def delete(self, session: Session) -> None:
+    def remove_session(self, session: Session) -> None:
         self._remove_sid(session.sid)
 
     def keep_alive(self, session: Session) -> None:

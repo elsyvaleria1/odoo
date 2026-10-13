@@ -36,7 +36,7 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
         self.patch(model_class, method, counted)
         return batches
 
-    def _make_chain(self, model_name, parent_name, depth):
+    def _create_chain(self, model_name, parent_name, depth):
         Model = self.env[model_name]
         chain = Model.create({"name": "n0"})
         for index in range(1, depth):
@@ -113,8 +113,8 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
             self.assertEqual(record.display_name, self._nested_name(record))
 
     def test_a_chain_deeper_than_the_stack_recomputes(self):
-        chain = self._make_chain("test_orm.recursive", "parent", 300)
-        tree = self._make_chain("test_orm.recursive.tree", "parent_id", 300)
+        chain = self._create_chain("test_orm.recursive", "parent", 300)
+        tree = self._create_chain("test_orm.recursive.tree", "parent_id", 300)
         self.env.flush_all()
         chain[0].name = "top"
         self.assertEqual(chain[-1].display_name, self._full_name(chain[-1]))
@@ -140,7 +140,7 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
         self.assertEqual(batches, [4, 2])
 
     def test_mutually_recursive_fields_keep_their_values(self):
-        chain = self._make_chain("test_orm.recursive", "parent", 6)
+        chain = self._create_chain("test_orm.recursive", "parent", 6)
         self.env.flush_all()
         chain[0].name = "top"
         self.env.flush_all()
@@ -152,7 +152,7 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
             self.assertEqual(record.alternating_down, expected)
 
     def test_a_cycle_is_computed_record_by_record(self):
-        chain = self._make_chain("test_orm.recursive", "parent", 3)
+        chain = self._create_chain("test_orm.recursive", "parent", 3)
         self.env.flush_all()
         chain[0].parent = chain[-1]
         chain.write({"name": "x"})
@@ -162,7 +162,7 @@ class TestRecursiveRecomputeByLevel(TransactionCase):
 
 
 class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
-    def _make_chain(self, model_name, parent_name, depth):
+    def _create_chain(self, model_name, parent_name, depth):
         Model = self.env[model_name]
         chain = Model.create({"name": "n0"})
         for index in range(1, depth):
@@ -190,7 +190,7 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
     def test_renaming_a_root_costs_the_same_whatever_the_depth(self):
         costs = []
         for depth in (3, 40):
-            chain = self._make_chain("test_orm.recursive", "parent", depth)
+            chain = self._create_chain("test_orm.recursive", "parent", depth)
             Recursive = self.env["test_orm.recursive"]
             costs.append(self._cost(Recursive.browse(chain[0].id), {"name": "top"}))
             self.env.flush_all()
@@ -201,7 +201,7 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
     def test_renaming_a_leaf_reads_its_ancestors_once(self):
         costs = []
         for depth in (3, 40):
-            chain = self._make_chain("test_orm.recursive.tree", "parent_id", depth)
+            chain = self._create_chain("test_orm.recursive.tree", "parent_id", depth)
             Tree = self.env["test_orm.recursive.tree"]
             costs.append(self._cost(Tree.browse(chain[-1].id), {"name": "leaf"}))
             self.env.flush_all()
@@ -210,8 +210,8 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
 
     def test_a_pending_move_is_walked_from_the_cache(self):
         Tree = self.env["test_orm.recursive.tree"]
-        chain = self._make_chain("test_orm.recursive.tree", "parent_id", 6)
-        other = self._make_chain("test_orm.recursive.tree", "parent_id", 4)
+        chain = self._create_chain("test_orm.recursive.tree", "parent_id", 6)
+        other = self._create_chain("test_orm.recursive.tree", "parent_id", 4)
         Tree.browse(chain[3].id).parent_id = other[-1]
         Tree.browse(chain[-1].id).name = "moved"
         self.env.flush_all()
@@ -223,8 +223,8 @@ class TestRecursiveModifiedReadsTheTreeOnce(TransactionCase):
 
     def test_a_move_under_a_new_parent_reaches_every_descendant(self):
         Recursive = self.env["test_orm.recursive"]
-        chain = self._make_chain("test_orm.recursive", "parent", 8)
-        other = self._make_chain("test_orm.recursive", "parent", 3)
+        chain = self._create_chain("test_orm.recursive", "parent", 8)
+        other = self._create_chain("test_orm.recursive", "parent", 3)
         Recursive.browse(chain[2].id).parent = other[-1]
         Recursive.browse(chain[0].id).name = "renamed"
         self.env.flush_all()

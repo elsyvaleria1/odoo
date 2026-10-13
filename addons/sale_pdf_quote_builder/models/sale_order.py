@@ -11,7 +11,9 @@ class SaleOrder(models.Model):
     def _default_quotation_document_ids(self):
         return self.env["quotation.document"].search(
             [
-                *self.env["quotation.document"]._check_company_domain(self.env.company),
+                *self.env["quotation.document"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("quotation_template_ids", "=", False),
                 ("add_by_default", "=", True),
             ]
@@ -46,7 +48,7 @@ class SaleOrder(models.Model):
             order.available_quotation_document_ids = (
                 self.env["quotation.document"]  # noqa: E8507 -- one query per order, on its own template
                 .search(
-                    self.env["quotation.document"]._check_company_domain(
+                    self.env["quotation.document"]._get_domain_company_compatible(
                         order.company_id
                     ),
                     order="sequence",

@@ -14,9 +14,9 @@ from odoo.tests.domain_fuzz import (
     Outcome,
     Schema,
     Viewpoint,
-    build_schema,
     draw_viewpoint,
     evaluators,
+    get_schema,
     item_sizes,
     seeds_from_environment,
 )
@@ -45,7 +45,7 @@ class TestDomainSemanticsFuzz(TransactionCase):
             isolated=True,
         )
         registry.ilike_normalizer = self.env.registry.get_ilike_normalizer(self.env)
-        schema = build_schema(self.env, ITEM_MODELS)
+        schema = get_schema(self.env, ITEM_MODELS)
         env = self.env
 
         @contextmanager

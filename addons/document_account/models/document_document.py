@@ -125,7 +125,7 @@ class DocumentsDocument(models.Model):
         if journal_id is None:
             company_journals = self.env["account.journal"].search(
                 [
-                    *self.env["account.journal"]._check_company_domain(
+                    *self.env["account.journal"]._get_domain_company_compatible(
                         self.env.company
                     ),
                 ]
@@ -223,7 +223,9 @@ class DocumentsDocument(models.Model):
     def account_create_account_bank_statement(self, journal_id=None):
         default_journal = journal_id or self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("type", "=", "bank"),
             ],
             limit=1,

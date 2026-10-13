@@ -119,7 +119,7 @@ class DocumentsAccountActionsServerCommon(DocumentsAccountTestCommon):
         }
 
         all_journals = cls.env["account.journal"].search(
-            cls.env["account.journal"]._check_company_domain(cls.env.company)
+            cls.env["account.journal"]._get_domain_company_compatible(cls.env.company)
         )
 
         journals_by_type_and_name = all_journals.grouped(lambda j: (j.type, j.name))

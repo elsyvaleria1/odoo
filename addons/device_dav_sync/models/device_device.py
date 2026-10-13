@@ -123,7 +123,7 @@ class DeviceDevice(models.Model):
 
             def is_request_authorized(headers, body) -> bool:
                 return (
-                    self.env["res.users.apikeys"]._check_credentials(
+                    self.env["res.users.apikeys"]._get_user_id_for_key(
                         scope=DAV_API_KEY_SCOPE, key=secret
                     )
                     == user.id

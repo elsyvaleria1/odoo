@@ -8,7 +8,7 @@ from odoo.tests import tagged
 from odoo.addons.account_online_synchronization.tests.common import (
     AccountOnlineSynchronizationCommon,
 )
-from odoo.addons.base.models.res_partner_bank_account import sanitize_account_number
+from odoo.addons.base.models.res_partner_bank_account import normalize_account_number
 
 
 @tagged("post_install", "-at_install")
@@ -232,7 +232,7 @@ class TestSynchStatementCreation(AccountOnlineSynchronizationCommon):
         self.assertEqual(online_account_2.journal_ids.currency_id, self.other_currency)
         self.assertEqual(
             online_account_2.journal_ids.bank_account_id.sanitized_acc_number,
-            sanitize_account_number("BE61954856342317"),
+            normalize_account_number("BE61954856342317"),
         )
 
         account_link_journal_wizard.selected_account = online_account_3

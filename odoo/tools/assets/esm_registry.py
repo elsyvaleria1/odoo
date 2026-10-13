@@ -210,7 +210,7 @@ def _merge_external_libs(
         owner_by_spec[spec] = module
 
 
-def _validated_esm_section(manifest: Manifest) -> Mapping[str, Any] | None:
+def _get_esm_section(manifest: Manifest) -> Mapping[str, Any] | None:
     esm = manifest.get("esm")
     if not esm:
         return None
@@ -314,7 +314,7 @@ def _prepare_esm_registry() -> EsmRegistry:
     classic_pages: set[str] = set()
     declaring_modules = 0
     for manifest in Manifest.get_all_addon_manifests():
-        esm = _validated_esm_section(manifest)
+        esm = _get_esm_section(manifest)
         if esm is None:
             continue
         declaring_modules += 1

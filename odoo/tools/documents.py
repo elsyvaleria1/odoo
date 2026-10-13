@@ -75,7 +75,7 @@ class PdfEmbeddedFiles(BaseReader):
 register_reader(PdfEmbeddedFiles())
 
 
-def _module_is_loaded(component: Any, options: Mapping[str, Any]) -> bool:
+def _is_module_loaded(component: Any, options: Mapping[str, Any]) -> bool:
     module = getattr(component, "module", "")
     env = options.get("env")
     if not module or env is None:
@@ -83,4 +83,4 @@ def _module_is_loaded(component: Any, options: Mapping[str, Any]) -> bool:
     return module in env.registry.loaded_modules
 
 
-register_availability_gate(_module_is_loaded)
+register_availability_gate(_is_module_loaded)

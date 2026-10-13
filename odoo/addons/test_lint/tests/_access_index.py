@@ -582,28 +582,34 @@ def _scoped_models(_in_scope: tuple[str, ...]) -> dict[str, ModelInfo]:
         else:
             info.kind = "extension"
         for class_def in class_defs:
-            for parent in class_def.inherit:
-                if parent != name and parent not in info.inherit:
-                    info.inherit.append(parent)
-            info.inherits.update(class_def.inherits)
-            for field_name, field_info in class_def.fields.items():
-                known = info.fields.get(field_name)
-                if known and known.comodel and not field_info.comodel:
-                    continue
-                info.fields[field_name] = field_info
-            if class_def.attributes.get("_log_access") is False:
-                info.log_access = False
-            if class_def.attributes.get("_inherits_rules") is False:
-                info.inherits_rules = False
-            if class_def.attributes.get("_auto") is False:
-                info.auto = False
-            for key, (path, kind) in (
-                class_def.attributes.get("_access_anchors") or {}
-            ).items():
-                info.anchors[key] = path
-                info.anchor_kinds[key] = kind
+            _update_model_info_from_class(info, class_def, name)
         result[name] = info
     return result
+
+
+def _update_model_info_from_class(
+    info: ModelInfo, class_def: _ClassDef, model_name: str
+) -> None:
+    for parent in class_def.inherit:
+        if parent != model_name and parent not in info.inherit:
+            info.inherit.append(parent)
+    info.inherits.update(class_def.inherits)
+    for field_name, field_info in class_def.fields.items():
+        known = info.fields.get(field_name)
+        if known and known.comodel and not field_info.comodel:
+            continue
+        info.fields[field_name] = field_info
+    if class_def.attributes.get("_log_access") is False:
+        info.log_access = False
+    if class_def.attributes.get("_inherits_rules") is False:
+        info.inherits_rules = False
+    if class_def.attributes.get("_auto") is False:
+        info.auto = False
+    for key, (path, kind) in (
+        class_def.attributes.get("_access_anchors") or {}
+    ).items():
+        info.anchors[key] = path
+        info.anchor_kinds[key] = kind
 
 
 def fields_of(model_name: str) -> dict[str, FieldInfo]:
@@ -719,15 +725,15 @@ def conditions(node: ast.AST) -> tuple[list[Condition], list[str]]:
     return found, problems
 
 
-def validate(model_name: str, text: str) -> list[str]:
+def get_domain_problems(model_name: str, text: str) -> list[str]:
     try:
         node = parse_domain(text)
     except SyntaxError as error:
         return [f"does not parse: {error.msg}"]
-    return _validate(model_name, node)
+    return _get_domain_node_problems(model_name, node)
 
 
-def _validate(model_name: str, node: ast.AST) -> list[str]:
+def _get_domain_node_problems(model_name: str, node: ast.AST) -> list[str]:
     found, problems = conditions(node)
     for condition in found:
         owner = model_name
@@ -766,7 +772,7 @@ def _validate(model_name: str, node: ast.AST) -> list[str]:
         elif condition.operator in ("any", "not any", "any!", "not any!") and (
             comodel := comodel_of(owner, target)
         ):
-            problems += _validate(comodel, condition.value)
+            problems += _get_domain_node_problems(comodel, condition.value)
     return problems
 
 

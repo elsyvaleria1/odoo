@@ -5,7 +5,7 @@ from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 
-from odoo.addons.base.models.ir_module import assert_log_admin_access
+from odoo.addons.base.models.ir_module import wrap_with_admin_access_check
 from odoo.addons.base.models.ir_ui_view_base import attach_ir
 
 _debug = DebugLog(__name__)
@@ -60,7 +60,7 @@ class WizardIrModuleModuleApplyScheduled(models.TransientModel):
         self.env["ir.module.module"].button_reset_state()
         return {"type": "ir.actions.act_window_close"}
 
-    @assert_log_admin_access
+    @wrap_with_admin_access_check
     def upgrade_module(self) -> dict[str, str]:
         Module = self.env["ir.module.module"]
 

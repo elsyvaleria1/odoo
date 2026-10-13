@@ -138,7 +138,7 @@ class ManifestChecker:
     def addon_dir(self, name: str) -> Path | None:
         return self.addon_dirs.get(name)
 
-    def findings(self, module: str, data: Mapping, module_dir: Path) -> list[str]:
+    def get_findings(self, module: str, data: Mapping, module_dir: Path) -> list[str]:
         return [f"{module}: {text}" for text in self._iter(module, data, module_dir)]
 
     def _iter(self, module: str, data: Mapping, module_dir: Path) -> Iterator[str]:
@@ -450,13 +450,13 @@ def workspace_checker(roots: list[str], excluded: set[str]) -> ManifestChecker:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = _sort_manifests.build_parser()
+    parser = _sort_manifests.prepare_argument_parser()
     parser.description = (
         "Report every __manifest__.py the fixer would rewrite, and every value "
         "the fixer cannot decide for you."
     )
     args = parser.parse_args(argv)
-    _sort_manifests.ensure_odoo_importable()
+    _sort_manifests.add_checkout_to_import_path_if_needed()
     excluded = set(args.exclude)
     checker = workspace_checker(args.roots, excluded)
 
@@ -474,7 +474,7 @@ def main(argv: list[str] | None = None) -> int:
         if data is not None:
             value.extend(
                 f"{manifest.parent}: {text.partition(': ')[2]}"
-                for text in checker.findings(
+                for text in checker.get_findings(
                     manifest.parent.name, data, manifest.parent
                 )
             )

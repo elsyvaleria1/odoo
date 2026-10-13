@@ -29,7 +29,7 @@ class TestDeviceTransportAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         enrollment = cls.env["device.enrollment"].create(
             {
                 "name": "Matrix enrollment",

@@ -41,7 +41,7 @@ both the doors and their contract.
   directory (LDAP) password is a password: a login without an account yet is
   refused there before any auth method sees it.
 - **XML-RPC is behind the login cooldown** as the web login is: `dispatch_rpc`
-  hands the client's address to `res.users._assert_can_auth` through
+  hands the client's address to `res.users._admit_authentication_attempt` through
   `odoo.http.rpc_client()`, since the call runs with its request borrowed. A
   credential is checked in a transaction of its own, so the claim on the
   address ends with the check; one that already passed takes no claim. A

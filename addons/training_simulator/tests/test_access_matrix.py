@@ -41,7 +41,7 @@ class TestTrainingSimulatorAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         simulator = cls.env["training.simulator"].create(
             {
                 "name": "matrix simulator",

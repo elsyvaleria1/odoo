@@ -22,7 +22,7 @@ class TestAccessMatrixRunner(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         docs = cls.env[MODEL].with_user(cls.users["owner"])
         return {
             "doc": docs.create(

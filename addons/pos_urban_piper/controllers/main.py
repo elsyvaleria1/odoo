@@ -579,7 +579,9 @@ class PosUrbanPiperController(http.Controller):
         )
         price_unit = float(line_data["price"] + price_extra)
         tax_ids = main_product.taxes_id.filtered_domain(
-            request.env["account.tax"]._check_company_domain(pos_config_sudo.company_id)
+            request.env["account.tax"]._get_domain_company_compatible(
+                pos_config_sudo.company_id
+            )
         )
         if line_data.get("taxes"):
             line_taxes = self._get_tax_value(line_data.get("taxes"), pos_config_sudo)

@@ -1159,7 +1159,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
                 "Cannot commit inside a savepoint! "
                 "This would corrupt the savepoint's rollback state."
             )
-        self._refuse_to_commit_an_aborted_transaction("before_flush")
+        self._check_transaction_can_commit("before_flush")
         _debug.pipeline(
             "cursor.commit_started",
             db=self.dbname,
@@ -1169,7 +1169,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         )
         with _debug.perf("cursor.commit.flush", cr=self, db=self.dbname):
             self.flush()
-        self._refuse_to_commit_an_aborted_transaction("after_flush")
+        self._check_transaction_can_commit("after_flush")
         observer = self._commit_write_observer
         written = (
             observer is not None and self._transaction_touched and self._has_written()
@@ -1202,7 +1202,7 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
         ):
             self.postcommit.drain()
 
-    def _refuse_to_commit_an_aborted_transaction(self, stage: str) -> None:
+    def _check_transaction_can_commit(self, stage: str) -> None:
         if not self.in_failed_transaction():
             return
         _debug.logic(
@@ -1396,15 +1396,15 @@ class Connection:
 if TYPE_CHECKING:
     from .bulk import _CursorInternals
 
-    def _assert_cursor_satisfies_bulk_host(_c: Cursor) -> _CursorInternals:
+    def _get_cursor_bulk_host(_c: Cursor) -> _CursorInternals:
         return _c
 
     from .metrics import _MetricsHost
 
-    def _assert_cursor_satisfies_metrics_host(_c: Cursor) -> _MetricsHost:
+    def _get_cursor_metrics_host(_c: Cursor) -> _MetricsHost:
         return _c
 
     from .pipeline import _PipelineHost
 
-    def _assert_cursor_satisfies_pipeline_host(_c: Cursor) -> _PipelineHost:
+    def _get_cursor_pipeline_host(_c: Cursor) -> _PipelineHost:
         return _c

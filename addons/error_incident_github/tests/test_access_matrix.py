@@ -23,7 +23,7 @@ class TestErrorIncidentGithubAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         try:
             raise ValueError("matrix")
         except ValueError as exc:

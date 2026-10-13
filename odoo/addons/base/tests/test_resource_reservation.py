@@ -813,7 +813,7 @@ class TestResourceFreeWindow(TransactionCase):
     def test_a_free_window_is_the_one_asked_for(self):
         start = datetime(2026, 5, 4, 8)
         self.assertEqual(
-            (self.press | self.crane)._find_free_window(start, 2),
+            (self.press | self.crane)._get_window_free(start, 2),
             (start, datetime(2026, 5, 4, 10)),
         )
 
@@ -821,7 +821,7 @@ class TestResourceFreeWindow(TransactionCase):
         self._book(self.press, datetime(2026, 5, 4, 7), datetime(2026, 5, 4, 9))
         self._book(self.crane, datetime(2026, 5, 4, 9), datetime(2026, 5, 4, 12))
         self.assertEqual(
-            (self.press | self.crane)._find_free_window(datetime(2026, 5, 4, 8), 2),
+            (self.press | self.crane)._get_window_free(datetime(2026, 5, 4, 8), 2),
             (datetime(2026, 5, 4, 12), datetime(2026, 5, 4, 14)),
         )
 
@@ -831,7 +831,7 @@ class TestResourceFreeWindow(TransactionCase):
         )
         booking.active = False
         start = datetime(2026, 5, 4, 8)
-        self.assertEqual(self.press._find_free_window(start, 1)[0], start)
+        self.assertEqual(self.press._get_window_free(start, 1)[0], start)
 
     def test_load_under_the_ceiling_leaves_the_window_free(self):
         self.press.booking_limit_percentage = 150
@@ -869,7 +869,7 @@ class TestResourceFreeWindow(TransactionCase):
     def test_no_window_within_the_horizon_is_none(self):
         self._book(self.press, datetime(2026, 5, 4), datetime(2026, 5, 10))
         self.assertIsNone(
-            self.press._find_free_window(datetime(2026, 5, 4), 1, horizon_days=3)
+            self.press._get_window_free(datetime(2026, 5, 4), 1, horizon_days=3)
         )
 
 

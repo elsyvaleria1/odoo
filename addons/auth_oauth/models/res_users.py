@@ -183,9 +183,9 @@ class ResUsers(models.Model):
             raise AccessDenied
         return (self.env.cr.dbname, login, access_token)
 
-    def _check_credentials(self, credential, env):
+    def _authenticate_credentials(self, credential, env):
         try:
-            return super()._check_credentials(credential, env)
+            return super()._authenticate_credentials(credential, env)
         except AccessDenied:
             if not (credential["type"] == "oauth_token" and credential["token"]):
                 raise

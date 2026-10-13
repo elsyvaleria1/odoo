@@ -1132,7 +1132,7 @@ class TestASavepointInsideAPipelineRecovers(BaseCase):
                 cr.execute("INSERT INTO _pipe_goc VALUES (1) RETURNING k")
                 return cr.fetchone()
 
-            def find():
+            def _get_existing_row():
                 cr.execute("SELECT k FROM _pipe_goc WHERE k = 1")
                 return cr.fetchone()
 
@@ -1140,7 +1140,7 @@ class TestASavepointInsideAPipelineRecovers(BaseCase):
                 cr.execute("SELECT 1")
                 cr.execute("SELECT 1")
                 row, created = get_or_create_row(
-                    cr, insert, find, conflict="_pipe_goc", flush=False
+                    cr, insert, _get_existing_row, conflict="_pipe_goc", flush=False
                 )
             self.assertEqual((row, created), ((1,), False))
             self.assertFalse(cr.in_failed_transaction())
@@ -1410,13 +1410,15 @@ class TestInsertOrExistingUnderARealRace(BaseCase):
                     )
                     return cr.fetchone()[0]
 
-                def find():
+                def _get_existing_row():
                     cr.execute(f"SELECT id FROM {self.TABLE} WHERE k = 'same'")
                     row = cr.fetchone()
                     return row[0] if row else None
 
                 barrier.wait(timeout=30)
-                _row, created = get_or_create_row(cr, insert, find, conflict="ioe key")
+                _row, created = get_or_create_row(
+                    cr, insert, _get_existing_row, conflict="ioe key"
+                )
                 cr.commit()
                 outcome = "created" if created else "found"
             except ConcurrencyError:
@@ -3211,7 +3213,7 @@ class TestBorrowHonoursItsTimeout(BaseCase):
             **overrides,
         }
 
-    def _refused(self, **overrides):
+    def _get_connection_info_for_closed_port(self, **overrides):
         with socket.socket() as probe:
             probe.settimeout(0.5)
             if probe.connect_ex(("127.0.0.1", self.refused_port)) == 0:
@@ -3220,7 +3222,7 @@ class TestBorrowHonoursItsTimeout(BaseCase):
 
     def test_cold_pool_to_an_unreachable_host_stays_inside_the_budget(self):
         budget = 3.0
-        info = self._refused()
+        info = self._get_connection_info_for_closed_port()
         pool = ConnectionPool(maxconn=4, borrow_timeout=budget)
         try:
             start = time.monotonic()
@@ -4529,7 +4531,7 @@ class TestPoolCleanupIsolatesFailures(BaseCase):
         def get_stats(self):
             return {}
 
-    def _make_pool_with(self, *fakes):
+    def _prepare_pool_with_connections(self, *fakes):
         cp = ConnectionPool(maxconn=8)
         cp._pools = {frozenset([("dbname", fp.name)]): fp for fp in fakes}
         return cp
@@ -4538,7 +4540,7 @@ class TestPoolCleanupIsolatesFailures(BaseCase):
         a = self._FakePool("A", raises=True)
         b = self._FakePool("B")
         c = self._FakePool("C")
-        cp = self._make_pool_with(a, b, c)
+        cp = self._prepare_pool_with_connections(a, b, c)
         cp.close_all()
         self.assertTrue(a.close_called and b.close_called and c.close_called)
         self.assertEqual(cp._pools, {})
@@ -4558,7 +4560,7 @@ class TestPoolCleanupIsolatesFailures(BaseCase):
     def test_drain_drains_survivors_despite_failure(self):
         a = self._FakePool("A", raises=True)
         b = self._FakePool("B")
-        cp = self._make_pool_with(a, b)
+        cp = self._prepare_pool_with_connections(a, b)
         cp.drain_all()
         self.assertTrue(a.drain_called and b.drain_called)
 
@@ -4797,7 +4799,7 @@ class TestCronsRecoverLikeRequests(BaseCase):
         )
 
     def _drive_callback(self, callback):
-        from odoo.addons.base.tests.test_ir_cron import make_job
+        from odoo.addons.base.tests.test_ir_cron import prepare_job_row
 
         reg = registry()
         with contextlib.closing(reg.cursor()) as cr:
@@ -4808,7 +4810,7 @@ class TestCronsRecoverLikeRequests(BaseCase):
             with patch.object(cls, self.ACTION, callback):
                 cls._run_server_action_with_retry(
                     cron,
-                    make_job(cron, cron_name="probe", ir_actions_server_id=0),
+                    prepare_job_row(cron, cron_name="probe", ir_actions_server_id=0),
                     env,
                 )
 
@@ -5483,7 +5485,7 @@ class TestSchemaForeignKeys(BaseCase):
             self.cr, "_test_fk_child", "parent_id", "_test_fk_parent", "id", ondelete
         )
 
-    def _find(self, ondelete):
+    def _get_foreign_key_names(self, ondelete):
         return sql_schema.get_fk_constraint_names(
             self.cr, "_test_fk_child", "parent_id", "_test_fk_parent", "id", ondelete
         )
@@ -5496,13 +5498,15 @@ class TestSchemaForeignKeys(BaseCase):
                     "DROP CONSTRAINT IF EXISTS _test_fk_child_parent_id_fkey"
                 )
                 self._add(policy)
-                self.assertTrue(self._find(policy), f"{policy} was not found back")
+                self.assertTrue(
+                    self._get_foreign_key_names(policy), f"{policy} was not found back"
+                )
 
     def test_a_key_is_not_found_under_a_different_policy(self):
         self._add("RESTRICT")
-        self.assertTrue(self._find("RESTRICT"))
+        self.assertTrue(self._get_foreign_key_names("RESTRICT"))
         self.assertEqual(
-            self._find("CASCADE"),
+            self._get_foreign_key_names("CASCADE"),
             [],
             "check_foreign_keys drops and re-adds on this answer; matching "
             "regardless of ondelete would leave a changed policy unapplied",
@@ -5517,7 +5521,7 @@ class TestSchemaForeignKeys(BaseCase):
 
     def test_the_policy_is_case_insensitive(self):
         self._add("cascade")
-        self.assertTrue(self._find("CASCADE"))
+        self.assertTrue(self._get_foreign_key_names("CASCADE"))
 
     def test_the_batch_query_reports_the_whole_row(self):
         self._add("SET NULL")
@@ -6525,12 +6529,12 @@ class TestInsertOrExisting(BaseCase):
             )
             return cr.fetchone()[0]
 
-        def find():
+        def _get_existing_row():
             cr.execute(f'SELECT id FROM "{self.TABLE}" WHERE k = %s', (key,))
             row = cr.fetchone()
             return row[0] if row else None
 
-        return get_or_create_row(cr, insert, find, conflict=f"key {key!r}")
+        return get_or_create_row(cr, insert, _get_existing_row, conflict=f"key {key!r}")
 
     def test_clean_insert_reports_created(self):
         with self.registry.cursor() as cr:

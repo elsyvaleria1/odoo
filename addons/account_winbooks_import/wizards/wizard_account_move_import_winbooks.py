@@ -195,7 +195,7 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
                 )
             if tax_group_name:
                 self.env["account.tax.group"].search(
-                    self.env["account.tax.group"]._check_company_domain(
+                    self.env["account.tax.group"]._get_domain_company_compatible(
                         self.env.company
                     )
                 ).with_context(skip_constraints_check=skip_constraints_check)[
@@ -236,7 +236,9 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
                 for rec in val:
                     account = AccountAccount.search(
                         [
-                            *AccountAccount._check_company_domain(self.env.company),
+                            *AccountAccount._get_domain_company_compatible(
+                                self.env.company
+                            ),
                             ("code", "=", rec.get("NUMBER")),
                         ],
                         limit=1,
@@ -344,7 +346,7 @@ class WizardAccountMoveImportWinbooks(models.TransientModel):
         journals = self.env["account.journal"]
         AccountJournal = self.env["account.journal"]
         existing_journals = AccountJournal.search(
-            AccountJournal._check_company_domain(self.env.company)
+            AccountJournal._get_domain_company_compatible(self.env.company)
         )
         used_codes = set(existing_journals.mapped("code"))
         processed_records = set()

@@ -28,7 +28,7 @@ class TestShippingOrder(TransactionCase):
     def _read(self, text, barcodes=None):
         document = Document.of(text=text, name="sheet.txt")
         if barcodes is not None:
-            document.seed("barcodes", barcodes)
+            document.update_representation("barcodes", barcodes)
         return run(document, "shipping_order", self.env, up_to=CHEAP)
 
     def test_the_sheet_s_text_gives_route_service_date_and_amounts(self):

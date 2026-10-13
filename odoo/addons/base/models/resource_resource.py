@@ -612,6 +612,16 @@ class ResourceResource(models.Model):
                 humans.write({**vals, "partner_id": party.id})
                 return (self - humans).write(vals)
         result = super().write(vals)
+        self._sync_reservations_for_changed_fields(vals)
+        things = self.filtered("kind_id")
+        if "kind_id" in vals:
+            things._on_kind_changed(vals)
+        elif vals.keys() & {"identifier_ids", *self._get_identifier_field_names()}:
+            things._check_required_identifiers()
+        things._notify_kind_models(vals)
+        return result
+
+    def _sync_reservations_for_changed_fields(self, vals: ValuesType) -> None:
         if "calendar_id" in vals:
             self.env["resource.reservation"]._recompute_reservations_field(
                 Domain("resource_id", "in", self.ids)
@@ -644,13 +654,6 @@ class ResourceResource(models.Model):
                     self.env[model_name].sudo().browse(
                         rows.mapped("res_id")
                     ).exists()._active_for_sync()._sync_reservations()
-        things = self.filtered("kind_id")
-        if "kind_id" in vals:
-            things._on_kind_changed(vals)
-        elif vals.keys() & {"identifier_ids", *self._get_identifier_field_names()}:
-            things._check_required_identifiers()
-        things._notify_kind_models(vals)
-        return result
 
     def _write_entering_maintenance(self, vals: ValuesType) -> bool:
         by_state_before = self.grouped(
@@ -842,7 +845,7 @@ class ResourceResource(models.Model):
         for resource in self:
             if resource.type == "human":
                 if resource.partner_id:
-                    resource.partner_id._ensure_private_facet().write(
+                    resource.partner_id._get_or_create_private_facet().write(
                         {
                             "birthdate": resource.date_origin,
                             "country_of_birth": resource.origin_country_id.id,
@@ -1048,7 +1051,7 @@ class ResourceResource(models.Model):
             self, when="open", archived=True
         )._end(at)
 
-    def _find_free_window(
+    def _get_window_free(
         self,
         start: datetime,
         hours: float,

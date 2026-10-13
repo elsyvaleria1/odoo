@@ -225,7 +225,7 @@ class _RegistryFieldsMixin(_RegistryStubs):
         return self.model_graph.get_dependent_fields(field)
 
     @locked
-    def refresh_field_depends(
+    def reset_field_depends(
         self, env: typing.Any, fields: Iterable[Field[typing.Any]]
     ) -> None:
         refreshed = 0

@@ -213,7 +213,7 @@ class TestRunnerLogging(TestRunnerLoggingCommon):
 
     def test_raise_subtest(self):
 
-        def make_message(message):
+        def _get_expected_log_message(message):
             return f"""ERROR: Subtest TestRunnerLogging.test_raise_subtest (<subtest>)
 Traceback (most recent call last):
   File "/root_path/odoo/odoo/addons/base/tests/test_test_suite.py", line $line, in test_raise_subtest
@@ -223,7 +223,7 @@ Exception: {message}
 
         self.expected_logs = [
             (logging.INFO, "=" * 70),
-            (logging.ERROR, make_message("This is an error")),
+            (logging.ERROR, _get_expected_log_message("This is an error")),
         ]
         with self.subTest():
             raise Exception("This is an error")
@@ -231,7 +231,7 @@ Exception: {message}
 
         self.expected_logs = [
             (logging.INFO, "=" * 70),
-            (logging.ERROR, make_message("This is an error2")),
+            (logging.ERROR, _get_expected_log_message("This is an error2")),
         ]
 
         with self.subTest():

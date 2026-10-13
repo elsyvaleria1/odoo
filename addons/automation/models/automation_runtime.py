@@ -19,7 +19,7 @@ class AutomationRuntime(models.Model):
     _description = "Automation Workflow Runtime Instance"
     _inherit = ["mixin.mail.thread", "mixin.mail.activity"]
     _check_company_auto = True
-    _check_company_domain = models.check_companies_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_companies_parent_of
     _order = "create_date desc, id desc"
     _access_anchors = frozendict(
         {

@@ -21,28 +21,29 @@ class FixedWindowLimiter:
         self._lock = threading.Lock()
         self._state: dict[str, list[float]] = {}
 
-    def is_limited(self, key: str) -> bool:
+    def acquire_request_slot(self, key: str) -> bool:
         now = monotonic()
         with self._lock:
             if len(self._state) > self.max_keys:
-                self._sweep(now)
+                self._remove_expired_keys(now)
+                self._evict_keys_over_capacity()
             state = self._state.get(key)
             if state is None or now - state[0] >= self.window:
                 if state is not None:
                     _debug.logic("rate_window_expired", key=key, hits=state[1])
                 self._state[key] = [now, 1]
-                return False
+                return True
             if state[1] >= self.limit:
                 _debug.logic("rate_limited", key=key, hits=state[1])
-                return True
+                return False
             state[1] += 1
-            return False
+            return True
 
     def clear(self) -> None:
         with self._lock:
             self._state.clear()
 
-    def _sweep(self, now: float) -> None:
+    def _remove_expired_keys(self, now: float) -> None:
         cutoff = now - self.window
         before = len(self._state)
         for stale in [k for k, v in self._state.items() if v[0] < cutoff]:
@@ -50,6 +51,8 @@ class FixedWindowLimiter:
         _debug.perf.count(
             "rate_sweep_stale_evicted", keys_before=before, keys_after=len(self._state)
         )
+
+    def _evict_keys_over_capacity(self) -> None:
         if len(self._state) > self.max_keys:
             evict = len(self._state) - self.max_keys * 9 // 10
             _debug.logic("rate_sweep_evict_oldest", keys=len(self._state), evict=evict)

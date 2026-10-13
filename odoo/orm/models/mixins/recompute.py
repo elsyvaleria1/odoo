@@ -596,7 +596,9 @@ class RecomputeMixin(_ModelStubs):
 
         env = self.env
         if len(tree):
-            records = self.with_env(env._derive(su=True, active_test=False))
+            records = self.with_env(
+                env._get_or_create_environment(su=True, active_test=False)
+            )
         else:
             records = self
         return records._modified_triggers(

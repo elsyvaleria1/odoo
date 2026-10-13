@@ -45,7 +45,8 @@ def _trickling_server(pieces=10, pause=0.3):
     threading.Thread(target=serve, daemon=True).start()
     try:
         with patch(
-            "odoo.tests.transaction_case._raise_test_timeout", side_effect=lambda t: t
+            "odoo.tests.transaction_case._get_timeout_with_minimum",
+            side_effect=lambda t: t,
         ):
             yield f"http://127.0.0.1:{listener.getsockname()[1]}"
     finally:

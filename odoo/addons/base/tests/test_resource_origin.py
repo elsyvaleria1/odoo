@@ -55,7 +55,7 @@ class TestResourceOrigin(TransactionCase):
         self.assertEqual(self.person.year_origin, 1990)
 
     def test_a_person_holds_several_nationalities(self):
-        facet = self.person.partner_id._ensure_private_facet()
+        facet = self.person.partner_id._get_or_create_private_facet()
         self.env["resource.nationality"].create(
             [
                 {"partner_id": facet.id, "country_id": self.mx.id, "basis": "birth"},

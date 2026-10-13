@@ -143,7 +143,7 @@ class WizardAccountMoveApplyAdvance(models.TransientModel):
         Journal = self.env["account.journal"]
         general_journals = Journal.search(
             [
-                *Journal._check_company_domain(self.company_id),
+                *Journal._get_domain_company_compatible(self.company_id),
                 ("type", "=", "general"),
             ]
         )
@@ -151,7 +151,7 @@ class WizardAccountMoveApplyAdvance(models.TransientModel):
             wizard.journal_id = (
                 wizard.company_id.account_config_id.automatic_entry_default_journal_id
                 or general_journals.filtered_domain(
-                    Journal._check_company_domain(wizard.company_id)
+                    Journal._get_domain_company_compatible(wizard.company_id)
                 )[:1]
             )
 

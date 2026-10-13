@@ -1122,24 +1122,24 @@ class IrCron(models.Model):
             self.env.cr.rollback()
             raise
 
-    def _raise_currently_executing(self) -> typing.NoReturn:
-        raise UserError(
+    def _prepare_cron_running_error(self) -> UserError:
+        return UserError(
             self.env._(
                 "Record cannot be modified right now: "
                 "This cron task is currently being executed and may not be modified "
                 "Please try again in a few minutes"
             )
-        ) from None
+        )
 
     def _lock_for_update_or_raise(self, *, allow_referencing: bool = False) -> None:
         try:
             self.lock_for_update(allow_referencing=allow_referencing)
         except LockError:
             _debug.logic("lock_refused", records=self, reason="row_locked")
-            self._raise_currently_executing()
+            raise self._prepare_cron_running_error() from None
         if running := self._try_lock_jobs():
             _debug.logic("lock_refused", job=running[0].id, reason="advisory_held")
-            running[0]._raise_currently_executing()
+            raise running[0]._prepare_cron_running_error() from None
 
     def _try_lock_jobs(self) -> Self:
         if not self:

@@ -88,11 +88,11 @@ class TestEsmBuildLifecycle(TransactionCase):
         old = self._publish("/web/assets/esm/aaaa/")
         self._publish("/web/assets/esm/bbbb/")
         self._age(old, 1)
-        self.Build._sweep()
+        self.Build._remove_expired_builds_and_get_count()
         self.assertTrue(old.exists())
         self.assertTrue(kept_row.exists())
         self._age(old, 30)
-        self.Build._sweep()
+        self.Build._remove_expired_builds_and_get_count()
         self.assertFalse(old.exists())
         self.assertFalse(kept_row.exists())
 
@@ -102,7 +102,7 @@ class TestEsmBuildLifecycle(TransactionCase):
         self._publish("/web/assets/esm/bbbb/")
         self._age(old, 400)
         with patch.object(type(self.env.registry), "clear_cache") as clear_cache:
-            self.Build._sweep()
+            self.Build._remove_expired_builds_and_get_count()
         self.assertIn("assets", [c.args[0] for c in clear_cache.call_args_list])
 
     def test_the_sweep_keeps_a_directory_another_build_still_owns(self):
@@ -111,7 +111,7 @@ class TestEsmBuildLifecycle(TransactionCase):
         self._publish("/web/assets/esm/dddd/")
         self._publish("/web/assets/esm/cccc/", variant="page=web.assets_frontend")
         self._age(old, 30)
-        self.Build._sweep()
+        self.Build._remove_expired_builds_and_get_count()
         self.assertFalse(old.exists())
         self.assertTrue(shared.exists(), "the page variant compiled the same bytes")
 
@@ -136,14 +136,15 @@ class TestEsmBuildLifecycle(TransactionCase):
         old = self._publish("/web/assets/esm/aaaa/", source_key="k1")
         current = self._publish("/web/assets/esm/bbbb/", source_key="k2")
         self.assertEqual(
-            self.Build._find_reusable("bundle", "test.builds", "default", "k2"),
+            self.Build._get_build_reusable("bundle", "test.builds", "default", "k2"),
             current,
         )
         self.assertEqual(
-            self.Build._find_reusable("bundle", "test.builds", "default", "k1"), old
+            self.Build._get_build_reusable("bundle", "test.builds", "default", "k1"),
+            old,
         )
         self.assertFalse(
-            self.Build._find_reusable("bundle", "test.builds", "default", "k3")
+            self.Build._get_build_reusable("bundle", "test.builds", "default", "k3")
         )
 
     def test_another_variant_built_from_the_same_sources_is_reused(self):
@@ -151,11 +152,13 @@ class TestEsmBuildLifecycle(TransactionCase):
             "/web/assets/esm/aaaa/", variant="website_id=1", source_key="k1"
         )
         self.assertEqual(
-            self.Build._find_reusable("bundle", "test.builds", "website_id=2", "k1"),
+            self.Build._get_build_reusable(
+                "bundle", "test.builds", "website_id=2", "k1"
+            ),
             first,
         )
         self.assertFalse(
-            self.Build._find_reusable("group", "test.builds", "website_id=2", "k1")
+            self.Build._get_build_reusable("group", "test.builds", "website_id=2", "k1")
         )
 
     def test_the_variant_s_own_build_is_preferred_to_another_s(self):
@@ -165,7 +168,9 @@ class TestEsmBuildLifecycle(TransactionCase):
         )
         self._publish("/web/assets/esm/aaaa/", variant="website_id=3", source_key="k1")
         self.assertEqual(
-            self.Build._find_reusable("bundle", "test.builds", "website_id=2", "k1"),
+            self.Build._get_build_reusable(
+                "bundle", "test.builds", "website_id=2", "k1"
+            ),
             own,
         )
 
@@ -183,7 +188,7 @@ class TestEsmBuildLifecycle(TransactionCase):
         republished = self.Build._publish({**spec, "source_key": "k2"})
         self.assertEqual(republished.source_key, "k2")
         self.assertEqual(
-            self.Build._find_reusable("bundle", "test.builds", "default", "k2"),
+            self.Build._get_build_reusable("bundle", "test.builds", "default", "k2"),
             republished,
         )
 
@@ -389,7 +394,7 @@ class TestEsbuildLockSerializesCompiles(TransactionCase):
         self.assertFalse(
             self.env["ir.asset.build"]
             .sudo()
-            ._find_reusable("bundle", self.BUNDLE, self.variant, self.key),
+            ._get_build_reusable("bundle", self.BUNDLE, self.variant, self.key),
             "the test transaction cannot see the committed build",
         )
         result, _children = self._compile()

@@ -260,7 +260,7 @@ class AccountMoveLine(models.Model):
         account_query = self.env["account.account"]._search(
             Domain.AND(
                 [
-                    self.env["account.account"]._check_company_domain(
+                    self.env["account.account"]._get_domain_company_compatible(
                         move.company_id or self.env.company
                     ),
                     Domain("internal_group", "not in", (excluded_group, "off")),

@@ -113,7 +113,7 @@ class AssetTemplateController(http.Controller):
                     .with_company(current_company)
                     .search(
                         [
-                            *env["account.account"]._check_company_domain(
+                            *env["account.account"]._get_domain_company_compatible(
                                 current_company
                             ),
                             ("account_type", "=", account_type),
@@ -140,7 +140,9 @@ class AssetTemplateController(http.Controller):
             .with_company(current_company)
             .search(
                 [
-                    *env["account.journal"]._check_company_domain(current_company),
+                    *env["account.journal"]._get_domain_company_compatible(
+                        current_company
+                    ),
                     ("type", "=", "general"),
                 ],
                 limit=1,

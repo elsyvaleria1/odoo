@@ -801,8 +801,8 @@ assert_eq "mail_message_access.py holds the access rule" \
     "$(grep -cE 'def _get_forbidden_access\(' "$MAIL/models/mail_message_access.py")" "1"
 assert_eq "mail_message_store.py holds _to_store" \
     "$(grep -cE 'def _to_store\(' "$MAIL/models/mail_message_store.py")" "1"
-assert_eq "_check_access moved off mail_message.py" \
-    "$(grep -cE 'def _check_access\(' "$MAIL/models/mail_message.py")" "0"
+assert_eq "_get_records_forbidden_and_error_factory moved off mail_message.py" \
+    "$(grep -cE 'def _get_records_forbidden_and_error_factory\(' "$MAIL/models/mail_message.py")" "0"
 # 3x each: the section-1 data-model row, the three-files note, and the model index.
 assert_eq "MODEL_MAP.md lists mail_message_access.py" \
     "$(grep -c 'mail_message_access.py' "$DOC/MODEL_MAP.md")" "3"

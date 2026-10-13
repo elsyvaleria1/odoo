@@ -17,7 +17,9 @@ class WizardProductProductReplenish(models.TransientModel):
                     self.env["stock.warehouse"]
                     .search(
                         [
-                            *self.env["stock.warehouse"]._check_company_domain(company),
+                            *self.env["stock.warehouse"]._get_domain_company_compatible(
+                                company
+                            ),
                         ],
                         limit=1,
                     )

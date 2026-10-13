@@ -153,7 +153,7 @@ def _strip_signatures(
     return copied_node
 
 
-def _find_by_id(root: etree._Element, uri: str) -> etree._Element:
+def _get_element_with_id(root: etree._Element, uri: str) -> etree._Element:
     identifier = uri[1:]
     results = root.xpath(_ID_XPATH, id=identifier)
     _debug.logic("dsig.reference", kind="id", matches=len(results))
@@ -172,7 +172,7 @@ def _resolve_reference(uri: str, reference: etree._Element) -> bytes:
     if not uri:
         node = root
     elif uri.startswith("#"):
-        node = _find_by_id(root, uri)
+        node = _get_element_with_id(root, uri)
     else:
         _debug.logic("dsig.reference", kind="unresolved")
         raise XmlSigError(f"URI {uri!r} not found")

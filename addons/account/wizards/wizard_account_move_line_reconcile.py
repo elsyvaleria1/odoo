@@ -235,7 +235,7 @@ class WizardAccountMoveLineReconcile(models.TransientModel):
         for wizard in self:
             wizard.journal_id = self.env["account.journal"].search(  # noqa: E8507 -- a transient wizard opened on one company
                 [
-                    *self.env["account.journal"]._check_company_domain(
+                    *self.env["account.journal"]._get_domain_company_compatible(
                         wizard.company_id
                     ),
                     ("type", "=", "general"),

@@ -7,7 +7,7 @@ from odoo.orm.domain import Domain
 from odoo.orm.fields.relational._base import PENDING_SCOPE_KEY
 from odoo.tests import TransactionCase, new_test_user, tagged
 
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 
 
 @tagged("post_install", "-at_install")
@@ -28,7 +28,7 @@ class TestX2manyCacheScope(TransactionCase):
             ]
         )
         for group in ("base.group_user", "base.group_partner_manager"):
-            make_guard_row(
+            create_guard_row(
                 cls.env,
                 "res.partner",
                 "[('name', 'not like', 'scope hidden')]",
@@ -155,7 +155,7 @@ class TestX2manyScopeKey(TransactionCase):
             groups="base.group_user",
             company_ids=[Command.set((company_a | company_b).ids)],
         )
-        make_guard_row(
+        create_guard_row(
             self.env,
             "res.company",
             "[('name', '!=', False)]",
@@ -197,7 +197,7 @@ class TestX2manyScopeInvariant(TransactionCase):
             ("res.partner", "walk hidden"),
             ("res.partner.tag", "walk hidden"),
         ):
-            make_guard_row(
+            create_guard_row(
                 cls.env,
                 model,
                 f"[('name', 'not like', '{hidden}')]",

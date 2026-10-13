@@ -14,7 +14,7 @@ class ResCountry(models.Model):
             country
             for [country] in self.env["account.fiscal.position"]._read_group(
                 [
-                    *self._check_company_domain(self.env.company),
+                    *self._get_domain_company_compatible(self.env.company),
                     ("foreign_vat", "!=", False),
                     ("country_id", "in", self.ids),
                 ],

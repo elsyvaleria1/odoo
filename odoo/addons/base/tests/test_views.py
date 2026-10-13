@@ -223,7 +223,7 @@ class TestViewInheritance(ViewCase):
             )
         return etree.tostring(element, encoding="unicode")
 
-    def makeView(self, name, parent=None, arch=None):
+    def create_view(self, name, parent=None, arch=None):
         view = self.View.create(
             {
                 "model": self.model,
@@ -247,24 +247,26 @@ class TestViewInheritance(ViewCase):
         self.model = "ir.ui.view.custom"
         self.view_ids = {}
 
-        self.a = self.makeView("A")
-        self.a1 = self.makeView("A1", self.a.id)
-        self.a2 = self.makeView("A2", self.a.id)
-        self.a11 = self.makeView("A11", self.a1.id)
+        self.a = self.create_view("A")
+        self.a1 = self.create_view("A1", self.a.id)
+        self.a2 = self.create_view("A2", self.a.id)
+        self.a11 = self.create_view("A11", self.a1.id)
         self.a11.mode = "primary"
-        self.makeView("A111", self.a11.id)
-        self.makeView("A12", self.a1.id)
-        self.makeView("A21", self.a2.id)
-        self.a22 = self.makeView("A22", self.a2.id)
-        self.makeView("A221", self.a22.id)
+        self.create_view("A111", self.a11.id)
+        self.create_view("A12", self.a1.id)
+        self.create_view("A21", self.a2.id)
+        self.a22 = self.create_view("A22", self.a2.id)
+        self.create_view("A221", self.a22.id)
 
-        self.b = self.makeView("B", arch=self.arch_for("B", "list"))
-        self.makeView("B1", self.b.id, arch=self.arch_for("B1", "list", parent=self.b))
-        self.c = self.makeView("C", arch=self.arch_for("C", "list"))
+        self.b = self.create_view("B", arch=self.arch_for("B", "list"))
+        self.create_view(
+            "B1", self.b.id, arch=self.arch_for("B1", "list", parent=self.b)
+        )
+        self.c = self.create_view("C", arch=self.arch_for("C", "list"))
         self.c.write({"priority": 1})
 
-        self.d = self.makeView("D")
-        self.d1 = self.makeView("D1", self.d.id)
+        self.d = self.create_view("D")
+        self.d1 = self.create_view("D1", self.d.id)
         self.d1.arch = None
 
     def test_get_inheriting_views(self):
@@ -301,12 +303,12 @@ class TestViewInheritance(ViewCase):
         self.assertFalse(self.View.default_view(model=self.model, view_type="graph"))
 
     def test_no_recursion(self):
-        r1 = self.makeView("R1")
+        r1 = self.create_view("R1")
         with self.assertRaises(ValidationError):
             r1.write({"inherit_id": r1.id})
 
-        r2 = self.makeView("R2", r1.id)
-        r3 = self.makeView("R3", r2.id)
+        r2 = self.create_view("R2", r1.id)
+        r3 = self.create_view("R3", r2.id)
         with self.assertRaises(ValidationError):
             r2.write({"inherit_id": r3.id})
 
@@ -324,7 +326,7 @@ class TestViewInheritance(ViewCase):
     def test_write_arch(self):
         self.env["res.lang"]._activate_lang("fr_FR")
 
-        v = self.makeView("T", arch='<form string="Foo">Bar</form>')
+        v = self.create_view("T", arch='<form string="Foo">Bar</form>')
         v.update_field_translations(
             "arch_db", {"fr_FR": {"Foo": "Fou", "Bar": "Barre"}}
         )
@@ -423,7 +425,7 @@ class TestViewInheritance(ViewCase):
                 </div>
             </form>
         """
-        base_view = self.makeView("invalid_xpath_base_view", arch=base_view_arch)
+        base_view = self.create_view("invalid_xpath_base_view", arch=base_view_arch)
 
         child_view_arch = """
         <data>
@@ -490,7 +492,7 @@ class TestViewInheritance(ViewCase):
         self.assertEqual(child_primary_no_arch.invalid_locators, False)
 
     def test_invalid_locators_survive_a_malformed_move_xpath(self):
-        base_view = self.makeView(
+        base_view = self.create_view(
             "malformed_move_base", arch="<form><field name='id'/></form>"
         )
         child = self.View.create(
@@ -518,7 +520,7 @@ class TestViewInheritance(ViewCase):
         )
 
     def test_invalid_locators_report_an_xpath_selecting_a_value(self):
-        base_view = self.makeView(
+        base_view = self.create_view(
             "value_xpath_base", arch="<form><field name='id'/></form>"
         )
         child = self.View.create(
@@ -549,7 +551,7 @@ class TestViewInheritance(ViewCase):
                 </div>
             </form>
         """
-        base_view = self.makeView("invalid_xpath_base_view", arch=base_view_arch)
+        base_view = self.create_view("invalid_xpath_base_view", arch=base_view_arch)
 
         child_view_arch = """
         <data>
@@ -700,7 +702,7 @@ class TestViewInheritance(ViewCase):
                 </div>
             </form>
         """
-        base_view = self.makeView("invalid_xpath_base_view", arch=base_view_arch)
+        base_view = self.create_view("invalid_xpath_base_view", arch=base_view_arch)
 
         child_view = self.View.create(
             {
@@ -2244,7 +2246,7 @@ class TestViews(ViewCase):
     def test_custom_view_validation(self):
         model = "ir.actions.act_url"
 
-        def validate():
+        def _check_custom_views():
             views = self.View._get_custom_views([model])
             return views.with_context(load_all_views=True)._check_xml()
 
@@ -2258,7 +2260,7 @@ class TestViews(ViewCase):
                         </list>
                     """,
         )
-        self.assertTrue(validate())
+        self.assertTrue(_check_custom_views())
 
         self._insert_view(
             name="inherited view",
@@ -2271,7 +2273,7 @@ class TestViews(ViewCase):
                         </xpath>
                     """,
         )
-        self.assertTrue(validate())
+        self.assertTrue(_check_custom_views())
 
         self._insert_view(
             name="inherited view 2",
@@ -2284,7 +2286,7 @@ class TestViews(ViewCase):
                         </xpath>
                     """,
         )
-        self.assertTrue(validate())
+        self.assertTrue(_check_custom_views())
 
     def test_view_inheritance(self):
         view1 = self.View.create(
@@ -3389,7 +3391,9 @@ class TestViews(ViewCase):
         self.assertIsNone(admin_root.get("group_create"))
 
     def test_attrs_groups_validation(self):
-        def validate(arch, valid=False, parent=False, field="name", model="ir.ui.view"):
+        def _check_attribute_field_visibility(
+            arch, valid=False, parent=False, field="name", model="ir.ui.view"
+        ):
             parent = "parent." if parent else ""
             if valid:
                 self.assertValid(
@@ -3437,7 +3441,7 @@ class TestViews(ViewCase):
                     model=model,
                 )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_system"/>
@@ -3452,7 +3456,7 @@ class TestViews(ViewCase):
             parent=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name"/>
@@ -3467,7 +3471,7 @@ class TestViews(ViewCase):
             parent=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name"/>
@@ -3477,7 +3481,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_system"/>
@@ -3487,7 +3491,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_portal"/>
@@ -3498,7 +3502,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_system"/>
@@ -3510,7 +3514,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_portal,base.group_system"/>
@@ -3520,7 +3524,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_erp_manager"/>
@@ -3530,7 +3534,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_erp_manager"/>
@@ -3545,7 +3549,7 @@ class TestViews(ViewCase):
             parent=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <group groups="base.group_system">
@@ -3557,7 +3561,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <group groups="base.group_system">
@@ -3569,7 +3573,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <group groups="base.group_system">
@@ -3583,7 +3587,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <group groups="base.group_erp_manager">
@@ -3597,7 +3601,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_system"/>
@@ -3612,7 +3616,7 @@ class TestViews(ViewCase):
             parent=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="base.group_erp_manager"/>
@@ -3627,7 +3631,7 @@ class TestViews(ViewCase):
             parent=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name"/>
@@ -3637,7 +3641,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_user"/>
@@ -3647,7 +3651,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_system"/>
@@ -3657,7 +3661,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_system"/>
@@ -3668,7 +3672,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_system"/>
@@ -3679,7 +3683,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_system"/>
@@ -3690,7 +3694,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View">
                 <field name="name" groups="!base.group_system"/>
@@ -3701,7 +3705,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="access_token"/>
@@ -3712,7 +3716,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="company_id" %(attrs)s groups="base.group_user"/>
@@ -3722,7 +3726,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="company_id" %(attrs)s groups="base.group_erp_manager"/>
@@ -3732,7 +3736,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <group groups="base.group_erp_manager">
@@ -3745,7 +3749,7 @@ class TestViews(ViewCase):
             valid=True,
         )
 
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="access_token"/>
@@ -3756,7 +3760,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="access_token"/>
@@ -3767,7 +3771,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="company_id" %(attrs)s groups="base.group_portal"/>
@@ -3777,7 +3781,7 @@ class TestViews(ViewCase):
             field="access_token",
             valid=True,
         )
-        validate(
+        _check_attribute_field_visibility(
             """
             <form string="View attachment">
                 <field name="company_id" %(attrs)s/>
@@ -3799,7 +3803,9 @@ class TestViews(ViewCase):
             }
         )
 
-        def validate(template, field, demo=True, no_add=False):
+        def _create_view_and_check_field_access(
+            template, field, demo=True, no_add=False
+        ):
             view = self.View.create(
                 {
                     "name": "Form view attachment",
@@ -3853,7 +3859,7 @@ class TestViews(ViewCase):
                     f"Field '{field}' should be added automatically but was removed by access rigth",
                 )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="company_id" invisible="name != 'toto'"/>
@@ -3862,7 +3868,7 @@ class TestViews(ViewCase):
             field="name",
         )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="company_id" invisible="not access_token" groups="base.group_erp_manager"/>
@@ -3872,7 +3878,7 @@ class TestViews(ViewCase):
             demo=False,
         )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="company_id" invisible="not name" groups="base.group_erp_manager"/>
@@ -3882,7 +3888,7 @@ class TestViews(ViewCase):
             field="name",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="company_id" invisible="not name" groups="base.group_erp_manager"/>
@@ -3894,7 +3900,7 @@ class TestViews(ViewCase):
             field="name",
             demo=True,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="company_id" invisible="not name" groups="base.group_erp_manager"/>
@@ -3905,7 +3911,7 @@ class TestViews(ViewCase):
             demo=True,
         )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_erp_manager">
@@ -3916,7 +3922,7 @@ class TestViews(ViewCase):
             field="access_token",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_erp_manager">
@@ -3928,7 +3934,7 @@ class TestViews(ViewCase):
             field="name",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_erp_manager" invisible="not display_name">
@@ -3940,7 +3946,7 @@ class TestViews(ViewCase):
             field="name",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_erp_manager" invisible="not display_name">
@@ -3952,7 +3958,7 @@ class TestViews(ViewCase):
             field="display_name",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_user" invisible="not display_name">
@@ -3964,7 +3970,7 @@ class TestViews(ViewCase):
             field="name",
             demo=False,
         )
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <group groups="base.group_user" invisible="not display_name">
@@ -3977,7 +3983,7 @@ class TestViews(ViewCase):
             demo=True,
         )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="name" groups="base.group_user"/>
@@ -3993,7 +3999,7 @@ class TestViews(ViewCase):
             no_add=True,
         )
 
-        validate(
+        _create_view_and_check_field_access(
             """
                 <form string="View attachment">
                     <field name="access_token" invisible="not name"/>
@@ -4706,7 +4712,7 @@ Forbidden use of `__comp__` in arch.""",
     def test_customization_dropped_only_on_arch_impacting_write(self):
         Custom = self.env["ir.ui.view.custom"]
 
-        def make():
+        def _create_view_and_customization():
             view = self.View.create(
                 {
                     "name": "cust_base",
@@ -4723,21 +4729,21 @@ Forbidden use of `__comp__` in arch.""",
             )
             return view, custom
 
-        view, custom = make()
+        view, custom = _create_view_and_customization()
         view.write({"name": "renamed"})
         self.assertTrue(custom.exists(), "name write must preserve customization")
 
-        view, custom = make()
+        view, custom = _create_view_and_customization()
         view.write({"arch_fs": "base/foo.xml"})
         self.assertTrue(custom.exists(), "arch_fs write must preserve customization")
 
-        view, custom = make()
+        view, custom = _create_view_and_customization()
         view.write(
             {"arch": '<form><field name="name"/><field name="create_uid"/></form>'}
         )
         self.assertFalse(custom.exists(), "arch write must drop customization")
 
-        view, custom = make()
+        view, custom = _create_view_and_customization()
         view.write({"priority": 42})
         self.assertFalse(custom.exists(), "priority write must drop customization")
 
@@ -7351,7 +7357,7 @@ class ViewModifiers(ViewCase):
             }
         )
 
-        def validate(
+        def _create_view_and_check_group_flags(
             arch, add_field_with_groups=False, parent=False, model="ir.ui.view"
         ):
             parent = "parent." if parent else ""
@@ -7388,7 +7394,7 @@ class ViewModifiers(ViewCase):
         self.assertValid(arch % {"attrs": """context="{'default_name': name}" """})
         self.assertValid(arch % {"attrs": """decoration-info="name == 'foo'" """})
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name"/>
@@ -7398,7 +7404,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="inherit_id" %(attrs)s/>
@@ -7407,7 +7413,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_public"/>
@@ -7417,7 +7423,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.group_user">
@@ -7429,7 +7435,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="inherit_id" groups="base.test_group" %(attrs)s/>
@@ -7438,7 +7444,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.test_group'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7448,7 +7454,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7463,7 +7469,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7478,7 +7484,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name"/>
@@ -7493,7 +7499,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name"/>
@@ -7503,7 +7509,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7513,7 +7519,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_portal"/>
@@ -7524,7 +7530,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7535,7 +7541,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7547,7 +7553,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_portal,base.test_group"/>
@@ -7557,7 +7563,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7567,7 +7573,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.group_multi_company' | 'base.test_group'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7579,7 +7585,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_system"/>
@@ -7589,7 +7595,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_erp_manager"/>
@@ -7604,7 +7610,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7614,7 +7620,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7629,7 +7635,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.test_group">
@@ -7641,7 +7647,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.test_group">
@@ -7653,7 +7659,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.test_group">
@@ -7665,7 +7671,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.test_group">
@@ -7679,7 +7685,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.group_erp_manager">
@@ -7693,7 +7699,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.test_group">
@@ -7707,7 +7713,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7722,7 +7728,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_erp_manager"/>
@@ -7737,7 +7743,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.test_group"/>
@@ -7752,7 +7758,7 @@ class ViewModifiers(ViewCase):
             parent=True,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7762,7 +7768,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name"/>
@@ -7772,7 +7778,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7783,7 +7789,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7794,7 +7800,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7805,7 +7811,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.group_multi_company,!base.test_group"/>
@@ -7815,7 +7821,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="~'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.group_multi_company"/>
@@ -7825,7 +7831,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.group_user"/>
@@ -7835,7 +7841,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="~'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7845,7 +7851,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <group groups="base.group_multi_company">
@@ -7859,7 +7865,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_multi_company"/>
@@ -7869,7 +7875,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups="~'base.group_multi_company'",
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.group_multi_company"/>
@@ -7886,7 +7892,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="!base.test_group"/>
@@ -7897,7 +7903,7 @@ class ViewModifiers(ViewCase):
             add_field_with_groups=False,
         )
 
-        validate(
+        _create_view_and_check_group_flags(
             """
             <form string="View">
                 <field name="name" groups="base.group_multi_company"/>

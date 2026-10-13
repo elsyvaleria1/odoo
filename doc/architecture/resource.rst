@@ -437,7 +437,7 @@ using capacity-aware scheduling retain their separate capacity calculation.
 Exclusive work-slot search
 --------------------------
 
-``resource.models.utils.find_available_interval`` searches forward or backward
+``odoo.addons.base.models.resource_utils.get_interval_available`` searches forward or backward
 for a span containing a requested elapsed working duration. Its provider supplies
 working intervals clipped to each query window and occupied intervals. The
 engine normalizes endpoints to UTC, preserves claims across windows, and permits

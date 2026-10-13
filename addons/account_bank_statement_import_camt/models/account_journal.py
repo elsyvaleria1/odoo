@@ -7,7 +7,7 @@ from odoo import models
 from odoo.exceptions import UserError
 
 from odoo.addons.account_bank_statement_import_camt.lib.camt import CAMT
-from odoo.addons.base.models.res_partner_bank_account import sanitize_account_number
+from odoo.addons.base.models.res_partner_bank_account import normalize_account_number
 
 _logger = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class AccountJournal(models.Model):
             transactions = []
             sequence = 0
 
-            account_no = sanitize_account_number(
+            account_no = normalize_account_number(
                 statement.xpath(
                     "ns:Acct/ns:Id/ns:IBAN/text() | ns:Acct/ns:Id/ns:Othr/ns:Id/text()",
                     namespaces=ns,
@@ -216,7 +216,7 @@ class AccountJournal(models.Model):
             currency_per_iban[account_no] = currency
 
         if len(statements_per_iban) > 1:
-            account_no = sanitize_account_number(self.bank_acc_number)
+            account_no = normalize_account_number(self.bank_acc_number)
             _logger.warning(
                 "The following statements will not be imported because they are targeting another journal (current journal id: %s):\n- %s",
                 account_no,

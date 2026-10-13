@@ -1,11 +1,10 @@
-
 from __future__ import annotations
 
 import csv
 import io
 import logging
 from collections import defaultdict
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Mapping
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -22,8 +21,10 @@ from .ir_access_convert import (
     NOTHING,
     OPERATIONS,
     TRUE,
+    _Acl,
     _Converter,
     _local_name,
+    _Rule,
     operation_string,
 )
 
@@ -213,18 +214,7 @@ def convert_legacy(
             if rule.domain == TRUE:
                 for op in rule.ops:
                     see_all[op].add(rule.group)
-        for acl in acls:
-            if not own(acl):
-                continue
-            if not acl.ops:
-                rows.append(_row(acl, "permission", acl.group, "r", NOTHING, acl.xmlid))
-                continue
-            governed = set()
-            for rule in grants:
-                if rule.group in closure[acl.group]:
-                    governed |= rule.ops & acl.ops
-            if free := acl.ops - governed:
-                rows.append(_row(acl, "permission", acl.group, free, TRUE, acl.xmlid))
+        rows.extend(_prepare_acl_permissions_vals(module, acls, grants, closure))
         for rule in grants:
             if not own(rule):
                 continue
@@ -283,6 +273,28 @@ def convert_legacy(
             row["guard_scope"] = scope
             rows.append(row)
     return _deduplicated(rows), notes
+
+
+def _prepare_acl_permissions_vals(
+    module: str,
+    acls: list[_Acl],
+    grants: list[_Rule],
+    closure: Mapping[str, frozenset[str]],
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for acl in acls:
+        if acl.module != module:
+            continue
+        if not acl.ops:
+            rows.append(_row(acl, "permission", acl.group, "r", NOTHING, acl.xmlid))
+            continue
+        governed: set[str] = set()
+        for rule in grants:
+            if rule.group in closure[acl.group]:
+                governed |= rule.ops & acl.ops
+        if free := acl.ops - governed:
+            rows.append(_row(acl, "permission", acl.group, free, TRUE, acl.xmlid))
+    return rows
 
 
 def _row(source, kind, group, ops, domain, xmlid) -> dict[str, Any]:

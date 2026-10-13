@@ -125,9 +125,13 @@ class _Working:
             if attr == "name" and value:
                 return self.named().get((tag, value))
             if attr is None:
-                return next(self.root.find(tag), None)
+                return next(self.root.get_nodes_of_kind(tag), None)
             return next(
-                (node for node in self.root.find(tag) if node.attrs.get(attr) == value),
+                (
+                    node
+                    for node in self.root.get_nodes_of_kind(tag)
+                    if node.attrs.get(attr) == value
+                ),
                 None,
             )
         target = locate_node(self.arch(), spec)

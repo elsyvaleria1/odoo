@@ -27,7 +27,7 @@ class TestPythonLint(LintCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        _py_scan.findings()
+        _py_scan.get_findings()
 
     def test_every_rule_is_held_at_its_floor(self):
         for rule in _rules.RULES:
@@ -35,7 +35,7 @@ class TestPythonLint(LintCase):
                 self.assert_ratchet_per_repository(
                     {
                         repo: sorted(found, key=lambda finding: finding.sort_key)
-                        for repo, found in _py_scan.findings_by_repository(
+                        for repo, found in _py_scan.get_findings_by_repository(
                             rule.name
                         ).items()
                     },
@@ -46,7 +46,7 @@ class TestPythonLint(LintCase):
                 )
 
     def test_no_source_in_the_corpus_is_unreadable(self):
-        broken = _py_scan.findings().get("unreadable-source", [])
+        broken = _py_scan.get_findings().get("unreadable-source", [])
         self.assertFalse(
             broken,
             f"{len(broken)} file(s) in the corpus could not be read, so every "
@@ -56,7 +56,7 @@ class TestPythonLint(LintCase):
 
     def test_every_rule_reaches_the_scan(self):
         self.assertEqual(
-            sorted(_py_scan.findings().keys() - _rules.BY_NAME.keys()),
+            sorted(_py_scan.get_findings().keys() - _rules.BY_NAME.keys()),
             [],
             "these rules produce findings but are not declared in _rules.RULES",
         )
@@ -84,7 +84,7 @@ class TestPythonLint(LintCase):
                 )
 
     def test_the_scan_leaves_no_child_process_behind(self):
-        _py_scan.findings()
+        _py_scan.get_findings()
         _parallel.run_chunks(_py_scan.scan_many, [], 2)
         self.assertEqual(
             [f"{child.pid} {child.name()}" for child in psutil.Process().children()],
@@ -95,7 +95,9 @@ class TestPythonLint(LintCase):
 
     def test_the_parallel_scan_agrees_with_the_serial_one(self):
         reported = {
-            finding.path for found in _py_scan.findings().values() for finding in found
+            finding.path
+            for found in _py_scan.get_findings().values()
+            for finding in found
         }
         sample = [
             source.path

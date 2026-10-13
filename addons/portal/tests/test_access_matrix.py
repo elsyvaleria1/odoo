@@ -23,7 +23,7 @@ class TestPortalAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         return {
             "legacy_hash_last_used": cls.env["ir.config_parameter"].create(
                 {"key": LEGACY_HASH_LAST_USED, "value": "2026-10-01"}

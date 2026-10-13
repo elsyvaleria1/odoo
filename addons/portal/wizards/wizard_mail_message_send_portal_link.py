@@ -97,7 +97,9 @@ class WizardMailMessageSendPortalLink(models.TransientModel):
         for wizard in self:
             record = wizard._get_portal_record()
             link, token = (
-                self.env["access.link"]._find_reusable(record, **SHARE_LINK)
+                self.env["access.link"]._get_link_and_token_reusable(
+                    record, **SHARE_LINK
+                )
                 if record and record.has_access("read")
                 else (self.env["access.link"], None)
             )

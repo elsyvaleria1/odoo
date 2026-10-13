@@ -560,7 +560,7 @@ class AccountDepreciationBoard(models.Model):
         for company in needs_default.company_id:
             default_per_company[company] = AccountJournal.search(  # noqa: E8507 -- one search per distinct company, not per asset
                 [
-                    *AccountJournal._check_company_domain(company),
+                    *AccountJournal._get_domain_company_compatible(company),
                     ("type", "=", "general"),
                 ],
                 limit=1,

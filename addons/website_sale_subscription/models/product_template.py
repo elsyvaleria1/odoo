@@ -318,7 +318,7 @@ class ProductTemplate(models.Model):
             )
 
             product_taxes = template.sudo().taxes_id.filtered_domain(
-                self.env["account.tax"]._check_company_domain(self.env.company)
+                self.env["account.tax"]._get_domain_company_compatible(self.env.company)
             )
             if product_taxes:
                 taxes = fiscal_position_sudo.map_tax(product_taxes)

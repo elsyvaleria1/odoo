@@ -28,7 +28,7 @@ class TestDeviceMobileTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         a = cls.companies["a"]
         return {
             "phone_a": cls.env["device.device"].create(

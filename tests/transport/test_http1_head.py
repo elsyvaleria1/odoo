@@ -3,13 +3,18 @@ from http import HTTPStatus
 
 import pytest
 
-from odoo.libs.http1 import HeadLimits, ProtocolError, find_head, parse_request_head
+from odoo.libs.http1 import (
+    HeadLimits,
+    ProtocolError,
+    get_request_head_span,
+    parse_request_head,
+)
 
 LIMITS = HeadLimits()
 
 
 def parse(raw: bytes):
-    span = find_head(raw, LIMITS)
+    span = get_request_head_span(raw, LIMITS)
     assert span is not None
     return parse_request_head(bytes(raw[span[0] : span[1]]), LIMITS)
 
@@ -240,23 +245,25 @@ def test_expect_100_continue_is_honoured_only_for_http11():
 
 
 def test_find_head_waits_for_the_blank_line():
-    assert find_head(b"GET / HTTP/1.1\r\nHost: x\r\n", LIMITS) is None
+    assert get_request_head_span(b"GET / HTTP/1.1\r\nHost: x\r\n", LIMITS) is None
     raw = b"GET / HTTP/1.1\r\nHost: x\r\n\r\nNEXT"
-    assert find_head(raw, LIMITS) == (0, len(raw) - 4)
+    assert get_request_head_span(raw, LIMITS) == (0, len(raw) - 4)
 
 
 def test_a_few_empty_lines_before_the_request_line_are_ignored_and_more_refused():
     assert parse(b"\r\n" * 4 + b"GET / HTTP/1.1\r\nHost: x\r\n\r\n").method == "GET"
     with pytest.raises(ProtocolError) as info:
-        find_head(b"\r\n" * 5 + b"GET / HTTP/1.1\r\nHost: x\r\n\r\n", LIMITS)
+        get_request_head_span(
+            b"\r\n" * 5 + b"GET / HTTP/1.1\r\nHost: x\r\n\r\n", LIMITS
+        )
     assert info.value.status == HTTPStatus.BAD_REQUEST
 
 
 def test_a_stream_of_empty_lines_is_refused_before_it_can_grow():
     with pytest.raises(ProtocolError) as info:
-        find_head(bytearray(b"\r\n" * 100_000), LIMITS)
+        get_request_head_span(bytearray(b"\r\n" * 100_000), LIMITS)
     assert info.value.status == HTTPStatus.BAD_REQUEST
-    assert find_head(b"\r\n\r\n", LIMITS) is None
+    assert get_request_head_span(b"\r\n\r\n", LIMITS) is None
 
 
 def test_scanning_only_new_bytes_finds_what_a_full_scan_finds():
@@ -274,8 +281,8 @@ def test_scanning_only_new_bytes_finds_what_a_full_scan_finds():
             scanned = len(buffer)
             buffer += stream[position : position + step]
             position += step
-            incremental = find_head(buffer, LIMITS, scanned)
-            assert incremental == find_head(buffer, LIMITS), stream
+            incremental = get_request_head_span(buffer, LIMITS, scanned)
+            assert incremental == get_request_head_span(buffer, LIMITS), stream
             if incremental is not None:
                 break
 
@@ -283,7 +290,7 @@ def test_scanning_only_new_bytes_finds_what_a_full_scan_finds():
 def test_head_size_and_count_limits():
     small = HeadLimits(max_head_bytes=64, max_header_count=2)
     with pytest.raises(ProtocolError) as info:
-        find_head(b"GET /" + b"a" * 100, small)
+        get_request_head_span(b"GET /" + b"a" * 100, small)
     assert info.value.status == HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE
     raw = b"GET / HTTP/1.1\r\nHost: x\r\nA: 1\r\nB: 2\r\n\r\n"
     with pytest.raises(ProtocolError) as info:

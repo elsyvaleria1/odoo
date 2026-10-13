@@ -25,8 +25,8 @@ from odoo.tools.image import image_data_uri
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 from odoo.addons.base.tests.common import (
     TransactionCaseWithUserDemo,
-    make_access_row,
-    make_guard_row,
+    create_access_row,
+    create_guard_row,
 )
 from odoo.addons.base.tests.test_expression import TransactionExpressionCase
 
@@ -495,7 +495,7 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         user1 = User.create({"name": "Aaaah", "login": "a"})
         user2 = User.create({"name": "Boooh", "login": "b"})
         user3 = User.create({"name": "Crrrr", "login": "c"})
-        make_guard_row(self.env, "res.users", "[('id', '!=', %d)]" % user2.id)
+        create_guard_row(self.env, "res.users", "[('id', '!=', %d)]" % user2.id)
         self.env.invalidate_all()
         users = (user1 + user2 + user3).with_user(self.user_demo)
         user1, user2, user3 = users
@@ -713,7 +713,7 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
             [{"message": message.id}] * 101,
         )
 
-        make_guard_row(
+        create_guard_row(
             self.env,
             "test_orm.emailmessage",
             str([("active", "=", False)]),
@@ -1820,7 +1820,7 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         record.with_user(user0).foo = "yes we can"
 
         self.assertTrue(user0._is_internal())
-        make_guard_row(
+        create_guard_row(
             self.env, record._name, str([("id", "!=", record.id)]), "base.group_user"
         )
         with self.assertRaises(AccessError):
@@ -2253,10 +2253,10 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
     def test_32_prefetch_missing_error(self):
         Discussion = self.env["test_orm.discussion"]
 
-        make_access_row(
+        create_access_row(
             self.env, Discussion.categories._name, "base.group_user", operation="r"
         )
-        make_guard_row(
+        create_guard_row(
             self.env,
             Discussion._name,
             "[('name', '!=', 'Super Secret discution')]",

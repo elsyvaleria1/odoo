@@ -2231,7 +2231,11 @@ class TestMessagePost(TestMessagePostCommon, CronMixinCase):
                     }
                 ]
             ),
-            patch.object(MailTestSimple, "_check_access", return_value=None),
+            patch.object(
+                MailTestSimple,
+                "_get_records_forbidden_and_error_factory",
+                return_value=None,
+            ),
         ):
             new_msg = self.test_record.with_user(self.user_portal).message_post(
                 body=Markup("<p>Test</p>"),

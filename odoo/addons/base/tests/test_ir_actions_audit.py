@@ -436,7 +436,7 @@ class TestIrActionsReadableFieldsAreFields(TransactionCase):
 
 @tagged("post_install", "-at_install")
 class TestIrActionsTodoOpenState(TransactionCase):
-    def _make_todo(self, sequence):
+    def _create_todo_action(self, sequence):
         return self.env["ir.actions.todo"].create(
             {
                 "action_id": self.env.ref("base.action_client_base_menu").id,
@@ -446,8 +446,8 @@ class TestIrActionsTodoOpenState(TransactionCase):
 
     def test_reopening_a_todo_wins_over_older_open_ones(self):
         self.env["ir.actions.todo"].search([]).write({"state": "done"})
-        early = self._make_todo(1)
-        late = self._make_todo(5)
+        early = self._create_todo_action(1)
+        late = self._create_todo_action(5)
         self.env.flush_all()
 
         early.action_open()
@@ -460,9 +460,9 @@ class TestIrActionsTodoOpenState(TransactionCase):
 
     def test_only_one_todo_stays_open(self):
         self.env["ir.actions.todo"].search([]).write({"state": "done"})
-        self._make_todo(1)
-        self._make_todo(2)
-        self._make_todo(3)
+        self._create_todo_action(1)
+        self._create_todo_action(2)
+        self._create_todo_action(3)
         self.assertEqual(
             self.env["ir.actions.todo"].search_count([("state", "=", "open")]), 1
         )
@@ -484,7 +484,7 @@ class TestIrActionsTodoOpenState(TransactionCase):
 
     def test_unlink_keeps_open_menu_and_deletes_the_rest(self):
         open_menu = self.env.ref("base.open_menu")
-        other = self._make_todo(50)
+        other = self._create_todo_action(50)
         (open_menu | other).unlink()
         self.assertTrue(open_menu.exists())
         self.assertFalse(other.exists())

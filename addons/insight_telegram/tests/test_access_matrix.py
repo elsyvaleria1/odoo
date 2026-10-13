@@ -29,7 +29,7 @@ class TestInsightTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         patcher = patch.dict(os.environ, sealing.rotated_environ(_SEALING_KEY))
         patcher.start()
         cls.addClassCleanup(patcher.stop)

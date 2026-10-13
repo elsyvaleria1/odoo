@@ -1808,7 +1808,10 @@ class TestDiscuss(MailCommon, TestRecipients):
             return DEFAULT
 
         with patch.object(
-            MailTestSimple, "_check_access", autospec=True, side_effect=_employee_crash
+            MailTestSimple,
+            "_get_records_forbidden_and_error_factory",
+            autospec=True,
+            side_effect=_employee_crash,
         ):
             with self.assertRaises(exceptions.AccessError):
                 self.env["mail.test.simple"].with_user(self.user_employee).browse(

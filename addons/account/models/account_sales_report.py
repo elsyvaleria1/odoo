@@ -145,7 +145,7 @@ class AccountEcSalesReportHandler(models.AbstractModel):
                         self.env["account.tax"]
                         .search(
                             [
-                                *self.env["account.tax"]._check_company_domain(
+                                *self.env["account.tax"]._get_domain_company_compatible(
                                     companies
                                 ),
                                 ("amount", "=", 0.0),

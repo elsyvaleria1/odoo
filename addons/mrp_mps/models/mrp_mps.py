@@ -29,7 +29,10 @@ class MrpProductionSchedule(models.Model):
     @api.model
     def _default_warehouse_id(self):
         warehouse = self.env["stock.warehouse"].search(
-            self.env["stock.warehouse"]._check_company_domain(self.env.company), limit=1
+            self.env["stock.warehouse"]._get_domain_company_compatible(
+                self.env.company
+            ),
+            limit=1,
         )
         if not warehouse:
             self.env["stock.warehouse"]._raise_missing_warehouse()

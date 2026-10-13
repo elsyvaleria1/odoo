@@ -138,11 +138,14 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
     def _compute_journal_id(self) -> None:
         Journal = self.env["account.journal"]
         journals = Journal.search(
-            [*Journal._check_company_domain(self.company_id), ("type", "=", "general")]
+            [
+                *Journal._get_domain_company_compatible(self.company_id),
+                ("type", "=", "general"),
+            ]
         )
         for record in self:
             record.journal_id = journals.filtered_domain(
-                Journal._check_company_domain(record.company_id)
+                Journal._get_domain_company_compatible(record.company_id)
             )[:1]
 
     @api.depends("date", "journal_id", "account_id", "amount", "res_model", "res_ids")

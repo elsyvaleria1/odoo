@@ -1282,7 +1282,7 @@ class AccountMoveLine(models.Model):
             return self.tax_ids
         self.check_singleton()
 
-        company_domain = self.env["account.tax"]._check_company_domain(
+        company_domain = self.env["account.tax"]._get_domain_company_compatible(
             self.move_id.company_id
         )
         all_account_taxes = self.account_id.sudo().tax_ids

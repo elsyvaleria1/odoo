@@ -288,7 +288,9 @@ class AccountMove(models.Model):
     def _prepare_order_line_vals_from_invoice(self, order):
         self.check_singleton()
         taxes_field = direction_of(order).product_taxes_field
-        company_domain = self.env["account.tax"]._check_company_domain(self.company_id)
+        company_domain = self.env["account.tax"]._get_domain_company_compatible(
+            self.company_id
+        )
         line_vals = {}
         for line in self.invoice_line_ids.filtered(
             lambda ln: ln.display_type == "product",

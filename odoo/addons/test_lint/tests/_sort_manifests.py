@@ -284,14 +284,14 @@ def iter_manifests(roots: list[str], excluded: set[str]):
                 yield manifest
 
 
-def ensure_odoo_importable() -> None:
+def add_checkout_to_import_path_if_needed() -> None:
     try:
         import odoo.modules.module  # noqa: F401 -- Probe whether the checkout can be imported before adding its path.
     except ImportError:
         sys.path.insert(0, str(Path(__file__).resolve().parents[4]))
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Rewrite Odoo __manifest__.py files into canonical shape: keys in "
@@ -323,8 +323,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    ensure_odoo_importable()
+    args = prepare_argument_parser().parse_args(argv)
+    add_checkout_to_import_path_if_needed()
 
     changed = unchanged = skipped = 0
 

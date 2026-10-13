@@ -37,7 +37,7 @@ class AccountTaxGroup(models.Model):
     _description = "Tax Group"
     _order = "sequence asc, id"
     _check_company_auto = True
-    _check_company_domain = models.check_companies_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_companies_parent_of
 
     name = fields.Char(
         translate=True,
@@ -99,7 +99,7 @@ class AccountTax(models.Model):
     _order = "sequence,id"
     _check_company_auto = True
     _rec_names_search = ["name", "description", "invoice_label"]
-    _check_company_domain = models.check_companies_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_companies_parent_of
     _search_visibility_fields = ()
 
     name = fields.Char(
@@ -560,13 +560,17 @@ class AccountTax(models.Model):
         for country, taxes in by_country.items():
             taxes.tax_group_id = self.env["account.tax.group"].search(  # noqa: E8507 -- one lookup per country of the batch
                 [
-                    *self.env["account.tax.group"]._check_company_domain(company),
+                    *self.env["account.tax.group"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("country_id", "=", country.id),
                 ],
                 limit=1,
             ) or self.env["account.tax.group"].search(  # noqa: E8507 -- one lookup per country of the batch
                 [
-                    *self.env["account.tax.group"]._check_company_domain(company),
+                    *self.env["account.tax.group"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("country_id", "=", False),
                 ],
                 limit=1,
@@ -4124,7 +4128,7 @@ class AccountTaxRepartitionLine(models.Model):
     _description = "Tax Repartition Line"
     _order = "document_type, repartition_type, sequence, id"
     _check_company_auto = True
-    _check_company_domain = models.check_companies_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_companies_parent_of
     _access_anchors = frozendict(
         {
             "company": models.Anchor("company_ids", shared=False),

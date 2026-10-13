@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.libs.fixed_window import FixedWindowLimiter
 from odoo.libs.sourcemap import SourceMap, encode_vlq, iter_segments
 from odoo.tests.common import BaseCase
@@ -63,16 +65,26 @@ class TestSourceMap(BaseCase):
 
 
 class TestFixedWindowLimiter(BaseCase):
-    def test_a_key_is_limited_past_its_window_limit(self):
+    def test_slot_is_available_again_at_the_window_boundary(self):
+        limiter = FixedWindowLimiter(window=60, limit=1)
+        with patch(
+            "odoo.libs.fixed_window.monotonic", side_effect=[0, 59.999, 60, 60, 120]
+        ):
+            self.assertEqual(
+                [limiter.acquire_request_slot("k") for _ in range(5)],
+                [True, False, True, False, True],
+            )
+
+    def test_a_key_acquires_slots_only_up_to_the_window_limit(self):
         limiter = FixedWindowLimiter(window=60, limit=3)
         self.assertEqual(
-            [limiter.is_limited("k") for _ in range(5)],
-            [False, False, False, True, True],
+            [limiter.acquire_request_slot("k") for _ in range(5)],
+            [True, True, True, False, False],
         )
-        self.assertFalse(limiter.is_limited("other"))
+        self.assertTrue(limiter.acquire_request_slot("other"))
 
     def test_the_key_map_stays_bounded(self):
         limiter = FixedWindowLimiter(window=60, limit=3, max_keys=100)
         for i in range(250):
-            limiter.is_limited(f"k{i}")
+            limiter.acquire_request_slot(f"k{i}")
         self.assertLessEqual(len(limiter._state), 101)

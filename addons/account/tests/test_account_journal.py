@@ -424,7 +424,9 @@ class TestAccountJournalSelectableDomain(AccountTestInvoicingCommon):
         journals = self.env["account.journal"].search(
             [
                 ("type", "=", "sale"),
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
             ]
         )
         if len(journals) < 2:
@@ -454,7 +456,9 @@ class TestAccountJournalSelectableDomain(AccountTestInvoicingCommon):
         journals = self.env["account.journal"].search(
             [
                 ("type", "=", "sale"),
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
             ]
         )
         if len(journals) < 2:
@@ -1412,7 +1416,7 @@ class TestAccountJournalCodeAndCopy(AccountTestInvoicingCommon):
             self.env["account.account"]
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(
+                    *self.env["account.account"]._get_domain_company_compatible(
                         self.env.company
                     ),
                     ("account_type", "=", "liability_credit_card"),

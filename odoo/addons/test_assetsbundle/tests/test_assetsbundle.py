@@ -11,7 +11,7 @@ from odoo.tests.common import BaseCase, TransactionCase, tagged
 from odoo.tools import mute_logger
 from odoo.tools.misc import file_path
 
-from .common import FileTouchable, make_bundle
+from .common import FileTouchable, prepare_bundle
 from odoo.addons.base.models.assetsbundle import (
     ANY_UNIQUE,
     AssetAttachmentStore,
@@ -1002,7 +1002,7 @@ class TestEmptyArtifactsAreNotPersisted(TransactionCase):
 
     def test_css_refuses_a_bundle_without_stylesheets(self):
         name = "test_assetsbundle.audit_nocss"
-        bundle = make_bundle(
+        bundle = prepare_bundle(
             self, name, ("/test_assetsbundle/static/src/js/nocss.js", "var x = 1;")
         )
         self.assertFalse(bundle.has_css_content)

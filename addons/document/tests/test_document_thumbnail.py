@@ -15,7 +15,7 @@ from odoo.tools import mute_logger
 
 from ..models import document_document_thumbnail
 from .test_document_common import TransactionCaseDocuments
-from odoo.addons.base.tests.test_pdf_raster import make_pdf
+from odoo.addons.base.tests.test_pdf_raster import prepare_pdf_bytes
 
 
 def _png(color):
@@ -137,7 +137,7 @@ class TestDocumentsThumbnailRoutes(HttpCase, TransactionCaseDocuments):
                 "type": "binary",
                 "name": "audit.pdf",
                 "user_folder_id": "COMPANY",
-                "datas": base64.b64encode(make_pdf()),
+                "datas": base64.b64encode(prepare_pdf_bytes()),
                 "mimetype": "application/pdf",
             }
         )
@@ -379,7 +379,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_a_pdf_is_rendered_by_a_job_as_the_system(self):
-        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        document = self._create("report.pdf", prepare_pdf_bytes(), "application/pdf")
         self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "pending")
@@ -396,7 +396,9 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_a_pdf_without_a_page_is_an_error_thumbnail(self):
-        document = self._create("empty.pdf", make_pdf(pages=0), "application/pdf")
+        document = self._create(
+            "empty.pdf", prepare_pdf_bytes(pages=0), "application/pdf"
+        )
         self.env.cr.flush()
 
         document._job_render_thumbnails()
@@ -406,7 +408,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_a_render_out_of_time_is_asked_again_not_failed(self):
-        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        document = self._create("report.pdf", prepare_pdf_bytes(), "application/pdf")
         self.env.cr.flush()
         timed_out = pdf_raster.Rendering(pdf_raster.Outcome.TIMED_OUT)
         self.patch(pdf_raster, "render_first_page", lambda *args: timed_out)
@@ -512,7 +514,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         with patch.object(
             type(self.env["ir.attachment"]),
             "_get_content",
-            lambda att, size=None: make_pdf(pages=3),
+            lambda att, size=None: prepare_pdf_bytes(pages=3),
         ):
             document._job_render_thumbnails()
 
@@ -538,7 +540,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     def test_no_renderer_leaves_the_pdf_to_the_browser(self):
         self.patch(pdf_raster, "available", lambda: False)
-        document = self._create("report.pdf", make_pdf(), "application/pdf")
+        document = self._create("report.pdf", prepare_pdf_bytes(), "application/pdf")
         self.env.cr.flush()
 
         self.assertEqual(document.thumbnail_status, "client_generated")
@@ -573,7 +575,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_documents_holding_one_pdf_queue_one_job(self):
-        raw = make_pdf()
+        raw = prepare_pdf_bytes()
         first = self._create("a.pdf", raw, "application/pdf")
         self.env.cr.flush()
         self._create("b.pdf", raw, "application/pdf")
@@ -639,11 +641,11 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     def test_a_browser_rendering_goes_stale_with_its_content(self):
         self.patch(pdf_raster, "available", lambda: False)
-        document = self._create("a.pdf", make_pdf(), "application/pdf")
+        document = self._create("a.pdf", prepare_pdf_bytes(), "application/pdf")
         document._store_own_thumbnail(_png((5, 5, 5)), "present")
         self.assertEqual(document.thumbnail_status, "present")
 
-        document.write({"datas": base64.b64encode(make_pdf(pages=2))})
+        document.write({"datas": base64.b64encode(prepare_pdf_bytes(pages=2))})
 
         self.assertEqual(
             document.thumbnail_status,
@@ -653,7 +655,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
 
     @unittest.skipUnless(pdf_raster.available(), "PyMuPDF is not installed")
     def test_the_sweep_queues_what_the_queue_lost(self):
-        document = self._create("a.pdf", make_pdf(), "application/pdf")
+        document = self._create("a.pdf", prepare_pdf_bytes(), "application/pdf")
         self.env.cr.flush()
         self._jobs(document.checksum).unlink()
 
@@ -702,7 +704,7 @@ class TestDocumentsThumbnailStore(TransactionCaseDocuments):
         attachment = self.env["ir.attachment"].create(
             {
                 "name": "a.pdf",
-                "raw": make_pdf(),
+                "raw": prepare_pdf_bytes(),
                 "mimetype": "application/pdf",
                 "res_model": "ir.cron",
                 "res_id": cron.id,

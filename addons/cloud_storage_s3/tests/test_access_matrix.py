@@ -23,7 +23,7 @@ class TestCloudStorageS3AccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         return {
             "s3_keys": cls.env["credential.credential"].create(
                 {

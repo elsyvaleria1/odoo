@@ -116,14 +116,7 @@ def relocate_module(
     if manifest is None:
         return False, None
     data = list(manifest.get("data") or [])
-    trees: dict[str, etree._ElementTree] = {}
-    for relative in data:
-        path = module / relative
-        if path.suffix == ".xml" and path.is_file():
-            try:
-                trees[relative] = etree.parse(str(path), _PARSER)
-            except etree.XMLSyntaxError:
-                continue
+    trees = _get_data_xml_trees(module, data)
     menus_by_file = {
         relative: _top_level_menuitems(tree.getroot())
         for relative, tree in trees.items()
@@ -227,6 +220,18 @@ def relocate_module(
     return True, None
 
 
+def _get_data_xml_trees(module: Path, data: list[str]) -> dict[str, etree._ElementTree]:
+    trees: dict[str, etree._ElementTree] = {}
+    for relative in data:
+        path = module / relative
+        if path.suffix == ".xml" and path.is_file():
+            try:
+                trees[relative] = etree.parse(str(path), _PARSER)
+            except etree.XMLSyntaxError:
+                continue
+    return trees
+
+
 def _rewrite_manifest_data(path: Path, old: list[str], new: list[str]) -> None:
     source = path.read_text(encoding="utf-8")
     tree = ast.parse(source)
@@ -258,7 +263,7 @@ def _rewrite_manifest_data(path: Path, old: list[str], new: list[str]) -> None:
     path.write_text("\n".join(lines), encoding="utf-8")
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Move every top-level <menuitem> of a module into views/<module>_menus.xml, "
@@ -303,7 +308,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    args = prepare_argument_parser().parse_args(argv)
     changed = unchanged = skipped = 0
     for root in args.roots:
         for module in sorted(Path(root).iterdir()):

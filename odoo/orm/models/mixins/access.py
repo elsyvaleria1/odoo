@@ -320,7 +320,7 @@ class AccessMixin(_ModelStubs):
     def check_access(self, operation: str) -> None:
         if self.env.su:
             return
-        if result := self._check_access(operation):
+        if result := self._get_records_forbidden_and_error_factory(operation):
             exception = result[1]()
             raise exception
         if self.env.privileges and operation != "read" and self._ids:
@@ -329,12 +329,17 @@ class AccessMixin(_ModelStubs):
             )
 
     def has_access(self, operation: str) -> bool:
-        return self.env.su or not self._check_access(operation)
+        return self.env.su or not self._get_records_forbidden_and_error_factory(
+            operation
+        )
 
     @api.model
     def _record_access_domain(self, operation: str) -> Domain:
         env = self.env
-        if type(self)._check_access is AccessMixin._check_access:
+        if (
+            type(self)._get_records_forbidden_and_error_factory
+            is AccessMixin._get_records_forbidden_and_error_factory
+        ):
             policy = env.registry.access_policy
             if not policy.model_allowed(env, self._name, operation):
                 return Domain.FALSE
@@ -350,7 +355,11 @@ class AccessMixin(_ModelStubs):
         return Domain("id", "in", query)
 
     def _filtered_access(self, operation: str) -> Self:
-        if self and not self.env.su and (result := self._check_access(operation)):
+        if (
+            self
+            and not self.env.su
+            and (result := self._get_records_forbidden_and_error_factory(operation))
+        ):
             return self - result[0]
         return self
 
@@ -380,7 +389,7 @@ class AccessMixin(_ModelStubs):
         return {id_: names.get(id_) for id_ in self._ids}
 
     @override
-    def _check_access(
+    def _get_records_forbidden_and_error_factory(
         self, operation: str
     ) -> tuple[Self, Callable[[], Exception]] | None:
         env = self.env
@@ -735,7 +744,7 @@ class AccessMixin(_ModelStubs):
             verdicts[id_] = True
 
     @override
-    def _known_readable(self) -> bool:
+    def _has_cached_read_access(self) -> bool:
         env = self.env
         if env.su or not self._ids:
             return False
@@ -744,7 +753,7 @@ class AccessMixin(_ModelStubs):
             return False
         return all(verdicts.get(id_) for id_ in self._ids)
 
-    def _check_company_domain(self, companies: typing.Any) -> Domain:
+    def _get_domain_company_compatible(self, companies: typing.Any) -> Domain:
         if not companies:
             return Domain("company_id", "=", False)
         if isinstance(companies, unquote):
@@ -820,7 +829,7 @@ class AccessMixin(_ModelStubs):
             all_corecords = all_corecords.with_prefetch(
                 tuple(prefetch[comodel._get_model_name()])
             )
-            domain = all_corecords._check_company_domain(companies)
+            domain = all_corecords._get_domain_company_compatible(companies)
             if not domain:
                 continue
             allowed = set(

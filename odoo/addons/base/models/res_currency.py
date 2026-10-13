@@ -730,7 +730,7 @@ class ResCurrencyRate(models.Model):
     _description = "Currency Rate"
     _rec_names_search = ["name", "rate"]
     _order = "name desc, id"
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
 
     name = fields.Date(
         string="Date",

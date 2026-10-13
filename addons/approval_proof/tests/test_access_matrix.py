@@ -24,7 +24,7 @@ class TestApprovalProofAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         approver = cls.users["approver_a"]
         category = cls.env["approval.category"].create(
             {

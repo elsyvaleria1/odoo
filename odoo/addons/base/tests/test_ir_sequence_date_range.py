@@ -248,29 +248,29 @@ class TestIrSequenceDateRangeOverlap(TransactionCase):
         )
         self.DateRange = self.env["ir.sequence.date_range"]
 
-    def _make_range(self, date_from, date_to):
+    def _create_date_range(self, date_from, date_to):
         return self.DateRange.create(
             {"sequence_id": self.seq.id, "date_from": date_from, "date_to": date_to}
         )
 
     def test_an_overlapping_range_is_refused(self):
-        self._make_range(date(2040, 1, 1), date(2040, 6, 30))
+        self._create_date_range(date(2040, 1, 1), date(2040, 6, 30))
         with self.assertRaises(ValidationError):
-            self._make_range(date(2040, 6, 30), date(2040, 12, 31))
-        self._make_range(date(2040, 7, 1), date(2040, 12, 31))
+            self._create_date_range(date(2040, 6, 30), date(2040, 12, 31))
+        self._create_date_range(date(2040, 7, 1), date(2040, 12, 31))
 
     def test_a_reversed_range_is_refused(self):
         with self.assertRaises(ValidationError):
-            self._make_range(date(2041, 12, 31), date(2041, 1, 1))
+            self._create_date_range(date(2041, 12, 31), date(2041, 1, 1))
 
     def test_widening_a_range_onto_its_neighbour_is_refused(self):
-        first = self._make_range(date(2042, 1, 1), date(2042, 6, 30))
-        self._make_range(date(2042, 7, 1), date(2042, 12, 31))
+        first = self._create_date_range(date(2042, 1, 1), date(2042, 6, 30))
+        self._create_date_range(date(2042, 7, 1), date(2042, 12, 31))
         with self.assertRaises(ValidationError):
             first.write({"date_to": date(2042, 7, 1)})
 
     def test_a_covering_lookup_prefers_the_latest_start(self):
-        older = self._make_range(date(2043, 1, 1), date(2043, 12, 31))
+        older = self._create_date_range(date(2043, 1, 1), date(2043, 12, 31))
         self.env.cr.execute(
             "INSERT INTO ir_sequence_date_range"
             " (sequence_id, date_from, date_to, number_next)"
@@ -299,8 +299,8 @@ class TestIrSequenceDateRangeOverlap(TransactionCase):
         )
 
     def test_creation_squeezes_into_the_gap_the_neighbours_leave(self):
-        self._make_range(date(2045, 1, 1), date(2045, 6, 14))
-        self._make_range(date(2045, 6, 16), date(2045, 12, 31))
+        self._create_date_range(date(2045, 1, 1), date(2045, 6, 14))
+        self._create_date_range(date(2045, 6, 16), date(2045, 12, 31))
         self.assertEqual(self.seq.next_by_id(date(2045, 6, 15)), "06/001")
         created = self.seq._get_covering_date_range(date(2045, 6, 15))
         self.assertEqual(
@@ -387,7 +387,7 @@ class TestIrSequenceDateRangeSeeding(TransactionCase):
             }
         )
 
-    def _make_range(self, year, **vals):
+    def _create_date_range(self, year, **vals):
         return self.env["ir.sequence.date_range"].create(
             {
                 "sequence_id": self.seq.id,
@@ -398,17 +398,17 @@ class TestIrSequenceDateRangeSeeding(TransactionCase):
         )
 
     def test_explicit_number_next_is_kept(self):
-        rng = self._make_range(2033, number_next=50)
+        rng = self._create_date_range(2033, number_next=50)
         self.assertEqual(rng.number_next, 50)
         self.assertEqual(self.seq.next_by_id(sequence_date=date(2033, 6, 1)), "050")
 
     def test_explicit_number_next_actual_is_kept(self):
-        rng = self._make_range(2034, number_next_actual=77)
+        rng = self._create_date_range(2034, number_next_actual=77)
         self.assertEqual(rng.number_next, 77)
         self.assertEqual(self.seq.next_by_id(sequence_date=date(2034, 6, 1)), "077")
 
     def test_default_range_still_starts_at_one(self):
-        rng = self._make_range(2035)
+        rng = self._create_date_range(2035)
         self.assertEqual(rng.number_next, 1)
         self.assertEqual(self.seq.next_by_id(sequence_date=date(2035, 6, 1)), "001")
 
@@ -418,7 +418,7 @@ class TestIrSequenceDateRangeSeeding(TransactionCase):
 
     def test_no_gap_parent_range_keeps_explicit_number_next(self):
         self.seq.write({"implementation": "no_gap"})
-        rng = self._make_range(2036, number_next=42)
+        rng = self._create_date_range(2036, number_next=42)
         self.assertEqual(rng.number_next, 42)
         self.assertEqual(self.seq.next_by_id(sequence_date=date(2036, 6, 1)), "042")
 

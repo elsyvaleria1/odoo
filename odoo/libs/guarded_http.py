@@ -722,7 +722,7 @@ def _is_rendered(value: typing.Any) -> bool:
     return MASK.encode() in decoded
 
 
-def _refuse_rendered(prepared: PreparedRequest) -> None:
+def _check_secrets_not_rendered(prepared: PreparedRequest) -> None:
     url = prepared.url or ""
     if MASK in url or MASK in unquote(url):
         _debug.logic("guarded_http.secret_rendered", where="url")
@@ -780,7 +780,7 @@ class GuardedSession(requests.Session):  # noqa: E8518 -- the guard itself: it m
                 kind="syntax",
             )
         prepared = super().prepare_request(request)
-        _refuse_rendered(prepared)
+        _check_secrets_not_rendered(prepared)
         return prepared
 
     def _reveal_secrets(self, request: requests.Request) -> requests.Request:

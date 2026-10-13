@@ -50,12 +50,12 @@ class Home(web_home.Home):
 
         elif user and request.httprequest.method == "POST" and kwargs.get("totp_token"):
             try:
-                with user._assert_can_auth(user=user.id):
+                with user._admit_authentication_attempt(user=user.id):
                     credentials = {
                         "type": user._get_mfa_type(),
                         "token": int(re.sub(r"\s", "", kwargs["totp_token"])),
                     }
-                    user._check_credentials(credentials, {"interactive": True})
+                    user._authenticate_credentials(credentials, {"interactive": True})
             except AccessDenied as e:
                 error = str(e)
             except ValueError:

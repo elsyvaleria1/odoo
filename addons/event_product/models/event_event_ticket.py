@@ -33,7 +33,9 @@ class EventEventTicket(models.Model):
     def _tax_included(self, amount, currency):
         self.check_singleton()
         taxes = self.product_id.taxes_id.filtered_domain(
-            self.env["account.tax"]._check_company_domain(self.event_id.company_id)
+            self.env["account.tax"]._get_domain_company_compatible(
+                self.event_id.company_id
+            )
         )
         return taxes.compute_all(amount, currency, 1.0, product=self.product_id)[
             "total_included"

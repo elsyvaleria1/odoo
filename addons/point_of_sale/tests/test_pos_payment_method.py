@@ -83,7 +83,9 @@ class TestPosPaymentMethodCompany(TransactionCase):
         )
         own_journal = self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self.env.company),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("type", "=", "bank"),
             ],
             limit=1,

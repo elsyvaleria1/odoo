@@ -35,7 +35,7 @@ from ._cron import (
     CronSchedule,
     ListenerKind,
     ReconnectBackoff,
-    sweep_database,
+    run_jobs_for_database,
     wait_for_notifies,
 )
 from ._env import IS_POSIX, IS_WINDOWS
@@ -367,7 +367,9 @@ class ThreadedServer(CommonServer):
         for db_name in db_names:
             thread.start_time = time.monotonic()
             try:
-                sweep_database(db_name, process_jobs, cron_logger, release=release)
+                run_jobs_for_database(
+                    db_name, process_jobs, cron_logger, release=release
+                )
             finally:
                 thread.start_time = None
 

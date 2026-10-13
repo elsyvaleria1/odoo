@@ -353,16 +353,16 @@ class Field[T](
     @access_classes.setter
     def access_classes(self, value: FieldAccessClasses | None) -> None:
         self.__dict__["access_classes"] = value
-        self._refresh_get_guarded()
+        self._reset_get_guarded()
 
     @access_classes.deleter
     def access_classes(self) -> None:
         self.__dict__.pop("access_classes", None)
-        self._refresh_get_guarded()
+        self._reset_get_guarded()
 
     _get_guarded: bool = True
 
-    def _refresh_get_guarded(self) -> None:
+    def _reset_get_guarded(self) -> None:
         self._get_guarded = (
             not self._setup_done
             or self.access_classes is not None
@@ -554,7 +554,7 @@ class Field[T](
 
             self._setup_done = True
             reset_cached_properties(self)
-            self._refresh_get_guarded()
+            self._reset_get_guarded()
 
     def setup_nonrelated(self, model: BaseModel) -> None:
         pass
@@ -775,11 +775,13 @@ class Field[T](
         field_cache = env._field_cache_memo.get(self)
         if field_cache is not None:
             return field_cache
-        field_cache = self._get_cache_impl(env)
+        field_cache = self._get_cache_uncached(env)
         env._field_cache_memo[self] = field_cache
         return field_cache
 
-    def _get_cache_impl(self, env: Environment) -> MutableMapping[IdType, typing.Any]:
+    def _get_cache_uncached(
+        self, env: Environment
+    ) -> MutableMapping[IdType, typing.Any]:
         core = env.core
         if self._is_context_dependent(env):
             return core.get_context_data(self, env.get_cache_key(self))

@@ -74,7 +74,9 @@ class AccountTax(models.Model):
 
     @api.model
     def _load_pos_data_domain(self, data, config):
-        return self.env["account.tax"]._check_company_domain(config.company_id.id)
+        return self.env["account.tax"]._get_domain_company_compatible(
+            config.company_id.id
+        )
 
     @api.model
     def _load_pos_data_fields(self, config):

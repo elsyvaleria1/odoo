@@ -1,8 +1,9 @@
-
 import random
 from collections import Counter
+from collections.abc import Callable, Sequence
 from contextlib import contextmanager
 from dataclasses import dataclass
+from typing import Any, Literal
 
 from odoo.exceptions import ValidationError
 from odoo.fields import Command
@@ -122,10 +123,10 @@ PROFILES = (
 
 
 def generate(seed, steps):
-    draw = _Draw(random.Random(seed), PROFILES[seed % len(PROFILES)])
+    draw_chance = _Draw(random.Random(seed), PROFILES[seed % len(PROFILES)])
     ops = []
     while len(ops) < steps:
-        ops += draw.unit()
+        ops += draw_chance.unit()
     return ops[:steps]
 
 
@@ -192,15 +193,15 @@ class _Draw:
             inner += self.unit(depth + 1)
         return [operation, *inner, ("close_savepoint", self.rng.random() < 0.6)]
 
-    def ancestor_unit(self, draw, fname, viewer, payload):
+    def ancestor_unit(self, draw_chance, fname, viewer, payload):
         rng = self.rng
         dropped = rng.choice((1, 1, 2))
         written = dropped + rng.choice((0, 1))
         return [
-            ("graft", draw, written, viewer, payload),
-            ("read", CATEGORY, (draw,), viewer, fname),
-            ("uncache_ancestor", draw, dropped, fname),
-            ("write_ancestor", draw, written, viewer, payload),
+            ("graft", draw_chance, written, viewer, payload),
+            ("read", CATEGORY, (draw_chance,), viewer, fname),
+            ("uncache_ancestor", draw_chance, dropped, fname),
+            ("write_ancestor", draw_chance, written, viewer, payload),
             ("check",),
         ]
 
@@ -345,12 +346,14 @@ class Walk:
         alive = self._alive(model_name)
         if not alive:
             return []
-        return sorted({alive[draw % len(alive)] for draw in draws})
+        return sorted({alive[draw_chance % len(alive)] for draw_chance in draws})
 
     def _op_create(self, model_name, count, viewer, payload):
         env = self._viewer(viewer)
         rng = random.Random(payload)
-        vals_list = [self._vals(rng, model_name, ()) for _ in range(count)]
+        vals_list = [
+            self._prepare_record_vals(rng, model_name, ()) for _ in range(count)
+        ]
         self.log[-1] += f" {vals_list}"
         records = env[model_name].create(vals_list)
         self.log[-1] += f" -> {records._ids}"
@@ -360,7 +363,7 @@ class Walk:
         if not ids:
             return
         env = self._viewer(viewer)
-        vals = self._vals(random.Random(payload), model_name, ids)
+        vals = self._prepare_record_vals(random.Random(payload), model_name, ids)
         if "attributes" in vals and (
             "category_id" in vals
             or len(self.env[model_name].browse(ids).category_id) > 1
@@ -406,17 +409,17 @@ class Walk:
                 ids = self._pick(model_name, draws)
                 self.env[model_name].browse(ids).invalidate_recordset([fname])
 
-    def _ancestor(self, draw, levels):
-        ids = self._pick(CATEGORY, (draw,))
+    def _ancestor(self, draw_chance, levels):
+        ids = self._pick(CATEGORY, (draw_chance,))
         node = self.env[CATEGORY].with_context(active_test=False).browse(ids)
         for _level in range(levels):
             node = node.parent_id
         return node
 
-    def _op_graft(self, draw, levels, viewer, payload):
+    def _op_graft(self, draw_chance, levels, viewer, payload):
         rng = random.Random(payload)
         Category = self._viewer(viewer)[CATEGORY]
-        node = self._ancestor(draw, 0)
+        node = self._ancestor(draw_chance, 0)
         if not node:
             node = Category.create({"name": rng.choice(NAMES), "code": "C"})
         depth = 0
@@ -431,13 +434,13 @@ class Walk:
         Category.browse(node.ids).write({"parent_id": parent})
         self.log[-1] += f" -> {node.id} under {parent}"
 
-    def _op_uncache_ancestor(self, draw, levels, fname):
-        if ancestor := self._ancestor(draw, levels):
+    def _op_uncache_ancestor(self, draw_chance, levels, fname):
+        if ancestor := self._ancestor(draw_chance, levels):
             ancestor.invalidate_recordset([fname])
             self.log[-1] += f" -> {ancestor.id}"
 
-    def _op_write_ancestor(self, draw, levels, viewer, payload):
-        ancestor = self._ancestor(draw, levels)
+    def _op_write_ancestor(self, draw_chance, levels, viewer, payload):
+        ancestor = self._ancestor(draw_chance, levels)
         if not ancestor:
             return
         rng = random.Random(payload)
@@ -471,8 +474,8 @@ class Walk:
         if rollback:
             self.env.clear()
 
-    def _op_caught_error(self, draw, viewer):
-        ids = self._pick(LINE, (draw,))
+    def _op_caught_error(self, draw_chance, viewer):
+        ids = self._pick(LINE, (draw_chance,))
         if not ids:
             return
         env = self._viewer(viewer)
@@ -502,7 +505,7 @@ class Walk:
             self._pick(ORDER, (rng.randrange(1 << 16),)) if rng.random() < 0.5 else []
         )
         Order = env[ORDER]
-        vals = self._vals(rng, ORDER, ())
+        vals = self._prepare_record_vals(rng, ORDER, ())
         before = self._dirty_values()
         draft = Order.new(vals, origin=Order.browse(origin) if origin else None)
         self.log[-1] += f" -> origin {origin} {vals}"
@@ -529,11 +532,11 @@ class Walk:
         alive = set(self.harness.alive_ids(ORDER))
         self.drafts = [draft for draft in self.drafts if draft._origin.id in alive]
 
-    def _op_draft_edit(self, draw, payload):
+    def _op_draft_edit(self, draw_chance, payload):
         self._drop_dead_drafts()
         if not self.drafts:
             return
-        draft = self.drafts[draw % len(self.drafts)]
+        draft = self.drafts[draw_chance % len(self.drafts)]
         rng = random.Random(payload)
         before = self._dirty_values()
         twins = draft.line_ids.filtered(lambda line: line._origin)
@@ -546,7 +549,9 @@ class Walk:
         else:
             vals = {
                 fname: value
-                for fname, value in self._vals(rng, ORDER, (), nested=True).items()
+                for fname, value in self._prepare_record_vals(
+                    rng, ORDER, (), nested=True
+                ).items()
                 if fname in DRAFT_FIELDS
             }
             draft.update(vals)
@@ -636,74 +641,135 @@ class Walk:
     def _op_check(self):
         pass
 
-    def _vals(self, rng, model_name, ids, nested=False):
-        vals = {}
+    def _prepare_record_vals(
+        self,
+        rng: random.Random,
+        model_name: str,
+        ids: Sequence[int],
+        nested: bool = False,
+    ) -> dict[str, Any]:
 
-        def maybe(probability):
+        def draw_chance(probability: float) -> bool:
             return rng.random() < probability
 
-        def one(comodel):
+        def get_candidate_id(comodel: str) -> int | Literal[False]:
             if comodel == CATEGORY and (found := self._category_by_code(rng)):
                 return found
             alive = self._alive(comodel)
-            return rng.choice(alive) if alive and maybe(0.85) else False
+            return rng.choice(alive) if alive and draw_chance(0.85) else False
 
         match model_name:
             case "test_orm.coherence.category":
-                if maybe(0.5):
-                    vals["name"] = rng.choice(NAMES)
-                if maybe(0.3):
-                    vals["code"] = rng.choice((*CODES, False))
-                if maybe(0.5):
-                    vals["parent_id"] = self._parent_outside(rng, ids)
-                if maybe(0.08):
-                    vals["active"] = maybe(0.5)
-                if maybe(0.15):
-                    vals["properties_definition"] = self._definition(rng)
+                return self._prepare_category_vals(rng, ids, draw_chance)
             case "test_orm.coherence.order":
-                if maybe(0.4):
-                    vals["name"] = rng.choice(NAMES)
-                if maybe(0.4):
-                    vals["category_id"] = one(CATEGORY)
-                if maybe(0.2):
-                    vals["priority"] = rng.randrange(4)
-                if maybe(0.12):
-                    vals["fallback_tag_id"] = one(TAG)
-                if maybe(0.2):
-                    vals["attributes"] = self._attributes(rng)
-                if maybe(0.06):
-                    vals["active"] = maybe(0.5)
-                if not nested and maybe(0.5):
-                    vals["line_ids"] = self._commands(rng, LINE)
-                if not nested and maybe(0.35):
-                    vals["tag_ids"] = self._commands(rng, TAG)
+                return self._prepare_order_vals(
+                    rng, nested, draw_chance, get_candidate_id
+                )
             case "test_orm.coherence.line":
-                if not nested and maybe(0.5):
-                    vals["order_id"] = one(ORDER)
-                if maybe(0.6):
-                    vals["qty"] = rng.randrange(5)
-                if maybe(0.5):
-                    vals["price"] = rng.randrange(5)
-                if maybe(0.06):
-                    vals["active"] = maybe(0.5)
+                return self._prepare_line_vals(
+                    rng, nested, draw_chance, get_candidate_id
+                )
             case "test_orm.coherence.tag":
-                if maybe(0.5):
-                    vals["name"] = rng.choice(NAMES)
-                if maybe(0.4):
-                    vals["label"] = rng.choice(LABELS)
-                if maybe(0.06):
-                    vals["active"] = maybe(0.5)
-                if not nested and maybe(0.3):
-                    vals["order_ids"] = self._commands(rng, ORDER)
+                return self._prepare_tag_vals(rng, nested, draw_chance)
             case "test_orm.coherence.item" | "test_orm.coherence.item.special":
-                if maybe(0.4):
-                    vals["name"] = rng.choice(NAMES)
-                if maybe(0.6):
-                    vals["weight"] = rng.randrange(9)
-                if maybe(0.4):
-                    vals["category_id"] = one(CATEGORY)
-                if model_name == SPECIAL and maybe(0.5):
-                    vals["extra"] = rng.randrange(6)
+                return self._prepare_item_vals(
+                    rng, model_name, draw_chance, get_candidate_id
+                )
+        return {}
+
+    def _prepare_category_vals(
+        self,
+        rng: random.Random,
+        ids: Sequence[int],
+        draw_chance: Callable[[float], bool],
+    ) -> dict[str, Any]:
+        vals: dict[str, Any] = {}
+        if draw_chance(0.5):
+            vals["name"] = rng.choice(NAMES)
+        if draw_chance(0.3):
+            vals["code"] = rng.choice((*CODES, False))
+        if draw_chance(0.5):
+            vals["parent_id"] = self._parent_outside(rng, ids)
+        if draw_chance(0.08):
+            vals["active"] = draw_chance(0.5)
+        if draw_chance(0.15):
+            vals["properties_definition"] = self._definition(rng)
+        return vals
+
+    def _prepare_order_vals(
+        self,
+        rng: random.Random,
+        nested: bool,
+        draw_chance: Callable[[float], bool],
+        get_candidate_id: Callable[[str], int | Literal[False]],
+    ) -> dict[str, Any]:
+        vals: dict[str, Any] = {}
+        if draw_chance(0.4):
+            vals["name"] = rng.choice(NAMES)
+        if draw_chance(0.4):
+            vals["category_id"] = get_candidate_id(CATEGORY)
+        if draw_chance(0.2):
+            vals["priority"] = rng.randrange(4)
+        if draw_chance(0.12):
+            vals["fallback_tag_id"] = get_candidate_id(TAG)
+        if draw_chance(0.2):
+            vals["attributes"] = self._attributes(rng)
+        if draw_chance(0.06):
+            vals["active"] = draw_chance(0.5)
+        if not nested and draw_chance(0.5):
+            vals["line_ids"] = self._commands(rng, LINE)
+        if not nested and draw_chance(0.35):
+            vals["tag_ids"] = self._commands(rng, TAG)
+        return vals
+
+    def _prepare_line_vals(
+        self,
+        rng: random.Random,
+        nested: bool,
+        draw_chance: Callable[[float], bool],
+        get_candidate_id: Callable[[str], int | Literal[False]],
+    ) -> dict[str, Any]:
+        vals: dict[str, Any] = {}
+        if not nested and draw_chance(0.5):
+            vals["order_id"] = get_candidate_id(ORDER)
+        if draw_chance(0.6):
+            vals["qty"] = rng.randrange(5)
+        if draw_chance(0.5):
+            vals["price"] = rng.randrange(5)
+        if draw_chance(0.06):
+            vals["active"] = draw_chance(0.5)
+        return vals
+
+    def _prepare_tag_vals(
+        self, rng: random.Random, nested: bool, draw_chance: Callable[[float], bool]
+    ) -> dict[str, Any]:
+        vals: dict[str, Any] = {}
+        if draw_chance(0.5):
+            vals["name"] = rng.choice(NAMES)
+        if draw_chance(0.4):
+            vals["label"] = rng.choice(LABELS)
+        if draw_chance(0.06):
+            vals["active"] = draw_chance(0.5)
+        if not nested and draw_chance(0.3):
+            vals["order_ids"] = self._commands(rng, ORDER)
+        return vals
+
+    def _prepare_item_vals(
+        self,
+        rng: random.Random,
+        model_name: str,
+        draw_chance: Callable[[float], bool],
+        get_candidate_id: Callable[[str], int | Literal[False]],
+    ) -> dict[str, Any]:
+        vals: dict[str, Any] = {}
+        if draw_chance(0.4):
+            vals["name"] = rng.choice(NAMES)
+        if draw_chance(0.6):
+            vals["weight"] = rng.randrange(9)
+        if draw_chance(0.4):
+            vals["category_id"] = get_candidate_id(CATEGORY)
+        if model_name == SPECIAL and draw_chance(0.5):
+            vals["extra"] = rng.randrange(6)
         return vals
 
     def _definition(self, rng):
@@ -756,18 +822,23 @@ class Walk:
         if alive and rng.random() < 0.1:
             return rng.sample(alive, min(len(alive), rng.randrange(1, 3)))
         if alive and rng.random() < 0.1:
-            return [rng.choice(alive), self._vals(rng, comodel, (), nested=True)]
+            return [
+                rng.choice(alive),
+                self._prepare_record_vals(rng, comodel, (), nested=True),
+            ]
         commands = []
         for _ in range(rng.choice((1, 1, 2, 3))):
             code = rng.randrange(7)
             if code == 0 or (not alive and code not in (5, 6)):
                 commands.append(
-                    Command.create(self._vals(rng, comodel, (), nested=True))
+                    Command.create(
+                        self._prepare_record_vals(rng, comodel, (), nested=True)
+                    )
                 )
                 continue
             match code:
                 case 1:
-                    vals = self._vals(rng, comodel, (), nested=True)
+                    vals = self._prepare_record_vals(rng, comodel, (), nested=True)
                     commands.append(Command.update(rng.choice(alive), vals))
                 case 2:
                     doomed = rng.choice(alive)

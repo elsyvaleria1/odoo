@@ -37,7 +37,7 @@ from .base import Field
 from .temporal import (
     _value_to_date,
     _value_to_datetime,
-    refuse_boolean_part_comparand,
+    check_date_part_comparand,
     temporal_part_getter,
 )
 
@@ -148,7 +148,7 @@ class _PropertiesSearchMixin(_PropertiesMixinBase):
             if property_name:
                 name, part = split_temporal_part(property_name)
                 check_property_field_value_name(name)
-                refuse_boolean_part_comparand(condition, part)
+                check_date_part_comparand(condition, part)
             if condition.operator in PYTHON_INEQUALITY_OPERATOR and (
                 condition.value is False or condition.value is None
             ):

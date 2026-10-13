@@ -106,7 +106,7 @@ def _identity(path: str) -> tuple[int, int] | None:
     return stat.st_dev, stat.st_ino
 
 
-def _errno_error(what: str) -> InotifyError:
+def _prepare_errno_error(what: str) -> InotifyError:
     code = ctypes.get_errno()
     return InotifyError(code, f"{what}: {os.strerror(code)}")
 
@@ -118,7 +118,7 @@ class Inotify:
         libc = _get_libc()
         fd: int = libc.inotify_init1(_IN_CLOEXEC | _IN_NONBLOCK)
         if fd < 0:
-            raise _errno_error("inotify_init1")
+            raise _prepare_errno_error("inotify_init1")
         self._fd = fd
         self._wd_by_path: dict[str, int] = {}
         self._paths_by_wd: dict[int, list[str]] = {}
@@ -153,7 +153,7 @@ class Inotify:
             self._fd, os.fsencode(path), mask | IN_MOVE_SELF
         )
         if wd < 0:
-            raise _errno_error(f"inotify_add_watch({path!r})")
+            raise _prepare_errno_error(f"inotify_add_watch({path!r})")
         previous = self._wd_by_path.get(path)
         if previous is not None and previous != wd:
             self._drop_alias(previous, path)

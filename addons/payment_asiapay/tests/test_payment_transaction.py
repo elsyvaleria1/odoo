@@ -27,7 +27,7 @@ class TestPaymentTransaction(AsiaPayCommon, PaymentHttpCommon):
         Account = self.env["account.account"]
         default_account_revenue = Account.with_company(company).search(
             [
-                *Account._check_company_domain(company),
+                *Account._get_domain_company_compatible(company),
                 ("account_type", "=", "income"),
                 (
                     "id",

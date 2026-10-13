@@ -427,7 +427,7 @@ class TestBackendDifferential(TransactionCase):
 
         self._diff((TestOrmFoo,), script, "unlink")
 
-    def _make_foos(self, env, rows):
+    def _create_foo_rows(self, env, rows):
         F = env["test_orm.foo"]
         for name, v1 in rows:
             F.create({"name": name, "value1": v1})
@@ -440,7 +440,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "eq": sorted(F.search([*scope, ("value1", "=", 2)]).mapped("name")),
@@ -466,7 +466,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "lt": sorted(F.search([*scope, ("value1", "<", 3)]).mapped("name")),
@@ -482,7 +482,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "like_ap": sorted(
@@ -506,7 +506,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "asc": F.search(scope, order="value1 asc").mapped("name"),
@@ -520,7 +520,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "multi": F.search(scope, order="value1 asc, name desc").mapped("name"),
@@ -548,7 +548,7 @@ class TestBackendDifferential(TransactionCase):
         names = [n for n, _ in rows]
 
         def script(env):
-            F = self._make_foos(env, rows)
+            F = self._create_foo_rows(env, rows)
             scope = [("name", "in", names)]
             return {
                 "limit": F.search(scope, order="value1", limit=3).mapped("name"),
@@ -1307,7 +1307,7 @@ class TestBackendDifferential(TransactionCase):
 
     def test_parent_store_and_child_of_agree(self):
 
-        def build_tree(env):
+        def _create_category_tree(env):
             C = env["test_orm.category"]
             root = C.create({"name": "root"})
             child = C.create({"name": "child", "parent": root.id})
@@ -1318,7 +1318,7 @@ class TestBackendDifferential(TransactionCase):
 
         registry = _isolated_registry(TestOrmCategory)
         with model_test_env(registry=registry) as env_a:
-            C_a, root_a, child_a, grand_a = build_tree(env_a)
+            C_a, root_a, child_a, grand_a = _create_category_tree(env_a)
             self.assertEqual(
                 grand_a.parent_path, f"{root_a.id}/{child_a.id}/{grand_a.id}/"
             )
@@ -1327,7 +1327,7 @@ class TestBackendDifferential(TransactionCase):
                 sorted(subtree_a.mapped("name")), ["child", "grand", "root"]
             )
 
-        C_b, root_b, child_b, grand_b = build_tree(self.env)
+        C_b, root_b, child_b, grand_b = _create_category_tree(self.env)
         self.assertTrue(grand_b.parent_path)
         self.assertEqual(grand_b.parent_path.count("/"), 3)
         subtree = C_b.search(

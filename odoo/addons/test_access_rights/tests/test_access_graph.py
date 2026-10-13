@@ -99,7 +99,7 @@ class TestAccessGraph(TransactionCase):
         cls.dave.group_ids = [Command.link(cls.group_x.id)]
         cls.users = cls.alice | cls.bob | cls.carol | cls.dave
 
-    def build(self, seed, size=60, grants=90):
+    def create_nodes_and_grants(self, seed, size=60, grants=90):
         rng = random.Random(seed)
         now = fields.Datetime.now()
         created = self.Node.browse()
@@ -179,7 +179,9 @@ class TestAccessGraph(TransactionCase):
         return groups, scoped
 
     def assert_agrees(self, seed, companies=None):
-        self.assert_state_agrees(*self.build(seed), seed=seed, companies=companies)
+        self.assert_state_agrees(
+            *self.create_nodes_and_grants(seed), seed=seed, companies=companies
+        )
 
     def stored_state(self, created):
         created = created.exists()
@@ -299,7 +301,7 @@ class TestAccessGraph(TransactionCase):
     def test_the_table_stays_derived_through_any_writes(self):
         for seed in (11, 12):
             rng = random.Random(seed)
-            created, *_ = self.build(seed, size=40, grants=60)
+            created, *_ = self.create_nodes_and_grants(seed, size=40, grants=60)
             for _batch in range(6):
                 for _write in range(8):
                     nodes = created.exists()
@@ -340,7 +342,7 @@ class TestAccessGraph(TransactionCase):
                 )
 
     def test_a_grant_writes_only_the_rows_it_is_the_source_of(self):
-        created, *_ = self.build(14, size=30, grants=40)
+        created, *_ = self.create_nodes_and_grants(14, size=30, grants=40)
         folder = created.filtered(lambda node: node.is_container)[0]
         cr = self.env.cr
         table = SQL.identifier(self.Node._access_reach_table())
@@ -363,7 +365,7 @@ class TestAccessGraph(TransactionCase):
         self.assert_table_is_derived()
 
     def test_a_rolled_back_write_leaves_the_rows_it_found(self):
-        created, *_ = self.build(13, size=20, grants=30)
+        created, *_ = self.create_nodes_and_grants(13, size=20, grants=30)
         self.assert_table_is_derived()
         with self.assertRaises(ValueError), self.env.cr.savepoint():
             created[0].parent_id = self.Node.create({"name": "elsewhere"})

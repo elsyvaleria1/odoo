@@ -173,7 +173,7 @@ class ResCompany(models.Model):
     def _first_journal_per_company(self, journal_type) -> dict:
         journals = self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self),
+                *self.env["account.journal"]._get_domain_company_compatible(self),
                 ("type", "=", journal_type),
             ]
         )

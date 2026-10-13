@@ -167,15 +167,20 @@ class Many2manyCase(TransactionCase):
                 side_effect=Attachment._search,
             ) as _search,
             patch.object(
-                Attachment, "_check_access", autospec=True, return_value=None
-            ) as _check_access,
+                Attachment,
+                "_get_records_forbidden_and_error_factory",
+                autospec=True,
+                return_value=None,
+            ) as _get_records_forbidden_and_error_factory,
         ):
             record.invalidate_model()
             record.m2m_attachment_ids
             _search.assert_called_once_with(
                 attachment.browse(), Domain.TRUE, order="id", bypass_access=True
             )
-            _check_access.assert_called_once_with(attachment, "read")
+            _get_records_forbidden_and_error_factory.assert_called_once_with(
+                attachment, "read"
+            )
 
         self.patch(field, "bypass_search_access", False)
         with (
@@ -186,8 +191,11 @@ class Many2manyCase(TransactionCase):
                 side_effect=Attachment._search,
             ) as _search,
             patch.object(
-                Attachment, "_check_access", autospec=True, return_value=None
-            ) as _check_access,
+                Attachment,
+                "_get_records_forbidden_and_error_factory",
+                autospec=True,
+                return_value=None,
+            ) as _get_records_forbidden_and_error_factory,
         ):
             record.invalidate_model()
             record.m2m_attachment_ids
@@ -197,4 +205,6 @@ class Many2manyCase(TransactionCase):
                 order="id",
                 bypass_access=False,
             )
-            _check_access.assert_called_once_with(attachment.browse(), "read")
+            _get_records_forbidden_and_error_factory.assert_called_once_with(
+                attachment.browse(), "read"
+            )

@@ -35,7 +35,7 @@ def _init_barcode() -> tuple[Any, str]:
         try:
             from reportlab.graphics import barcode
 
-            font_name = _validated_font(barcode)
+            font_name = _configure_font_and_get_name(barcode)
         except ImportError:
             _debug.lifecycle("barcode.init", available=False)
             raise
@@ -49,7 +49,7 @@ def _init_barcode() -> tuple[Any, str]:
         return _barcode_init
 
 
-def _validated_font(barcode: Any) -> str:
+def _configure_font_and_get_name(barcode: Any) -> str:
     from reportlab.pdfbase.pdfmetrics import TypeFace, getFont
 
     candidate = _COURIER

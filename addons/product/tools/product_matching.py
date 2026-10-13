@@ -20,7 +20,7 @@ def get_or_create_matching_product(
     if internal_reference:
         product = env["product.product"].search(
             [
-                *env["product.product"]._check_company_domain(company),
+                *env["product.product"]._get_domain_company_compatible(company),
                 ("default_code", "=", internal_reference),
             ],
             limit=1,

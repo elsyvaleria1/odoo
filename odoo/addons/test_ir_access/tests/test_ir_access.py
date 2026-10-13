@@ -43,7 +43,7 @@ class TestIrAccessCase(TransactionCase):
         cls.mario, cls.luigi, cls.peach, cls.toad, cls.yoshi, cls.bowser = cls.records
         cls.model = cls.records.browse()
 
-    def make_access(
+    def create_access(
         self,
         name="",
         records=None,
@@ -65,8 +65,10 @@ class TestIrAccessCase(TransactionCase):
             }
         )
 
-    def make_guard(self, name="", records=None, group=None, operation="r", **kwargs):
-        return self.make_access(name, records, group, operation, kind="guard", **kwargs)
+    def create_guard(self, name="", records=None, group=None, operation="r", **kwargs):
+        return self.create_access(
+            name, records, group, operation, kind="guard", **kwargs
+        )
 
     def assertAccess(self, allowed, operation="read"):
         self.assertTrue(self.model.has_access(operation))
@@ -105,14 +107,14 @@ class TestIrAccessCase(TransactionCase):
 
 class TestIrAccess(TestIrAccessCase):
     def test_a_context_without_companies_is_a_cache_key(self):
-        self.make_access(records=self.mario + self.luigi)
+        self.create_access(records=self.mario + self.luigi)
         model = self.model.with_context(allowed_company_ids=[])
         self.assertEqual(tuple(model.env["ir.access"]._get_access_context())[0], ())
         self.model = model
         self.assertAccess(self.mario + self.luigi)
 
     def test_for_fields(self):
-        access = self.make_access(records=self.records, operation="ru")
+        access = self.create_access(records=self.records, operation="ru")
         self.assertTrue(access.for_read)
         self.assertTrue(access.for_write)
         self.assertFalse(access.for_create)
@@ -139,7 +141,7 @@ class TestIrAccess(TestIrAccessCase):
         self.assertEqual(access.operation, "c")
 
     def test_a_guard_without_group_binds_everyone(self):
-        self.make_access(group=self.group1)
+        self.create_access(group=self.group1)
         guard = self.env["ir.access"].create(
             {
                 "name": "no group",
@@ -197,7 +199,7 @@ class TestIrAccess(TestIrAccessCase):
                 self.records.check_access(operation)
 
     def test_a_guard_alone_grants_nothing(self):
-        self.make_guard(records=self.records)
+        self.create_guard(records=self.records)
 
         self.assertFalse(self.model.has_access("read"))
         self.assertFalse(self.model.has_access("write"))
@@ -209,69 +211,69 @@ class TestIrAccess(TestIrAccessCase):
 
     def test_one_permission(self):
         humans = self.mario + self.luigi + self.peach
-        self.make_access(group=self.group1, operation="r")
-        self.make_access(records=humans, group=self.group1, operation="u")
+        self.create_access(group=self.group1, operation="r")
+        self.create_access(records=humans, group=self.group1, operation="u")
 
         self.assertAccess(self.records, "read")
         self.assertAccess(humans, "write")
 
     def test_two_permissions_in_group(self):
-        self.make_access(records=self.mario + self.luigi, group=self.group1)
-        self.make_access(records=self.mario + self.peach, group=self.group1)
+        self.create_access(records=self.mario + self.luigi, group=self.group1)
+        self.create_access(records=self.mario + self.peach, group=self.group1)
 
         self.assertAccess(self.mario + self.luigi + self.peach)
 
     def test_two_permissions_in_distinct_groups(self):
-        self.make_access(records=self.mario + self.luigi, group=self.group1)
-        self.make_access(records=self.mario + self.peach, group=self.group2)
-        self.make_access(records=self.mario + self.yoshi, group=self.group3)
+        self.create_access(records=self.mario + self.luigi, group=self.group1)
+        self.create_access(records=self.mario + self.peach, group=self.group2)
+        self.create_access(records=self.mario + self.yoshi, group=self.group3)
 
         self.assertAccess(self.mario + self.luigi + self.peach)
 
     def test_one_permission_one_guard(self):
-        self.make_access(
+        self.create_access(
             records=self.mario + self.peach + self.bowser, group=self.group1
         )
-        self.make_guard(records=self.records - self.bowser)
+        self.create_guard(records=self.records - self.bowser)
 
         self.assertAccess(self.mario + self.peach)
 
     def test_two_permissions_one_guard(self):
-        self.make_access(
+        self.create_access(
             records=self.mario + self.luigi + self.bowser, group=self.group1
         )
-        self.make_access(
+        self.create_access(
             records=self.mario + self.peach + self.bowser, group=self.group2
         )
-        self.make_guard(records=self.records - self.bowser)
+        self.create_guard(records=self.records - self.bowser)
 
         self.assertAccess(self.mario + self.luigi + self.peach)
 
     def test_two_permissions_two_guards(self):
-        self.make_access(
+        self.create_access(
             records=self.mario + self.luigi + self.bowser, group=self.group1
         )
-        self.make_access(
+        self.create_access(
             records=self.mario + self.peach + self.bowser, group=self.group2
         )
-        self.make_guard(records=self.records - self.bowser)
-        self.make_guard(records=self.records - self.peach)
+        self.create_guard(records=self.records - self.bowser)
+        self.create_guard(records=self.records - self.peach)
 
         self.assertAccess(self.mario + self.luigi)
 
     def test_special_user_manager(self):
-        self.make_access(
+        self.create_access(
             records=self.mario + self.luigi + self.bowser, group=self.group1
         )
-        self.make_access(group=self.group2)
-        self.make_guard(records=self.records - self.bowser)
+        self.create_access(group=self.group2)
+        self.create_guard(records=self.records - self.bowser)
 
         self.assertAccess(self.records - self.bowser)
 
     def test_guards_bind_their_operations_only(self):
-        self.make_access(group=self.group1, operation="r")
-        self.make_access(group=self.group2, operation="crud")
-        self.make_guard(records=self.records - self.bowser, operation="cud")
+        self.create_access(group=self.group1, operation="r")
+        self.create_access(group=self.group2, operation="crud")
+        self.create_guard(records=self.records - self.bowser, operation="cud")
 
         self.assertAccess(self.records, operation="read")
         self.assertAccess(self.records - self.bowser, operation="write")
@@ -279,8 +281,8 @@ class TestIrAccess(TestIrAccessCase):
         self.assertAccess(self.records - self.bowser, operation="unlink")
 
     def test_a_member_guard_binds_only_the_members_of_its_group(self):
-        self.make_access(group=self.group1)
-        self.make_guard(
+        self.create_access(group=self.group1)
+        self.create_guard(
             records=self.mario + self.luigi, group=self.group3, guard_scope="members"
         )
 
@@ -290,9 +292,9 @@ class TestIrAccess(TestIrAccessCase):
         self.assertAccess(self.mario + self.luigi)
 
     def test_adding_a_group_never_takes_records_away(self):
-        self.make_access(records=self.mario + self.luigi, group=self.group1)
-        self.make_access(records=self.peach, group=self.group3)
-        self.make_guard(records=self.records - self.bowser)
+        self.create_access(records=self.mario + self.luigi, group=self.group1)
+        self.create_access(records=self.peach, group=self.group3)
+        self.create_guard(records=self.records - self.bowser)
         before = self.records._filtered_access("read")
         self.assertEqual(before, self.mario + self.luigi)
 
@@ -314,7 +316,7 @@ class TestIrAccess(TestIrAccessCase):
                 self.subTest(domain=domain),
                 self.assertRaisesRegex(ValidationError, "tests the user's groups"),
             ):
-                self.make_access(group=self.group1, domain=domain)
+                self.create_access(group=self.group1, domain=domain)
 
     def test_a_domain_that_only_widens_with_the_user_s_groups_is_accepted(self):
         for domain in (
@@ -328,21 +330,21 @@ class TestIrAccess(TestIrAccessCase):
             ),
         ):
             with self.subTest(domain=domain):
-                self.make_access(group=self.group1, domain=domain)
+                self.create_access(group=self.group1, domain=domain)
 
     def test_an_invalid_domain_is_refused(self):
         with self.assertRaisesRegex(ValidationError, "Invalid domain"):
-            self.make_access(group=self.group1, domain="[('no_such_field', '=', 1)]")
+            self.create_access(group=self.group1, domain="[('no_such_field', '=', 1)]")
         with self.assertRaisesRegex(ValidationError, "Invalid domain"):
-            self.make_access(group=self.group1, domain="[('val', 'access', 'read')]")
+            self.create_access(group=self.group1, domain="[('val', 'access', 'read')]")
         with self.assertRaisesRegex(ValidationError, "Invalid domain"):
-            self.make_access(
+            self.create_access(
                 group=self.group1, domain="[('category_id', 'access', 'fly')]"
             )
 
     def test_a_row_that_does_not_evaluate_admits_nothing(self):
-        self.make_access(records=self.mario, group=self.group1)
-        broken = self.make_access(group=self.group2)
+        self.create_access(records=self.mario, group=self.group1)
+        broken = self.create_access(group=self.group2)
         self.env.cr.execute(
             "UPDATE ir_access SET domain = %s WHERE id = %s",
             [f"[('id', '=', 1 // (user.id - {self.user.id}))]", broken.id],
@@ -354,8 +356,8 @@ class TestIrAccess(TestIrAccessCase):
             self.assertAccess(self.mario)
 
     def test_a_guard_that_does_not_evaluate_lets_nothing_through(self):
-        self.make_access(group=self.group1)
-        broken = self.make_guard()
+        self.create_access(group=self.group1)
+        broken = self.create_guard()
         self.env.cr.execute(
             "UPDATE ir_access SET domain = %s WHERE id = %s",
             [f"[('id', '=', 1 // (user.id - {self.user.id}))]", broken.id],
@@ -369,7 +371,7 @@ class TestIrAccess(TestIrAccessCase):
                 self.mario.check_access("read")
 
     def test_error_message_no_access(self):
-        self.make_access(group=self.group3, operation="cd")
+        self.create_access(group=self.group3, operation="cd")
 
         with self.assertAccessError(
             r"You are not allowed to access.*No group currently allows this operation"
@@ -383,8 +385,8 @@ class TestIrAccess(TestIrAccessCase):
 
     def test_error_message_names_the_failing_rows(self):
         humans = self.records[:3]
-        self.make_access("See good guys", records=self.records[:5], group=self.group1)
-        self.make_guard("Restrict to humans", records=humans)
+        self.create_access("See good guys", records=self.records[:5], group=self.group1)
+        self.create_guard("Restrict to humans", records=humans)
 
         self.assertEqual(self.records._filtered_access("read"), humans)
         with self.assertAccessError(
@@ -419,7 +421,7 @@ class TestIrAccess(TestIrAccessCase):
     def test_every_model_reads_its_access_from_ir_access(self):
         partner = self.env["res.partner"].create({"name": "Somebody"})
         self.assertTrue(partner.with_user(self.user).has_access("read"))
-        self.make_guard(model="res.partner", domain="[(0, '=', 1)]")
+        self.create_guard(model="res.partner", domain="[(0, '=', 1)]")
         self.assertFalse(partner.with_user(self.user).has_access("read"))
 
 
@@ -449,8 +451,8 @@ class TestCompanySelectionKey(TestIrAccessCase):
 @tagged("post_install", "-at_install")
 class TestStaleRows(TestIrAccessCase):
     def test_a_row_naming_a_field_its_model_lost_admits_nothing(self):
-        self.make_access(records=self.luigi, group=self.group1)
-        stale = self.make_access(group=self.group2)
+        self.create_access(records=self.luigi, group=self.group1)
+        stale = self.create_access(group=self.group2)
         self.env.cr.execute(
             "UPDATE ir_access SET domain = %s WHERE id = %s",
             ["[('no_such_field', '=', 1)]", stale.id],
@@ -468,8 +470,8 @@ class TestGroupLabels(TestIrAccessCase):
         hidden, shown = Category.create([{"name": "Secret"}, {"name": "Public"}])
         self.mario.sudo().category_id = hidden
         self.luigi.sudo().category_id = shown
-        self.make_access(group=self.group1)
-        self.make_access(
+        self.create_access(group=self.group1)
+        self.create_access(
             records=shown, group=self.group1, model="test_ir_access.category"
         )
 
@@ -486,7 +488,7 @@ class TestGroupLabels(TestIrAccessCase):
 class TestConditionalReach(TestIrAccessCase):
     def ceiling(self, **args):
         role = self.group1._add_missing_xml_ids()[self.group1.id]
-        return self.make_guard(
+        return self.create_guard(
             group=self.group1,
             guard_scope="members",
             reach="predicate",
@@ -495,8 +497,8 @@ class TestConditionalReach(TestIrAccessCase):
         )
 
     def test_a_restricted_role_is_bounded_by_its_conditional_accesses(self):
-        self.make_access(records=self.mario + self.luigi, group=self.group1)
-        self.make_access(group=self.group2)
+        self.create_access(records=self.mario + self.luigi, group=self.group1)
+        self.create_access(group=self.group2)
         self.assertAccess(self.records)
 
         self.ceiling()
@@ -510,8 +512,8 @@ class TestConditionalReach(TestIrAccessCase):
                 "implied_ids": [Command.link(self.group1.id)],
             }
         )
-        self.make_access(records=self.mario, group=self.group1)
-        self.make_access(group=wider)
+        self.create_access(records=self.mario, group=self.group1)
+        self.create_access(group=wider)
         self.user.group_ids = [Command.link(wider.id)]
 
         self.ceiling()
@@ -519,8 +521,8 @@ class TestConditionalReach(TestIrAccessCase):
         self.assertAccess(self.records)
 
     def test_a_group_the_role_names_counts_as_its_own(self):
-        self.make_access(records=self.mario, group=self.group1)
-        self.make_access(group=self.group2)
+        self.create_access(records=self.mario, group=self.group1)
+        self.create_access(group=self.group2)
 
         self.ceiling(**{"with": [self.group2._add_missing_xml_ids()[self.group2.id]]})
 
@@ -539,7 +541,7 @@ class TestAccessOperator(TestIrAccessCase):
         cls.bowser.sudo().category_id = cls.villains
 
     def delegate_to_category(self, operation="read"):
-        return self.make_access(
+        return self.create_access(
             "through the category",
             group=self.group1,
             domain=str([("category_id", "access", operation)]),
@@ -547,7 +549,7 @@ class TestAccessOperator(TestIrAccessCase):
 
     def test_a_record_is_reachable_when_its_category_is(self):
         self.delegate_to_category()
-        self.make_access(
+        self.create_access(
             records=self.heroes, group=self.group1, model="test_ir_access.category"
         )
         self.assertAccess(self.records - self.bowser)
@@ -559,8 +561,8 @@ class TestAccessOperator(TestIrAccessCase):
 
     def test_the_operator_reads_the_category_s_own_operation(self):
         self.delegate_to_category("write")
-        self.make_access(group=self.group1, model="test_ir_access.category")
-        self.make_access(
+        self.create_access(group=self.group1, model="test_ir_access.category")
+        self.create_access(
             records=self.villains,
             group=self.group1,
             operation="u",
@@ -570,7 +572,7 @@ class TestAccessOperator(TestIrAccessCase):
 
     def test_a_read_verdict_follows_a_write_the_category_rule_reads(self):
         self.delegate_to_category()
-        self.make_access(
+        self.create_access(
             group=self.group1,
             model="test_ir_access.category",
             domain="[('name', '!=', 'Hidden')]",
@@ -586,7 +588,7 @@ class TestAccessOperator(TestIrAccessCase):
             ValidationError,
             r"form a cycle: .*test_ir_access\.category\.read.*test_ir_access\.item\.read",
         ):
-            self.make_access(
+            self.create_access(
                 group=self.group2,
                 model="test_ir_access.category",
                 domain=str([("featured_item_id", "access", "read")]),
@@ -594,7 +596,7 @@ class TestAccessOperator(TestIrAccessCase):
 
     def test_a_self_referencing_row_is_refused(self):
         with self.assertRaisesRegex(ValidationError, "form a cycle"):
-            self.make_access(
+            self.create_access(
                 group=self.group1,
                 model="test_ir_access.node",
                 domain=str(
@@ -604,7 +606,7 @@ class TestAccessOperator(TestIrAccessCase):
 
     def test_a_cycle_written_behind_the_constraint_fails_clearly(self):
         self.delegate_to_category()
-        back = self.make_access(group=self.group2, model="test_ir_access.category")
+        back = self.create_access(group=self.group2, model="test_ir_access.category")
         self.env.cr.execute(
             "UPDATE ir_access SET domain = %s WHERE id = %s",
             [str([("featured_item_id", "access", "read")]), back.id],
@@ -627,8 +629,8 @@ class TestDelegatedAccess(TestIrAccessCase):
             [{"item_id": record.id} for record in self.mario + self.bowser]
         )
         allowed = children[0]
-        self.make_access(group=self.group1, model="test_ir_access.delegated")
-        self.make_access(records=self.mario, group=self.group1)
+        self.create_access(group=self.group1, model="test_ir_access.delegated")
+        self.create_access(records=self.mario, group=self.group1)
         user_children = children.with_user(self.user)
 
         user_children.sudo()._access_domain("read")
@@ -645,11 +647,11 @@ class TestDelegatedAccess(TestIrAccessCase):
             [{link: record.id} for record in self.mario + self.bowser]
         )
         allowed, forbidden = children
-        self.make_access(group=self.group1, model=model_name)
+        self.create_access(group=self.group1, model=model_name)
         user_children = children.with_user(self.user)
         self.assertFalse(user_children.browse().has_access("read"))
 
-        self.make_access(records=self.mario, group=self.group1)
+        self.create_access(records=self.mario, group=self.group1)
         self.assertEqual(
             user_children.search([("id", "in", children.ids)]),
             allowed.with_user(self.user),
@@ -710,8 +712,8 @@ class TestRetiredAccessTables(TestIrAccessCase):
         self.assertEqual(everyone.guard_scope, "everyone")
 
     def test_the_failing_guard_is_blamed_by_name(self):
-        self.make_access(group=self.group1, operation="ru")
-        self.make_guard("only mario", records=self.mario, operation="u")
+        self.create_access(group=self.group1, operation="ru")
+        self.create_guard("only mario", records=self.mario, operation="u")
         with (
             self.debug_mode(),
             self.assertAccessError(r"Blame the following accesses:\s*- only mario"),
@@ -738,15 +740,15 @@ class TestGroupsWithAccess(TestIrAccessCase):
         return groups & (self.group1 + self.group2 + self.group3)
 
     def test_a_row_through_the_access_operator_needs_the_pointed_access(self):
-        self.make_access(
+        self.create_access(
             group=self.group1, domain=str([("category_id", "access", "read")])
         )
-        self.make_access(group=self.group2, model="test_ir_access.category")
+        self.create_access(group=self.group2, model="test_ir_access.category")
         self.assertFalse(self.groups(self.MODEL))
         with self.assertAccessError("No group currently allows this operation"):
             self.env[self.MODEL].with_user(self.carol).check_access("read")
 
-        self.make_access(group=self.group1, model="test_ir_access.category")
+        self.create_access(group=self.group1, model="test_ir_access.category")
         self.assertEqual(self.groups(self.MODEL), self.group1)
         with self.assertAccessError(
             r"allowed for the following groups:\s*- Group 1\s*Ask: [^\n]+\s*Contact"
@@ -754,43 +756,43 @@ class TestGroupsWithAccess(TestIrAccessCase):
             self.env[self.MODEL].with_user(self.carol).check_access("read")
 
     def test_the_model_s_own_guard_needs_its_access_too(self):
-        self.make_access(group=self.group1, model="test_ir_access.guarded")
-        self.make_access(group=self.group2, model="test_ir_access.category")
+        self.create_access(group=self.group1, model="test_ir_access.guarded")
+        self.create_access(group=self.group2, model="test_ir_access.category")
         self.assertFalse(self.groups("test_ir_access.guarded"))
-        self.make_access(group=self.group1, model="test_ir_access.category")
+        self.create_access(group=self.group1, model="test_ir_access.category")
         self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
 
     def test_a_path_through_the_access_operator_needs_the_pointed_access(self):
-        self.make_access(
+        self.create_access(
             group=self.group1,
             model="test_ir_access.guarded",
             domain=str([("category_id.featured_item_id", "access", "read")]),
         )
-        self.make_access(group=self.group1, model="test_ir_access.category")
-        self.make_access(group=self.group2)
+        self.create_access(group=self.group1, model="test_ir_access.category")
+        self.create_access(group=self.group2)
         self.assertFalse(self.groups("test_ir_access.guarded"))
-        self.make_access(group=self.group1)
+        self.create_access(group=self.group1)
         self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
 
     def test_a_nested_access_condition_needs_the_pointed_access(self):
-        self.make_access(
+        self.create_access(
             group=self.group1,
             model="test_ir_access.guarded",
             domain=str(
                 [("category_id", "any", [("featured_item_id", "access", "read")])]
             ),
         )
-        self.make_access(group=self.group1, model="test_ir_access.category")
-        self.make_access(group=self.group2)
+        self.create_access(group=self.group1, model="test_ir_access.category")
+        self.create_access(group=self.group2)
         self.assertFalse(self.groups("test_ir_access.guarded"))
-        self.make_access(group=self.group1)
+        self.create_access(group=self.group1)
         self.assertEqual(self.groups("test_ir_access.guarded"), self.group1)
 
     def test_a_delegated_parent_needs_its_access_too(self):
-        self.make_access(group=self.group1, model="test_ir_access.delegated")
-        self.make_access(group=self.group2)
+        self.create_access(group=self.group1, model="test_ir_access.delegated")
+        self.create_access(group=self.group2)
         self.assertFalse(self.groups("test_ir_access.delegated"))
-        self.make_access(group=self.group1)
+        self.create_access(group=self.group1)
         self.assertEqual(self.groups("test_ir_access.delegated"), self.group1)
 
 
@@ -799,8 +801,8 @@ class TestFailedAccesses(TestIrAccessCase):
         children = self.env["test_ir_access.delegated"].create(
             [{"item_id": record.id} for record in self.mario + self.bowser]
         )
-        self.make_access(group=self.group1, model="test_ir_access.delegated")
-        self.make_access("only mario items", records=self.mario, group=self.group1)
+        self.create_access(group=self.group1, model="test_ir_access.delegated")
+        self.create_access("only mario items", records=self.mario, group=self.group1)
         forbidden = children[1].with_user(self.user)
         with (
             self.debug_mode(),
@@ -816,8 +818,8 @@ class TestFailedAccesses(TestIrAccessCase):
         record = self.env["test_ir_access.guarded"].create(
             {"name": "g", "category_id": hidden.id}
         )
-        self.make_access(group=self.group1, model="test_ir_access.guarded")
-        self.make_access(
+        self.create_access(group=self.group1, model="test_ir_access.guarded")
+        self.create_access(
             group=self.group1,
             model="test_ir_access.category",
             domain="[('name', '!=', 'Hidden')]",
@@ -842,8 +844,8 @@ class TestOwnerThroughTheAccessOperator(TestIrAccessCase):
             ]
         )
         of_mario, of_bowser, of_nobody = owned
-        self.make_access(group=self.group1, model="test_ir_access.owned")
-        self.make_access(records=self.mario, group=self.group1)
+        self.create_access(group=self.group1, model="test_ir_access.owned")
+        self.create_access(records=self.mario, group=self.group1)
         as_user = self.env["test_ir_access.owned"].with_user(self.user)
         self.assertTrue(as_user._access_owner_delegates())
         self.assertEqual(

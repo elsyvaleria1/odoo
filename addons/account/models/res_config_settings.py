@@ -397,7 +397,9 @@ class ResConfigSettings(models.TransientModel):
         res = {}
         tax = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(self.env.company),
+                *self.env["account.tax"]._get_domain_company_compatible(
+                    self.env.company
+                ),
                 ("tax_exigibility", "=", "on_payment"),
             ],
             limit=1,

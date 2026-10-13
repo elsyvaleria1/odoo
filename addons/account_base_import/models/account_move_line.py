@@ -43,7 +43,7 @@ class AccountMoveLine(models.Model):
 
             journal_codes_ids = {}
             journal_codes = self.env["account.journal"].search_read(
-                domain=self.env["account.journal"]._check_company_domain(
+                domain=self.env["account.journal"]._get_domain_company_compatible(
                     self.env.company
                 ),
                 fields=["code"],

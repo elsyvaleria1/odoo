@@ -410,14 +410,14 @@ class TestAssetsCacheInvalidatedAtCommit(TransactionCase):
             if key[0] == "ir.asset" and "_get_asset_paths" in str(key[1])
         ]
 
-    def _make_asset(self):
+    def _create_asset(self):
         return self.env["ir.asset"].create(
             {"name": "probe", "bundle": self.BUNDLE, "path": "/web/static/src/probe.js"}
         )
 
     def test_write_registers_a_post_commit_clear(self):
         self.env.cr.postcommit.clear()
-        self._make_asset()
+        self._create_asset()
         self.assertTrue(
             self.env.cr.postcommit.data.get("ir_asset_cache_invalidated"),
             "a post-commit clear must be queued",
@@ -426,7 +426,7 @@ class TestAssetsCacheInvalidatedAtCommit(TransactionCase):
 
     def test_post_commit_clear_evicts_an_entry_cached_before_commit(self):
         self.env.cr.postcommit.clear()
-        self._make_asset()
+        self._create_asset()
         self.env["ir.asset"]._get_asset_paths(self.BUNDLE, {})
         self.assertTrue(self._asset_cache_keys(), "entry cached inside the txn")
 
@@ -439,7 +439,7 @@ class TestAssetsCacheInvalidatedAtCommit(TransactionCase):
 
     def test_repeated_writes_queue_a_single_clear(self):
         self.env.cr.postcommit.clear()
-        assets = self._make_asset()
+        assets = self._create_asset()
         assets.write({"sequence": 5})
         assets.unlink()
         self.assertEqual(len(self.env.cr.postcommit), 1)

@@ -613,7 +613,7 @@ class PurchaseOrderLine(models.Model):
                 rounding_method="HALF-UP",
             )
 
-        tax_domain = self.env["account.tax"]._check_company_domain(company_id)
+        tax_domain = self.env["account.tax"]._get_domain_company_compatible(company_id)
         product_taxes = product_id.supplier_taxes_id.filtered_domain(tax_domain)
         taxes = po.fiscal_position_id.map_tax(product_taxes)
 

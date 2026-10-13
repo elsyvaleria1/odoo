@@ -42,7 +42,7 @@ from odoo.addons.base.models.ir_attachment_assets import SOURCE_MAP_SUFFIXES
 from odoo.addons.base.tests.common import (
     TransactionCaseWithUserDemo,
     TransactionCaseWithUserPortal,
-    make_guard_row,
+    create_guard_row,
 )
 
 
@@ -1420,12 +1420,12 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.assertEqual(
             att.id in one_model.ids,
             allowed,
-            "per-model domain path disagrees with _check_access",
+            "per-model domain path disagrees with _get_records_forbidden_and_error_factory",
         )
         self.assertEqual(
             att.id in many_models.ids,
             allowed,
-            "the many-model search disagrees with _check_access",
+            "the many-model search disagrees with _get_records_forbidden_and_error_factory",
         )
 
     def test_res_field_must_name_an_attachment_backed_field(self):
@@ -1662,7 +1662,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         self.Attachment.create_unique([values])
         self.assertIn("datas", values, "the caller's dict must not be mutated")
 
-    def _make_other_company_user(self):
+    def _create_other_company_and_user(self):
         company_b = self.env["res.company"].sudo().create({"name": "IRA-C2 B"})
         return (
             self.env["res.users"]
@@ -1688,7 +1688,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         )
 
     def test_create_unique_dedups_a_cross_company_row_on_a_writable_record(self):
-        user_b = self._make_other_company_user()
+        user_b = self._create_other_company_and_user()
         payload = b"ira-c2-shared-" + os.urandom(8)
         target = self.env["res.partner"].sudo().create({"name": "ira-c2 target"})
         seeded = self.Attachment.sudo().create(
@@ -1726,7 +1726,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
         )
 
     def test_create_unique_refuses_a_record_the_caller_cannot_write(self):
-        user_b = self._make_other_company_user()
+        user_b = self._create_other_company_and_user()
         parameter = self.env["ir.config_parameter"].search([], limit=1)
         with self.assertRaises(AccessError):
             self.Attachment.with_user(user_b).create_unique(
@@ -1742,7 +1742,7 @@ class TestIrAttachment(TransactionCaseWithUserDemo):
             )
 
     def test_create_unique_never_returns_another_users_private_row(self):
-        user_b = self._make_other_company_user()
+        user_b = self._create_other_company_and_user()
         payload = b"ira-private-" + os.urandom(8)
         private = self.Attachment.with_user(self.user_demo).create(
             {"name": "mine", "mimetype": "text/plain", "raw": payload}
@@ -3003,7 +3003,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
         }
         a = self.attachment = self.Attachments.create(self.vals)
 
-        self.rule = make_guard_row(
+        self.rule = create_guard_row(
             self.env,
             record._name,
             "[('id', '!=', %s)]" % record.id,
@@ -3800,7 +3800,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
         self.assertIn(
             orphan,
             self.Attachments.search([("name", "=", "orphan")]),
-            "_search and _check_access disagree on what counts as unlinked",
+            "_search and _get_records_forbidden_and_error_factory disagree on what counts as unlinked",
         )
         self.assertNotIn(
             orphan,
@@ -3843,7 +3843,7 @@ class TestPermissions(TransactionCaseWithUserDemo):
             self.assertEqual(
                 row.id in by_model.ids,
                 reachable,
-                f"{label}: the per-model search path disagrees with _check_access",
+                f"{label}: the per-model search path disagrees with _get_records_forbidden_and_error_factory",
             )
             self.assertEqual(
                 row.id in broad.ids,

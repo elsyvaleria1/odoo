@@ -586,7 +586,7 @@ class IrAccessChangeset(models.Model):
                     ", ".join(stale.mapped("record_name")),
                 )
             )
-        impact = self._check_review()
+        impact = self._get_impact_reviewed()
         with applying():
             for line in self.line_ids:
                 line._apply()
@@ -628,7 +628,7 @@ class IrAccessChangeset(models.Model):
             "view_mode": "form",
         }
 
-    def _check_review(self) -> dict[str, Any]:
+    def _get_impact_reviewed(self) -> dict[str, Any]:
         impact = self._impact()
         if self.state == "proposed" and _shape(impact) != _shape(self.impact or {}):
             raise UserError(

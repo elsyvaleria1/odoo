@@ -21,7 +21,7 @@ from odoo.tools import file_path
 from .constants import STATIC_CACHE, STATIC_CACHE_LONG
 from .core import request
 from .settings import current as current_settings
-from .wrappers import Response, _Response, sanitize_download_name
+from .wrappers import Response, _Response, normalize_download_name
 
 _debug = DebugLog(__name__)
 
@@ -244,7 +244,7 @@ class Stream:
             "as_attachment": as_attachment,
             "download_name": None
             if self.download_name is None
-            else sanitize_download_name(self.download_name),
+            else normalize_download_name(self.download_name),
             "conditional": self.conditional,
             "etag": self.etag,
             "last_modified": self.last_modified,

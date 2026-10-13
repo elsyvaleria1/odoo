@@ -132,7 +132,7 @@ class ModelSpec:
     def get(self, fname: str) -> FieldSpec:
         return next(spec for spec in self.fields if spec.name == fname)
 
-    def find(self, fname: str) -> FieldSpec | None:
+    def get_field_if_present(self, fname: str) -> FieldSpec | None:
         return next((spec for spec in self.fields if spec.name == fname), None)
 
 
@@ -145,7 +145,7 @@ class Schema:
         names = path.split(".")
         owner = model
         for index in range(len(names)):
-            spec = self.models[owner].find(".".join(names[index:]))
+            spec = self.models[owner].get_field_if_present(".".join(names[index:]))
             if spec is not None:
                 return names[:index], owner, spec
             owner = typing.cast("str", self.models[owner].get(names[index]).comodel)
@@ -163,7 +163,7 @@ class Schema:
         return found | {owner} if steps else found
 
 
-def build_schema(env: Environment, model_names: Sequence[str]) -> Schema:
+def get_schema(env: Environment, model_names: Sequence[str]) -> Schema:
     specs = {}
     for model_name in model_names:
         model = env[model_name]
@@ -1639,7 +1639,7 @@ def _smaller_datasets(
         model = schema.models[model_name]
         for index, row in enumerate(rows):
             for fname, value in (row or {}).items():
-                spec = model.find(fname)
+                spec = model.get_field_if_present(fname)
                 if spec is not None and spec.required:
                     continue
                 if isinstance(value, Translated):

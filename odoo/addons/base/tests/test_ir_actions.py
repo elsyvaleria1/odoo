@@ -9,7 +9,7 @@ from odoo import Command
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.libs.json import OPT_SORT_KEYS
 from odoo.libs.json import dumps as json_dumps
-from odoo.service.transaction import _integrity_error_to_validation_error
+from odoo.service.transaction import _prepare_integrity_validation_error
 from odoo.tests import common, tagged
 from odoo.tools import mute_logger
 
@@ -1369,7 +1369,7 @@ ZeroDivisionError: division by zero"""
 
 @tagged("post_install", "-at_install")
 class TestActionsPath(common.TransactionCase):
-    def _make_window(self, path):
+    def _create_window_action(self, path):
         return self.env["ir.actions.act_window"].create(
             {
                 "name": "PathWindow",
@@ -1381,19 +1381,19 @@ class TestActionsPath(common.TransactionCase):
     def test_path_invalid_format(self):
         for bad in ("Foo", "1abc", "a b", "-abc"):
             with self.subTest(path=bad), self.assertRaises(ValidationError):
-                self._make_window(bad)
+                self._create_window_action(bad)
 
     def test_path_reserved_prefixes(self):
         for bad in ("m-foo", "action-foo", "new"):
             with self.subTest(path=bad), self.assertRaises(ValidationError):
-                self._make_window(bad)
+                self._create_window_action(bad)
 
     def test_path_valid(self):
-        action = self._make_window("my-valid_path1")
+        action = self._create_window_action("my-valid_path1")
         self.assertEqual(action.path, "my-valid_path1")
 
     def test_path_unique_cross_table(self):
-        self._make_window("shared-path")
+        self._create_window_action("shared-path")
         with self.assertRaises(IntegrityError), mute_logger("odoo.db.cursor"):
             with self.env.cr.savepoint():
                 self.env["ir.actions.act_url"].create(
@@ -1406,7 +1406,7 @@ class TestActionsPath(common.TransactionCase):
                 self.env.flush_all()
 
     def test_the_cross_table_rejection_names_the_path_field(self):
-        self._make_window("shared-path-msg")
+        self._create_window_action("shared-path-msg")
         try:
             with self.env.cr.savepoint(), mute_logger("odoo.db.cursor"):
                 self.env["ir.actions.act_url"].create(
@@ -1418,7 +1418,7 @@ class TestActionsPath(common.TransactionCase):
                 )
                 self.env.flush_all()
         except IntegrityError as exc:
-            message = str(_integrity_error_to_validation_error(self.env, exc))
+            message = str(_prepare_integrity_validation_error(self.env, exc))
         else:
             self.fail("a duplicate path must be rejected")
         self.assertIn("unique", message.lower())

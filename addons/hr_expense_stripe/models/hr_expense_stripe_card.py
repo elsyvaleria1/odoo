@@ -33,7 +33,7 @@ class HrExpenseStripeCard(models.Model):
     _inherit = ["mixin.mail.thread"]
     _description = "Employee Expense Card"
     _check_company_auto = True
-    _check_company_domain = models.check_company_domain_parent_of
+    _get_domain_company_compatible = models.get_domain_company_parent_of
     _mail_post_access = "read"
     _access_anchors = frozendict(
         {

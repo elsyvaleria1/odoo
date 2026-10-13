@@ -1025,7 +1025,9 @@ class TestPoSCommon(PosCatalogEditorMixin, ValuationReconciliationTestCommon):
             price_unit = self.pricelist._get_product_price(product, quantity)
             tax_ids = fiscal_position.map_tax(
                 product.taxes_id.filtered_domain(
-                    self.env["account.tax"]._check_company_domain(self.env.company)
+                    self.env["account.tax"]._get_domain_company_compatible(
+                        self.env.company
+                    )
                 )
             )
             discount = kwargs.get("discount", 0.0)

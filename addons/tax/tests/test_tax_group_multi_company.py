@@ -96,14 +96,14 @@ class TestTaxGroupMultiCompany(BaseTaxCommon):
         ):
             found = Group.search(
                 [
-                    *Group._check_company_domain(company),
+                    *Group._get_domain_company_compatible(company),
                     ("id", "=", self.shared_group.id),
                 ]
             )
             self.assertEqual(
                 bool(found),
                 expected,
-                f"_check_company_domain disagrees with membership for {company.name}",
+                f"_get_domain_company_compatible disagrees with membership for {company.name}",
             )
 
     def test_record_rule_hides_the_group_from_a_non_member(self):

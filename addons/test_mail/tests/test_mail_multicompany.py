@@ -168,9 +168,12 @@ class TestMultiCompanySetup(TestMailMCCommon, HttpCase):
             ("ReportLike2", "AttContent2"),
         ]
 
-        _original_car = MailMessage._check_access
+        _original_car = MailMessage._get_records_forbidden_and_error_factory
         with patch.object(
-            MailMessage, "_check_access", autospec=True, side_effect=_original_car
+            MailMessage,
+            "_get_records_forbidden_and_error_factory",
+            autospec=True,
+            side_effect=_original_car,
         ) as mock_msg_car:
             with self.assertRaises(AccessError):
                 test_records_mc_c1.message_post(

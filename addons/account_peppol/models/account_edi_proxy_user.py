@@ -261,7 +261,9 @@ class Account_Edi_Proxy_ClientUser(models.Model):
         else:
             journal = journal or self.env["account.journal"].search(
                 [
-                    *self.env["account.journal"]._check_company_domain(self.company_id),
+                    *self.env["account.journal"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
                     ("type", "=", "sale"),
                 ],
                 limit=1,

@@ -42,7 +42,7 @@ def _get_invalid_name_message(kind: str, value: object) -> str:
     return f"{kind} {value!r} is not a PostgreSQL name: refusing to build DDL from it"
 
 
-def _refuse_column_type(
+def _prepare_column_type_error(
     columntype: str, tablename: str, columnname: str | None
 ) -> ValueError:
     _debug.logic(
@@ -204,7 +204,7 @@ def create_model_table(
 ) -> None:
     for colname, coltype, _ in columns:
         if not _SQL_TYPE_TOKEN.fullmatch(coltype):
-            raise _refuse_column_type(coltype, tablename, colname)
+            raise _prepare_column_type_error(coltype, tablename, colname)
     colspecs = [
         *([] if inherits else [SQL("id SERIAL NOT NULL")]),
         *(
@@ -310,7 +310,7 @@ def create_column(
     comment: str | None = None,
 ) -> None:
     if not _SQL_TYPE_TOKEN.fullmatch(columntype):
-        raise _refuse_column_type(columntype, tablename, columnname)
+        raise _prepare_column_type_error(columntype, tablename, columnname)
     sql = SQL(
         "ALTER TABLE %s ADD COLUMN %s %s%s",
         SQL.identifier(tablename),
@@ -350,7 +350,7 @@ def convert_column(
     cr: BaseCursor, tablename: str, columnname: str, columntype: str
 ) -> None:
     if not _SQL_TYPE_TOKEN.fullmatch(columntype):
-        raise _refuse_column_type(columntype, tablename, columnname)
+        raise _prepare_column_type_error(columntype, tablename, columnname)
     using = SQL("%s::%s", SQL.identifier(columnname), SQL(columntype))
     _convert_column(cr, tablename, columnname, columntype, using)
 
@@ -423,7 +423,7 @@ def convert_column_from_company_dependent(
     keep_translation: bool = False,
 ) -> None:
     if not _SQL_TYPE_TOKEN.fullmatch(columntype):
-        raise _refuse_column_type(columntype, tablename, columnname)
+        raise _prepare_column_type_error(columntype, tablename, columnname)
     _debug.pipeline(
         "schema.company_dependent_conversion",
         table=tablename,
@@ -460,7 +460,7 @@ def _convert_column(
     cr: BaseCursor, tablename: str, columnname: str, columntype: str, using: SQL
 ) -> None:
     if not _SQL_TYPE_TOKEN.fullmatch(columntype):
-        raise _refuse_column_type(columntype, tablename, columnname)
+        raise _prepare_column_type_error(columntype, tablename, columnname)
     query = SQL(
         "ALTER TABLE %s ALTER COLUMN %s DROP DEFAULT, ALTER COLUMN %s TYPE %s USING %s",
         SQL.identifier(tablename),

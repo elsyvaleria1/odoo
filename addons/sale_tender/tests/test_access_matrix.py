@@ -83,7 +83,7 @@ class TestSaleTenderAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         product = cls.env["product.product"].create({"name": "matrix need"})
         records = {}
         for key, company in (("a", cls.companies["a"]), ("b", cls.companies["b"])):

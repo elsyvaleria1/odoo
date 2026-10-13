@@ -79,7 +79,9 @@ class WizardAccountMoveImportSaft(models.TransientModel):
             self.env["account.account"]
             .with_company(self.company_id)
             .search_fetch(
-                self.env["account.account"]._check_company_domain(self.company_id),
+                self.env["account.account"]._get_domain_company_compatible(
+                    self.company_id
+                ),
                 field_names=["id", "code"],
             )
         )
@@ -187,7 +189,9 @@ class WizardAccountMoveImportSaft(models.TransientModel):
 
         journal_misc = self.env["account.journal"].search(
             [
-                *self.env["account.journal"]._check_company_domain(self.company_id),
+                *self.env["account.journal"]._get_domain_company_compatible(
+                    self.company_id
+                ),
                 ("type", "=", "general"),
             ],
             limit=1,
@@ -226,7 +230,7 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         nsmap = self._get_cleaned_namespace(tree)
         partners_to_create = {}
         existing_partners = self.env["res.partner"].search_fetch(
-            self.env["res.partner"]._check_company_domain(self.company_id),
+            self.env["res.partner"]._get_domain_company_compatible(self.company_id),
             field_names=["id", "name", "vat"],
         )
         existing_partners_mapping = {
@@ -343,7 +347,9 @@ class WizardAccountMoveImportSaft(models.TransientModel):
     def _get_or_create_saft_tax_group(self):
         tax_group = self.env["account.tax.group"].search(
             [
-                *self.env["account.tax.group"]._check_company_domain(self.company_id),
+                *self.env["account.tax.group"]._get_domain_company_compatible(
+                    self.company_id
+                ),
                 ("name", "=", "SAF-T taxes"),
             ],
         )
@@ -357,7 +363,7 @@ class WizardAccountMoveImportSaft(models.TransientModel):
     def _prepare_tax_data(self, tree) -> tuple:
         nsmap = self._get_cleaned_namespace(tree)
         existing_taxes = self.env["account.tax"].search_fetch(
-            self.env["account.tax"]._check_company_domain(self.company_id),
+            self.env["account.tax"]._get_domain_company_compatible(self.company_id),
             field_names=["name", "amount_type", "amount", "id"],
         )
         existing_taxes_mapping = {
@@ -417,7 +423,11 @@ class WizardAccountMoveImportSaft(models.TransientModel):
         moves_to_create = {}
         existing_journal_xml_ids = (
             self.env["account.journal"]
-            .search(self.env["account.journal"]._check_company_domain(self.company_id))
+            .search(
+                self.env["account.journal"]._get_domain_company_compatible(
+                    self.company_id
+                )
+            )
             ._get_external_ids()
         )
         existing_journal_xml_ids = {
@@ -648,7 +658,9 @@ class WizardAccountMoveImportSaft(models.TransientModel):
                 self.env._("Accounting Settings"),
             )
 
-        domain = self.env["account.move"]._check_company_domain(self.company_id)
+        domain = self.env["account.move"]._get_domain_company_compatible(
+            self.company_id
+        )
         start_date = (
             self.env["account.move"].search(domain, limit=1, order="date asc").date
             or fields.Date.today()

@@ -23,7 +23,7 @@ class TestGithubAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         return {
             "hook": cls.env["integration.github.webhook"].create({"name": "matrix"}),
             "pull": cls.env["integration.github.pull"].create(

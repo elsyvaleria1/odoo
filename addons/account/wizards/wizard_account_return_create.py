@@ -145,9 +145,9 @@ class WizardAccountReturnCreate(models.TransientModel):
                 self.env["account.fiscal.position"]
                 .search(  # noqa: E8507 -- a transient wizard opened on one company
                     [
-                        *self.env["account.fiscal.position"]._check_company_domain(
-                            wizard.company_id
-                        ),
+                        *self.env[
+                            "account.fiscal.position"
+                        ]._get_domain_company_compatible(wizard.company_id),
                         ("foreign_vat", "!=", False),
                     ]
                 )

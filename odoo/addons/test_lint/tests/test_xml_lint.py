@@ -21,12 +21,12 @@ class TestXmlLint(LintCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        _xml_scan.findings()
+        _xml_scan.get_findings()
 
     def test_every_rule_is_held_at_its_floor(self):
         for rule in _xml_rules.RULES:
             found = sorted(
-                _xml_scan.findings().get(rule.name, []),
+                _xml_scan.get_findings().get(rule.name, []),
                 key=lambda finding: finding.sort_key,
             )
             if not rule.every_repository:
@@ -63,7 +63,7 @@ class TestXmlLint(LintCase):
 
     def test_every_rule_reaches_the_scan(self):
         self.assertEqual(
-            sorted(_xml_scan.findings().keys() ^ _xml_rules.BY_NAME.keys()), []
+            sorted(_xml_scan.get_findings().keys() ^ _xml_rules.BY_NAME.keys()), []
         )
 
 

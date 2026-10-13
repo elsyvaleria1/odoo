@@ -36,8 +36,8 @@ class WizardResUsersCheckIdentity(models.TransientModel):
                 "type": "password",
             }
             user = self.env.user
-            with user._assert_can_auth(user=user.id):
-                user._check_credentials(credential, {"interactive": True})
+            with user._admit_authentication_attempt(user=user.id):
+                user._authenticate_credentials(credential, {"interactive": True})
         except AccessDenied:
             _debug.logic("identity_check_failed", uid=self.env.uid)
             raise UserError(

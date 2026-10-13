@@ -27,7 +27,7 @@ class AccountBankStatementLine(models.Model):
         companies = self.company_id
         accounts = self.env["account.account"].search(
             [
-                *self.env["account.account"]._check_company_domain(companies),
+                *self.env["account.account"]._get_domain_company_compatible(companies),
                 ("reconcile", "=", True),
                 ("account_type", "not in", ("asset_cash", "liability_credit_card")),
             ]
@@ -36,7 +36,9 @@ class AccountBankStatementLine(models.Model):
             self.env["account.journal"]
             .search(
                 [
-                    *self.env["account.journal"]._check_company_domain(companies),
+                    *self.env["account.journal"]._get_domain_company_compatible(
+                        companies
+                    ),
                     ("type", "in", ["bank", "cash", "credit"]),
                 ]
             )
@@ -400,7 +402,7 @@ class AccountBankStatementLine(models.Model):
         return (
             self.env["account.payment.channel"]
             .search(
-                self.env["account.payment.channel"]._check_company_domain(
+                self.env["account.payment.channel"]._get_domain_company_compatible(
                     self.company_id
                 )
             )

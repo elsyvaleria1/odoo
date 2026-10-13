@@ -135,7 +135,7 @@ class AccountBankStatementLine(models.Model):
 
         purchase_journal_id = self.env["account.journal"].search_fetch(
             domain=[
-                *self.env["account.journal"]._check_company_domain(
+                *self.env["account.journal"]._get_domain_company_compatible(
                     statement_line.company_id
                 ),
                 ("type", "=", "purchase"),

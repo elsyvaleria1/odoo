@@ -114,7 +114,7 @@ class TestAccountTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         customer_c = cls.partners["customer_c"]

@@ -88,11 +88,11 @@ def _legacy_access_data(
         and registry.loading.addon_state.get(LEGACY_ACCESS_MODULE) == module
     ):
         return True
-    _refuse_retired_access_model(model, module, fname)
+    _check_access_model_supported(model, module, fname)
     return False
 
 
-def _refuse_retired_access_model(model: str | None, module: str, fname: str) -> None:
+def _check_access_model_supported(model: str | None, module: str, fname: str) -> None:
     if model not in RETIRED_ACCESS_MODELS:
         return
     _debug.logic("convert.retired_access_model", module=module, file=fname, model=model)
@@ -107,7 +107,7 @@ def _refuse_retired_access_model(model: str | None, module: str, fname: str) -> 
     )
 
 
-def _check_model_name(f_model: str | None) -> str:
+def _get_model_name_required(f_model: str | None) -> str:
     if not f_model:
         raise ValueError('Define an attribute model="..." in your .XML file!')
     return f_model
@@ -176,7 +176,7 @@ def _substitute_xml_ids(self: Any, s: str) -> str:
 def _search_values(
     self: Any, env: Environment, f_model: str | None, f_search: str, f_use: str
 ) -> list[Any]:
-    f_model = _check_model_name(f_model)
+    f_model = _get_model_name_required(f_model)
     context = _prepare_eval_context(self, env, f_model)
     records = env[f_model].search(safe_eval(f_search, context))
     values = (
@@ -1106,7 +1106,7 @@ def convert_csv_import(
     model = filename.split("-")[0]
     if model == "ir.model.access" and _legacy_access_data(env, model, module, fname):
         return
-    _refuse_retired_access_model(model, module, fname)
+    _check_access_model_supported(model, module, fname)
     reader = csv.reader(
         io.StringIO(csvcontent.decode("utf-8-sig")), quotechar='"', delimiter=","
     )

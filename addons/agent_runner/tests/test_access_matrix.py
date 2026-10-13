@@ -29,7 +29,7 @@ class TestAgentRunnerAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         capability = cls.env.ref("agent_runner.capability_sandbox")
         run = cls.env["agent.run"].create(
             {"name": "matrix", "kind": "probe", "capability_id": capability.id}

@@ -301,7 +301,7 @@ class ProductTrace(models.Model):
             (
                 "location_id",
                 "any",
-                self.env["stock.location"]._check_company_domain(
+                self.env["stock.location"]._get_domain_company_compatible(
                     self.env.companies.ids
                 ),
             ),

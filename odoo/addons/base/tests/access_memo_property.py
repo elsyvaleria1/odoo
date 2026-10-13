@@ -18,6 +18,8 @@ WORDS = ("alpha", "beta", "gamma", "delta")
 OPERATIONS = ("read", "write", "unlink")
 CANDIDATES = 6
 
+type Mutation = tuple[typing.Any, ...]
+
 
 @dataclass
 class World:
@@ -61,7 +63,7 @@ def _french(word: str) -> str:
     return WORDS[(WORDS.index(word) + 1) % len(WORDS)]
 
 
-def build_world(env, names: dict[str, str], note_class: str, *, sql: bool) -> World:
+def create_world(env, names: dict[str, str], note_class: str, *, sql: bool) -> World:
     if not env["res.lang"]._activate_lang("fr_FR"):
         env["res.lang"]._create_lang("fr_FR")
     company_a = env.company
@@ -407,9 +409,9 @@ def _write_modes(role: str | None, fname: str, bypass: bool = False) -> list[str
     return bypassing if bypass and bypassing else ["write", *bypassing]
 
 
-def _mutation(
+def _prepare_mutation(
     rng: random.Random, world: World, depth: int = 0, focus: tuple | None = None
-) -> tuple:
+) -> Mutation:
     kind = rng.choices(
         [
             "write",
@@ -448,15 +450,7 @@ def _mutation(
                 role = "line"
             return (kind, role, i, rng.choice(LANGS), rng.choice(WORDS))
         case "create":
-            role = rng.choice(["doc", "line", "folder"])
-            values = {
-                fname: _value(rng, world, role, fname)
-                for fname in WRITABLE[role]
-                if rng.random() < 0.6
-            }
-            if role == "line":
-                values.setdefault("doc_id", _value(rng, world, role, "doc_id"))
-            return (kind, role, values)
+            return _prepare_create_mutation(rng, world)
         case "unlink":
             return (kind, rng.choices(["doc", "line", "folder"], [2, 4, 1])[0], i)
         case "lines":
@@ -496,9 +490,27 @@ def _mutation(
             value = _value(rng, world, role, fname)
             return (kind, role, i, fname, value, rng.random() < 0.5)
         case "savepoint" if depth == 0:
-            inner = tuple(_mutation(rng, world, 1) for _i in range(rng.randrange(1, 4)))
-            return (kind, inner, tuple(_check(rng) for _i in range(rng.randrange(2))))
+            inner = tuple(
+                _prepare_mutation(rng, world, 1) for _i in range(rng.randrange(1, 4))
+            )
+            return (
+                kind,
+                inner,
+                tuple(_prepare_observation(rng) for _i in range(rng.randrange(2))),
+            )
     return ("flush",)
+
+
+def _prepare_create_mutation(rng: random.Random, world: World) -> Mutation:
+    role = rng.choice(["doc", "line", "folder"])
+    values = {
+        fname: _value(rng, world, role, fname)
+        for fname in WRITABLE[role]
+        if rng.random() < 0.6
+    }
+    if role == "line":
+        values.setdefault("doc_id", _value(rng, world, role, "doc_id"))
+    return ("create", role, values)
 
 
 def _principal(rng: random.Random) -> tuple:
@@ -511,7 +523,7 @@ def _principal(rng: random.Random) -> tuple:
     )
 
 
-def _check(rng: random.Random) -> tuple:
+def _prepare_observation(rng: random.Random) -> Mutation:
     kind = rng.choices(
         [
             "has_access",
@@ -618,7 +630,7 @@ def _fact_mutation(
     if focus[3] == "doc":
         options += _via_options(rng, world, text, i, bypass) * 3
     if not options:
-        return _mutation(rng, world, focus=focus)
+        return _prepare_mutation(rng, world, focus=focus)
     op = rng.choice(options)
     if op[0] == "write":
         mode = rng.choice(_write_modes(op[1], op[3], bypass))
@@ -761,8 +773,31 @@ def _resolve(world: World, value: typing.Any) -> typing.Any:
     return value
 
 
-def _apply(world: World, op: tuple) -> None:
+def _update_world(world: World, op: Mutation) -> None:
     env = world.env
+    kind = op[0]
+    handler = _WORLD_MUTATION_HANDLERS.get(kind)
+    if handler is not None:
+        handler(world, op, env)
+        return
+    match kind:
+        case "savepoint":
+            try:
+                with env.cr.savepoint():
+                    for inner in op[1]:
+                        _update_world(world, inner)
+                    for check in op[2]:
+                        failure = _observe_and_compare(world, check)
+                        if failure:
+                            raise _Divergence(failure)
+                    raise _Rollback
+            except _Rollback:
+                pass
+        case "flush":
+            env.flush_all()
+
+
+def _update_world_records(world: World, op: Mutation, env: typing.Any) -> None:
     kind = op[0]
     match kind:
         case "write":
@@ -787,6 +822,11 @@ def _apply(world: World, op: tuple) -> None:
             record = world.record(op[1], op[2])
             if record is not None:
                 record.unlink()
+
+
+def _update_world_relations(world: World, op: Mutation, env: typing.Any) -> None:
+    kind = op[0]
+    match kind:
         case "lines":
             doc = world.record("doc", op[1])
             if doc is None:
@@ -814,6 +854,11 @@ def _apply(world: World, op: tuple) -> None:
                 "set": Command.set([tag.id]),
             }[op[2]]
             doc.tag_ids = [command]
+
+
+def _update_world_access(world: World, op: Mutation, env: typing.Any) -> None:
+    kind = op[0]
+    match kind:
         case "membership":
             user, group = world.bound("users")[op[1]], world.bound("groups")[op[2]]
             add = op[3]
@@ -863,6 +908,11 @@ def _apply(world: World, op: tuple) -> None:
             )
             if row.exists():
                 row.unlink()
+
+
+def _update_world_related_records(world: World, op: Mutation, env: typing.Any) -> None:
+    kind = op[0]
+    match kind:
         case "partner_parent":
             contact = world.bound("contacts")[op[1]]
             parents = [*world.bound("company_partners"), False]
@@ -896,20 +946,28 @@ def _apply(world: World, op: tuple) -> None:
             if record is not None:
                 mode = "raw_model" if whole_model else "raw"
                 _write_as(world, record, fname, _resolve(world, value), mode)
-        case "savepoint":
-            try:
-                with env.cr.savepoint():
-                    for inner in op[1]:
-                        _apply(world, inner)
-                    for check in op[2]:
-                        failure = _observe_and_compare(world, check)
-                        if failure:
-                            raise _Divergence(failure)
-                    raise _Rollback
-            except _Rollback:
-                pass
-        case "flush":
-            env.flush_all()
+
+
+_WORLD_MUTATION_HANDLERS: dict[
+    str, typing.Callable[[World, Mutation, typing.Any], None]
+] = {
+    "write": _update_world_records,
+    "write_lang": _update_world_records,
+    "create": _update_world_records,
+    "unlink": _update_world_records,
+    "lines": _update_world_relations,
+    "tags": _update_world_relations,
+    "membership": _update_world_access,
+    "grant": _update_world_access,
+    "ungrant": _update_world_access,
+    "rule_create": _update_world_access,
+    "rule_write": _update_world_access,
+    "rule_unlink": _update_world_access,
+    "partner_parent": _update_world_related_records,
+    "write_via": _update_world_related_records,
+    "cache_write": _update_world_related_records,
+    "raw_write": _update_world_related_records,
+}
 
 
 def _write_as(world: World, record: typing.Any, fname: str, value, mode: str) -> None:
@@ -1173,7 +1231,7 @@ def _execute(world: World, op: tuple) -> dict | None:
     try:
         if op[0] == "observe":
             return _observe_and_compare(world, op)
-        _apply(world, op)
+        _update_world(world, op)
     except _Divergence as divergence:
         return divergence.failure
     except Exception as error:
@@ -1308,7 +1366,7 @@ def _flipping(world: World, check: tuple, candidates: list[tuple]) -> tuple | No
                 continue
             try:
                 with world.env.cr.savepoint():
-                    _apply(world, candidate)
+                    _update_world(world, candidate)
                     after = observe(
                         principal_env(world, principal), world, kind, role, ids, detail
                     )
@@ -1324,90 +1382,127 @@ def _flipping(world: World, check: tuple, candidates: list[tuple]) -> tuple | No
     return None
 
 
-def explore(world: World, seed: int, steps: int) -> tuple[list[tuple], dict | None]:
-    rng = random.Random(seed)
-    ops: list[tuple] = []
-    texts: list[str] = []
-    theme = THEMES[seed % len(THEMES)]
+class _ExplorationResult(typing.NamedTuple):
+    operations: list[Mutation]
+    failure: dict[str, typing.Any] | None
 
-    def themed_check() -> tuple:
+
+@dataclass(slots=True)
+class _MutationExplorer:
+    world: World
+    rng: random.Random
+    theme: str
+    operations: list[Mutation]
+    texts: list[str]
+
+    def _prepare_observation_for_theme(self) -> Mutation:
         by_kind: dict[str, list[tuple]] = {}
         for _attempt in range(40):
-            check = _check(rng)
-            readable = theme == "bypass" or theme in _hazards(_focus_role(check))
+            check = _prepare_observation(self.rng)
+            readable = self.theme == "bypass" or self.theme in _hazards(
+                _focus_role(check)
+            )
             if readable and _memoized(check):
                 by_kind.setdefault(check[2], []).append(check)
         if not by_kind:
-            return _check(rng)
-        return rng.choice(by_kind[rng.choice(sorted(by_kind))])
+            return _prepare_observation(self.rng)
+        return self.rng.choice(by_kind[self.rng.choice(sorted(by_kind))])
 
-    def step(op: tuple) -> dict | None:
-        ops.append(op)
+    def _run_operation_and_get_failure(
+        self, op: Mutation
+    ) -> dict[str, typing.Any] | None:
+        self.operations.append(op)
         if op[0] == "rule_create":
-            texts.extend(_spec_texts([op[1]]))
+            self.texts.extend(_spec_texts([op[1]]))
         elif op[0] == "rule_write":
-            texts.extend(_spec_texts([op[2]]))
-        return _execute(world, op)
+            self.texts.extend(_spec_texts([op[2]]))
+        return _execute(self.world, op)
 
-    def scope_episode() -> dict | None:
-        indexes = tuple(rng.randrange(16) for _i in range(rng.randrange(1, 4)))
-        check = ("observe", _principal(rng), "x2many", "doc", indexes, "line_ids")
-        focus, _hazard = _focus_rule(rng, world, check, rng.choice(SCOPE_HAZARDS))
+    def _run_scope_episode_and_get_failure(self) -> dict[str, typing.Any] | None:
+        indexes = tuple(
+            self.rng.randrange(16) for _i in range(self.rng.randrange(1, 4))
+        )
+        check = ("observe", _principal(self.rng), "x2many", "doc", indexes, "line_ids")
+        focus, _hazard = _focus_rule(
+            self.rng, self.world, check, self.rng.choice(SCOPE_HAZARDS)
+        )
         for op in focus:
-            if failure := step(op):
+            if failure := self._run_operation_and_get_failure(op):
                 return failure
-        if failure := step(check):
+        if failure := self._run_operation_and_get_failure(check):
             return failure
         candidates = [
             (
                 "write_via",
-                rng.choice(indexes),
+                self.rng.choice(indexes),
                 "line_ids",
-                rng.randrange(4),
+                self.rng.randrange(4),
                 fname,
-                _value(rng, world, "line", fname),
-                rng.choice(("raw", "raw_model")),
+                _value(self.rng, self.world, "line", fname),
+                self.rng.choice(("raw", "raw_model")),
             )
-            for fname in rng.choices(BYPASSABLE["raw"]["line"], k=3)
+            for fname in self.rng.choices(BYPASSABLE["raw"]["line"], k=3)
         ]
-        chosen = _flipping(world, check, candidates) or candidates[0]
-        return step(chosen) or step(check)
+        chosen = _flipping(self.world, check, candidates) or candidates[0]
+        return self._run_operation_and_get_failure(
+            chosen
+        ) or self._run_operation_and_get_failure(check)
 
-    def episode() -> dict | None:
-        if rng.random() < SCOPE_EPISODES:
-            return scope_episode()
-        if rng.random() < 0.2:
-            return step(_mutation(rng, world))
-        themed = rng.random() < 0.7
-        check = themed_check() if themed else _check(rng)
-        read, hazard = texts[-3:], None
-        if themed or rng.random() < 0.5:
-            focus, hazard = _focus_rule(rng, world, check, theme if themed else None)
+    def _run_episode_and_get_failure(self) -> dict[str, typing.Any] | None:
+        if self.rng.random() < SCOPE_EPISODES:
+            return self._run_scope_episode_and_get_failure()
+        if self.rng.random() < 0.2:
+            return self._run_operation_and_get_failure(
+                _prepare_mutation(self.rng, self.world)
+            )
+        themed = self.rng.random() < 0.7
+        check = (
+            self._prepare_observation_for_theme()
+            if themed
+            else _prepare_observation(self.rng)
+        )
+        read, hazard = self.texts[-3:], None
+        if themed or self.rng.random() < 0.5:
+            focus, hazard = _focus_rule(
+                self.rng, self.world, check, self.theme if themed else None
+            )
             for op in focus:
-                if failure := step(op):
+                if failure := self._run_operation_and_get_failure(op):
                     return failure
             read = _spec_texts([focus[0][2]])
-            texts.extend(read)
-        if failure := step(check):
+            self.texts.extend(read)
+        if failure := self._run_operation_and_get_failure(check):
             return failure
-        for _round in range(rng.randrange(1, 4)):
+        for _round in range(self.rng.randrange(1, 4)):
             candidates = [
-                _fact_mutation(rng, world, read, check, themed and theme == "bypass")
-                if rng.random() < 0.7
-                else _mutation(rng, world, focus=check)
+                _fact_mutation(
+                    self.rng, self.world, read, check, themed and self.theme == "bypass"
+                )
+                if self.rng.random() < 0.7
+                else _prepare_mutation(self.rng, self.world, focus=check)
                 for _i in range(CANDIDATES)
             ]
-            chosen = _flipping(world, check, candidates) or candidates[0]
-            if failure := step(chosen) or step(check):
+            chosen = _flipping(self.world, check, candidates) or candidates[0]
+            if failure := self._run_operation_and_get_failure(
+                chosen
+            ) or self._run_operation_and_get_failure(check):
                 return failure
-        if rng.random() < 0.7:
-            variations = [_vary(rng, check, hazard) for _i in range(4)]
-            varied = _differing(world, check, variations) or variations[0]
-            if failure := step(varied):
+        if self.rng.random() < 0.7:
+            variations = [_vary(self.rng, check, hazard) for _i in range(4)]
+            varied = _differing(self.world, check, variations) or variations[0]
+            if failure := self._run_operation_and_get_failure(varied):
                 return failure
-            if rng.random() < 0.5:
-                return step(check)
+            if self.rng.random() < 0.5:
+                return self._run_operation_and_get_failure(check)
         return None
+
+
+def explore_mutations(world: World, seed: int, steps: int) -> _ExplorationResult:
+    rng = random.Random(seed)
+    ops: list[Mutation] = []
+    texts: list[str] = []
+    theme = THEMES[seed % len(THEMES)]
+    explorer = _MutationExplorer(world, rng, theme, ops, texts)
 
     failure = None
     with _isolated(world):
@@ -1415,16 +1510,18 @@ def explore(world: World, seed: int, steps: int) -> tuple[list[tuple], dict | No
             spec = _row_spec(rng, world, role, kind)
             if kind == "permission" and slot != 1:
                 spec["group"] = 0
-            failure = failure or step(("rule_write", slot, spec, False))
+            failure = failure or explorer._run_operation_and_get_failure(
+                ("rule_write", slot, spec, False)
+            )
         while failure is None and len(ops) < steps:
-            failure = episode()
+            failure = explorer._run_episode_and_get_failure()
         if failure is not None:
             failure["step"] = len(ops) - 1
-    return ops, failure
+    return _ExplorationResult(ops, failure)
 
 
 def campaign(world: World, seed: int, steps: int) -> tuple[dict, str | None]:
-    ops, failure = explore(world, seed, steps)
+    ops, failure = explore_mutations(world, seed, steps)
     stats = {
         "seed": seed,
         "steps": len(ops),

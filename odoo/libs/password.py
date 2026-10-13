@@ -56,7 +56,7 @@ def _pbkdf2_sha512(password: bytes, salt: bytes, rounds: int) -> bytes:
     return hashlib.pbkdf2_hmac("sha512", password, salt, rounds, dklen=_HASH_SIZE)
 
 
-def _check_rounds(rounds: object) -> int:
+def _get_rounds_allowed(rounds: object) -> int:
     if not isinstance(rounds, int) or isinstance(rounds, bool):
         raise TypeError(f"pbkdf2_sha512__rounds must be an int, got {rounds!r}")
     if not 0 < rounds <= _MAX_ROUNDS:
@@ -94,7 +94,7 @@ def _parse_hash(hash_str: str) -> tuple[int, bytes, bytes] | None:
 
 
 def pbkdf2_sha512_hash(password: str, rounds: int = _DEFAULT_ROUNDS) -> str:
-    rounds = _check_rounds(rounds)
+    rounds = _get_rounds_allowed(rounds)
     encoded = _encode(password)
     salt = os.urandom(_SALT_SIZE)
     with _debug.perf("password.hash", rounds=rounds):
@@ -126,7 +126,7 @@ class CryptContext:
             raise ValueError(
                 f"{_HASHING!r} is the scheme hash() writes and cannot be deprecated"
             )
-        self._rounds = _check_rounds(pbkdf2_sha512__rounds)
+        self._rounds = _get_rounds_allowed(pbkdf2_sha512__rounds)
 
     def hash(self, password: str) -> str:
         return pbkdf2_sha512_hash(password, self._rounds)

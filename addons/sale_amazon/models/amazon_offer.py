@@ -23,7 +23,9 @@ class AmazonOffer(models.Model):
             accounts = self.env["amazon.account"].search(
                 [
                     ("credential_id", "!=", False),
-                    *self.env["amazon.account"]._check_company_domain(self.env.company),
+                    *self.env["amazon.account"]._get_domain_company_compatible(
+                        self.env.company
+                    ),
                 ],
                 limit=2,
             )

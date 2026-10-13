@@ -28,7 +28,7 @@ class TestAccountCollectionSaleFleetAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         warehouse = env["stock.warehouse"].search([("company_id", "=", a.id)], limit=1)

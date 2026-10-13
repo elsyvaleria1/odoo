@@ -232,7 +232,9 @@ class AccountReportExport(models.Model):
         if company.tax_config_id.account_fiscal_country_id != self.country_id:
             foreign_vat_fpos = self.env["account.fiscal.position"].search(
                 [
-                    *self.env["account.fiscal.position"]._check_company_domain(company),
+                    *self.env["account.fiscal.position"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("foreign_vat", "!=", False),
                     ("country_id", "=", self.country_id.id),
                 ],
@@ -346,7 +348,7 @@ class AccountReportExport(models.Model):
         duplicate_codes = defaultdict(lambda: self.env["report.formula.line"])
         duplicate_codes_same_line = defaultdict(lambda: self.env["report.formula.line"])
         common_account_domain = [
-            *AccountAccount._check_company_domain(self.env.company),
+            *AccountAccount._get_domain_company_compatible(self.env.company),
         ]
 
         tag_ids_linked_to_account = set(

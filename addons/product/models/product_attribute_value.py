@@ -123,7 +123,7 @@ class ProductAttributeValue(models.Model):
 
     @api.depends("default_extra_price")
     def _compute_default_extra_price_changed(self) -> None:
-        company_domain = self.env["product.template"]._check_company_domain(
+        company_domain = self.env["product.template"]._get_domain_company_compatible(
             self.env.companies
         )
         ptavs_by_pav = (

@@ -182,7 +182,9 @@ class UnlinkMixin(_ModelStubs):
     def _modified_many2many_corecords(self) -> None:
         inverses = self.pool.field_inverses
         triggers = self.pool._get_field_triggers()
-        records = self.with_env(self.env._derive(su=True, active_test=False))
+        records = self.with_env(
+            self.env._get_or_create_environment(su=True, active_test=False)
+        )
         for field in self._fields.values():
             if not (field.is_many2many and field.store):
                 continue

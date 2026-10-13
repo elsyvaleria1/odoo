@@ -219,7 +219,7 @@ class StockForecasted_Product_Product(models.AbstractModel):
         Warehouse = self.env["stock.warehouse"]
         return Warehouse.search(
             [
-                *Warehouse._check_company_domain(self.env.company),
+                *Warehouse._get_domain_company_compatible(self.env.company),
                 ("active", "=", True),
             ],
             limit=1,

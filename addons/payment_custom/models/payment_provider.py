@@ -50,7 +50,7 @@ class PaymentProvider(models.Model):
                     self.env["account.journal"]  # noqa: E8507 -- one lookup per provider, on its own company
                     .search(
                         [
-                            *self.env["account.journal"]._check_company_domain(
+                            *self.env["account.journal"]._get_domain_company_compatible(
                                 company_id
                             ),
                             ("type", "=", "bank"),

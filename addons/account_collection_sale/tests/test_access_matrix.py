@@ -89,12 +89,15 @@ class TestAccountCollectionSaleAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         a = cls.companies["a"]
         env["account.chart.template"].try_loading("generic_coa", company=a)
         sale_journal = env["account.journal"].search(
-            [*env["account.journal"]._check_company_domain(a), ("type", "=", "sale")],
+            [
+                *env["account.journal"]._get_domain_company_compatible(a),
+                ("type", "=", "sale"),
+            ],
             limit=1,
         ) or env["account.journal"].with_company(a).create(
             {"name": "matrix sales", "code": "MXSA", "type": "sale"}

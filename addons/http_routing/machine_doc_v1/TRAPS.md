@@ -38,7 +38,7 @@ non-idempotent shapes, all `/<default-lang>/…`.
 
 ## 3. Id `0` had to be rejected in the converter, not later
 
-`_check_access` does `browse(id_ for id_ in self._ids if id_)` — a **falsy id is
+`_get_records_forbidden_and_error_factory` does `browse(id_ for id_ in self._ids if id_)` — a **falsy id is
 filtered out**, so `/<model>/0` got neither `MissingError` nor `AccessError`, and
 then died in `_pre_dispatch` where `_slug` refuses to *produce* a 0-id slug:
 an unauthenticated **500** on every frontend `<model(…)>` route, reachable by any

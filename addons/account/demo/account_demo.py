@@ -196,14 +196,14 @@ class AccountChartTemplate(models.AbstractModel):
         cid = company.id or self.env.company.id
         misc_journal = self.env["account.journal"].search(
             domain=[
-                *self.env["account.journal"]._check_company_domain(cid),
+                *self.env["account.journal"]._get_domain_company_compatible(cid),
                 ("type", "=", "general"),
             ],
             limit=1,
         )
         bank_journal = self.env["account.journal"].search(
             domain=[
-                *self.env["account.journal"]._check_company_domain(cid),
+                *self.env["account.journal"]._get_domain_company_compatible(cid),
                 ("type", "=", "bank"),
             ],
             limit=1,
@@ -216,7 +216,7 @@ class AccountChartTemplate(models.AbstractModel):
             .with_company(company or self.env.company)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(cid),
+                    *self.env["account.account"]._get_domain_company_compatible(cid),
                     ("account_type", "=", "income"),
                     (
                         "id",
@@ -640,7 +640,7 @@ class AccountChartTemplate(models.AbstractModel):
         cid = company.id or self.env.company.id
         bnk_journal = self.env["account.journal"].search(
             domain=[
-                *self.env["account.journal"]._check_company_domain(cid),
+                *self.env["account.journal"]._get_domain_company_compatible(cid),
                 ("type", "=", "bank"),
             ],
             limit=1,
@@ -715,7 +715,7 @@ class AccountChartTemplate(models.AbstractModel):
         cid = company.id or self.env.company.id
         bnk_journal = self.env["account.journal"].search(
             domain=[
-                *self.env["account.journal"]._check_company_domain(cid),
+                *self.env["account.journal"]._get_domain_company_compatible(cid),
                 ("type", "=", "bank"),
             ],
             limit=1,
@@ -985,7 +985,9 @@ class AccountChartTemplate(models.AbstractModel):
             .with_company(company)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(company),
+                    *self.env["account.account"]._get_domain_company_compatible(
+                        company
+                    ),
                     ("account_type", "=", account_type),
                 ],
                 limit=1,
@@ -994,7 +996,9 @@ class AccountChartTemplate(models.AbstractModel):
             .with_company(company)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(company),
+                    *self.env["account.account"]._get_domain_company_compatible(
+                        company
+                    ),
                 ],
                 limit=1,
             )

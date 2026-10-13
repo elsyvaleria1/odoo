@@ -241,7 +241,7 @@ def _only_evals_changed(
     return etree.tostring(tree, method="c14n") == etree.tostring(written, method="c14n")
 
 
-def build_parser() -> argparse.ArgumentParser:
+def prepare_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Rewrite the (code, id, values) x2many command tuples in eval= "
@@ -276,7 +276,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> None:
-    args = build_parser().parse_args(argv)
+    args = prepare_argument_parser().parse_args(argv)
     changed = unchanged = skipped = 0
     for xml_file in _pretty_xml.iter_target_files(args.roots, set(args.exclude)):
         result = modernize_xml_file(xml_file, dry_run=args.dry_run)

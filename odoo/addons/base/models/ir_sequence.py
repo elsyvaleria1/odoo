@@ -556,14 +556,14 @@ class IrSequence(models.Model):
             "number_next": self._get_date_range_number_next(date_from, date_to),
         }
 
-        def find_covering() -> Any:
+        def _reset_cache_and_get_covering_range() -> Any:
             DateRange.invalidate_model()
             return self._get_covering_date_range(date)
 
         date_range, created = get_or_create_row(
             self.env.cr,
             lambda: DateRange.sudo().create(vals),
-            find_covering,
+            _reset_cache_and_get_covering_range,
             conflict=f"ir.sequence {self.id} date range {date_from}..{date_to}",
             flush=False,
         )

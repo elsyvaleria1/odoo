@@ -49,7 +49,7 @@ class TestAutomationTelegramAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         partner_model = env["ir.model"]._get("res.partner")
         rule = env["automation.rule"].create(

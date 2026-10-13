@@ -311,7 +311,7 @@ class ResUsers(models.Model):
         ]
         _debug.lifecycle("write", users=self, keys=sorted(vals), hr_fields=hr_fields)
         employee_domain = [
-            *self.env["hr.employee"]._check_company_domain(self.env.company),
+            *self.env["hr.employee"]._get_domain_company_compatible(self.env.company),
             ("user_id", "in", self.ids),
         ]
 

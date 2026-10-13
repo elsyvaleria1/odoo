@@ -111,7 +111,7 @@ class TestResUsersSettingsWriteOnlyChanges(TransactionCase):
         cls.user = new_test_user(cls.env, login="rusetwoc", groups="base.group_user")
         cls.settings = cls.env["res.users.settings"]._get_or_create_for_user(cls.user)
 
-    def _find_writable_field(self, types):
+    def _get_writable_field(self, types):
         Settings = self.env["res.users.settings"]
         as_user = Settings.with_user(self.user)
         return next(
@@ -129,7 +129,7 @@ class TestResUsersSettingsWriteOnlyChanges(TransactionCase):
         )
 
     def test_unchanged_x2many_is_not_written(self):
-        fname = self._find_writable_field(("many2many", "one2many"))
+        fname = self._get_writable_field(("many2many", "one2many"))
         if not fname:
             self.skipTest("no writable x2many field on res.users.settings")
         settings = self.settings.with_user(self.user)

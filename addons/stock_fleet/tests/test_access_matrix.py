@@ -48,7 +48,7 @@ class TestStockFleetAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         reasons = cls.env["stock.picking.unbatch.reason"]
         warehouse = cls.env["stock.warehouse"].search(
             [("company_id", "=", cls.companies["a"].id)], limit=1

@@ -61,7 +61,7 @@ class SaleOrderLine(models.Model):
                 )
             )
             taxes = line.tax_ids.filtered_domain(
-                self.env["account.tax"]._check_company_domain(line.company_id)
+                self.env["account.tax"]._get_domain_company_compatible(line.company_id)
             )
             line.tax_ids = fpos.map_tax(taxes)
             _debug.logic(

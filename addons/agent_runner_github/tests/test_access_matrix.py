@@ -40,7 +40,7 @@ class TestAgentRunnerGithubAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         category = cls.env.ref("integration_github.credential_category_github_app")
         return {
             "app": cls.env["credential.credential"].create(

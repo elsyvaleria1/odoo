@@ -101,7 +101,7 @@ def _root_lock(base: Path, name: str) -> Iterator[None]:
         os.close(fd)
 
 
-def _dangles(root_dir: Path) -> bool:
+def _has_dangling_links(root_dir: Path) -> bool:
     try:
         links = [entry for entry in root_dir.iterdir() if entry.is_symlink()]
     except OSError:
@@ -109,13 +109,13 @@ def _dangles(root_dir: Path) -> bool:
     return bool(links) and not any(link.exists() for link in links)
 
 
-def _prune_dangling_roots(base: Path, keep: str) -> int:
+def _remove_dangling_roots(base: Path, keep: str) -> None:
     pruned = 0
     for root_dir in base.iterdir():
         name = root_dir.name
         if name == keep or root_dir.is_symlink() or not root_dir.is_dir():
             continue
-        if not _dangles(root_dir):
+        if not _has_dangling_links(root_dir):
             continue
         lock = base / f"{name}.lock"
         try:
@@ -138,7 +138,6 @@ def _prune_dangling_roots(base: Path, keep: str) -> int:
             if fd is not None:
                 os.close(fd)
     _debug.lifecycle("esbuild.resolution_roots_pruned", base=str(base), pruned=pruned)
-    return pruned
 
 
 def _shared_resolution_root(base: Path, name: str, roots: Mapping[str, Path]) -> Path:
@@ -148,7 +147,7 @@ def _shared_resolution_root(base: Path, name: str, roots: Mapping[str, Path]) ->
     with _root_lock(base, name):
         if _holds_exactly(root_dir, roots):
             return root_dir
-        _prune_dangling_roots(base, keep=name)
+        _remove_dangling_roots(base, keep=name)
         staging = _write_resolution_root(
             Path(tempfile.mkdtemp(prefix=f"{name}-", dir=base)) / "roots", roots
         )

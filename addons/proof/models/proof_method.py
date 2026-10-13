@@ -188,7 +188,7 @@ class ProofMethod(models.Model):
             "type": "password",
         }
         try:
-            with user._assert_can_auth(user=user.id):
-                user._check_credentials(credential, {"interactive": True})
+            with user._admit_authentication_attempt(user=user.id):
+                user._authenticate_credentials(credential, {"interactive": True})
         except AccessDenied:
             raise UserError(self.env._("Incorrect password.")) from None

@@ -1,4 +1,3 @@
-
 import argparse
 import ast
 import csv
@@ -224,11 +223,11 @@ def declare_in_class(path: Path, node: ast.ClassDef, anchors: dict[str, str]) ->
                 break
         lines[last.end_lineno : last.end_lineno] = [render(anchors, indent)]
     text = "".join(lines)
-    text = ensure_imports(text)
+    text = add_required_imports(text)
     path.write_text(text, encoding="utf-8")
 
 
-def ensure_imports(text: str) -> str:
+def add_required_imports(text: str) -> str:
     if not re.search(
         r"^from odoo(\.tools)? import .*\bfrozendict\b", text, re.MULTILINE
     ):

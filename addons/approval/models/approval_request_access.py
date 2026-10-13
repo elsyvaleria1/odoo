@@ -842,7 +842,9 @@ class ApprovalRequestAccess(models.Model):
         kind = (
             "self_approval" if user == self.request_owner_id else "requester_exclusion"
         )
-        return self.env["ir.access.exception"]._find(user, kind, self.category_id)
+        return self.env["ir.access.exception"]._get_exception_active(
+            user, kind, self.category_id
+        )
 
     def _get_excluded_approvers(self) -> ResUsers:
         self.check_singleton()

@@ -18,7 +18,7 @@ class Sweep:
     checked: int = 0
 
 
-def _sweep(fixer) -> Sweep:
+def _run_fixer_sweep(fixer) -> Sweep:
     changed: list[str] = []
     declined: list[str] = []
     unsettled: list[str] = []
@@ -52,9 +52,9 @@ def _sweep(fixer) -> Sweep:
 
 @functools.cache
 def formatter_sweep() -> Sweep:
-    return _sweep(_pretty_xml.format_xml_file)
+    return _run_fixer_sweep(_pretty_xml.format_xml_file)
 
 
 @functools.cache
 def sorter_sweep() -> Sweep:
-    return _sweep(_sort_xml_records.sort_xml_file)
+    return _run_fixer_sweep(_sort_xml_records.sort_xml_file)

@@ -29,14 +29,14 @@ class TestResUsersApikeys(TransactionCase):
         return self.Apikeys.with_user(self.user)._generate(scope, "k", exp)
 
     def _cached_auth(self, key):
-        self.env["res.users"]._check_uid_passwd_cached(
+        self.env["res.users"]._authenticate_rpc_credentials_cached(
             self.user.id, key, sha256(key.encode()).hexdigest()
         )
 
     def test_check_credentials_valid(self):
         key = self._generate(scope="rpc")
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="rpc", key=key), self.user.id
+            self.Apikeys._get_user_id_for_key(scope="rpc", key=key), self.user.id
         )
 
     def test_generate_refreshes_cached_user_keys(self):
@@ -48,23 +48,23 @@ class TestResUsersApikeys(TransactionCase):
 
     def test_check_credentials_wrong_key(self):
         self._generate(scope="rpc")
-        self.assertIsNone(self.Apikeys._check_credentials(scope="rpc", key="0" * 40))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="rpc", key="0" * 40))
 
     def test_check_credentials_empty_args_raise(self):
         with self.assertRaises(ValueError):
-            self.Apikeys._check_credentials(scope="", key="x")
+            self.Apikeys._get_user_id_for_key(scope="", key="x")
         with self.assertRaises(ValueError):
-            self.Apikeys._check_credentials(scope="rpc", key="")
+            self.Apikeys._get_user_id_for_key(scope="rpc", key="")
 
     def test_check_credentials_expired(self):
         key = self._generate(scope="rpc", hours=-1)
-        self.assertIsNone(self.Apikeys._check_credentials(scope="rpc", key=key))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="rpc", key=key))
 
     def test_check_credentials_inactive_user(self):
         key = self._generate(scope="rpc")
         self.user.active = False
         self.env.flush_all()
-        self.assertIsNone(self.Apikeys._check_credentials(scope="rpc", key=key))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="rpc", key=key))
 
     def test_expiration_date_system_bypass(self):
         self.Apikeys.sudo()._check_expiration_date(None)
@@ -83,9 +83,9 @@ class TestResUsersApikeys(TransactionCase):
         expired = self._generate(scope="rpc", hours=-1)
         self.Apikeys._gc_user_apikeys()
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="rpc", key=valid), self.user.id
+            self.Apikeys._get_user_id_for_key(scope="rpc", key=valid), self.user.id
         )
-        self.assertIsNone(self.Apikeys._check_credentials(scope="rpc", key=expired))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="rpc", key=expired))
 
     def test_remove_other_users_key_raises(self):
         self._generate(scope="rpc")
@@ -113,21 +113,21 @@ class TestResUsersApikeys(TransactionCase):
         declare_api_scope(self.env, "base.test_scope_x", "scope_x")
         declare_api_scope(self.env, "base.test_scope_y", "scope_y")
         key = self._generate(scope="scope_x")
-        self.assertIsNone(self.Apikeys._check_credentials(scope="scope_y", key=key))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="scope_y", key=key))
 
     def test_check_credentials_scope_match(self):
         declare_api_scope(self.env, "base.test_scope_x", "scope_x")
         key = self._generate(scope="scope_x")
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="scope_x", key=key), self.user.id
+            self.Apikeys._get_user_id_for_key(scope="scope_x", key=key), self.user.id
         )
 
     def test_check_credentials_null_scope_matches_rpc_alone(self):
         declare_api_scope(self.env, "base.test_scope_any", "anything")
         key = new_unbound_test_api_key(self.user)
-        self.assertIsNone(self.Apikeys._check_credentials(scope="anything", key=key))
+        self.assertIsNone(self.Apikeys._get_user_id_for_key(scope="anything", key=key))
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="rpc", key=key), self.user.id
+            self.Apikeys._get_user_id_for_key(scope="rpc", key=key), self.user.id
         )
 
     def test_generate_stores_hash_not_plaintext(self):
@@ -207,7 +207,7 @@ class TestResUsersApikeys(TransactionCase):
         admin = self.env.ref("base.user_admin")
         key = self.Apikeys.with_user(admin)._generate("rpc", "persistent", None)
         self.assertEqual(
-            self.Apikeys._check_credentials(scope="rpc", key=key),
+            self.Apikeys._get_user_id_for_key(scope="rpc", key=key),
             admin.id,
         )
 
@@ -239,7 +239,7 @@ class TestResUsersApikeys(TransactionCase):
     def test_a_cached_key_stops_authenticating_when_it_expires(self):
         key = self._generate(hours=1)
         Users = self.env["res.users"]
-        Users._check_uid_passwd(self.user.id, key)
+        Users._authenticate_rpc_credentials(self.user.id, key)
         with freeze_time(fields.Datetime.now() + timedelta(hours=2)):
             with self.assertRaises(AccessDenied):
-                Users._check_uid_passwd(self.user.id, key)
+                Users._authenticate_rpc_credentials(self.user.id, key)

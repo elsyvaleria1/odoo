@@ -67,7 +67,7 @@ class AccountBankStatementLine(models.Model):
             domain = self._get_domain_auto_reconcile_due(run_start)
             if company_id is not None:
                 domain &= Domain(
-                    self.env["account.reconcile.model"]._check_company_domain(
+                    self.env["account.reconcile.model"]._get_domain_company_compatible(
                         company_id
                     )
                 )
@@ -501,7 +501,9 @@ class AccountBankStatementLine(models.Model):
         domain = []
         if company_id is not None:
             domain = Domain(
-                self.env["account.reconcile.model"]._check_company_domain(company_id)
+                self.env["account.reconcile.model"]._get_domain_company_compatible(
+                    company_id
+                )
             )
         reco_models = self.env["account.reconcile.model"].search(domain)
 

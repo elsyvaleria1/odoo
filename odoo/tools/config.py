@@ -82,8 +82,8 @@ class _OdooOption(optparse.Option):
     @classmethod
     def bind(cls, config: Any) -> type[_OdooOption]:
         checkers = {
-            "int": _check_number,
-            "float": _check_number,
+            "int": _parse_number_option,
+            "float": _parse_number_option,
             "string": lambda _option, _opt, value: str(value),
             "choice": optparse.check_choice,
             "bool": config._parse_bool,
@@ -253,7 +253,7 @@ _SECTION_HEADER = configparser.RawConfigParser.SECTCRE
 _INLINE_COMMENT = re.compile(r"\s[#;]")
 
 
-def _check_number(option: Any, opt: str, value: str) -> int | float:
+def _parse_number_option(option: Any, opt: str, value: str) -> int | float:
     cast = int if option.type == "int" else float
     try:
         return cast(value)

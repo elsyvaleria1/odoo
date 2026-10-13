@@ -26,7 +26,7 @@ class TestChangePasswordWizardAudit(TransactionCase):
             cls.env, login="cpw_target", password="cpw_target_pw"
         )
 
-    def _build_wizard(self, acting_user):
+    def _create_password_wizard(self, acting_user):
         return (
             self.env["wizard.res.users.update.password"]
             .with_user(acting_user)
@@ -36,18 +36,24 @@ class TestChangePasswordWizardAudit(TransactionCase):
 
     def test_non_manager_cannot_change_other_user_password(self):
         with self.assertRaises(AccessError):
-            wizard = self._build_wizard(self.internal)
+            wizard = self._create_password_wizard(self.internal)
             wizard.change_password_button()
-        self.env["res.users"]._check_uid_passwd(self.target.id, "cpw_target_pw")
+        self.env["res.users"]._authenticate_rpc_credentials(
+            self.target.id, "cpw_target_pw"
+        )
 
     def test_manager_can_change_other_user_password(self):
-        wizard = self._build_wizard(self.manager)
+        wizard = self._create_password_wizard(self.manager)
         self.assertTrue(wizard.user_ids, "the target should seed a wizard line")
         wizard.user_ids.new_passwd = "cpw_manager_set_pw"
         wizard.change_password_button()
-        self.env["res.users"]._check_uid_passwd(self.target.id, "cpw_manager_set_pw")
+        self.env["res.users"]._authenticate_rpc_credentials(
+            self.target.id, "cpw_manager_set_pw"
+        )
         with self.assertRaises(AccessDenied):
-            self.env["res.users"]._check_uid_passwd(self.target.id, "cpw_target_pw")
+            self.env["res.users"]._authenticate_rpc_credentials(
+                self.target.id, "cpw_target_pw"
+            )
 
     def test_change_password_own_has_no_user_id_field(self):
         self.assertNotIn(
@@ -77,7 +83,7 @@ class TestChangePasswordWizardAudit(TransactionCase):
         with patch(_REQUEST, fake_request):
             result = wizard.change_password()
         self.assertEqual(result.get("tag"), "reload")
-        Users._check_uid_passwd(self.internal.id, "cpw_own_new_pw")
+        Users._authenticate_rpc_credentials(self.internal.id, "cpw_own_new_pw")
         with self.assertRaises(AccessDenied):
-            Users._check_uid_passwd(self.internal.id, "cpw_internal_pw")
-        Users._check_uid_passwd(self.target.id, "cpw_target_pw")
+            Users._authenticate_rpc_credentials(self.internal.id, "cpw_internal_pw")
+        Users._authenticate_rpc_credentials(self.target.id, "cpw_target_pw")

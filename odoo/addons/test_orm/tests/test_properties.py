@@ -15,7 +15,7 @@ from odoo.orm.constants import READ_GROUP_NUMBER_GRANULARITY
 from odoo.tests import Form, TransactionCase, users
 from odoo.tools import get_lang, mute_logger
 
-from odoo.addons.base.tests.common import make_guard_row
+from odoo.addons.base.tests.common import create_guard_row
 from odoo.addons.base.tests.test_expression import TransactionExpressionCase
 
 
@@ -1897,7 +1897,7 @@ class PropertiesCase(TestPropertiesMixin):
             }
         )
 
-        make_guard_row(
+        create_guard_row(
             self.env,
             "test_orm.multi.tag",
             str([("name", "not in", tags[5:].mapped("name"))]),
@@ -1947,7 +1947,7 @@ class PropertiesCase(TestPropertiesMixin):
                 ],
             }
         )
-        make_guard_row(
+        create_guard_row(
             self.env,
             "test_orm.multi.tag",
             str([("name", "!=", "Hidden Tag")]),
@@ -2335,7 +2335,7 @@ class PropertiesCase(TestPropertiesMixin):
         self.assertEqual(values["value"], (tag.id, "Test Tag"))
         self.env.invalidate_all()
         with patch(
-            "odoo.addons.test_orm.models.test_orm.TestOrmMultiTag._check_access",
+            "odoo.addons.test_orm.models.test_orm.TestOrmMultiTag._get_records_forbidden_and_error_factory",
             _mocked_check_access,
         ):
             values = message.read(["attributes"])[0]["attributes"][0]
@@ -2343,7 +2343,7 @@ class PropertiesCase(TestPropertiesMixin):
 
         self.env.invalidate_all()
         with patch(
-            "odoo.addons.test_orm.models.test_orm.TestOrmDiscussion._check_access",
+            "odoo.addons.test_orm.models.test_orm.TestOrmDiscussion._get_records_forbidden_and_error_factory",
             _mocked_check_access,
         ):
             values = message.read(["attributes"])[0]["attributes"][0]

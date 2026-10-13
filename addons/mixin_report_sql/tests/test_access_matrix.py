@@ -22,7 +22,7 @@ class TestMixinReportSqlAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         state = cls.env["report.rolling.state"].create(
             {"model": "mixin.report.sql.matrix", "stale": True}
         )

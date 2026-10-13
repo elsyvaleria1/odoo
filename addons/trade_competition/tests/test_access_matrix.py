@@ -22,7 +22,7 @@ class TestTradeCompetitionAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         env = cls.env
         company = cls.companies["a"]
         rival = env["res.partner"].create(

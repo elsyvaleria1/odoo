@@ -525,7 +525,7 @@ class AccountChartTemplate(models.AbstractModel):
         return (
             self.env[model]
             .with_context(active_test=False)
-            .search([*self.env[model]._check_company_domain(company)])
+            .search([*self.env[model]._get_domain_company_compatible(company)])
         )
 
     def _reload_xmlid_mapping(self, records) -> dict:
@@ -548,7 +548,9 @@ class AccountChartTemplate(models.AbstractModel):
             company.account_config_id.chart_template, company
         )
         Journal = self.env["account.journal"].with_context(active_test=False)
-        company_domain = self.env["account.journal"]._check_company_domain(company)
+        company_domain = self.env["account.journal"]._get_domain_company_compatible(
+            company
+        )
         existing_journals = Journal.search(company_domain)
         _debug.pipeline(
             "journals_reload_matching",
@@ -856,7 +858,7 @@ class AccountChartTemplate(models.AbstractModel):
             return True
 
         query = self.env["account.account"]._search(
-            self.env["account.account"]._check_company_domain(company)
+            self.env["account.account"]._get_domain_company_compatible(company)
         )
         account_code = (
             self.with_company(company)
@@ -1464,7 +1466,7 @@ class AccountChartTemplate(models.AbstractModel):
             self.env["account.tax"]
             .search(
                 [
-                    *self.env["account.tax"]._check_company_domain(company),
+                    *self.env["account.tax"]._get_domain_company_compatible(company),
                     ("type_tax_use", "in", type_tax_use),
                 ],
                 limit=1,
@@ -1473,8 +1475,10 @@ class AccountChartTemplate(models.AbstractModel):
         )
 
     def _force_company_default_tax_on_products(self, company, fname, tax_field) -> None:
-        company_domain = self.env["product.template"]._check_company_domain(company)
-        tax_domain = self.env["account.tax"]._check_company_domain(company)
+        company_domain = self.env["product.template"]._get_domain_company_compatible(
+            company
+        )
+        tax_domain = self.env["account.tax"]._get_domain_company_compatible(company)
         products = (
             self.env["product.template"]
             .sudo()
@@ -1513,7 +1517,7 @@ class AccountChartTemplate(models.AbstractModel):
 
         if not company.parent_id and self.env["account.tax"].search_count(
             [
-                *self.env["account.tax"]._check_company_domain(company),
+                *self.env["account.tax"]._get_domain_company_compatible(company),
                 ("tax_exigibility", "=", "on_payment"),
             ],
             limit=1,
@@ -1624,7 +1628,9 @@ class AccountChartTemplate(models.AbstractModel):
 
     def _get_bank_fees_reco_account(self, company):
         AccountAccount = self.env["account.account"].with_company(company)
-        domain = [*self.env["account.account"]._check_company_domain(company.id)]
+        domain = [
+            *self.env["account.account"]._get_domain_company_compatible(company.id)
+        ]
         return AccountAccount.search(
             [*domain, ("name", "like", "Bank Fees")], limit=1
         ) or AccountAccount.search([*domain, ("account_type", "=", "expense")], limit=1)
@@ -1911,7 +1917,9 @@ class AccountChartTemplate(models.AbstractModel):
         local_tax_group_per_field = {
             field: self.env["account.tax.group"].search(
                 [
-                    *self.env["account.tax.group"]._check_company_domain(company),
+                    *self.env["account.tax.group"]._get_domain_company_compatible(
+                        company
+                    ),
                     (
                         "country_id",
                         "=",
@@ -1952,7 +1960,9 @@ class AccountChartTemplate(models.AbstractModel):
     ):
         sign_comparator = "<" if float(rep_line.get("factor_percent", 100)) < 0 else ">"
         minimal_domain = [
-            *self.env["account.tax.repartition.line"]._check_company_domain(company),
+            *self.env["account.tax.repartition.line"]._get_domain_company_compatible(
+                company
+            ),
             ("account_id", "!=", False),
             ("factor_percent", sign_comparator, 0),
         ]
@@ -2016,7 +2026,7 @@ class AccountChartTemplate(models.AbstractModel):
     ):
         local_cash_basis_tax = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(company),
+                *self.env["account.tax"]._get_domain_company_compatible(company),
                 (
                     "country_id",
                     "=",
@@ -2141,7 +2151,7 @@ class AccountChartTemplate(models.AbstractModel):
     def _instantiate_foreign_taxes(self, country, company):
         taxes_in_country = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(company),
+                *self.env["account.tax"]._get_domain_company_compatible(company),
                 ("country_id", "=", country.id),
             ]
         )

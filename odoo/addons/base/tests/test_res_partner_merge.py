@@ -5,7 +5,7 @@ from odoo import Command
 from odoo.exceptions import AccessError, UserError
 from odoo.tests.common import TransactionCase, new_test_user, tagged
 
-from odoo.addons.base.tests.common import make_access_row
+from odoo.addons.base.tests.common import create_access_row
 
 
 class TestMergePartner(TransactionCase):
@@ -206,7 +206,7 @@ class TestMergePartner(TransactionCase):
 
     def test_merge_partners_with_peon_user(self):
         for model in ("wizard.res.partner.merge", "wizard.res.partner.merge.line"):
-            make_access_row(self.env, model, "base.group_user", operation="cru")
+            create_access_row(self.env, model, "base.group_user", operation="cru")
         partner_peon = self.env["res.partner"].create(
             {
                 "name": "Peon",

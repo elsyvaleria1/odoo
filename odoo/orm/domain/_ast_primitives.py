@@ -130,7 +130,7 @@ def _recursion_error_as_value_error() -> typing.Iterator[None]:
         ) from None
 
 
-def _check_depth(depth: int) -> int:
+def _get_depth_within_limit(depth: int) -> int:
     if depth > MAX_DOMAIN_NESTING:
         raise ValueError(
             f"Domain nesting too deep (>{MAX_DOMAIN_NESTING} levels); refusing "

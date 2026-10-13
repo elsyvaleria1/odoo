@@ -217,7 +217,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
 
         related_sale_tax = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(so.company_id),
+                *self.env["account.tax"]._get_domain_company_compatible(so.company_id),
                 ("amount_type", "=", "percent"),
                 ("type_tax_use", "=", "sale"),
                 ("amount", "=", self.purchase_tax.amount),
@@ -260,7 +260,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
 
         related_purchase_tax = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(po.company_id),
+                *self.env["account.tax"]._get_domain_company_compatible(po.company_id),
                 ("amount_type", "=", "percent"),
                 ("type_tax_use", "=", "purchase"),
                 ("amount", "=", self.sale_tax.amount),
@@ -406,7 +406,7 @@ class TestOrderEdiUbl(TestAccountEdiUblCii, SaleCommon):
 
         purchase_tax = self.env["account.tax"].search(
             [
-                *self.env["account.tax"]._check_company_domain(po.company_id),
+                *self.env["account.tax"]._get_domain_company_compatible(po.company_id),
                 ("amount_type", "=", "percent"),
                 ("type_tax_use", "=", "purchase"),
                 ("amount", "=", self.sale_tax.amount),

@@ -204,7 +204,7 @@ class ResCompany(models.Model):
             .with_company(self)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(self),
+                    *self.env["account.account"]._get_domain_company_compatible(self),
                     ("code", "=like", old_code + "%"),
                     ("account_type", "in", LIQUIDITY_ACCOUNT_TYPES),
                 ],
@@ -431,7 +431,7 @@ class ResCompany(models.Model):
         self.check_singleton()
         default_journal = self.env["account.journal"].search(
             domain=[
-                *self.env["account.journal"]._check_company_domain(self),
+                *self.env["account.journal"]._get_domain_company_compatible(self),
                 ("type", "=", "general"),
             ],
             limit=1,
@@ -469,7 +469,7 @@ class ResCompany(models.Model):
             .with_company(self)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(self),
+                    *self.env["account.account"]._get_domain_company_compatible(self),
                     ("account_type", "=", unaffected_earnings_type),
                 ],
                 limit=1,
@@ -489,7 +489,7 @@ class ResCompany(models.Model):
             .with_context(active_test=False)
             .search(
                 [
-                    *self.env["account.account"]._check_company_domain(self),
+                    *self.env["account.account"]._get_domain_company_compatible(self),
                     ("code", "=like", "9%"),
                 ]
             )
@@ -772,7 +772,7 @@ class ResCompany(models.Model):
             )
 
         journals = self.env["account.journal"].search(
-            self.env["account.journal"]._check_company_domain(self)
+            self.env["account.journal"]._get_domain_company_compatible(self)
         )
         results = []
         for journal in journals:

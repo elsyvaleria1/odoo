@@ -49,7 +49,7 @@ from odoo.tools.safe_eval import (
     _BUILTINS,
     _EXPR_OPCODES,
     _SAFE_BUILTINS,
-    assert_valid_codeobj,
+    check_code_object,
     guard_format_calls,
     to_opcodes,
 )
@@ -867,7 +867,7 @@ class ExpressionRewriter(ast.NodeTransformer):
         return self._visit_comprehension(node, ("key", "value"))
 
 
-def reject_dunder_identifiers(tree: ast.AST) -> None:
+def check_dunder_identifiers(tree: ast.AST) -> None:
     for node in ast.walk(tree):
         match node:
             case ast.Name(id=name) | ast.Attribute(attr=name) | ast.arg(arg=name):
@@ -2265,7 +2265,7 @@ class IrQweb(models.AbstractModel):
             _debug.logic("compile_expr.rejected", reason="syntax", chars=len(expr))
             raise SyntaxError(f"Can not compile expression: {expr} ({e.msg})") from e
 
-        reject_dunder_identifiers(tree)
+        check_dunder_identifiers(tree)
         tree = ExpressionRewriter(raise_on_missing).visit(tree)
         expression = ast.unparse(tree)
 
@@ -2282,7 +2282,7 @@ class IrQweb(models.AbstractModel):
         except SyntaxError as e:
             _debug.logic("compile_expr.rejected", reason="syntax", chars=len(expr))
             raise SyntaxError(f"Can not compile expression: {expr} ({e.msg})") from e
-        assert_valid_codeobj(_SAFE_QWEB_OPCODES, code, expr)
+        check_code_object(_SAFE_QWEB_OPCODES, code, expr)
 
         result = f"({expression})"
         self._compile_expr_cache[cache_key] = result

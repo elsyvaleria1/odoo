@@ -2901,7 +2901,7 @@ class TestGeneratedAssetDomains(TransactionCase):
             [everything.ids],
         )
         everything.invalidate_recordset()
-        self.env["ir.asset.build"].sudo()._sweep_orphan_rows()
+        self.env["ir.asset.build"].sudo()._remove_orphan_rows_and_get_count()
         self.assertEqual(
             everything.exists(),
             bridge | classic,

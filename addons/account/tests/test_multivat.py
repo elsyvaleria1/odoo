@@ -398,7 +398,9 @@ class TestMultiVAT(AccountTestInvoicingCommon):
         self.assertFalse(
             self.env["account.tax"].search_count(
                 [
-                    *self.env["account.tax"]._check_company_domain(other_company),
+                    *self.env["account.tax"]._get_domain_company_compatible(
+                        other_company
+                    ),
                     ("country_id", "=", self.env.ref("base.fr").id),
                 ]
             ),

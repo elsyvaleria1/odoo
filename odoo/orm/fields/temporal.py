@@ -219,7 +219,7 @@ def temporal_part_getter(
     )
 
 
-def refuse_boolean_part_comparand(condition: DomainCondition, part: str | None) -> None:
+def check_date_part_comparand(condition: DomainCondition, part: str | None) -> None:
     if not part or part == "tz":
         return
     value = condition.value
@@ -342,7 +342,7 @@ class Date(BaseDate[date]):
     ) -> Domain:
         operator = condition.operator
         if level == OptimizationLevel.BASIC:
-            refuse_boolean_part_comparand(
+            check_date_part_comparand(
                 condition, parse_field_expr(condition.field_expr)[1]
             )
             if (
@@ -457,7 +457,7 @@ class Datetime(BaseDate[datetime]):
         self, condition: DomainCondition, model: BaseModel, level: OptimizationLevel
     ) -> Domain:
         if level == OptimizationLevel.BASIC:
-            refuse_boolean_part_comparand(
+            check_date_part_comparand(
                 condition, parse_field_expr(condition.field_expr)[1]
             )
             return self._optimize_datetime_comparand(condition, model)

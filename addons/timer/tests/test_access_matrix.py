@@ -28,7 +28,7 @@ class TestTimerAccessMatrix(AccessMatrixCase):
     )
 
     @classmethod
-    def build(cls):
+    def create_matrix_records(cls):
         stranger = new_test_user(
             cls.env, login="matrix_timer_stranger", groups="base.group_user"
         )

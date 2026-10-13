@@ -203,12 +203,16 @@ class TestMailPluginController(TestMailPluginControllerCommon):
             new_partner_count, partner_count, "Should not have created a new partner"
         )
 
-        def _check_access(record, operation):
+        def _get_records_forbidden_and_error_factory(record, operation):
             if operation == "read" and record == partner:
                 return record, lambda: AccessError("No Access")
             return None
 
-        with patch.object(type(partner), "_check_access", _check_access):
+        with patch.object(
+            type(partner),
+            "_get_records_forbidden_and_error_factory",
+            _get_records_forbidden_and_error_factory,
+        ):
             result = self.mock_plugin_partner_get(
                 "Test",
                 "test@test.example.com",

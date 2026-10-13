@@ -13,7 +13,7 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from odoo.libs.debug_log import DebugLog
-from odoo.libs.http1 import ProtocolError, find_head
+from odoo.libs.http1 import ProtocolError, get_request_head_span
 from odoo.libs.worker_thread import as_worker_thread
 
 from ._env import bequeath_socket, get_env_int
@@ -461,7 +461,7 @@ class ThreadedHTTPServer:
                 busy=self._pool.busy,
                 limit=self.max_http_threads,
             )
-            self._refuse(conn)
+            self._send_unavailable_and_close(conn)
 
     def _shed(self, conn: Connection) -> None:
         self._shed_since_warning += 1
@@ -483,10 +483,10 @@ class ThreadedHTTPServer:
             max_queue=self.max_queue,
             busy=self._pool.busy,
         )
-        self._refuse(conn)
+        self._send_unavailable_and_close(conn)
 
     @staticmethod
-    def _refuse(conn: Connection) -> None:
+    def _send_unavailable_and_close(conn: Connection) -> None:
         with contextlib.suppress(OSError):
             conn.sock.setblocking(False)
             conn.sock.send(_UNAVAILABLE_RESPONSE)
@@ -681,7 +681,10 @@ class ThreadedHTTPServer:
 
     def _holds_complete_head(self, conn: Connection, scanned: int = 0) -> bool:
         try:
-            return find_head(conn.source.buffer, self.limits.head, scanned) is not None
+            return (
+                get_request_head_span(conn.source.buffer, self.limits.head, scanned)
+                is not None
+            )
         except ProtocolError as exc:
             _debug.logic(
                 "httpd.head_malformed_while_idle",

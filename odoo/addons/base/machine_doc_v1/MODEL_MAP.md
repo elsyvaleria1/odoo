@@ -598,7 +598,7 @@ impact: the lines applied in a savepoint rolled back, and for every active
 person holding an affected group, per affected model and operation, the
 records reached before and after (counts, gained, lost). `action_activate()`
 is the verb `activate`: it refuses a line whose row changed since it was
-staged; it computes the impact again (`_check_review`) and refuses a proposed
+staged; it computes the impact again (`_get_impact_reviewed`) and refuses a proposed
 change set whose impact changed shape since the proposal (who gains or loses
 what, counts aside), and a change set that widens anyone's reach when its
 author activates it (another access administrator does); it stores the impact
@@ -655,7 +655,7 @@ reviewers' reminder seven days before `date_to`.
 
 **Key Methods:**
 - `_check_length` — the constraint holding every exception, whoever writes it, to a year at most
-- `_find(user, kind, scope)` — the live exception letting `user` past `kind` on `scope`, or none
+- `_get_exception_active(user, kind, scope)` — the live exception letting `user` past `kind` on `scope`, or none
 - `_record_use(reason)`, `action_revoke(reason)`
 
 ### models/ir_access_sod.py
@@ -721,7 +721,7 @@ the report the night it is gone; the scan changes no row.
 
 **Key Methods:**
 - `_scan()` — refresh the report, log what is new; returns the counts per state
-- `_find()` — the drift, computed: the replay, then the orphan and custom rows
+- `_get_findings_by_identity()` — the drift, computed: the replay, then the orphan and custom rows
 
 ### models/ir_access_audit.py
 
@@ -1009,8 +1009,8 @@ whether it is the build pages are handed now.
 
 **Key Methods:**
 - `_publish(spec)` — make a build current, superseding the previous one of its variant
-- `_find_reusable(kind, bundle, variant, source_key)` — the build a source key names
-- `_sweep(domain)` — delete builds superseded past the grace, and the files only they owned
+- `_get_build_reusable(kind, bundle, variant, source_key)` — the build a source key names
+- `_remove_expired_builds_and_get_count(domain)` — delete builds superseded past the grace and their exclusively owned files, returning the number of builds removed
 - `_gc_asset_builds()` — autovacuum: retire uninstalled bundles, sweep, collect unowned files
 
 ---
@@ -1492,7 +1492,7 @@ owner record: `read` on the owner for a read, `write` for everything else.
 `_search` states that as SQL: a many2one onto a model whose access is its rows
 reads it through the `access` operator, any other owner through
 `odoo.tools.owner_reach` -- per owning model, the owner under that model's own
-access domain (`_record_access_domain`). `_check_access` adds the forbidden ids
+access domain (`_record_access_domain`). `_get_records_forbidden_and_error_factory` adds the forbidden ids
 to whatever the ACLs and rules already refused, and a constraint refuses a row
 whose owner does not exist. `_of(records)` is the rows owned by those records
 and `_owner()` the owner of one row. Hosts outside base: `speech.speaker`,
@@ -1991,7 +1991,7 @@ User accounts — inherits all partner fields.
 **Key Methods:**
 - `_login(db, credential, user_agent_env)` — Authenticate user
 - `_login_unknown(credential, user_agent_env)` — hook: sign in a login no active account carries (LDAP), run inside the cooldown and never at a keys-only door
-- `_check_credentials(credential, env)` — Verify credentials
+- `_authenticate_credentials(credential, env)` — Verify credentials
 - `authenticate(db, credential, user_agent_env)` — Full auth flow
 - `check_identity(fn)` — Decorator requiring password re-verification
 - `_is_admin()`, `_is_system()`, `_is_superuser()` — Access level checks
@@ -2048,7 +2048,7 @@ API key management with custom SQL table (encrypted key storage).
 
 **Key Methods:**
 - `_match_key(scope, key)` — `(user_id, expiration)` of a live key at the door of `scope`
-- `_check_credentials(*, scope, key)` — the key's user at that door, or None
+- `_authenticate_credentials(*, scope, key)` — the key's user at that door, or None
 - `_generate(scope, name, expiration_date)` — Generate and store key; the scope is required, declared and active (the key wizard defaults it to `rpc`)
 - `_gc_user_apikeys()` — Autovacuum expired keys
 
@@ -2124,7 +2124,7 @@ source, carrying the failure tally and the moment of the last one. A source is
 a client address (`base.login_cooldown_after`), an account `account:<uid>` or
 a login no account carries `login:<sha256 of it>` (`base.login_cooldown_account_after`,
 counting failures from every address); both share `base.login_cooldown_duration`.
-`res.users._assert_can_auth` reads both in one query; the RPC doors reach it
+`res.users._admit_authentication_attempt` reads both in one query; the RPC doors reach it
 through `odoo.http.rpc_client()`, set by `dispatch_rpc`, since they run with
 the request borrowed. A cooled address or account refuses interactive attempts
 and leaves the RPC doors API keys (160 random bits: no oracle); a refused key
@@ -2158,7 +2158,7 @@ before it) refuses passwords at the RPC doors.
 Per-user settings storage.
 
 **Key Methods:**
-- `_find_or_create_for_user(user)` — Find or create settings record
+- `_get_or_create_for_user(user)` — Get or create settings record
 - `set_res_users_settings(new_settings)` — Update and return formatted settings
 
 ---
