@@ -182,11 +182,12 @@ class AccountBankStatementLine(models.Model):
         for tax_line_vals, grouping_key, to_update in tax_results[
             "tax_lines_to_update"
         ]:
-            lines_to_delete += tax_line_vals["record"]
+            tax_line = tax_line_vals["record"]
+            lines_to_delete += tax_line
             new_line_vals = self._lines_prepare_tax_line({**grouping_key, **to_update})
-            lines_to_add_or_update.append(
-                tax_line_vals["record"]._prepare_aml_values(**new_line_vals)
-            )
+            if tax_line.is_name_manual:
+                del new_line_vals["name"]
+            lines_to_add_or_update.append(tax_line._prepare_aml_values(**new_line_vals))
 
         lines_to_keep = (liquidity_lines + other_lines) - lines_to_delete
         _debug.pipeline(
@@ -203,15 +204,18 @@ class AccountBankStatementLine(models.Model):
             lines_to_keep, lines_to_add_or_update
         )
 
+    def _get_tax_line_name(self, tax) -> str:
+        self.check_singleton()
+        if self.payment_ref:
+            return f"{tax.name} - {self.payment_ref}"
+        return tax.name
+
     def _lines_prepare_tax_line(self, tax_line_vals) -> dict:
         self.check_singleton()
 
         tax_rep = self.env["account.tax.repartition.line"].browse(
             tax_line_vals["tax_repartition_line_id"]
         )
-        name = tax_rep.tax_id.name
-        if self.payment_ref:
-            name = f"{name} - {self.payment_ref}"
         currency = self.env["res.currency"].browse(tax_line_vals["currency_id"])
         amount_currency = tax_line_vals["amount_currency"]
         balance = self._prepare_counterpart_amounts_using_st_line_rate(
@@ -221,7 +225,7 @@ class AccountBankStatementLine(models.Model):
         return {
             "account_id": tax_line_vals["account_id"],
             "date": self.date,
-            "name": name,
+            "name": self._get_tax_line_name(tax_rep.tax_id),
             "partner_id": tax_line_vals["partner_id"],
             "currency_id": currency.id,
             "amount_currency": amount_currency,

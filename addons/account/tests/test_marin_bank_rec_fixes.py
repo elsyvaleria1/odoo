@@ -267,6 +267,32 @@ class TestMarinBankRecFixes(AccountTestInvoicingCommon):
         st_line.edit_reconcile_line(tax_line.id, {"account_id": self.expense.id})
         self.assertTrue(analytic_lines.exists())
 
+    def test_bank_rec_tax_recompute_keeps_an_edited_tax_line_label(self):
+        tax = self.env["account.tax"].create({"name": "bank tax", "amount": 10})
+        st_line = self._st_line(110.0)
+        st_line.set_account_bank_statement_line(
+            st_line.line_ids[-1].id, self.revenue.id
+        )
+        st_line.edit_reconcile_line(
+            st_line.line_ids[-1].id, {"tax_ids": [Command.link(tax.id)]}
+        )
+        tax_line = st_line.line_ids.filtered("tax_line_id")
+        self.assertEqual(tax_line.name, "bank tax - turlututu")
+        self.assertFalse(tax_line.is_name_manual)
+        st_line.edit_reconcile_line(tax_line.id, {"name": "Edited label"})
+        tax_line = st_line.line_ids.filtered("tax_line_id")
+        self.assertTrue(tax_line.is_name_manual)
+        base_line = st_line.line_ids.filtered("tax_ids")
+        st_line.edit_reconcile_line(
+            base_line.id, {"amount_currency": -55.0, "balance": -55.0}
+        )
+        tax_line = st_line.line_ids.filtered("tax_line_id")
+        self.assertAlmostEqual(tax_line.balance, -5.0)
+        self.assertEqual(tax_line.name, "Edited label")
+        self.assertTrue(tax_line.is_name_manual)
+        st_line.edit_reconcile_line(tax_line.id, {"name": "bank tax - turlututu"})
+        self.assertFalse(st_line.line_ids.filtered("tax_line_id").is_name_manual)
+
     def test_reconciliation_report_ignores_draft_statement_lines(self):
         posted = self._st_line(100.0)
         drafted = self._st_line(50.0)

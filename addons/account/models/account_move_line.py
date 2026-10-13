@@ -184,7 +184,7 @@ class AccountMoveLine(models.Model):
     )
     is_name_manual = fields.Boolean(
         string="Label Edited",
-        help="The label of this tax line was edited by hand: resynchronizing the taxes keeps it instead of rewriting it from the tax.",
+        help="The label of this tax line was typed by hand and differs from the tax's: recomputing the taxes keeps it. Clearing it, or typing the tax's label back, lets the label follow the tax again.",
     )
     translated_product_name = fields.Text(compute="_compute_translated_product_name")
     debit = fields.Monetary(
@@ -2770,13 +2770,33 @@ class AccountMoveLine(models.Model):
             return True
         if "name" in vals and "is_name_manual" not in vals:
             renamed_tax_lines = self.filtered(
-                lambda line: line.display_type == "tax" and line.name != vals["name"]
+                lambda line: (
+                    line.tax_repartition_line_id
+                    and line.display_type != "rounding"
+                    and line.name != vals["name"]
+                )
             )
-            if renamed_tax_lines and renamed_tax_lines != self:
-                (self - renamed_tax_lines).write(vals)
-                return renamed_tax_lines.write(vals)
             if renamed_tax_lines:
-                vals = {**vals, "is_name_manual": True}
+                manual_lines = renamed_tax_lines.filtered(
+                    lambda line: line._is_manual_tax_line_name(vals["name"])
+                )
+                batches = [
+                    (lines, lines_vals)
+                    for lines, lines_vals in (
+                        (self - renamed_tax_lines, vals),
+                        (manual_lines, {**vals, "is_name_manual": True}),
+                        (
+                            renamed_tax_lines - manual_lines,
+                            {**vals, "is_name_manual": False},
+                        ),
+                    )
+                    if lines
+                ]
+                if len(batches) > 1:
+                    for lines, lines_vals in batches:
+                        lines.write(lines_vals)
+                    return True
+                vals = batches[0][1]
         self._check_deferred_account_change(vals)
         vals = self._normalize_vals(vals)
 
@@ -4721,10 +4741,21 @@ class AccountMoveLine(models.Model):
     def _is_edi_line_tax_required(self) -> bool:
         return self.product_id.type != "combo"
 
+    def _is_manual_tax_line_name(self, name) -> bool:
+        self.check_singleton()
+        if not name:
+            return False
+        tax = self.tax_line_id
+        automatic_names = {tax.name}
+        if st_line := self.move_id.statement_line_id:
+            automatic_names.add(st_line._get_tax_line_name(tax))
+        return name not in automatic_names
+
     def _prepare_aml_values(self, **kwargs):
         self.check_singleton()
         return {
             "name": self.name,
+            "is_name_manual": self.is_name_manual,
             "account_id": self.account_id.id,
             "currency_id": self.currency_id.id,
             "amount_currency": self.amount_currency,

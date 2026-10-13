@@ -478,6 +478,14 @@ class AccountBankStatementLine(models.Model):
         move_line_to_edit.remove_move_reconcile()
         self.auto_reconcile_rule = False
         move_line_to_edit_vals = move_line_to_edit._prepare_aml_values(**record_data)
+        if (
+            move_line_to_edit.tax_repartition_line_id
+            and "name" in record_data
+            and record_data["name"] != move_line_to_edit.name
+        ):
+            move_line_to_edit_vals["is_name_manual"] = (
+                move_line_to_edit._is_manual_tax_line_name(record_data["name"])
+            )
         if edited_move_reconciled_line_ids:
             move_line_to_edit_vals["reconciled_lines_ids"] = [
                 Command.set(edited_move_reconciled_line_ids)

@@ -949,3 +949,81 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(tax_line.name, "Edited in form")
         self.assertTrue(tax_line.is_name_manual)
         self.assertAlmostEqual(tax_line.amount_currency, -300.0 * tax.amount / 100)
+
+    def test_clearing_an_edited_label_gives_the_label_back_to_the_tax(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        tax_line.name = "Edited label"
+        tax_line.name = False
+        self.assertFalse(tax_line.is_name_manual)
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(tax_line.name, tax.name)
+
+    def test_typing_the_tax_label_back_follows_later_tax_renames(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        tax_line.name = "Edited label"
+        tax_line.name = tax.name
+        self.assertFalse(tax_line.is_name_manual)
+        tax.name = "Renamed tax"
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(tax_line.name, "Renamed tax")
+        self.assertFalse(tax_line.is_name_manual)
+
+    def test_resync_keeps_an_edited_label_on_a_journal_entry_tax_line(self):
+        tax = self.company_data["default_tax_sale"]
+        tax_rep = tax.invoice_repartition_line_ids.filtered(
+            lambda rep: rep.repartition_type == "tax"
+        )
+        rate = tax.amount / 100
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "base",
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "balance": -100.0,
+                            "tax_ids": [Command.set(tax.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": tax.name,
+                            "account_id": tax_rep.account_id.id,
+                            "balance": -100.0 * rate,
+                            "tax_repartition_line_id": tax_rep.id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "balance": 100.0 * (1 + rate),
+                        }
+                    ),
+                ],
+            }
+        )
+        base_line, tax_line, counterpart = entry.line_ids.sorted("id")
+        self.assertEqual(tax_line.display_type, "product")
+        tax_line.name = "Edited label"
+        self.assertTrue(tax_line.is_name_manual)
+        entry.write(
+            {
+                "line_ids": [
+                    Command.update(base_line.id, {"balance": -200.0}),
+                    Command.update(counterpart.id, {"balance": 200.0 * (1 + rate)}),
+                ]
+            }
+        )
+        self.assertEqual(entry.line_ids.filtered("tax_repartition_line_id"), tax_line)
+        self.assertAlmostEqual(tax_line.balance, -200.0 * rate)
+        self.assertEqual(tax_line.name, "Edited label")
