@@ -75,15 +75,27 @@ class AccountReconcileModel(models.Model):
         tracking=True,
         help="The reconciliation model will only be available from the selected journals.",
     )
+    match_direction = fields.Selection(
+        selection=[
+            ("incoming", "Incoming"),
+            ("outgoing", "Outgoing"),
+            ("both", "Incoming and outgoing"),
+        ],
+        string="Direction",
+        default="both",
+        required=True,
+        tracking=True,
+        help="The reconciliation model will only be applied to money received (incoming), money paid (outgoing) or both.",
+    )
     match_amount = fields.Selection(
         selection=[
             ("lower", "Is lower than or equal to"),
             ("greater", "Is greater than or equal to"),
             ("between", "Is between"),
         ],
-        string="Amount",
+        string="Amount (absolute)",
         tracking=True,
-        help="The reconciliation model will only be applied when the amount being lower than, greater than or between specified amount(s).",
+        help="The reconciliation model will only be applied when the absolute amount, whatever its direction, is lower than, greater than or between the specified amount(s).",
     )
     match_amount_min = fields.Float(
         string="Amount Min Parameter",
@@ -122,6 +134,13 @@ class AccountReconcileModel(models.Model):
         inverse_name="model_id",
         copy=True,
         tracking=True,
+    )
+
+    _match_amount_min_match_amount_max_check = models.Constraint(
+        "CHECK(match_amount_min >= 0 AND match_amount_max >= 0)",
+        "The amount bounds of a reconciliation model cannot be negative: they are "
+        "compared to the absolute amount. Use the direction to tell money received "
+        "from money paid.",
     )
 
     @api.constrains("match_label", "match_label_param")
@@ -172,6 +191,7 @@ class AccountReconcileModel(models.Model):
     @api.depends(
         "mapped_partner_id",
         "match_label",
+        "match_direction",
         "match_amount",
         "match_partner_ids",
         "match_journal_ids",
@@ -181,6 +201,7 @@ class AccountReconcileModel(models.Model):
         for model in self:
             model.can_be_proposed = not model.mapped_partner_id and (
                 model.match_label
+                or model.match_direction != "both"
                 or model.match_amount
                 or model.match_partner_ids
                 or model.match_journal_ids

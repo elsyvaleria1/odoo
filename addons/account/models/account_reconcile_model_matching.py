@@ -21,6 +21,7 @@ MATCH_FIELDS = frozenset(
         "match_amount",
         "match_amount_max",
         "match_amount_min",
+        "match_direction",
         "match_journal_ids",
         "match_label",
         "match_label_param",
@@ -95,17 +96,24 @@ class AccountReconcileModel(models.Model):
 
     @api.model
     def _get_match_amount_sql(self, amount: SQL, reco_model="reco_model") -> SQL:
-        minimum = SQL("COALESCE(%s.match_amount_min, 0.0)", SQL.identifier(reco_model))
-        maximum = SQL("COALESCE(%s.match_amount_max, 0.0)", SQL.identifier(reco_model))
+        reco_model = SQL.identifier(reco_model)
+        minimum = SQL("COALESCE(%s.match_amount_min, 0.0)", reco_model)
+        maximum = SQL("COALESCE(%s.match_amount_max, 0.0)", reco_model)
         return SQL(
-            """CASE COALESCE(%(match_amount)s, '')
-                   WHEN 'lower'   THEN %(amount)s <= %(max)s
-                   WHEN 'greater' THEN %(amount)s >= %(min)s
-                   WHEN 'between' THEN %(amount)s BETWEEN LEAST(%(min)s, %(max)s)
-                                                      AND GREATEST(%(min)s, %(max)s)
+            """CASE %(match_direction)s
+                   WHEN 'incoming' THEN %(amount)s > 0
+                   WHEN 'outgoing' THEN %(amount)s < 0
+                   ELSE TRUE
+               END
+               AND CASE COALESCE(%(match_amount)s, '')
+                   WHEN 'lower'   THEN ABS(%(amount)s) <= %(max)s
+                   WHEN 'greater' THEN ABS(%(amount)s) >= %(min)s
+                   WHEN 'between' THEN ABS(%(amount)s) BETWEEN LEAST(%(min)s, %(max)s)
+                                                           AND GREATEST(%(min)s, %(max)s)
                    ELSE TRUE
                END""",
-            match_amount=SQL("%s.match_amount", SQL.identifier(reco_model)),
+            match_direction=SQL("%s.match_direction", reco_model),
+            match_amount=SQL("%s.match_amount", reco_model),
             amount=amount,
             min=minimum,
             max=maximum,

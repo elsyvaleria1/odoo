@@ -1000,6 +1000,37 @@ class TestMarinReconcileWizardAudit(AccountTestInvoicingCommon):
             wizard.reco_model_autocomplete_ids._origin,
         )
 
+    def test_reconcile_wizard_suggests_models_by_the_residual_direction(self):
+        def model(name, **vals):
+            return self.env["account.reconcile.model"].create(
+                {
+                    "name": f"Marin direction {name}",
+                    "trigger": "manual",
+                    "line_ids": [
+                        Command.create({"account_id": self.revenue_account.id})
+                    ],
+                    **vals,
+                }
+            )
+
+        incoming = model("incoming", match_direction="incoming")
+        outgoing = model("outgoing", match_direction="outgoing")
+        at_least_100 = model("size", match_amount="greater", match_amount_min=100.0)
+        lines = self.create_line_for_reconciliation(
+            -300.0, -300.0, self.company.currency_id, "2017-01-01"
+        ) + self.create_line_for_reconciliation(
+            200.0, 200.0, self.company.currency_id, "2017-01-01"
+        )
+        wizard = (
+            self.env["wizard.account.move.line.reconcile"]
+            .with_context(active_model="account.move.line", active_ids=lines.ids)
+            .new({})
+        )
+        self.assertEqual(wizard.amount, -100.0)
+        suggested = wizard.reco_model_autocomplete_ids._origin
+        self.assertLessEqual(outgoing | at_least_100, suggested)
+        self.assertNotIn(incoming, suggested)
+
     def test_change_account_keeps_the_foreign_sign_of_a_netted_group(self):
         cad = self.setup_other_currency("CAD")
         source_account = self.env["account.account"].create(

@@ -2382,14 +2382,15 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
         reco_model._trigger_reconciliation_model(st_line)
         self.assertEqual(st_line.activity_ids.activity_type_id.id, activity_type_id)
 
-    def test_match_amount_in_between_neg_amount(self):
+    def test_match_amount_in_between_outgoing_amount(self):
         bank_stmt_line = self._create_st_line(amount=-1500)
         between_rule = self.env["account.reconcile.model"].create(
             {
-                "name": "Between neg amount",
+                "name": "Between outgoing amount",
+                "match_direction": "outgoing",
                 "match_amount": "between",
-                "match_amount_min": -1000,
-                "match_amount_max": -2000,
+                "match_amount_min": 2000,
+                "match_amount_max": 1000,
                 "line_ids": [
                     Command.create({"account_id": self.current_assets_account.id})
                 ],
@@ -2412,8 +2413,8 @@ class TestReconciliationMatchingRules(AccountTestInvoicingCommon):
 
         between_rule.update(
             {
-                "match_amount_min": -2000,
-                "match_amount_max": -1000,
+                "match_amount_min": 1000,
+                "match_amount_max": 2000,
             }
         )
         self._check_st_line_matching(

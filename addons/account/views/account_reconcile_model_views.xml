@@ -69,9 +69,12 @@
                                 placeholder="All partners"
                                 widget="many2many_tags"
                                 options="{'no_quick_create': True}" />
+                            <field name="match_direction" />
                             <label for="match_amount" />
                             <div class="d-flex gap-2">
-                                <field name="match_amount" placeholder="Any amount" />
+                                <field
+                                    name="match_amount"
+                                    placeholder="Any absolute amount" />
                                 <field
                                     name="match_amount_min"
                                     invisible="match_amount in (False, 'lower')"
