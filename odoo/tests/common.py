@@ -28,6 +28,7 @@ from odoo.libs.sql import SQL
 from odoo.service.api_scope import RPC_SCOPE
 from odoo.tools import config
 from odoo.tools.cache import _COUNTERS, ormcache_counter
+from odoo.tools.xml_utils import check_with_xsd_file
 
 from .browser import ChromeBrowser, ChromeBrowserException
 from .case import TestCase
@@ -43,7 +44,6 @@ from .transaction_case import (
     release_test_lock,
 )
 from .utils import HOST, get_db_name, save_test_file
-from .xsd import check_xml
 
 if TYPE_CHECKING:
     from odoo.orm.runtime._model_types import ResUsersModel
@@ -199,31 +199,21 @@ def standalone(*tags: str) -> Callable[[_S], _S]:
     return register
 
 
-def test_xsd(
-    url: str | None = None,
-    path: str | None = None,
-    skip: bool | str = False,
-    xsd_name: str | None = None,
-) -> Callable[[Callable[..., Any]], Callable[..., None]]:
+def test_xsd(*, path: str) -> Callable[[Callable[..., Any]], Callable[..., None]]:
     def decorator(func: Callable[..., Any]) -> Callable[..., None]:
         @wraps(func)
         def wrapped_f(self: Any, *args: Any, **kwargs: Any) -> None:
-            if skip:
-                _debug.logic("test.xsd.skipped", func=func.__qualname__)
-                raise unittest.SkipTest(
-                    skip if isinstance(skip, str) else "XSD validation disabled"
-                )
             xmls = func(self, *args, **kwargs)
+            documents = xmls if isinstance(xmls, list) else [xmls]
             with _debug.perf(
                 "test.xsd.check",
                 cr=self.env.cr,
                 func=func.__qualname__,
-                xsd=xsd_name,
-                url=url is not None,
-                path=path is not None,
-                documents=len(xmls) if isinstance(xmls, (list, tuple)) else 1,
+                xsd=path,
+                documents=len(documents),
             ):
-                check_xml(self.env, url, path, xmls, xsd_name)
+                for xml in documents:
+                    check_with_xsd_file(xml, path)
 
         return wrapped_f
 
