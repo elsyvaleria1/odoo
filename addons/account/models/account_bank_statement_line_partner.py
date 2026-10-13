@@ -71,7 +71,7 @@ class AccountBankStatementLine(models.Model):
         "suggests a partner to the later ones.",
     )
 
-    def write(self, vals):
+    def _get_partner_write_vals(self, vals) -> dict:
         if "partner_id" in vals:
             vals = {"is_partner_manual": bool(vals["partner_id"]), **vals}
             if vals["partner_id"]:
@@ -79,7 +79,7 @@ class AccountBankStatementLine(models.Model):
                     "suggested_partner_id": False,
                     "partner_suggestion_source": False,
                 }
-        return super().write(vals)
+        return vals
 
     @api.depends("payment_ref", "journal_id")
     def _compute_counterparty_key(self) -> None:

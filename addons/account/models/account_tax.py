@@ -556,6 +556,12 @@ class AccountTax(models.Model):
             base_line["account_id"] = self._get_base_line_field_value_from_record(
                 record, "account_id", kwargs, self.env["account.account"]
             )
+        base_line["deferred_start_date"] = self._get_base_line_field_value_from_record(
+            record, "deferred_start_date", kwargs, False
+        )
+        base_line["deferred_end_date"] = self._get_base_line_field_value_from_record(
+            record, "deferred_end_date", kwargs, False
+        )
         return base_line
 
     @api.model
@@ -566,7 +572,7 @@ class AccountTax(models.Model):
                 record, field, kwargs, fallback
             )
 
-        return {
+        tax_line = {
             **kwargs,
             "record": record,
             "id": load("id", 0),
@@ -584,17 +590,23 @@ class AccountTax(models.Model):
             "amount_currency": load("amount_currency", 0.0),
             "balance": load("balance", 0.0),
         }
+        tax_line["deferred_start_date"] = load("deferred_start_date", False)
+        tax_line["deferred_end_date"] = load("deferred_end_date", False)
+        return tax_line
 
     @api.model
     @_debug.perf.timed
     def _prepare_base_line_grouping_key(self, base_line):
-        return {
+        grouping_key = {
             "partner_id": base_line["partner_id"].id,
             "currency_id": base_line["currency_id"].id,
             "analytic_distribution": base_line["analytic_distribution"],
             "account_id": base_line["account_id"].id,
             "tax_ids": [Command.set(sorted(base_line["tax_ids"].ids))],
         }
+        grouping_key["deferred_start_date"] = base_line["deferred_start_date"]
+        grouping_key["deferred_end_date"] = base_line["deferred_end_date"]
+        return grouping_key
 
     @_debug.perf.timed
     def _prepare_base_line_tax_repartition_grouping_key(
@@ -602,7 +614,7 @@ class AccountTax(models.Model):
     ):
         tax = tax_data["tax"]
         tax_rep = tax_rep_data["tax_rep"]
-        return {
+        grouping_key = {
             **base_line_grouping_key,
             "tax_repartition_line_id": tax_rep.id,
             "group_tax_id": tax_data["group"].id,
@@ -617,10 +629,25 @@ class AccountTax(models.Model):
             "tax_tag_ids": [Command.set(sorted(tax_rep_data["tax_tags"].ids))],
             "__keep_zero_line": False,
         }
+        record = base_line["record"]
+        if (
+            isinstance(record, models.Model)
+            and record._name == "account.move.line"
+            and record._has_deferred_compatible_account()
+            and base_line["deferred_start_date"]
+            and base_line["deferred_end_date"]
+            and not tax_rep.use_in_tax_closing
+        ):
+            grouping_key["deferred_start_date"] = base_line["deferred_start_date"]
+            grouping_key["deferred_end_date"] = base_line["deferred_end_date"]
+        else:
+            grouping_key["deferred_start_date"] = False
+            grouping_key["deferred_end_date"] = False
+        return grouping_key
 
     @_debug.perf.timed
     def _prepare_tax_line_repartition_grouping_key(self, tax_line):
-        return {
+        grouping_key = {
             "tax_repartition_line_id": tax_line["tax_repartition_line_id"].id,
             "partner_id": tax_line["partner_id"].id,
             "currency_id": tax_line["currency_id"].id,
@@ -630,6 +657,9 @@ class AccountTax(models.Model):
             "tax_ids": [Command.set(sorted(tax_line["tax_ids"].ids))],
             "tax_tag_ids": [Command.set(sorted(tax_line["tax_tag_ids"].ids))],
         }
+        grouping_key["deferred_start_date"] = tax_line["deferred_start_date"]
+        grouping_key["deferred_end_date"] = tax_line["deferred_end_date"]
+        return grouping_key
 
     def _get_repartition_lines_by_kind(self, is_refund, cache=None):
         self.check_singleton()

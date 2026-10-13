@@ -694,11 +694,14 @@ class AccountReport(models.Model):
     @api.model
     def _get_domain_options_journals(self, options):
         selected_journals = self._get_options_journals(options)
-        return (
+        domain = (
             Domain("journal_id", "in", [j["id"] for j in selected_journals])
             if selected_journals
             else Domain.TRUE
         )
+        if options.get("include_analytic_without_aml"):
+            domain |= Domain("journal_id", "=", False)
+        return domain
 
     def _init_options_aml_ir_filters(self, options, previous_options) -> None:
         options["aml_ir_filters"] = []
@@ -2049,6 +2052,7 @@ class AccountReport(models.Model):
             "_init_options_hierarchy": 1030,
             "_init_options_currency_table": 1055,
             "_init_options_readonly_query": 1070,
+            "_init_options_analytic_groupby": 995,
         }
 
     def _get_totals_below_sections(self):

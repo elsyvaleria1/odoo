@@ -8,6 +8,8 @@ class IrUiMenu(models.Model):
         return [
             "account.account_tag_menu",
             "account.menu_account_group",
+            "account.menu_action_account_report_multicurrency_revaluation",
+            "account.menu_action_account_report_tree",
         ]
 
     def _get_hidden_menu_ids(self):

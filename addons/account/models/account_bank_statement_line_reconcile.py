@@ -156,42 +156,29 @@ class AccountBankStatementLine(models.Model):
 
         return invoices._get_records_action()
 
-    @api.model_create_multi
-    @_debug.perf.timed
-    def create(self, vals_list):
-        if _debug.lifecycle.enabled:
-            _debug.lifecycle(
-                "create",
-                model=self._name,
-                count=len(vals_list),
-                fields=sorted({key for vals in vals_list for key in vals}),
-            )
-        statement_lines = super().create(vals_list)
+    def _process_created_statement_lines(self) -> None:
         retrieve_partner = not self.env.context.get("no_retrieve_partner")
         if retrieve_partner:
-            statement_lines._set_partner_from_transaction()
-        statement_lines.move_id._message_log_batch(
+            self._set_partner_from_transaction()
+        self.move_id._message_log_batch(
             bodies={
                 statement_line.move_id.id: statement_line._format_statement_line_data()
-                for statement_line in statement_lines
+                for statement_line in self
             }
         )
 
-        if self.env.context.get("auto_statement_processing", False) and statement_lines:
+        if self.env.context.get("auto_statement_processing", False) and self:
             _debug.pipeline(
                 "auto_statement_processing_batches",
-                stline=statement_lines,
+                stline=self,
                 auto_statement_processing_batch_size=AUTO_STATEMENT_PROCESSING_BATCH_SIZE,
             )
-            for index in range(
-                0, len(statement_lines), AUTO_STATEMENT_PROCESSING_BATCH_SIZE
-            ):
-                statement_lines[
+            for index in range(0, len(self), AUTO_STATEMENT_PROCESSING_BATCH_SIZE):
+                self[
                     index : index + AUTO_STATEMENT_PROCESSING_BATCH_SIZE
                 ]._try_auto_reconcile_statement_lines(
                     detect_partner=index > 0 or not retrieve_partner
                 )
-        return statement_lines
 
     @_debug.perf.timed
     def _format_statement_line_data(self):

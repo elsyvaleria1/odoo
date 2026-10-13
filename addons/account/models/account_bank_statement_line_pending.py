@@ -46,14 +46,6 @@ class AccountBankStatementLine(models.Model):
     def _get_matching_parent_state(self) -> str:
         return "draft" if self.env.context.get("propose_draft_matches") else "posted"
 
-    def _try_auto_reconcile_statement_lines(
-        self, company_id=None, detect_partner=True
-    ) -> None:
-        super()._try_auto_reconcile_statement_lines(
-            company_id=company_id, detect_partner=detect_partner
-        )
-        self._propose_draft_matches()
-
     def _propose_draft_matches(self) -> None:
         remaining = (
             self.exists()
@@ -81,12 +73,6 @@ class AccountBankStatementLine(models.Model):
             st_lines=remaining,
             proposed=remaining.filtered("draft_match_proposal_ids"),
         )
-
-    def set_line_bank_statement_line(self, move_lines_ids):
-        if self.env.context.get("propose_draft_matches"):
-            self._record_draft_match_proposal(move_lines_ids)
-            return None
-        return super().set_line_bank_statement_line(move_lines_ids)
 
     def _record_draft_match_proposal(self, move_lines_ids) -> None:
         self.check_singleton()

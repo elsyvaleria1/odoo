@@ -1,7 +1,10 @@
 import contextlib
+import datetime
 import functools
 from importlib import import_module
 from inspect import getmembers, isclass, isfunction, ismodule
+
+from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
@@ -205,6 +208,16 @@ class IrModuleModule(models.Model):
                 self.env.registry._delayed_account_translator = (
                     load_account_translations
                 )
+        if not langs or langs == ["en_US"] or not modules or "account" not in modules:
+            return
+
+        recent_returns = self.env["account.return"].search(
+            [("date_to", ">=", datetime.date.today() - relativedelta(years=1))]
+        )
+        for lang in langs:
+            recent_returns.with_context(
+                {"update_returns_translation_lang": lang}
+            )._update_translated_name()
 
     @_debug.perf.timed
     def _register_hook(self):

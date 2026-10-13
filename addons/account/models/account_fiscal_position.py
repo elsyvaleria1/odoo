@@ -115,3 +115,4 @@ class AccountFiscalPosition(models.Model):
         created_records.get(
             "account.tax", self.env["account.tax"]
         ).fiscal_position_ids += self
+        self.env["account.return.type"]._sync_all_returns(self.company_id.root_id)

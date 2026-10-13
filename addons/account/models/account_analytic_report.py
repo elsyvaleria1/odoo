@@ -22,11 +22,6 @@ class AccountReport(models.AbstractModel):
     def _compute_filter_analytic_groupby(self) -> None:
         self._compute_report_option_filter("filter_analytic_groupby")
 
-    def _get_options_initializers_forced_sequence_map(self):
-        sequence_map = super()._get_options_initializers_forced_sequence_map()
-        sequence_map["_init_options_analytic_groupby"] = 995
-        return sequence_map
-
     @_debug.perf.timed
     def _init_options_analytic_groupby(self, options, previous_options) -> None:
         if _debug.logic.enabled and not self.filter_analytic_groupby:
@@ -416,13 +411,6 @@ class AccountReport(models.AbstractModel):
                     action["views"] = [(view_id.id, "list")]
 
             return action
-
-    @api.model
-    def _get_domain_options_journals(self, options):
-        domain = super()._get_domain_options_journals(options)
-        if options.get("include_analytic_without_aml"):
-            domain |= Domain("journal_id", "=", False)
-        return domain
 
     def _get_domain_options(self, options, date_scope):
         self.check_singleton()

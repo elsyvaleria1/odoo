@@ -437,6 +437,24 @@ class AccountBankStatement(models.Model):
         stmts = super().create(vals_list)
         self._reparent_attachments(stmts, attachments_list)
         self.env["account.bank.statement.line"]._invalidate_running_balance()
+        _debug.logic(
+            "statement_pdf_generation",
+            statements=stmts,
+            skipped=bool(self.env.context.get("skip_pdf_attachment_generation")),
+        )
+        if not self.env.context.get("skip_pdf_attachment_generation"):
+            stmts.filtered(
+                lambda statement: (
+                    statement.is_complete
+                    and (
+                        not statement.attachment_ids
+                        or not any(
+                            attachment.mimetype == "application/pdf"
+                            for attachment in statement.attachment_ids
+                        )
+                    )
+                )
+            ).action_generate_attachment()
         return stmts
 
     @_debug.perf.timed
@@ -460,3 +478,59 @@ class AccountBankStatement(models.Model):
         res = super().unlink()
         self.env["account.bank.statement.line"]._invalidate_running_balance()
         return res
+
+    @_debug.perf.timed
+    def action_view_bank_reconcile_widget(self):
+        _debug.lifecycle("action_view_bank_reconcile_widget", records=self)
+        self.check_singleton()
+        return self.env[
+            "account.bank.statement.line"
+        ]._action_view_bank_reconciliation_widget(
+            name=self.name,
+            default_context={
+                "search_default_statement_id": self.id,
+                "search_default_journal_id": self.journal_id.id,
+            },
+            extra_domain=[("statement_id", "=", self.id)],
+        )
+
+    @_debug.perf.timed
+    def action_view_journal_invalid_statements(self) -> dict:
+        _debug.lifecycle("action_view_journal_invalid_statements", records=self)
+        self.check_singleton()
+        return {
+            "name": self.env._("Invalid Bank Statements"),
+            "type": "ir.actions.act_window",
+            "res_model": "account.bank.statement",
+            "view_mode": "list",
+            "context": {
+                "search_default_journal_id": self.journal_id.id,
+                "search_default_invalid": True,
+            },
+        }
+
+    @_debug.perf.timed
+    def action_generate_attachment(self):
+        _debug.lifecycle("action_generate_attachment", records=self)
+        ir_actions_report_sudo = self.env["ir.actions.report"].sudo()
+        statement_report_action = self.env.ref(
+            "account.action_report_account_statement"
+        )
+        for statement in self:
+            statement_report = statement_report_action.sudo()
+            content, _content_type = ir_actions_report_sudo._render_qweb_pdf(
+                statement_report, res_ids=statement.ids
+            )
+            statement.attachment_ids |= self.env["ir.attachment"].create(
+                {
+                    "name": self.env._("Bank Statement %s.pdf", statement.name)
+                    if statement.name
+                    else self.env._("Bank Statement.pdf"),
+                    "type": "binary",
+                    "mimetype": "application/pdf",
+                    "raw": content,
+                    "res_model": statement._name,
+                    "res_id": statement.id,
+                }
+            )
+        return statement_report_action.report_action(docids=self)

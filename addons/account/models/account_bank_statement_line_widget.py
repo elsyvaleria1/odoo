@@ -204,6 +204,9 @@ class AccountBankStatementLine(models.Model):
 
     @_debug.perf.timed
     def set_line_bank_statement_line(self, move_lines_ids) -> None:
+        if self.env.context.get("propose_draft_matches"):
+            self._record_draft_match_proposal(move_lines_ids)
+            return
         self.check_singleton()
         move_lines = self.env["account.move.line"].search(
             [

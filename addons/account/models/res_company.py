@@ -1,11 +1,12 @@
 import functools
 from collections import defaultdict
 from datetime import date, timedelta
+from typing import Self
 
 from odoo import Command, api, fields, models
 from odoo.exceptions import LockError, UserError
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import SQL, format_list
+from odoo.tools import SQL, date_utils, format_list
 from odoo.tools.misc import format_date
 
 from odoo.addons.account.models.account_account import LIQUIDITY_ACCOUNT_TYPES
@@ -104,6 +105,13 @@ class ResCompany(models.Model):
     company_vat_placeholder = fields.Char(
         related="account_config_id.company_vat_placeholder"
     )
+    account_representative_id = fields.Many2one(
+        related="account_config_id.account_representative_id",
+        readonly=False,
+    )
+    account_display_representative_field = fields.Boolean(
+        related="account_config_id.account_display_representative_field"
+    )
 
     def _search_account_config_id(self, operator, value):
         return self._search_config_link("account.config", operator, value)
@@ -175,6 +183,10 @@ class ResCompany(models.Model):
                     )
                 )
         companies._set_category_defaults()
+        companies._initiate_account_onboardings()
+
+        self.env["account.return.type"].sudo().search([])._set_default_values(companies)
+        self.env["account.return.type"]._sync_all_returns(companies.root_id)
         return companies
 
     @staticmethod
@@ -365,6 +377,8 @@ class ResCompany(models.Model):
         return locks
 
     def write(self, vals):
+        companies = self.exists()
+        root_companies_before = companies.root_id
         if "currency_id" in vals:
             for company in self:
                 if (
@@ -376,7 +390,14 @@ class ResCompany(models.Model):
                             "You cannot change the currency of the company since some journal items already exist"
                         )
                     )
-        return super().write(vals)
+        res = super().write(vals)
+        if set(vals) & {"child_ids", "parent_id"} and any(
+            companies.account_config_id.mapped("account_opening_date")
+        ):
+            self.env["account.return.type"]._sync_all_returns(
+                root_companies_before | companies.root_id
+            )
+        return res
 
     @api.model
     def setting_init_bank_account_action(self):
@@ -942,3 +963,202 @@ class ResCompany(models.Model):
 
     def _check_tax_return_configuration(self):
         return
+
+    def _get_countries_allowing_tax_representative(self):
+        return set()
+
+    @_debug.perf.timed
+    def _get_tax_closing_journal(self):
+        if not self.account_config_id.account_tax_return_journal_id:
+            closing_journal = self.env["account.journal"]
+            for company in reversed(self.sudo().parent_ids):
+                if journal := company.account_config_id.account_tax_return_journal_id:
+                    closing_journal = journal
+                    break
+            if not closing_journal:
+                closing_journal = (
+                    self.env["account.journal"]
+                    .sudo()
+                    .search(
+                        [
+                            *self.env["account.journal"]._check_company_domain(self),
+                            (
+                                "code",
+                                "in",
+                                ("TAX", "TRTRN"),
+                            ),
+                            ("type", "=", "general"),
+                        ],
+                        limit=1,
+                    )
+                )
+            if not closing_journal:
+                _debug.logic(
+                    "tax_closing_journal_loaded_from_chart",
+                    company=self,
+                    chart=self.account_config_id.chart_template,
+                )
+                ChartTemplate = self.env["account.chart.template"].with_company(self)
+                ChartTemplate._load_data(
+                    {
+                        "account.journal": ChartTemplate._get_account_reports_journal(
+                            self.account_config_id.chart_template
+                        ),
+                        "res.company": ChartTemplate._get_account_reports_res_company(
+                            self.account_config_id.chart_template
+                        ),
+                    }
+                )
+                closing_journal = ChartTemplate.ref("tax_returns")
+            _debug.logic(
+                "tax_closing_journal_resolved",
+                company=self,
+                journal=closing_journal,
+            )
+            self.account_config_id.account_tax_return_journal_id = closing_journal
+
+        return self.account_config_id.account_tax_return_journal_id
+
+    def _get_available_tax_units(self, report, limit=None):
+        self.check_singleton()
+        return self.env["account.tax.unit"].search(
+            [
+                ("company_ids", "in", self.id),
+                ("country_id", "=", report.country_id.id),
+            ],
+            limit=limit,
+        )
+
+    def _get_vat_filing_company(self) -> Self:
+        self.check_singleton()
+        ancestors = self.with_privilege(
+            "base.privilege_read_company_hierarchy",
+            reason="a company finds the ancestor that files its VAT returns",
+        ).parent_ids
+        effective_vats = []
+        effective_vat = False
+        for ancestor in ancestors:
+            effective_vat = ancestor.vat or effective_vat
+            effective_vats.append(effective_vat)
+
+        filing_company = ancestors[-1]
+        for ancestor, ancestor_vat in zip(
+            reversed(ancestors), reversed(effective_vats), strict=True
+        ):
+            if ancestor_vat != effective_vat:
+                break
+            filing_company = ancestor
+        _debug.logic(
+            "vat_filing_company_resolved",
+            company=self,
+            vat=effective_vat,
+            filing_company=filing_company,
+        )
+        return self.browse(filing_company.id)
+
+    def _get_branches_with_same_vat(self, accessible_only=False) -> Self:
+        self.check_singleton()
+
+        current = self.sudo()
+        same_vat_branch_ids = [current.id]
+        current_strict_parents = current.parent_ids - current
+        if accessible_only:
+            candidate_branches = current.root_id._get_accessible_branches()
+        else:
+            candidate_branches = (
+                self.env["res.company"]
+                .sudo()
+                .search([("id", "child_of", current.root_id.ids)])
+            )
+
+        current_vat_check_set = {current.vat} if current.vat else set()
+        for branch in candidate_branches - current:
+            parents_vat_set = set(
+                filter(None, (branch.parent_ids - current_strict_parents).mapped("vat"))
+            )
+            if parents_vat_set == current_vat_check_set:
+                same_vat_branch_ids.append(branch.id)
+
+        _debug.logic(
+            "same_vat_branches_found",
+            company=self,
+            accessible_only=accessible_only,
+            candidates=len(candidate_branches),
+            matched=len(same_vat_branch_ids),
+        )
+        return self.browse(same_vat_branch_ids)
+
+    def compute_fiscalyear_dates(self, current_date) -> dict:
+        self.check_singleton()
+        return self._compute_fiscalyear_dates_by_company(current_date)[self.id]
+
+    @_debug.perf.timed
+    def _compute_fiscalyear_dates_by_company(self, current_date) -> dict[int, dict]:
+        window = timedelta(days=366)
+        day = fields.Date.to_date(current_date)
+        fiscal_years_by_company = (
+            self.env["account.fiscal.year"]
+            .search_fetch(
+                [
+                    ("company_id", "in", self.root_id.ids),
+                    ("date_from", "<=", day + window),
+                    ("date_to", ">=", day - window),
+                ],
+                ["company_id", "date_from", "date_to"],
+            )
+            .grouped("company_id")
+        )
+        return {
+            company.id: company._compute_fiscalyear_dates(
+                current_date,
+                fiscal_years_by_company.get(
+                    company.root_id, self.env["account.fiscal.year"]
+                ),
+            )
+            for company in self
+        }
+
+    def _compute_fiscalyear_dates(self, current_date, fiscal_years) -> dict:
+        def fiscal_year_at(moment):
+            day = fields.Date.to_date(moment)
+            return next(
+                (fy for fy in fiscal_years if fy.date_from <= day <= fy.date_to),
+                fiscal_years.browse(),
+            )
+
+        fiscalyear = fiscal_year_at(current_date)
+        _debug.logic(
+            "fiscalyear_record_lookup",
+            company=self,
+            date=current_date,
+            fiscalyear=fiscalyear,
+            found=bool(fiscalyear),
+        )
+        if fiscalyear:
+            return {
+                "date_from": fiscalyear.date_from,
+                "date_to": fiscalyear.date_to,
+                "record": fiscalyear,
+            }
+
+        date_from, date_to = date_utils.get_fiscal_year(
+            current_date,
+            day=self.account_config_id.fiscalyear_last_day,
+            month=int(self.account_config_id.fiscalyear_last_month),
+        )
+
+        if fiscalyear_from := fiscal_year_at(date_from):
+            date_from = fiscalyear_from.date_to + timedelta(days=1)
+
+        if fiscalyear_to := fiscal_year_at(date_to):
+            date_to = fiscalyear_to.date_from - timedelta(days=1)
+
+        _debug.logic(
+            "fiscalyear_dates_computed",
+            company=self,
+            date_from=date_from,
+            date_to=date_to,
+            clipped_from=bool(fiscalyear_from),
+            clipped_to=bool(fiscalyear_to),
+        )
+        return {"date_from": date_from, "date_to": date_to}

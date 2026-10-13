@@ -520,10 +520,13 @@ class AccountBankStatementLine(models.Model):
 
         st_lines.move_id.action_post()
         self._invalidate_running_balance()
-        return st_lines.with_env(self.env)
+        st_lines = st_lines.with_env(self.env)
+        st_lines._process_created_statement_lines()
+        return st_lines
 
     @_debug.perf.timed
     def write(self, vals):
+        vals = self._get_partner_write_vals(vals)
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         vals = self._normalize_debit_credit_vals(vals)
         res = super(

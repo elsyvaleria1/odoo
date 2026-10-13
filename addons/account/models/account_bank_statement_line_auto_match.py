@@ -490,6 +490,7 @@ class AccountBankStatementLine(models.Model):
             st_lines._match_by_auto_reconcile_rules(
                 company_id=company_id, detect_partner=detect_partner
             )
+        self._propose_draft_matches()
 
     @_debug.perf.timed
     def _match_by_auto_reconcile_rules(
