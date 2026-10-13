@@ -1319,6 +1319,18 @@ class TestAccountJournalBankCard(TestAccountJournalDashboardCommon):
         journal = self.company_data["default_journal_bank"].copy(
             {"currency_id": self.other_currency.id}
         )
+        outstanding = self.env["account.account"].create(
+            {
+                "code": "109901",
+                "name": "Outstanding payments",
+                "account_type": "asset_current",
+                "reconcile": True,
+            }
+        )
+        (
+            journal.inbound_payment_channel_ids[:1]
+            | journal.outbound_payment_channel_ids[:1]
+        ).payment_account_id = outstanding
         with self._withholding(10.0):
             self._create_direct_payments(
                 journal,
