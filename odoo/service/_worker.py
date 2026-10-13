@@ -197,7 +197,7 @@ class Worker:
         self._listener_ready = any(key.fd != self.wakeup_pipe[0] for key, _ in ready)
         empty_pipe(self.wakeup_pipe[0])
 
-    def check_limits(self) -> None:
+    def enforce_runtime_limits(self) -> None:
         Registry._evict_idle_registries()
         if self.ppid != os.getppid():
             self.logger.info("Parent changed")
@@ -429,7 +429,7 @@ class Worker:
             _debug.lifecycle("worker.ready", kind=self.__class__.__name__, pid=self.pid)
             worker = current_worker_thread()
             while self.alive:
-                self.check_limits()
+                self.enforce_runtime_limits()
                 self.multi.ping_pipe(self.watchdog_pipe)
                 self.sleep()
                 if not self.alive:
@@ -603,8 +603,8 @@ class WorkerCron(Worker):
         return self.kind.max_age()
 
     @override
-    def check_limits(self) -> None:
-        super().check_limits()
+    def enforce_runtime_limits(self) -> None:
+        super().enforce_runtime_limits()
 
         max_age = self.get_max_age()
         if max_age > 0 and (time.monotonic() - self.alive_time) > max_age:

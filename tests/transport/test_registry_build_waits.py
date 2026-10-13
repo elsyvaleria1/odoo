@@ -61,18 +61,18 @@ def server():
 
 class TestTheWatchdogDoesNotWaitForARegistryBuild:
     @pytest.mark.parametrize("idle_timeout", [0, 3600])
-    def test_check_limits_returns_while_another_thread_builds(
+    def test_enforce_runtime_limits_returns_while_another_thread_builds(
         self, server, idle_timeout
     ):
         with (
             patch.object(Registry, "idle_timeout", idle_timeout),
             _RegistryBuild(),
         ):
-            probe, outcome = _run_aside(server.check_limits)
+            probe, outcome = _run_aside(server.enforce_runtime_limits)
             blocked = probe.is_alive()
         probe.join(5)
         assert not blocked, (
-            f"check_limits waited {BLOCKED_S:.0f}s on the registry lock another "
+            f"enforce_runtime_limits waited {BLOCKED_S:.0f}s on the registry lock another "
             f"thread held: every limit, the memory check and the systemd "
             f"watchdog beat stop for as long as a module install runs"
         )
@@ -93,7 +93,7 @@ class TestTheWatchdogDoesNotWaitForARegistryBuild:
                 patch.object(_threaded.db, "cancel_queries_of", cancel),
                 _RegistryBuild(),
             ):
-                probe, _outcome = _run_aside(server.check_limits)
+                probe, _outcome = _run_aside(server.enforce_runtime_limits)
                 blocked = probe.is_alive()
             probe.join(5)
         finally:

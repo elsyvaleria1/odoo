@@ -67,7 +67,7 @@ and so could not be tuned apart.
 """
 
 _TIME_LIMITED_THREAD_TYPES = ("http", "cron", "job", "stream")
-"""Thread kinds `check_limits` may recycle the server for.
+"""Thread kinds `enforce_runtime_limits` may recycle the server for.
 
 "websocket_job" is deliberately absent: `bus` runs every websocket's database
 work on a small pool of such threads, and recycling the server for one slow
@@ -90,6 +90,10 @@ connections the websockets' work runs on.
 """
 
 _SIGXCPU_EXIT_CODE = 128 + getattr(signal, "SIGXCPU", 24)
+
+
+def _is_thread_overrun_finished(thread: threading.Thread, started: float | None) -> bool:
+    return getattr(thread, "start_time", None) != started
 
 
 def _get_http_server_metrics(httpd: ThreadedHTTPServer | None) -> dict[str, Any]:
@@ -188,7 +192,7 @@ class ThreadedServer(CommonServer):
         self.signal_handler(sig, None)
         return True
 
-    def check_limits(self) -> None:
+    def enforce_runtime_limits(self) -> None:
         Registry._evict_idle_registries()
         memory_over_limit = self.get_memory_over_soft_limit() is not None
 
@@ -214,71 +218,10 @@ class ThreadedServer(CommonServer):
             )
             if budget <= 0 or elapsed <= budget:
                 continue
-            doing = describe_thread_work(thread)
-            if self._cancelled_overruns.get(thread) != start_time:
-                self._cancelled_overruns[thread] = start_time
-                self._overruns_cancelled += 1
-                cancelled = self._cancel_thread_queries(thread)
-                self.logger.warning(
-                    "Thread %s real time limit (%.1f/%ds) reached%s; cancelled "
-                    "%d running quer%s%s",
-                    thread,
-                    elapsed,
-                    budget,
-                    f" while {doing}" if doing else "",
-                    cancelled,
-                    "y" if cancelled == 1 else "ies",
-                    ""
-                    if thread_type in _CANCEL_ONLY_THREAD_TYPES
-                    else ", reloading if it does not return",
-                )
-                _debug.logic(
-                    "server.thread_over_limit",
-                    thread=thread.name,
-                    type=thread_type,
-                    elapsed_s=elapsed,
-                    limit_s=budget,
-                    doing=doing,
-                    cancelled=cancelled,
-                )
-                continue
-            if (
-                thread in self.limits_reached_threads
-                or thread_type in _CANCEL_ONLY_THREAD_TYPES
-            ):
-                continue
-            self.logger.warning(
-                "Thread %s is still on the same work %.1fs after its queries were "
-                "cancelled%s; reloading",
-                thread,
-                elapsed,
-                f" ({doing})" if doing else "",
+            self._enforce_thread_time_limit(
+                thread, thread_type, start_time, elapsed, budget
             )
-            _debug.logic(
-                "server.thread_stuck_after_cancel",
-                thread=thread.name,
-                type=thread_type,
-                elapsed_s=elapsed,
-            )
-            self.limits_reached_threads.add(thread)
-            self._overrun_start_times[thread] = start_time
-        for thread in list(self._cancelled_overruns):
-            if not thread.is_alive() or self._overrun_work_finished(
-                thread, self._cancelled_overruns[thread]
-            ):
-                del self._cancelled_overruns[thread]
-        for thread in list(self.limits_reached_threads):
-            if not thread.is_alive() or self._overrun_work_finished(
-                thread, self._overrun_start_times.get(thread)
-            ):
-                self.limits_reached_threads.remove(thread)
-                self._overrun_start_times.pop(thread, None)
-                _debug.lifecycle(
-                    "server.thread_overrun_cleared",
-                    thread=thread.name,
-                    alive=thread.is_alive(),
-                    pending=len(self.limits_reached_threads),
-                )
+        self._clear_finished_thread_overruns()
         if _debug.perf.enabled and watched:
             _debug.perf.count(
                 "server.threads_sampled",
@@ -300,18 +243,94 @@ class ThreadedServer(CommonServer):
         else:
             self.limit_reached_time = None
 
+    def _enforce_thread_time_limit(
+        self,
+        thread: threading.Thread,
+        thread_type: str,
+        start_time: float,
+        elapsed: float,
+        budget: float,
+    ) -> None:
+        doing = describe_thread_work(thread)
+        if self._cancelled_overruns.get(thread) != start_time:
+            self._cancelled_overruns[thread] = start_time
+            self._overruns_cancelled += 1
+            cancelled = self._cancel_thread_queries(thread)
+            self.logger.warning(
+                "Thread %s real time limit (%.1f/%ds) reached%s; cancelled "
+                "%d running quer%s%s",
+                thread,
+                elapsed,
+                budget,
+                f" while {doing}" if doing else "",
+                cancelled,
+                "y" if cancelled == 1 else "ies",
+                ""
+                if thread_type in _CANCEL_ONLY_THREAD_TYPES
+                else ", reloading if it does not return",
+            )
+            _debug.logic(
+                "server.thread_over_limit",
+                thread=thread.name,
+                type=thread_type,
+                elapsed_s=elapsed,
+                limit_s=budget,
+                doing=doing,
+                cancelled=cancelled,
+            )
+            return
+        if (
+            thread in self.limits_reached_threads
+            or thread_type in _CANCEL_ONLY_THREAD_TYPES
+        ):
+            return
+        self.logger.warning(
+            "Thread %s is still on the same work %.1fs after its queries were "
+            "cancelled%s; reloading",
+            thread,
+            elapsed,
+            f" ({doing})" if doing else "",
+        )
+        _debug.logic(
+            "server.thread_stuck_after_cancel",
+            thread=thread.name,
+            type=thread_type,
+            elapsed_s=elapsed,
+        )
+        self.limits_reached_threads.add(thread)
+        self._overrun_start_times[thread] = start_time
+
+    def _clear_finished_thread_overruns(self) -> None:
+        for thread in list(self._cancelled_overruns):
+            if not thread.is_alive() or _is_thread_overrun_finished(
+                thread, self._cancelled_overruns[thread]
+            ):
+                del self._cancelled_overruns[thread]
+        for thread in list(self.limits_reached_threads):
+            if not thread.is_alive() or _is_thread_overrun_finished(
+                thread, self._overrun_start_times.get(thread)
+            ):
+                self.limits_reached_threads.remove(thread)
+                self._overrun_start_times.pop(thread, None)
+                _debug.lifecycle(
+                    "server.thread_overrun_cleared",
+                    thread=thread.name,
+                    alive=thread.is_alive(),
+                    pending=len(self.limits_reached_threads),
+                )
+
     @staticmethod
     def _is_reload_held_for_module_operation() -> bool:
         return any(is_running_module_operation(t) for t in threading.enumerate())
 
     @contextlib.contextmanager
-    def _watching_limits(self) -> Iterator[None]:
+    def _watch_runtime_limits(self) -> Iterator[None]:
         done = threading.Event()
 
         def watch() -> None:
             while not done.wait(LIMIT_MONITOR_INTERVAL_S):
                 try:
-                    self.check_limits()
+                    self.enforce_runtime_limits()
                 except Exception as exc:
                     self.logger.warning(
                         "Limit check failed while preloading; retrying",
@@ -331,10 +350,6 @@ class ThreadedServer(CommonServer):
         finally:
             done.set()
             watcher.join()
-
-    @staticmethod
-    def _overrun_work_finished(thread: threading.Thread, started: float | None) -> bool:
-        return getattr(thread, "start_time", None) != started
 
     def _cancel_thread_queries(self, thread: threading.Thread) -> int:
         return _cancel_thread_queries(thread, self.logger)
@@ -685,7 +700,7 @@ class ThreadedServer(CommonServer):
             with (
                 contextlib.nullcontext()
                 if stop or self.httpd is None
-                else self._watching_limits()
+                else self._watch_runtime_limits()
             ):
                 rc = preload_registries(preload)
             _debug.pipeline(
@@ -711,7 +726,7 @@ class ThreadedServer(CommonServer):
 
             while self.quit_signals_received == 0:
                 watchdog.beat()
-                self.check_limits()
+                self.enforce_runtime_limits()
                 if (
                     self.limit_reached_time
                     and self._is_reload_held_for_module_operation()
@@ -856,10 +871,10 @@ class WebsocketServer(CommonServer):
                 "y" if cancelled == 1 else "ies",
             )
         for thread, started in list(self._cancelled_overruns.items()):
-            if not thread.is_alive() or getattr(thread, "start_time", None) != started:
+            if not thread.is_alive() or _is_thread_overrun_finished(thread, started):
                 del self._cancelled_overruns[thread]
 
-    def check_limits(self) -> None:
+    def enforce_runtime_limits(self) -> None:
         Registry._evict_idle_registries()
         self.cancel_overrunning_jobs()
         should_restart = False
@@ -884,7 +899,7 @@ class WebsocketServer(CommonServer):
         _debug.lifecycle("server.evented.watchdog_started", ppid=self.ppid, beat=beat)
         while True:
             try:
-                self.check_limits()
+                self.enforce_runtime_limits()
             except Exception as exc:
                 self.logger.warning(
                     "Evented watchdog check failed; retrying in %ss",

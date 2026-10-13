@@ -23,10 +23,10 @@ def server():
 
 
 class _Request:
-    def __init__(self, name, *, elapsed, module_operation=False):
+    def __init__(self, name, *, elapsed, module_operation=False, kind="http"):
         self._stop = threading.Event()
         self.thread = threading.Thread(target=self._stop.wait, name=name)
-        self.thread.type = "http"
+        self.thread.type = kind
         self.thread.start_time = time.monotonic() - elapsed
         self.thread.module_operation = module_operation
 
@@ -109,8 +109,8 @@ class TestTheThreadedWatchdogSparesAModuleOperation:
             patch.object(_threaded.db, "cancel_queries_of", cancel),
             _Request("install", elapsed=600, module_operation=True),
         ):
-            server.check_limits()
-            server.check_limits()
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
         cancel.assert_not_called()
         assert not server.limits_reached_threads
 
@@ -122,8 +122,8 @@ class TestTheThreadedWatchdogSparesAModuleOperation:
             _Request("install", elapsed=600, module_operation=True),
             _Request("slow", elapsed=200) as slow,
         ):
-            server.check_limits()
-            server.check_limits()
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
             reached = set(server.limits_reached_threads)
         cancel.assert_called_once_with("slow")
         assert reached == {slow}
@@ -137,7 +137,7 @@ class TestTheThreadedWatchdogSparesAModuleOperation:
             patch.object(_threaded.db, "cancel_queries_of", cancel),
             _Request("install", elapsed=600, module_operation=True),
         ):
-            server.check_limits()
+            server.enforce_runtime_limits()
         cancel.assert_called_once_with("install")
 
     def test_the_reload_waits_for_the_operation(self, server):
@@ -146,13 +146,97 @@ class TestTheThreadedWatchdogSparesAModuleOperation:
         assert not server._is_reload_held_for_module_operation()
 
 
+class TestThreadOverrunEnforcement:
+    @pytest.mark.parametrize("kind", ["http", "cron", "job", "stream", "websocket_job"])
+    def test_queries_are_cancelled_once_before_stuck_work_is_marked(self, server, kind):
+        with (
+            server_settings.override(limit_time_real=1),
+            patch.object(_threaded.db, "cancel_queries_of", return_value=2) as cancel,
+            _Request("slow-work", elapsed=20, kind=kind) as thread,
+        ):
+            server.enforce_runtime_limits()
+            assert not server.limits_reached_threads
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            cancel.assert_called_once_with("slow-work")
+            assert server._overruns_cancelled == 1
+            expected = set() if kind == "websocket_job" else {thread}
+            assert server.limits_reached_threads == expected
+        server.enforce_runtime_limits()
+        assert not server._cancelled_overruns
+        assert not server.limits_reached_threads
+        assert not server._overrun_start_times
+        assert server.limit_reached_time is None
+
+    def test_a_new_work_episode_gets_its_own_cancellation(self, server):
+        with (
+            server_settings.override(limit_time_real=1),
+            patch.object(_threaded.db, "cancel_queries_of", return_value=1) as cancel,
+            _Request("reused-thread", elapsed=20) as thread,
+        ):
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            first_start = thread.start_time
+            assert server.limits_reached_threads == {thread}
+            thread.start_time = None
+            server.enforce_runtime_limits()
+            assert not server._cancelled_overruns
+            assert not server.limits_reached_threads
+            assert server.limit_reached_time is None
+            thread.start_time = first_start + 1
+            server.enforce_runtime_limits()
+            assert not server.limits_reached_threads
+            server.enforce_runtime_limits()
+            assert server._overrun_start_times[thread] == first_start + 1
+            assert cancel.call_count == 2
+            assert server._overruns_cancelled == 2
+
+    def test_cancellation_failure_still_allows_stuck_work_to_be_marked(self, server):
+        with (
+            server_settings.override(limit_time_real=1),
+            patch.object(_threaded.db, "cancel_queries_of", side_effect=RuntimeError("down")) as cancel,
+            _Request("uncancellable-thread", elapsed=20) as thread,
+        ):
+            server.enforce_runtime_limits()
+            assert not server.limits_reached_threads
+            server.enforce_runtime_limits()
+            assert server.limits_reached_threads == {thread}
+            cancel.assert_called_once_with("uncancellable-thread")
+
+    def test_websocket_jobs_reuse_the_thread_without_restarting_the_server(self):
+        server = _threaded.WebsocketServer(MagicMock())
+        server.get_memory_over_soft_limit = MagicMock(return_value=None)
+        server.logger = MagicMock()
+        with (
+            server_settings.override(limit_time_real=1),
+            patch.object(_threaded.os, "kill") as kill,
+            patch.object(_threaded.db, "cancel_queries_of", return_value=1) as cancel,
+            _Request("websocket-worker", elapsed=20, kind="websocket_job") as thread,
+        ):
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            cancel.assert_called_once_with("websocket-worker")
+            first_start = thread.start_time
+            thread.start_time = None
+            server.enforce_runtime_limits()
+            assert not server._cancelled_overruns
+            thread.start_time = first_start + 1
+            server.enforce_runtime_limits()
+            server.enforce_runtime_limits()
+            assert cancel.call_count == 2
+            assert server._overruns_cancelled == 2
+            kill.assert_not_called()
+        server.enforce_runtime_limits()
+        assert not server._cancelled_overruns
+
+
 class TestTheThreadedWatchdogRunsDuringPreload:
     def test_limits_are_checked_while_the_registries_load(self, server):
         checked = threading.Event()
-        server.check_limits = MagicMock(side_effect=checked.set)
+        server.enforce_runtime_limits = MagicMock(side_effect=checked.set)
         with (
             patch.object(_threaded, "LIMIT_MONITOR_INTERVAL_S", 0.01),
-            server._watching_limits(),
+            server._watch_runtime_limits(),
         ):
             assert checked.wait(5), (
                 "an HTTP request served while the registries preload ran "
@@ -167,10 +251,10 @@ class TestTheThreadedWatchdogRunsDuringPreload:
             if len(calls) == 1:
                 raise RuntimeError("boom")
 
-        server.check_limits = check
+        server.enforce_runtime_limits = check
         with (
             patch.object(_threaded, "LIMIT_MONITOR_INTERVAL_S", 0.01),
-            server._watching_limits(),
+            server._watch_runtime_limits(),
         ):
             deadline = time.monotonic() + 5
             while len(calls) < 2 and time.monotonic() < deadline:

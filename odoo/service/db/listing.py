@@ -224,12 +224,12 @@ def _get_catalog_cached(cr: Any = None) -> list[str]:
         )
         _catalog_refresh_lock.acquire()
     try:
-        return _get_catalog_after_cache_miss(ttl, cr)
+        return _get_catalog_and_update_cache(ttl, cr)
     finally:
         _catalog_refresh_lock.release()
 
 
-def _get_catalog_after_cache_miss(ttl: float, cr: Any = None) -> list[str]:
+def _get_catalog_and_update_cache(ttl: float, cr: Any = None) -> list[str]:
     global _catalog_cache  # noqa: PLW0603 -- Updates process-wide state shared by callers of this module.
 
     now = time.monotonic()

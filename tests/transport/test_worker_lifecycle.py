@@ -110,7 +110,7 @@ class TestCpuRlimitClamp:
             server_settings.override(limit_memory_soft=0, limit_time_cpu=limit),
             patch.object(_worker, "get_memory_over_soft_limit", return_value=None),
         ):
-            worker.check_limits()
+            worker.enforce_runtime_limits()
         worker.close()
         return res.setrlimit.call_args.args[1]
 
@@ -122,7 +122,7 @@ class TestCpuRlimitClamp:
         soft, hard = self._apply(multi, hard=65)
         assert (soft, hard) == (65, 65), (
             "setrlimit raises ValueError when soft exceeds hard, and this runs "
-            "on every check_limits pass — so an unclamped value does not cap "
+            "on every enforce_runtime_limits pass — so an unclamped value does not cap "
             "CPU, it kills the worker with a traceback"
         )
 
@@ -476,7 +476,7 @@ class TestTheWorkerCancelsItsOwnOverrun:
             seen.append(threading.current_thread().start_time is not None)
             worker.alive = False
 
-        worker.check_limits = MagicMock()
+        worker.enforce_runtime_limits = MagicMock()
         worker.sleep = MagicMock()
         worker.process_work = work
         worker._runloop_exc = None
