@@ -392,21 +392,19 @@ class MixinOrderLineMatch(models.AbstractModel):
             (
                 o.state = 'done'
                 AND (
-                    (
-                        (ol.product_qty > ol.qty_invoiced OR ol.qty_to_invoice > 0)
-                        AND NOT EXISTS (
-                            SELECT 1 FROM %(rel)s rel
-                            JOIN account_move_line aml ON rel.move_line_id = aml.id
-                            WHERE rel.order_line_id = ol.id
-                            AND aml.parent_state = 'draft'
-                        )
-                    )
-                    OR ol.qty_to_invoice < 0
+                    ol.product_qty > %(qty_claimed)s
+                    OR ol.qty_to_invoice != 0
                 )
             )
-            OR (COALESCE(ol.display_type, '') = '' AND ol.is_downpayment AND ol.qty_invoiced > 0)
+            OR (
+                COALESCE(ol.display_type, '') = ''
+                AND ol.is_downpayment
+                AND %(qty_claimed)s > 0
+            )
             """,
-            rel=SQL.identifier(self._link_rel_table),
+            qty_claimed=SQL(
+                "(COALESCE(ol.qty_invoiced, 0) + COALESCE(ol.qty_invoiced_draft, 0))"
+            ),
         )
 
     @api.model

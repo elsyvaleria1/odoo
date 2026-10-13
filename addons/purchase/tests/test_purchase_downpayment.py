@@ -105,6 +105,41 @@ class TestPurchaseDownpayment(TestPurchaseToInvoiceCommon):
             )
         )
 
+    def test_a_downpayment_deducted_on_a_draft_bill_leaves_the_match_list(self):
+        po = self.init_purchase(confirm=False, products=[self.product_order])
+        po.line_ids.product_qty = 10.0
+        po.action_confirm()
+        self.init_invoice("in_invoice", amounts=[69.00], post=True)
+        match_lines = self.env["purchase.bill.line.match"].search(
+            [("partner_id", "=", self.partner_a.id)]
+        )
+        action = match_lines.action_add_to_po()
+        self.env["wizard.account.move.line.add.to.purchase.order"].with_context(
+            {**action["context"], "active_ids": match_lines.ids}
+        ).create({}).action_add_downpayment()
+        po_dp_line = po.line_ids.filtered(
+            lambda l: l.display_type != "line_section" and l.is_downpayment
+        )
+        self.env.flush_all()
+        self.assertIn(
+            po_dp_line,
+            self.env["purchase.bill.line.match"]
+            .search([("partner_id", "=", self.partner_a.id)])
+            .order_line_id,
+        )
+
+        final_bill = po.create_invoice()
+        self.env.flush_all()
+
+        self.assertEqual(final_bill.state, "draft")
+        self.assertEqual(po_dp_line.qty_invoiced + po_dp_line.qty_invoiced_draft, 0.0)
+        self.assertNotIn(
+            po_dp_line,
+            self.env["purchase.bill.line.match"]
+            .search([("partner_id", "=", self.partner_a.id)])
+            .order_line_id,
+        )
+
     def test_product_supplierinfo_downpayment(self):
         self.product_a.seller_ids = [
             Command.create(

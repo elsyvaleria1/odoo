@@ -41,6 +41,7 @@ class PurchaseBillLineMatch(models.Model):
                 "product_qty",
                 "product_uom_id",
                 "qty_invoiced",
+                "qty_invoiced_draft",
                 "qty_to_invoice",
             ],
         }

@@ -169,3 +169,21 @@ class TestInvoiceLineMatch(TransactionCase):
         self.assertEqual(
             self.Match.search(action["domain"]).order_line_id, order.line_ids
         )
+
+    def test_an_order_line_partly_on_a_draft_invoice_stays_offered(self):
+        self.product.invoice_policy = "ordered"
+        order = self._confirmed_order(qty=10)
+        invoice = order._create_invoices()
+        invoice.invoice_line_ids.quantity = 4
+        self.env.flush_all()
+        self.assertEqual(order.line_ids.qty_invoiced_draft, 4.0)
+        self.assertEqual(order.line_ids.qty_to_invoice, 6.0)
+        self.assertEqual(self._rows().order_line_id, order.line_ids)
+
+    def test_an_order_line_wholly_on_a_draft_invoice_leaves_the_match_list(self):
+        self.product.invoice_policy = "ordered"
+        order = self._confirmed_order(qty=10)
+        order._create_invoices()
+        self.env.flush_all()
+        self.assertEqual(order.line_ids.qty_invoiced_draft, 10.0)
+        self.assertFalse(self._rows().order_line_id)

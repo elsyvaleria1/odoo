@@ -95,3 +95,21 @@ class TestBillLineMatch(TransactionCase):
         self.assertEqual(bill.partner_id, self.vendor)
         self.assertEqual(bill.currency_id, order.line_ids.currency_id)
         self.assertEqual(bill.invoice_line_ids.product_id, self.product)
+
+    def test_an_order_line_partly_on_a_draft_bill_stays_offered(self):
+        self.product.bill_policy = "ordered"
+        order = self._confirmed_order(qty=10)
+        bill = order.create_invoice()
+        bill.invoice_line_ids.quantity = 4
+        self.env.flush_all()
+        self.assertEqual(order.line_ids.qty_invoiced_draft, 4.0)
+        self.assertEqual(order.line_ids.qty_to_invoice, 6.0)
+        self.assertEqual(self._rows().order_line_id, order.line_ids)
+
+    def test_an_order_line_wholly_on_a_draft_bill_leaves_the_match_list(self):
+        self.product.bill_policy = "ordered"
+        order = self._confirmed_order(qty=10)
+        order.create_invoice()
+        self.env.flush_all()
+        self.assertEqual(order.line_ids.qty_invoiced_draft, 10.0)
+        self.assertFalse(self._rows().order_line_id)
