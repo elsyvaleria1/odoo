@@ -424,9 +424,7 @@ class AccountMove(models.Model):
         return self.line_ids.filtered(
             lambda line: (
                 line.display_type in TAX_BASE_DISPLAY_TYPES
-                and not (
-                    line.display_type == "rounding" and line.tax_repartition_line_id
-                )
+                and not line.tax_repartition_line_id
             )
         )
 

@@ -1082,6 +1082,7 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(new_tax_line.tax_line_id, other_tax)
         self.assertEqual(new_tax_line.name, "Other tax")
         self.assertFalse(new_tax_line.is_name_manual)
+        self.assertAlmostEqual(new_tax_line.balance, -10.0)
 
     def test_invoice_lines_relabelled_and_repartnered_in_one_write(self):
         invoice = self._invoice(self.company_data["default_tax_sale"])
@@ -1131,6 +1132,150 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(new_tax_line.name, "Other tax")
         self.assertFalse(new_tax_line.is_name_manual)
         self.assertAlmostEqual(invoice.amount_tax, 10.0)
+
+    def test_journal_entry_tax_line_retaxed_alone_keeps_the_amounts(self):
+        tax = self.company_data["default_tax_sale"]
+        other_tax = tax.copy({"name": "Other tax", "amount": 10.0})
+        entry = self._journal_entry(tax)
+        base_line, tax_line = self._tax_and_base_lines(entry).sorted("id")
+        tax_line.tax_ids = other_tax
+        self.assertEqual(entry.line_ids.filtered("tax_repartition_line_id"), tax_line)
+        self.assertEqual(tax_line.tax_ids, other_tax)
+        self.assertAlmostEqual(tax_line.balance, -15.0)
+        self.assertAlmostEqual(base_line.balance, -100.0)
+
+    def test_invoice_tax_line_retaxed_alone_keeps_the_amounts(self):
+        tax = self.company_data["default_tax_sale"]
+        other_tax = tax.copy({"name": "Other tax", "amount": 10.0})
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        tax_line.tax_ids = other_tax
+        self.assertEqual(self._tax_line(invoice), tax_line)
+        self.assertEqual(tax_line.tax_ids, other_tax)
+        self.assertAlmostEqual(invoice.amount_tax, 15.0)
+
+    def _affected_tax_chain(self):
+        include_tax = self.env["account.tax"].create(
+            {
+                "name": "Included 10%",
+                "amount": 10.0,
+                "type_tax_use": "sale",
+                "include_base_amount": True,
+            }
+        )
+        affected_tax = self.env["account.tax"].create(
+            {
+                "name": "Affected 20%",
+                "amount": 20.0,
+                "type_tax_use": "sale",
+                "is_base_affected": True,
+            }
+        )
+        return include_tax, affected_tax
+
+    @staticmethod
+    def _tax_repartition_line(tax):
+        return tax.invoice_repartition_line_ids.filtered(
+            lambda rep: rep.repartition_type == "tax"
+        )
+
+    def _tax_line_balances(self, move):
+        return {
+            line.tax_line_id: line.balance
+            for line in move.line_ids.filtered("tax_repartition_line_id")
+        }
+
+    def test_journal_entry_affected_tax_chain_built_by_the_sync(self):
+        include_tax, affected_tax = self._affected_tax_chain()
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "base",
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "balance": -100.0,
+                            "tax_ids": [Command.set((include_tax + affected_tax).ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "balance": 100.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        include_tax_line = entry.line_ids.filtered(
+            lambda line: line.tax_line_id == include_tax
+        )
+        self.assertEqual(include_tax_line.tax_ids, affected_tax)
+        entry.line_ids.filtered(lambda line: line.name == "base").balance = -200.0
+        self.assertEqual(
+            self._tax_line_balances(entry),
+            {include_tax: -20.0, affected_tax: -44.0},
+        )
+
+    def test_journal_entry_encoded_affected_tax_chain_is_not_counted_twice(self):
+        include_tax, affected_tax = self._affected_tax_chain()
+        revenue = self.company_data["default_account_revenue"]
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "base",
+                            "account_id": revenue.id,
+                            "balance": -100.0,
+                            "tax_ids": [Command.set((include_tax + affected_tax).ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": include_tax.name,
+                            "account_id": revenue.id,
+                            "balance": -10.0,
+                            "tax_repartition_line_id": self._tax_repartition_line(
+                                include_tax
+                            ).id,
+                            "tax_ids": [Command.set(affected_tax.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": affected_tax.name,
+                            "account_id": revenue.id,
+                            "balance": -22.0,
+                            "tax_repartition_line_id": self._tax_repartition_line(
+                                affected_tax
+                            ).id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "counterpart",
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "balance": 132.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        entry.line_ids.filtered(lambda line: line.name == "base").balance = -200.0
+        self.assertEqual(
+            self._tax_line_balances(entry),
+            {include_tax: -20.0, affected_tax: -44.0},
+        )
 
     def _relabelled_tax_line(self, move):
         tax_line = move.line_ids.filtered("tax_repartition_line_id")

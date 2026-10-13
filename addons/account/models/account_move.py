@@ -2756,14 +2756,13 @@ class AccountMove(models.Model):
             round_from_tax_lines=round_from_tax_lines,
             reapply_currency_rate=reapply_currency_rate,
         )
-        if self.id or not is_invoice:
-            base_amls = self.line_ids.filtered(
-                lambda line: line.display_type == "product"
+        base_amls = (
+            self.line_ids if self.id or not is_invoice else self.invoice_line_ids
+        ).filtered(
+            lambda line: (
+                line.display_type == "product" and not line.tax_repartition_line_id
             )
-        else:
-            base_amls = self.invoice_line_ids.filtered(
-                lambda line: line.display_type == "product"
-            )
+        )
         base_lines = [
             self._prepare_product_base_line_for_taxes_computation(line)
             for line in base_amls
