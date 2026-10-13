@@ -312,6 +312,22 @@ class TestAccountTaxMergeWizard(AccountTestInvoicingCommon):
         self.assertEqual(group_a.children_tax_ids, group_b.children_tax_ids)
         self.assertFalse(self._wizard(group_a + group_b).disable_merge_button)
 
+    def test_per_company_copies_of_a_group_tax_merge_in_one_pass(self):
+        child_a = self._child_tax(self.company_a, "child")
+        child_b = self._child_tax(self.company_b, "child")
+        group_a = self._group_tax(self.company_a, child_a)
+        group_b = self._group_tax(self.company_b, child_b)
+        wizard = self._wizard(group_a + group_b + child_a + child_b)
+        self.assertFalse(wizard.disable_merge_button)
+
+        wizard.action_merge()
+        groups = (group_a + group_b).exists()
+        children = (child_a + child_b).exists()
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(len(children), 1)
+        self.assertEqual(groups.children_tax_ids, children)
+        self.assertEqual(groups.company_ids, self.company_a + self.company_b)
+
     def test_cash_basis_tax_is_not_merged_into_an_on_invoice_tax(self):
         tax_a = self._tax(self.company_a)
         tax_b = self._tax(self.company_b)

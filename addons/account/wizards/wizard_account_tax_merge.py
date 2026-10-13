@@ -43,7 +43,17 @@ class WizardAccountTaxMerge(models.TransientModel):
             tax.active,
             tax.tax_exigibility,
             tax.cash_basis_transition_account_id.id,
-            tuple(sorted(tax.children_tax_ids.ids)),
+            tuple(
+                sorted(
+                    repr(
+                        (
+                            self._get_grouping_key(child),
+                            self._get_repartition_signature(child),
+                        )
+                    )
+                    for child in tax.children_tax_ids
+                )
+            ),
         )
 
     @api.model
