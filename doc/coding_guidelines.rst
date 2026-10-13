@@ -6393,7 +6393,7 @@ them by the scope in each row's first clause, not by date or position.
    * - 7.92
      - 2026-10-13
      - §1.5: the fourteen names with ``l10n_<cc>`` inside lead with it
-       (base 1.157): ``partner_l10n_mx``, ``geoengine_l10n_mx`` and the
+       (base 1.158): ``partner_l10n_mx``, ``geoengine_l10n_mx`` and the
        ``agro_surface_l10n_mx*`` five become ``l10n_mx_*``;
        ``document_l10n_<cc>_hr_payroll`` becomes
        ``l10n_<cc>_hr_payroll_document``; ``approval_account_l10n_mx_edi``
