@@ -2,7 +2,9 @@ import datetime
 import smtplib
 from unittest import mock
 
+from odoo import modules
 from odoo.libs.json import loads as json_loads
+from odoo.modules.registry import Registry
 from odoo.tests import TransactionCase
 
 
@@ -56,4 +58,21 @@ class MailCase(TransactionCase):
         mock_logging_info.assert_any_call(
             "Ignoring SMTPServerDisconnected while trying to quit non open session"
         )
+        self.assertEqual(mail.state, "outgoing")
+
+    def test_send_after_commit_while_registry_loads_leaves_mail_to_queue(self):
+        mail = self.env["mail.mail"].create({"email_to": "loading@example.com"})
+        self.env.cr.postcommit.clear()
+        with (
+            mock.patch.object(self.registry, "ready", False),
+            mock.patch.object(
+                self.registry,
+                "signal_changes",
+                lambda: Registry.signal_changes(self.registry),
+            ),
+            self.assertNoLogs("odoo.registry", "WARNING"),
+        ):
+            with mock.patch.object(modules.module, "current_test", None):
+                mail.send_after_commit()
+            self.env.cr.postcommit.drain()
         self.assertEqual(mail.state, "outgoing")

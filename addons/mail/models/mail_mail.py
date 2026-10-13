@@ -1444,6 +1444,9 @@ class MailMail(models.Model):
         if modules.module.current_test:
             self.exists().send()
             return
+        if not self.env.registry.ready:
+            _debug.logic("send_after_commit_left_to_queue", mails=len(self))
+            return
 
         email_ids = self.ids
         dbname = self.env.cr.dbname
