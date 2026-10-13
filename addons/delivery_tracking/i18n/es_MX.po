@@ -97,6 +97,7 @@ msgstr "Entregada"
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__display_name
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__display_name
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__display_name
 msgid "Display Name"
 msgstr "Nombre en pantalla"
 
@@ -127,6 +128,7 @@ msgstr "Entrega a domicilio"
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__id
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__id
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__id
 msgid "ID"
 msgstr "ID"
 
@@ -338,3 +340,97 @@ msgstr "Falta consultar el estado de alguna de las guías."
 #: code:addons/delivery_tracking/models/stock_picking.py:0
 msgid "Weight (kg)"
 msgstr "Peso (kg)"
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking_type__auto_validation_carrier_ids
+msgid ""
+"Automatically validate ready outgoing transfers when all their tracking "
+"numbers report delivery through one of these carriers. Normal validation "
+"checks still apply. Leave empty to validate manually."
+msgstr ""
+"Valida automáticamente las salidas listas cuando todas sus guías confirmen "
+"la entrega con uno de estos transportistas. Se conservan las verificaciones "
+"normales. Dejar vacío para validar manualmente."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"Automatically validated after %(carrier)s confirmed delivery of all tracking"
+" numbers: %(references)s."
+msgstr ""
+"Validada automáticamente después de que %(carrier)s confirmó la entrega de "
+"todas las guías: %(references)s."
+
+#. module: delivery_tracking
+#: model:mail.activity.type,name:delivery_tracking.mail_activity_type_carrier_validation
+msgid "Carrier Delivery Validation"
+msgstr "Validación de entrega del transportista"
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_validation_error
+msgid "Carrier Delivery Validation Blocked"
+msgstr "Validación de entrega bloqueada"
+
+#. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
+msgid "Carrier: Validation Blocked"
+msgstr "Transportista: validación bloqueada"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "Delivered: resolve the validation issue"
+msgstr "Entregada: resolver el bloqueo de validación"
+
+#. module: delivery_tracking
+#: model:ir.model,name:delivery_tracking.model_stock_picking_type
+msgid "Picking Type"
+msgstr "Tipo de operación"
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking__carrier_validation_error
+msgid ""
+"Reason the delivered transfer could not be validated automatically. Correct "
+"the issue and refresh tracking, or wait for the next scheduled run."
+msgstr ""
+"Motivo por el que la transferencia entregada no se pudo validar "
+"automáticamente. Corrige el problema y actualiza el rastreo, o espera la "
+"próxima ejecución programada."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "The delivered transfer has no open moves."
+msgstr "La transferencia entregada no tiene movimientos pendientes."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "The delivered transfer was validated."
+msgstr "Se validó la transferencia entregada."
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"The quantities for %(product)s do not cover the full demand. Check the "
+"quantities and picked lines before retrying."
+msgstr ""
+"Las cantidades de %(product)s no coinciden con la demanda completa. Revisa "
+"las cantidades y las líneas preparadas antes de reintentar."
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__auto_validation_carrier_ids
+msgid "Validate on Carrier Delivery"
+msgstr "Validar al confirmar entrega del transportista"
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"Validation requires an additional confirmation. Open the transfer and "
+"validate it manually."
+msgstr ""
+"La validación requiere una confirmación adicional. Abre la transferencia y "
+"valídala manualmente."

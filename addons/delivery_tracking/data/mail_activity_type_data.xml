@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="mail_activity_type_carrier_validation" model="mail.activity.type">
+        <field name="name">Carrier Delivery Validation</field>
+        <field name="res_model">stock.picking</field>
+        <field name="icon">fa-truck</field>
+    </record>
+</odoo>

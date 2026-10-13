@@ -118,10 +118,14 @@ class StockPicking(models.Model):
                 "date_carrier_tracking_sync",
                 "carrier_tracking_error",
                 "carrier_tracking_details",
+                "carrier_validation_error",
             ),
             False,
         )
         super(StockPicking, changed).write(vals | reset)
+        changed.activity_unlink(
+            ["delivery_tracking.mail_activity_type_carrier_validation"]
+        )
         return (
             super(StockPicking, self - changed).write(vals) if self - changed else True
         )
@@ -234,7 +238,7 @@ class StockPicking(models.Model):
 
     @api.model
     def _cron_fetch_carrier_tracking(self) -> None:
-        self.search(
+        pending = self.search(
             [
                 ("carrier_id.tracking_provider", "!=", False),
                 ("carrier_tracking_ref", "!=", False),
@@ -242,7 +246,30 @@ class StockPicking(models.Model):
                 ("state", "!=", "cancel"),
                 ("create_date", ">=", fields.Datetime.now() - TRACKING_WINDOW),
             ]
-        )._fetch_carrier_tracking()
+        )
+        delivered = self.search(
+            [
+                ("picking_type_id.code", "=", "outgoing"),
+                ("picking_type_id.auto_validation_carrier_ids", "!=", False),
+                ("carrier_tracking_state", "=", "delivered"),
+                ("state", "=", "assigned"),
+            ]
+        ).filtered(lambda picking: picking._is_carrier_auto_validation_enabled())
+        # Failed reads must recover before cached delivery can close a transfer.
+        retry = delivered.filtered(
+            lambda picking: (
+                picking.carrier_tracking_error
+                or not all(
+                    (picking.carrier_tracking_details or {})
+                    .get(reference, {})
+                    .get("state")
+                    == "delivered"
+                    for reference in picking._get_carrier_tracking_references()
+                )
+            )
+        )
+        (pending | retry)._fetch_carrier_tracking()
+        (delivered - retry)._complete_carrier_deliveries()
 
     def _fetch_carrier_tracking(self) -> None:
         groups = {}
@@ -297,6 +324,7 @@ class StockPicking(models.Model):
                         "date_carrier_tracking_sync": fields.Datetime.now(),
                     }
                 )
+        self._complete_carrier_deliveries()
 
     def _get_carrier_tracking_references(self) -> list[str]:
         self.check_singleton()
@@ -346,6 +374,7 @@ class StockPicking(models.Model):
                 status["state"] == "delivered"
                 and picking.carrier_tracking_state != "delivered"
                 and picking.state not in ("done", "cancel")
+                and not picking._is_carrier_auto_validation_enabled()
             )
         )
         self.write(

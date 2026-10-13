@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-10 07:49+0000\n"
-"PO-Revision-Date: 2026-10-10 07:49+0000\n"
+"POT-Creation-Date: 2026-10-13 20:04+0000\n"
+"PO-Revision-Date: 2026-10-13 20:04+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -39,6 +39,22 @@ msgid "At Destination"
 msgstr ""
 
 #. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking_type__auto_validation_carrier_ids
+msgid ""
+"Automatically validate ready outgoing transfers when all their tracking "
+"numbers report delivery through one of these carriers. Normal validation "
+"checks still apply. Leave empty to validate manually."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"Automatically validated after %(carrier)s confirmed delivery of all tracking"
+" numbers: %(references)s."
+msgstr ""
+
+#. module: delivery_tracking
 #. odoo-python
 #: code:addons/delivery_tracking/models/stock_picking.py:0
 msgid "Branch"
@@ -47,6 +63,16 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_status_branch
 msgid "Carrier Branch"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:mail.activity.type,name:delivery_tracking.mail_activity_type_carrier_validation
+msgid "Carrier Delivery Validation"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_validation_error
+msgid "Carrier Delivery Validation Blocked"
 msgstr ""
 
 #. module: delivery_tracking
@@ -119,6 +145,11 @@ msgid "Carrier: On the Way"
 msgstr ""
 
 #. module: delivery_tracking
+#: model_terms:ir.ui.view,arch_db:delivery_tracking.view_picking_search_carrier_tracking
+msgid "Carrier: Validation Blocked"
+msgstr ""
+
+#. module: delivery_tracking
 #. odoo-python
 #: code:addons/delivery_tracking/models/stock_picking.py:0
 msgid "Date"
@@ -127,6 +158,12 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_tracking_state__delivered
 msgid "Delivered"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "Delivered: resolve the validation issue"
 msgstr ""
 
 #. module: delivery_tracking
@@ -144,6 +181,7 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__display_name
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__display_name
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__display_name
 msgid "Display Name"
 msgstr ""
 
@@ -178,6 +216,7 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__id
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__id
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__id
 msgid "ID"
 msgstr ""
 
@@ -214,6 +253,11 @@ msgid "Packages"
 msgstr ""
 
 #. module: delivery_tracking
+#: model:ir.model,name:delivery_tracking.model_stock_picking_type
+msgid "Picking Type"
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields.selection,name:delivery_tracking.selection__stock_picking__carrier_delivery_kind__pickup
 msgid "Pickup at Branch"
 msgstr ""
@@ -229,6 +273,13 @@ msgstr ""
 msgid ""
 "Reads the status of this carrier's tracking numbers on a schedule. Each "
 "carrier connector adds itself here."
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,help:delivery_tracking.field_stock_picking__carrier_validation_error
+msgid ""
+"Reason the delivered transfer could not be validated automatically. Correct "
+"the issue and refresh tracking, or wait for the next scheduled run."
 msgstr ""
 
 #. module: delivery_tracking
@@ -295,6 +346,26 @@ msgid "The carrier returned no movement history."
 msgstr ""
 
 #. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "The delivered transfer has no open moves."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid "The delivered transfer was validated."
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"The quantities for %(product)s do not cover the full demand. Check the "
+"quantities and picked lines before retrying."
+msgstr ""
+
+#. module: delivery_tracking
 #: model:ir.model.fields,field_description:delivery_tracking.field_delivery_carrier__tracking_provider
 #: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking__carrier_tracking_provider
 msgid "Tracking Provider"
@@ -308,6 +379,19 @@ msgstr ""
 #. module: delivery_tracking
 #: model:ir.actions.server,name:delivery_tracking.ir_cron_fetch_carrier_tracking_ir_actions_server
 msgid "Transfers: read carrier tracking status"
+msgstr ""
+
+#. module: delivery_tracking
+#: model:ir.model.fields,field_description:delivery_tracking.field_stock_picking_type__auto_validation_carrier_ids
+msgid "Validate on Carrier Delivery"
+msgstr ""
+
+#. module: delivery_tracking
+#. odoo-python
+#: code:addons/delivery_tracking/models/stock_picking_validation.py:0
+msgid ""
+"Validation requires an additional confirmation. Open the transfer and "
+"validate it manually."
 msgstr ""
 
 #. module: delivery_tracking

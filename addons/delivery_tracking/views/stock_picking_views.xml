@@ -52,6 +52,10 @@
                         name="carrier_tracking_error"
                         invisible="not carrier_tracking_error"
                         class="text-danger" />
+                    <field
+                        name="carrier_validation_error"
+                        invisible="not carrier_validation_error or state in ('done', 'cancel')"
+                        class="text-danger" />
                 </group>
             </xpath>
             <xpath expr="//page[@name='extra']" position="after">
@@ -67,6 +71,10 @@
                         class="oe_link" />
                     <group name="carrier_tracking_details_sync">
                         <field name="date_carrier_tracking_sync" />
+                        <field
+                            name="carrier_validation_error"
+                            invisible="not carrier_validation_error or state in ('done', 'cancel')"
+                            class="text-danger" />
                         <field
                             name="carrier_tracking_error"
                             invisible="not carrier_tracking_error"
@@ -92,6 +100,7 @@
                     decoration-info="carrier_tracking_state in ('at_destination', 'out_for_delivery')"
                     decoration-success="carrier_tracking_state == 'delivered'" />
                 <field name="date_carrier_status" optional="hide" />
+                <field name="carrier_validation_error" optional="hide" />
             </xpath>
         </field>
     </record>
@@ -115,6 +124,10 @@
                     name="carrier_delivered_open"
                     string="Carrier: Delivered, Not Validated"
                     domain="[('carrier_tracking_state', '=', 'delivered'), ('state', 'not in', ('done', 'cancel'))]" />
+                <filter
+                    name="carrier_validation_blocked"
+                    string="Carrier: Validation Blocked"
+                    domain="[('carrier_validation_error', '!=', False), ('state', 'not in', ('done', 'cancel'))]" />
             </search>
         </field>
     </record>
