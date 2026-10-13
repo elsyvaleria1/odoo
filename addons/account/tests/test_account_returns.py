@@ -3671,7 +3671,18 @@ class TestAccountReturn(TestAccountReportsCommon):
         january_return.action_submit()
         self.assertIn(january_return.state, ("submitted", "paid"))
         self.assertTrue(january_return.date_submission)
+        self.assertEqual(
+            self.env.company.account_config_id.tax_lock_date, january_return.date_to
+        )
 
+        self.env["account.lock_exception"].create(
+            {
+                "company_id": self.env.company.id,
+                "user_id": self.simple_accountman.id,
+                "tax_lock_date": december_return.date_from - relativedelta(days=1),
+                "reason": "reset the returns",
+            }
+        )
         january_return.action_reset_tax_return_common()
         december_return.action_reset_tax_return_common()
         self.assertRecordValues(

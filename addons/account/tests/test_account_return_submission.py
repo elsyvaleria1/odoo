@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+from dateutil.relativedelta import relativedelta
+
 from odoo import Command, fields
 from odoo.exceptions import UserError
 from odoo.tests import tagged
@@ -61,6 +63,16 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
             tax_return.action_validate()
         self.assertEqual(tax_return.state, "reviewed")
         return tax_return
+
+    def _allow_resetting(self, tax_return):
+        self.env["account.lock_exception"].create(
+            {
+                "company_id": tax_return.company_id.id,
+                "user_id": self.env.user.id,
+                "tax_lock_date": tax_return.date_from - relativedelta(days=1),
+                "reason": "the authority rejected the filing",
+            }
+        )
 
     def _accepted_submission(self):
         tax_return = self._reviewed_return()
@@ -195,6 +207,10 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
             error_payload={"errors": [{"code": "E12", "message": "Bad period"}]},
         )
 
+        self.assertEqual(
+            tax_return.company_id.account_config_id.tax_lock_date, tax_return.date_to
+        )
+        self._allow_resetting(tax_return)
         tax_return.action_reset_2_states()
 
         self.assertEqual(tax_return.state, "new")
@@ -208,6 +224,10 @@ class TestAccountReturnSubmission(TestAccountReportsCommon):
             "rejected",
             error_payload={"errors": [{"code": "E12", "message": "Bad period"}]},
         )
+        self.assertEqual(
+            tax_return.company_id.account_config_id.tax_lock_date, tax_return.date_to
+        )
+        self._allow_resetting(tax_return)
         tax_return.action_reset_2_states()
 
         with patch.object(

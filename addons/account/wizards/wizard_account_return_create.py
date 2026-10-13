@@ -38,6 +38,19 @@ class WizardAccountReturnCreate(models.TransientModel):
         required=True,
         domain="[('id', 'in', available_return_type_ids)]",
     )
+    available_country_ids = fields.Many2many(
+        comodel_name="res.country",
+        compute="_compute_available_country_ids",
+    )
+    country_id = fields.Many2one(
+        comodel_name="res.country",
+        string="Filing Country",
+        compute="_compute_country_id",
+        store=True,
+        readonly=False,
+        domain="[('id', 'in', available_country_ids)]",
+    )
+    show_country_id = fields.Boolean(compute="_compute_available_country_ids")
     date_from = fields.Date(required=True)
     date_to = fields.Date(required=True)
     show_warning_wrong_dates = fields.Boolean(compute="_compute_warnings")
@@ -84,6 +97,44 @@ class WizardAccountReturnCreate(models.TransientModel):
                     available=wizard.available_return_type_ids,
                 )
                 wizard.return_type_id = wizard.available_return_type_ids[:1]
+
+    @api.depends("company_id", "return_type_id")
+    def _compute_available_country_ids(self) -> None:
+        for wizard in self:
+            company = wizard.company_id
+            if wizard.return_type_id.country_id:
+                wizard.available_country_ids = wizard.return_type_id.country_id
+            elif wizard.return_type_id.is_tax_return_type:
+                wizard.available_country_ids = (
+                    company.tax_config_id.account_fiscal_country_id
+                    | wizard._get_foreign_vat_countries()
+                )
+            else:
+                wizard.available_country_ids = (
+                    company.tax_config_id.account_fiscal_country_id
+                )
+            wizard.show_country_id = len(wizard.available_country_ids) > 1
+
+    @api.depends("available_country_ids")
+    def _compute_country_id(self) -> None:
+        for wizard in self:
+            if wizard.country_id not in wizard.available_country_ids:
+                wizard.country_id = wizard.available_country_ids[:1]
+
+    def _get_foreign_vat_countries(self):
+        self.check_singleton()
+        return (
+            self.env["account.fiscal.position"]
+            .search(  # noqa: E8507 -- a transient wizard opened on one company
+                [
+                    *self.env["account.fiscal.position"]._get_domain_company_compatible(
+                        self.company_id
+                    ),
+                    ("foreign_vat", "!=", False),
+                ]
+            )
+            .country_id
+        )
 
     @api.depends(
         "show_warning_existing_return",
@@ -141,18 +192,7 @@ class WizardAccountReturnCreate(models.TransientModel):
                 wizard.company_id.tax_config_id.account_fiscal_country_id
             ][wizard.category]
 
-            foreign_vat_fpos_countries = (
-                self.env["account.fiscal.position"]
-                .search(  # noqa: E8507 -- a transient wizard opened on one company
-                    [
-                        *self.env[
-                            "account.fiscal.position"
-                        ]._get_domain_company_compatible(wizard.company_id),
-                        ("foreign_vat", "!=", False),
-                    ]
-                )
-                .mapped("country_id")
-            )
+            foreign_vat_fpos_countries = wizard._get_foreign_vat_countries()
 
             foreign_return_types = self.env["account.return.type"]
             for foreign_country in foreign_vat_fpos_countries:
@@ -216,11 +256,16 @@ class WizardAccountReturnCreate(models.TransientModel):
         return [
             ("company_id", "=", company.id),
             ("type_id", "=", self.return_type_id._origin.id),
+            (
+                "country_id",
+                "=",
+                self.return_type_id._get_filing_country(company, self.country_id).id,
+            ),
             ("date_from", "<=", self.date_to),
             ("date_to", ">=", self.date_from),
         ]
 
-    @api.depends("date_from", "date_to", "return_type_id")
+    @api.depends("date_from", "date_to", "return_type_id", "country_id")
     @_debug.perf.timed
     def _compute_warnings(self) -> None:
         for wizard in self:
@@ -325,6 +370,7 @@ class WizardAccountReturnCreate(models.TransientModel):
             tax_unit,
             allow_duplicates=True,
             bypass_period_check=True,
+            country=self.country_id,
         )
         returns_created.skipped_check_cycles = ",".join(
             v

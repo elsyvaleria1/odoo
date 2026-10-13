@@ -270,6 +270,7 @@
                     <field name="date_from" />
                     <field name="date_deadline" />
                     <field name="type_id" />
+                    <field name="country_id" />
                     <field name="state" />
                     <field name="date_submission" />
                     <filter

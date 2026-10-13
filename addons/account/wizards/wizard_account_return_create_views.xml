@@ -20,6 +20,11 @@
                         options="{'no_open': True, 'no_create_edit': True}"
                         required="1"
                         class="w-100" />
+                    <field name="available_country_ids" invisible="1" />
+                    <field
+                        name="country_id"
+                        options="{'no_open': True, 'no_create': True}"
+                        invisible="not show_country_id" />
                     <label for="date_from" string="Dates" />
                     <div class="d-flex align-items-center col-10 col-lg-6">
                         <field name="date_to" invisible="1" />

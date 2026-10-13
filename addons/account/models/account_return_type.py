@@ -282,10 +282,22 @@ class AccountReturnType(models.Model):
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
 
-    def _can_return_exist(self, company, tax_unit=False) -> bool:
+    def _get_filing_country(self, company, country=None):
+        return (
+            country
+            or self.country_id
+            or company.tax_config_id.account_fiscal_country_id
+        )
+
+    def _get_domain_filing_country(self, company, filing_country):
+        if filing_country == company.tax_config_id.account_fiscal_country_id:
+            return Domain("country_id", "in", [filing_country.id, False])
+        return Domain("country_id", "=", filing_country.id)
+
+    def _can_return_exist(self, company, tax_unit=False, country=None) -> bool:
+        country = country or self.country_id
         is_foreign_vat = (
-            bool(self.country_id)
-            and company.tax_config_id.account_fiscal_country_id != self.country_id
+            bool(country) and company.tax_config_id.account_fiscal_country_id != country
         )
 
         is_tax_unit_main_comp = not tax_unit or tax_unit.main_company_id == company
@@ -426,7 +438,9 @@ class AccountReturnType(models.Model):
         for return_to_check in all_return_that_might_be_deleted:
             if (
                 not return_to_check.type_id._can_return_exist(
-                    return_to_check.company_id, return_to_check.tax_unit_id
+                    return_to_check.company_id,
+                    return_to_check.tax_unit_id,
+                    country=return_to_check.country_id,
                 )
                 or return_to_check.date_deadline
                 < return_to_check.company_id.account_config_id.account_opening_date
@@ -448,30 +462,31 @@ class AccountReturnType(models.Model):
         if self.env.context.get("only_refresh_conditional_types"):
             return
 
-        if (
+        is_domestic = (
             main_company.sudo().tax_config_id.account_fiscal_country_id.code
             == country_code
-        ):
-            search_domain = Domain.AND(
-                [
-                    Domain("auto_generate", "=", True),
-                    Domain.OR(
-                        [
-                            Domain("country_id", "=", False),
-                            Domain("country_id.code", "=", country_code),
-                        ]
-                    ),
-                ]
+        )
+        report_types = (
+            self.env["account.return.type"]
+            .sudo()
+            .search(
+                Domain("auto_generate", "=", True)
+                & (
+                    Domain("country_id", "=", False)
+                    | Domain("country_id.code", "=", country_code)
+                )
             )
-        else:
-            search_domain = Domain.AND(
-                [
-                    Domain("country_id.code", "=", country_code),
-                    Domain("auto_generate", "=", True),
-                ]
+        )
+        foreign_country = self.env["res.country"]
+        if not is_domestic:
+            report_types = report_types.filtered(
+                lambda return_type: (
+                    return_type.country_id or return_type.is_tax_return_type
+                )
             )
-
-        report_types = self.env["account.return.type"].sudo().search(search_domain)
+            foreign_country = self.env["res.country"].search(
+                [("code", "=", country_code)], limit=1
+            )
         _debug.pipeline(
             "_generate_all_returns",
             company=main_company,
@@ -481,7 +496,9 @@ class AccountReturnType(models.Model):
         )
         for report_type in report_types:
             report_type._try_create_returns_for_fiscal_year(
-                main_company, tax_unit=tax_unit
+                main_company,
+                tax_unit=tax_unit,
+                country=foreign_country if not report_type.country_id else None,
             )
 
     @api.onchange("category")
@@ -492,9 +509,15 @@ class AccountReturnType(models.Model):
 
     @_debug.perf.timed
     def _try_create_returns_for_fiscal_year(
-        self, main_company, tax_unit, allow_duplicates=False, bypass_period_check=False
+        self,
+        main_company,
+        tax_unit,
+        allow_duplicates=False,
+        bypass_period_check=False,
+        country=None,
     ):
         self.check_singleton()
+        filing_country = self._get_filing_country(main_company, country)
         if self.report_id.filter_multi_company != "tax_units":
             tax_unit = False
 
@@ -521,7 +544,7 @@ class AccountReturnType(models.Model):
             allow_duplicates=allow_duplicates,
         )
 
-        if not self._can_return_exist(main_company, tax_unit):
+        if not self._can_return_exist(main_company, tax_unit, country=filing_country):
             returns_to_unlink = (
                 self.env["account.return"]
                 .sudo()
@@ -531,6 +554,7 @@ class AccountReturnType(models.Model):
                         ("date_lock", "=", False),
                         ("is_completed", "=", False),
                         ("type_id", "=", self.id),
+                        *self._get_domain_filing_country(main_company, filing_country),
                         ("date_to", ">=", date_from),
                         ("date_from", "<=", date_to),
                         ("manually_created", "=", False),
@@ -573,7 +597,7 @@ class AccountReturnType(models.Model):
             for other_main_company in other_main_companies:
                 if other_main_company.account_config_id.account_opening_date:
                     self._try_create_returns_for_fiscal_year(
-                        other_main_company, tax_unit
+                        other_main_company, tax_unit, country=country
                     )
 
         expected_companies = (
@@ -607,11 +631,15 @@ class AccountReturnType(models.Model):
                         main_company.id,
                     ),
                     ("type_id", "=", self.id),
+                    *self._get_domain_filing_country(main_company, filing_country),
                     ("date_to", ">=", date_from),
                     ("date_from", "<=", date_to),
                 ]
             )
         )
+        existing_returns.filtered(
+            lambda account_return: not account_return.country_id
+        ).country_id = filing_country
         if existing_returns and not allow_duplicates:
             existing_periods = {
                 (account_return.date_from, account_return.date_to): self.env[
@@ -712,8 +740,11 @@ class AccountReturnType(models.Model):
         for period_from, period_to in periods:
             create_vals_list.append(
                 {
-                    "name": self._get_return_name(main_company, period_from, period_to),
+                    "name": self._get_return_name(
+                        main_company, period_from, period_to, country=filing_country
+                    ),
                     "type_id": self.id,
+                    "country_id": filing_country.id,
                     "company_id": main_company.id,
                     "date_from": period_from,
                     "date_to": period_to,
@@ -890,6 +921,9 @@ class AccountReturnType(models.Model):
                     ("date_from", "=", period_start),
                     ("date_to", "=", period_end),
                     ("type_id", "=", self.id),
+                    *self._get_domain_filing_country(
+                        main_company, self._get_filing_country(main_company)
+                    ),
                 ]
             )
         )
@@ -940,12 +974,14 @@ class AccountReturnType(models.Model):
         period_to=None,
         minimal=False,
         all_lang=False,
+        country=None,
     ):
         main_company = main_company.sudo()
+        country = country or self.country_id
         country_code = (
-            f"({self.country_id.code})"
-            if self.country_id
-            and self.country_id != main_company.tax_config_id.account_fiscal_country_id
+            f"({country.code})"
+            if country
+            and country != main_company.tax_config_id.account_fiscal_country_id
             else ""
         )
         _debug.logic(

@@ -6,6 +6,7 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.modules.module import get_module_path, load_script
 from odoo.tests import tagged
 
 from odoo.addons.account.models.account_return_type import MONTHS_PER_PERIOD
@@ -623,8 +624,9 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
             self.root_company.account_config_id.tax_lock_date, date(2024, 1, 31)
         )
 
-    def test_a_foreign_type_over_a_countryless_report_closes_its_country_only(self):
+    def _post_a_domestic_and_a_belgian_sale(self):
         belgium = self.env.ref("base.be")
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
         self.root_company.account_config_id.account_opening_date = "2023-01-01"
         foreign_vat = self.env["account.fiscal.position"].create(
             {
@@ -685,6 +687,13 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
                 )
             ]
         ).action_post()
+        return domestic_tax, belgian_tax, payable | receivable
+
+    def test_a_foreign_type_over_a_countryless_report_closes_its_country_only(self):
+        belgium = self.env.ref("base.be")
+        _domestic_tax, _belgian_tax, belgian_accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
         return_type = self.env["account.return.type"].create(
             {
                 "name": "VAT Return (Marin, BE)",
@@ -706,10 +715,143 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         tax_return.action_validate(bypass_failing_tests=True)
 
         closed_taxes = tax_return.closing_move_ids.line_ids.filtered(
-            lambda line: line.account_id not in (payable | receivable)
+            lambda line: line.account_id not in belgian_accounts
         )
         self.assertRecordValues(
             closed_taxes,
             [{"name": "BE 21%", "debit": 210.0, "credit": 0.0}],
         )
         self.assertEqual(tax_return.period_amount_to_pay, 210.0)
+
+    def _january_returns_of_the_countryless_type(self):
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+        self.env["account.return"].search(
+            [
+                ("type_id", "=", self.return_type.id),
+                ("company_id", "=", self.root_company.id),
+                ("date_to", "<", "2024-01-01"),
+            ]
+        )._as_workflow_step().write({"is_completed": True})
+        return self.env["account.return"].search(
+            [
+                ("type_id", "=", self.return_type.id),
+                ("company_id", "=", self.root_company.id),
+                ("date_from", "=", "2024-01-01"),
+            ]
+        )
+
+    def _closed_tax_amounts(self, tax_returns, taxes):
+        return sorted(
+            (line.name, line.debit)
+            for line in tax_returns.closing_move_ids.line_ids
+            if line.name in taxes.mapped("name")
+        )
+
+    def test_a_countryless_domestic_return_leaves_foreign_vat_lines_out(self):
+        domestic_tax, belgian_tax, _belgian_accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        domestic_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: not r.name.endswith("(BE)")
+        )
+
+        domestic_return.action_validate(bypass_failing_tests=True)
+
+        self.assertEqual(
+            self._closed_tax_amounts(domestic_return, domestic_tax + belgian_tax),
+            [(domestic_tax.name, 15.0)],
+        )
+
+    def test_a_countryless_type_is_filed_for_each_foreign_vat_country(self):
+        domestic_tax, belgian_tax, _belgian_accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        returns = self._january_returns_of_the_countryless_type()
+        self.assertEqual(len(returns), 2)
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        domestic_return = returns.filtered(lambda r: r.country_id == fiscal_country)
+        foreign_return = returns - domestic_return
+        self.assertEqual(foreign_return.country_id, self.env.ref("base.be"))
+        self.assertTrue(foreign_return.name.endswith("(BE)"), foreign_return.name)
+
+        with self.subTest("a second sync creates nothing"):
+            self.assertEqual(self._january_returns_of_the_countryless_type(), returns)
+
+        foreign_return.action_validate(bypass_failing_tests=True)
+        domestic_return.action_validate(bypass_failing_tests=True)
+
+        self.assertEqual(
+            self._closed_tax_amounts(foreign_return, domestic_tax + belgian_tax),
+            [("BE 21%", 210.0)],
+        )
+        self.assertEqual(
+            self._closed_tax_amounts(returns, domestic_tax + belgian_tax),
+            sorted([(domestic_tax.name, 15.0), ("BE 21%", 210.0)]),
+        )
+
+    def test_the_creation_wizard_files_a_countryless_type_for_a_foreign_country(self):
+        belgium = self.env.ref("base.be")
+        self._post_a_domestic_and_a_belgian_sale()
+        self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id)]
+        ).sudo().unlink()
+        wizard = self.env["wizard.account.return.create"].create(
+            {
+                "return_type_id": self.return_type.id,
+                "country_id": belgium.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+            }
+        )
+        self.assertEqual(
+            wizard.available_country_ids,
+            self.root_company.tax_config_id.account_fiscal_country_id + belgium,
+        )
+        self.assertTrue(wizard.show_country_id)
+        wizard.action_create_manual_account_returns()
+
+        created = self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id)]
+        )
+        self.assertEqual(created.country_id, belgium)
+        self.assertEqual(created.date_to, date(2024, 1, 31))
+
+    def test_migration_fills_the_return_country(self):
+        belgium = self.env.ref("base.be")
+        belgian_type = self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, BE)",
+                "report_id": self.tax_report.id,
+                "country_id": belgium.id,
+                "auto_generate": False,
+            }
+        )
+        returns = self.env["account.return"].create(
+            [
+                {
+                    "name": f"January {return_type.name}",
+                    "type_id": return_type.id,
+                    "company_id": self.root_company.id,
+                    "date_from": "2024-01-01",
+                    "date_to": "2024-01-31",
+                }
+                for return_type in (self.return_type, belgian_type)
+            ]
+        )
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_return SET country_id = NULL WHERE id = ANY(%s)",
+            [returns.ids],
+        )
+        self.env.invalidate_all()
+        script = load_script(
+            f"{get_module_path('account')}/migrations/1.50/post-10-return_country.py",
+            "odoo.addons.account.migrations.post_10_return_country_1_50",
+        )
+        script.migrate(self.env.cr, "1.49")
+        self.env.invalidate_all()
+
+        self.assertEqual(
+            returns.mapped("country_id"),
+            self.root_company.tax_config_id.account_fiscal_country_id + belgium,
+        )

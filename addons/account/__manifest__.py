@@ -1,6 +1,6 @@
 {
     "name": "Accounting and Invoicing",
-    "version": "1.49",
+    "version": "1.50",
     "oldest_upgradable_version": "1.35",
     "category": "Accounting/Accounting",
     "sequence": 10,

@@ -770,6 +770,10 @@ class AccountReport(models.Model):
                 **previous_options["return_periodicity"],
                 "report_id": self.id,
             }
+            if "selected_return_country_id" in previous_options:
+                options["return_periodicity"]["country_id"] = previous_options[
+                    "selected_return_country_id"
+                ]
             _debug.logic(
                 "return_periodicity_kept",
                 report=self,
@@ -801,6 +805,8 @@ class AccountReport(models.Model):
                 "return_type_id": return_type.id,
                 "report_id": self.id,
             }
+            if return_country_id := previous_options.get("selected_return_country_id"):
+                options["return_periodicity"]["country_id"] = return_country_id
             _debug.logic(
                 "return_periodicity_from_type",
                 report=self,
@@ -1200,10 +1206,12 @@ class AccountReport(models.Model):
         return domains
 
     def _get_tax_filing_country(self, options):
+        return_periodicity = options.get("return_periodicity") or {}
         return (
             self.country_id
+            or self.env["res.country"].browse(return_periodicity.get("country_id"))
             or self.env["account.return.type"]
-            .browse((options.get("return_periodicity") or {}).get("return_type_id"))
+            .browse(return_periodicity.get("return_type_id"))
             .country_id
         )
 
