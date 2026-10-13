@@ -38,7 +38,15 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             ]
         else:
             options["bank_reconciliation_report_journal_id"] = (
-                self.env["account.journal"].search([("type", "=", "bank")], limit=1).id
+                self.env["account.journal"]
+                .search(
+                    [
+                        ("type", "=", "bank"),
+                        ("company_id", "in", report.get_report_company_ids(options)),
+                    ],
+                    limit=1,
+                )
+                .id
             )
 
         is_multi_currency = self.env.user.has_group(
@@ -235,12 +243,26 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         bank_miscellaneous_domain = self._get_domain_bank_miscellaneous_move_lines(
             options, journal
         )
+        _debug.logic(
+            "misc_operations_scope",
+            report=report,
+            journal=journal,
+            skipped=bank_miscellaneous_domain is None,
+        )
+        if bank_miscellaneous_domain is None:
+            return (
+                []
+                if current_groupby
+                else self._prepare_custom_engine_result(
+                    amount_currency_id=journal_currency.id
+                )
+            )
         bank_miscellaneous_domain = Domain.AND(
             [bank_miscellaneous_domain, [("journal_id", "!=", exchange_journal.id)]]
         )
 
         base_query = report._get_report_query(
-            options, "strict_range", domain=bank_miscellaneous_domain or []
+            options, "strict_range", domain=bank_miscellaneous_domain
         )
 
         groupby_field_sql = (

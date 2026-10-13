@@ -2920,17 +2920,7 @@ class AccountReport(models.Model):
             column_group_key,
             column_group_options,
         ) in self._split_options_per_column_group(options).items():
-            data = get_column_group_result(
-                column_group_options
-                | {
-                    "forced_domain": [
-                        domain
-                        for domain in column_group_options["forced_domain"]
-                        if domain != ("id", "=", False)
-                    ],
-                },
-                date_scope,
-            )
+            data = get_column_group_result(column_group_options, date_scope)
             _debug.perf.count(
                 "unallocated_earnings_rows",
                 rows=len(data),

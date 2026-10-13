@@ -50,9 +50,7 @@ class AccountDeferredReportHandler(models.AbstractModel):
         ]
 
     @_debug.perf.timed
-    def _get_domain_deferred_lines(
-        self, report, options, filter_already_generated=False, filter_not_started=False
-    ):
+    def _get_domain_deferred_lines(self, report, options, filter_not_started=False):
         domain = report._get_domain_options(options, "from_beginning")
         internal_group = (
             "expense" if self._get_deferred_report_type() == "expense" else "income"
@@ -67,32 +65,12 @@ class AccountDeferredReportHandler(models.AbstractModel):
             ]
         )
         domain &= Domain(self._get_domain_fully_inside_period(options))
-        if filter_already_generated:
-            domain &= Domain(
-                [
-                    ("deferred_end_date", ">=", options["date"]["date_from"]),
-                    "!",
-                    (
-                        "move_id.deferred_move_ids",
-                        "any",
-                        [
-                            ("date", "=", options["date"]["date_to"]),
-                            "|",
-                            ("state", "=", "posted"),
-                            "&",
-                            ("auto_post", "=", "at_date"),
-                            ("date", ">=", fields.Date.context_today(self)),
-                        ],
-                    ),
-                ]
-            )
         if filter_not_started:
             domain &= Domain("deferred_start_date", ">", options["date"]["date_to"])
         _debug.logic(
             "deferred_domain_built",
             report=report,
             internal_group=internal_group,
-            filter_already_generated=filter_already_generated,
             filter_not_started=filter_not_started,
         )
         return domain
@@ -269,7 +247,9 @@ class AccountDeferredReportHandler(models.AbstractModel):
             column_dict["date_from"] = column_options["date"]["date_from"]
             column_dict["date_to"] = column_options["date"]["date_to"]
 
-        options["columns"] = list(reversed(options["columns"]))
+        options["columns"] = sorted(
+            options["columns"], key=lambda column: column["date_from"]
+        )
         total_column = [
             {
                 **options["columns"][0],
@@ -398,12 +378,9 @@ class AccountDeferredReportHandler(models.AbstractModel):
         column_date_from = fields.Date.to_date(column_values["date_from"])
         column_date_to = fields.Date.to_date(column_values["date_to"])
         report_date_from = fields.Date.to_date(options["date"]["date_from"])
-        report_date_to = fields.Date.to_date(options["date"]["date_to"])
 
-        if column_values["expression_label"] in ("not_started", "later"):
-            column_date_from = report_date_to + relativedelta(days=1)
-        if column_values["expression_label"] == "before":
-            column_date_to = report_date_from - relativedelta(days=1)
+        if column_values["expression_label"] == "not_started":
+            column_date_from += relativedelta(days=1)
 
         _grouping_model, grouping_record_id = report._get_model_info_from_id(
             params.get("calling_line_dict_id")

@@ -405,7 +405,6 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
 
             FROM %(table_references)s
 
-            JOIN account_journal journal ON journal.id = account_move_line.journal_id
             JOIN account_move aged_move ON aged_move.id = account_move_line.move_id
             %(currency_table_join)s
 
@@ -699,17 +698,15 @@ class AccountAgedPartnerBalanceReportHandler(models.AbstractModel):
             "total": 0,
         }
 
-    def aged_partner_balance_audit(self, options, params, journal_type, internal_type):
+    def aged_partner_balance_audit(self, options, params, internal_type):
         report = self.env["report.formula"].browse(options["report_id"])
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "account.action_amounts_to_settle"
         )
-        journal_type_to_exclude = {"purchase": "sale", "sale": "purchase"}
         if options:
             domain = [
                 ("account_id.reconcile", "=", True),
                 ("account_id.account_type", "=", internal_type),
-                ("journal_id.type", "!=", journal_type_to_exclude.get(journal_type)),
                 *self._prepare_domain_from_period(options, params["expression_label"]),
                 *report._get_domain_options(options, "from_beginning"),
                 *report._get_domain_audit_line_groupby(params["calling_line_dict_id"]),
@@ -770,7 +767,6 @@ class AccountAgedSideReportHandler(models.AbstractModel):
     _aged_account_type = None
     _aged_internal_type = None
     _aged_line_xmlid = None
-    _aged_audit_journal_type = None
 
     def _get_aged_account_type_option(self):
         raise NotImplementedError
@@ -799,7 +795,7 @@ class AccountAgedSideReportHandler(models.AbstractModel):
     def action_audit_cell(self, options, params):
         _debug.lifecycle("action_audit_cell", records=self)
         return super().aged_partner_balance_audit(
-            options, params, self._aged_audit_journal_type, self._aged_internal_type
+            options, params, self._aged_internal_type
         )
 
 
@@ -811,7 +807,6 @@ class AccountAgedPayableReportHandler(models.AbstractModel):
     _aged_account_type = "trade_payable"
     _aged_internal_type = "liability_payable"
     _aged_line_xmlid = "account.aged_payable_line"
-    _aged_audit_journal_type = "purchase"
 
     def _get_aged_account_type_option(self):
         return {
@@ -829,7 +824,6 @@ class AccountAgedReceivableReportHandler(models.AbstractModel):
     _aged_account_type = "trade_receivable"
     _aged_internal_type = "asset_receivable"
     _aged_line_xmlid = "account.aged_receivable_line"
-    _aged_audit_journal_type = "sale"
 
     def _get_aged_account_type_option(self):
         return {

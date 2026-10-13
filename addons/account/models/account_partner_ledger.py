@@ -136,16 +136,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             line_dict_id
         )
 
-        prefix_domain = Domain("partner_id.name", "=ilike", f"{matched_prefix}%")
-        if self._get_no_partner_line_label().upper().startswith(matched_prefix):
-            prefix_domain |= Domain("partner_id", "=", None)
-
-        expand_options = {
-            **options,
-            "forced_domain": list(
-                Domain(options.get("forced_domain", [])) & prefix_domain
-            ),
-        }
+        expand_options = {**options, "partner_name_prefix": matched_prefix}
         parent_level = len(matched_prefix) * 2
         partner_lines, _dummy = self._prepare_partner_lines(
             report, expand_options, level_shift=parent_level
@@ -327,17 +318,16 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             prefix = report._get_prefix_groups_matched_prefix_from_line_id(
                 line_dict["id"]
             )
-            partner_prefix_domains.append([("name", "=ilike", f"{prefix}%")])
+            partner_prefix_domains.append(
+                Domain("partner_id.name", "=ilike", f"{prefix}%")
+            )
 
             if no_partner_line_label.startswith(prefix):
                 partner_ids_to_expand.append(None)
 
         if partner_prefix_domains:
-            partner_ids_to_expand += (
-                self.env["res.partner"]
-                .with_context(active_test=False)
-                .search(Domain.OR(partner_prefix_domains))
-                .ids
+            partner_ids_to_expand += self._get_report_partner_ids(
+                report, options, Domain.OR(partner_prefix_domains)
             )
         _debug.pipeline(
             "unfold_batch_partners_collected",
@@ -362,6 +352,27 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             if partner_ids_to_expand
             else {},
         }
+
+    def _get_report_partner_ids(self, report, options, domain) -> list:
+        partner_ids = set()
+        for column_group_options in report._split_options_per_column_group(
+            options
+        ).values():
+            query = report._get_report_query(
+                column_group_options, "from_beginning", domain=domain
+            )
+            partner_ids.update(
+                partner_id
+                for (partner_id,) in self.env.execute_query(
+                    SQL(
+                        "SELECT DISTINCT account_move_line.partner_id FROM %s WHERE %s",
+                        query.from_clause,
+                        query.where_clause,
+                    )
+                )
+                if partner_id
+            )
+        return sorted(partner_ids)
 
     @api.model
     @_debug.perf.timed
@@ -488,6 +499,44 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             for partner in partners
         ]
 
+    def _get_partner_name_prefix_domain(self, options) -> Domain:
+        prefix = options.get("partner_name_prefix")
+        if not prefix:
+            return Domain.TRUE
+        domain = Domain("partner_id.name", "=ilike", f"{prefix}%")
+        if self._get_no_partner_line_label().upper().startswith(prefix):
+            domain |= Domain("partner_id", "=", None)
+        return domain
+
+    def _get_partner_scope_condition(self, options, partner_id_sql) -> SQL:
+        partner_domain = Domain.TRUE
+        if options.get("partner_ids"):
+            partner_domain &= Domain(
+                "id", "in", [int(partner) for partner in options["partner_ids"]]
+            )
+        if options.get("partner_categories"):
+            partner_domain &= Domain(
+                "tag_ids",
+                "in",
+                [int(category) for category in options["partner_categories"]],
+            )
+        if partner_domain.is_true():
+            return SQL("TRUE")
+        partners = (
+            self.env["res.partner"]
+            .with_context(active_test=False)
+            ._search(partner_domain)
+        )
+        return SQL("%s IN %s", partner_id_sql, partners.subselect())
+
+    @staticmethod
+    def _get_partnerless_side_options(column_group_options) -> dict:
+        return {
+            key: value
+            for key, value in column_group_options.items()
+            if key not in ("partner_ids", "partner_categories", "partner_name_prefix")
+        }
+
     @_debug.perf.timed
     def _get_query_sums(self, report, options) -> SQL:
         queries = []
@@ -496,7 +545,11 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             column_group_key,
             column_group_options,
         ) in report._split_options_per_column_group(options).items():
-            query = report._get_report_query(column_group_options, "from_beginning")
+            query = report._get_report_query(
+                column_group_options,
+                "from_beginning",
+                domain=self._get_partner_name_prefix_domain(column_group_options),
+            )
 
             date_from = report._get_date_bounds_info(
                 column_group_options, "strict_range"
@@ -701,15 +754,23 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             column_group_key,
             column_group_options,
         ) in report._split_options_per_column_group(options).items():
-            partner_ids = column_group_options.pop("partner_ids", [])
+            partner_scope = self._get_partner_scope_condition(
+                column_group_options, SQL("aml_with_partner.partner_id")
+            )
             _debug.logic(
                 "sums_without_partner_scope",
                 report=report,
                 column_group=column_group_key,
-                partner_constraint=bool(partner_ids),
-                partners=len(partner_ids),
+                partner_ids=len(column_group_options.get("partner_ids") or []),
+                partner_categories=len(
+                    column_group_options.get("partner_categories") or []
+                ),
+                name_prefix=column_group_options.get("partner_name_prefix"),
             )
-            query = report._get_report_query(column_group_options, "from_beginning")
+            query = report._get_report_query(
+                self._get_partnerless_side_options(column_group_options),
+                "from_beginning",
+            )
             date_from = report._get_date_bounds_info(
                 column_group_options, "strict_range"
             )[0]
@@ -752,7 +813,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                 %(currency_table_join)s
                 WHERE partial.max_date <= %(date_to)s AND %(search_condition)s
                     AND account_move_line.partner_id IS NULL
-                    %(partner_id_constraint)s
+                    AND %(partner_scope)s
                 GROUP BY aml_with_partner.partner_id
                 """,
                     column_group_key=column_group_key,
@@ -768,11 +829,7 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                     ),
                     date_to=column_group_options["date"]["date_to"],
                     search_condition=query.where_clause,
-                    partner_id_constraint=SQL(
-                        " AND aml_with_partner.partner_id = ANY(%s)", list(partner_ids)
-                    )
-                    if partner_ids
-                    else SQL(""),
+                    partner_scope=partner_scope,
                 )
             )
 
@@ -932,6 +989,22 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
     def _prepare_aml_order_by_sql(self):
         return SQL("account_move_line.date, account_move_line.id")
 
+    def _get_aml_query_with_account(self, report, query_options) -> tuple:
+        query = report._get_report_query(query_options, "strict_range")
+        account_alias = query.left_join(
+            lhs_alias="account_move_line",
+            lhs_column="account_id",
+            rhs_table="account_account",
+            rhs_column="id",
+            link="account_id",
+        )
+        return (
+            query,
+            account_alias,
+            self.env["account.account"]._field_to_sql(account_alias, "code", query),
+            self.env["account.account"]._field_to_sql(account_alias, "name"),
+        )
+
     @_debug.perf.timed
     def _prepare_aml_values(self, options, partner_ids, offset=0, limit=None):
         rslt = {partner_id: [] for partner_id in partner_ids}
@@ -955,6 +1028,13 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
         directly_linked_aml_partner_clause = SQL(
             "(%s)", SQL(" OR ").join(directly_linked_aml_partner_clauses)
         )
+        indirectly_linked_aml_partner_clause = SQL(
+            "%s AND %s",
+            indirectly_linked_aml_partner_clause,
+            self._get_partner_scope_condition(
+                options, SQL("aml_with_partner.partner_id")
+            ),
+        )
         _debug.logic(
             "aml_partner_clauses",
             report=options.get("report_id"),
@@ -973,19 +1053,16 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
             options
         ).items():
             group_options.pop("partner_ids", None)
-            query = report._get_report_query(group_options, "strict_range")
-            account_alias = query.left_join(
-                lhs_alias="account_move_line",
-                lhs_column="account_id",
-                rhs_table="account_account",
-                rhs_column="id",
-                link="account_id",
+            query, _account_alias, account_code, account_name = (
+                self._get_aml_query_with_account(report, group_options)
             )
-            account_code = self.env["account.account"]._field_to_sql(
-                account_alias, "code", query
-            )
-            account_name = self.env["account.account"]._field_to_sql(
-                account_alias, "name"
+            (
+                partnerless_query,
+                partnerless_account_alias,
+                partnerless_account_code,
+                partnerless_account_name,
+            ) = self._get_aml_query_with_account(
+                report, self._get_partnerless_side_options(group_options)
             )
 
             queries.append(
@@ -1117,15 +1194,15 @@ class AccountPartnerLedgerReportHandler(models.AbstractModel):
                     balance_select=report._currency_table_apply_rate(
                         SQL("-SIGN(aml_with_partner.balance) * partial.amount")
                     ),
-                    account_code=account_code,
-                    account_name=account_name,
+                    account_code=partnerless_account_code,
+                    account_name=partnerless_account_name,
                     journal_name=journal_name,
                     column_group_key=column_group_key,
-                    table_references=query.from_clause,
+                    table_references=partnerless_query.from_clause,
                     currency_table_join=report._currency_table_aml_join(group_options),
                     indirectly_linked_aml_partner_clause=indirectly_linked_aml_partner_clause,
-                    account_alias=SQL.identifier(account_alias),
-                    search_condition=query.where_clause,
+                    account_alias=SQL.identifier(partnerless_account_alias),
+                    search_condition=partnerless_query.where_clause,
                     date_from=group_options["date"]["date_from"],
                     date_to=group_options["date"]["date_to"],
                     order_by=order_by,

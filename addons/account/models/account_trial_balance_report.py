@@ -449,7 +449,8 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                         (SELECT distinct account_account.id
                         FROM account_account
                         LEFT JOIN account_group ON
-                            (
+                            account_group.company_id = %(root_company_id)s
+                            AND (
                                 LEFT(account_account.code_store->>%(company_id)s, LENGTH(code_prefix_start)) BETWEEN
                                     code_prefix_start
                                 AND code_prefix_end
@@ -459,6 +460,7 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                         )""",
                         lang=self.env.lang or "en_US",
                         company_id=str(self.env.company.root_id.id),
+                        root_company_id=self.env.company.root_id.id,
                         filter_search_bar="%" + options["filter_search_bar"] + "%",
                     ),
                 )
@@ -682,39 +684,6 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
             lines[-1]["name"] = self.env._("Total")
 
         return lines
-
-    @_debug.perf.timed
-    def _report_expand_unfoldable_line_with_groupby(
-        self,
-        line_dict_id,
-        groupby,
-        options,
-        progress,
-        offset,
-        unfold_all_batch_data=None,
-    ):
-        report = self.env["report.formula"].browse(options["report_id"])
-        _debug.logic(
-            "initial_balance_amls_hidden",
-            report=report,
-            groupby=groupby,
-            hidden=groupby == "id",
-        )
-        if groupby != "id":
-            return report._report_expand_unfoldable_line_with_groupby(
-                line_dict_id, groupby, options, progress, offset, unfold_all_batch_data
-            )
-
-        for col_group_vals in options["column_groups"].values():
-            if (
-                col_group_vals["forced_options"]["trial_balance_column_type"]
-                == "initial_balance"
-            ):
-                col_group_vals["forced_domain"].append(("id", "=", False))
-
-        return report._report_expand_unfoldable_line_with_groupby(
-            line_dict_id, groupby, options, progress, offset, unfold_all_batch_data
-        )
 
     @_debug.perf.timed
     def _custom_unfold_all_batch_data_generator(

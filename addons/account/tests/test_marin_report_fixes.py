@@ -1,3 +1,4 @@
+import copy
 import datetime
 from unittest.mock import patch
 
@@ -683,3 +684,363 @@ class TestMarinReportFixes(TestAccountReportsCommon):
         moves_lines_to_generate = handler._get_moves_to_defer(options)[0]
         self.assertFalse(moves_lines_to_generate)
         self.assertTrue(options["all_entries"])
+
+
+@tagged("post_install", "-at_install")
+class TestMarinReportEngineFixes(TestAccountReportsCommon):
+    @staticmethod
+    def _cells(options, line, *labels):
+        by_label = {
+            column["expression_label"]: cell.get("no_format")
+            for column, cell in zip(options["columns"], line["columns"], strict=True)
+        }
+        return tuple(by_label[label] for label in labels)
+
+    def _payment_through_partnerless_misc(self, partner):
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=partner,
+            invoice_date="2019-03-01",
+            amounts=[1000.0],
+            taxes=[],
+            post=True,
+        )
+        receivable = self.company_data["default_account_receivable"]
+        misc_move = self.env["account.move"].create(
+            {
+                "date": "2019-03-02",
+                "journal_id": self.company_data["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "debit": 1000.0,
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                        }
+                    ),
+                    Command.create({"credit": 1000.0, "account_id": receivable.id}),
+                ],
+            }
+        )
+        misc_move.action_post()
+        (invoice.line_ids + misc_move.line_ids).filtered(
+            lambda line: line.account_id == receivable
+        ).reconcile()
+        return invoice, misc_move
+
+    def test_partner_ledger_keeps_partnerless_counterparts_under_partner_scopes(self):
+        report = self.env.ref("account.partner_ledger_report")
+        tag = self.env["res.partner.tag"].create({"name": "ledger tag"})
+        bernard = self._create_partner(
+            name="Bernard Gagnant", tag_ids=[Command.set(tag.ids)]
+        )
+        self._payment_through_partnerless_misc(bernard)
+
+        def bernard_cells(default_options):
+            options = self._generate_options(
+                report, "2019-03-01", "2019-03-31", default_options=default_options
+            )
+            line = next(
+                line
+                for line in report._get_lines(options)
+                if line["name"] == bernard.name
+            )
+            return self._cells(options, line, "debit", "credit", "balance")
+
+        self.assertEqual(
+            bernard_cells({"partner_ids": bernard.ids}), (1000.0, 1000.0, 0.0)
+        )
+        self.assertEqual(
+            bernard_cells({"partner_categories": tag.ids}), (1000.0, 1000.0, 0.0)
+        )
+        report.prefix_groups_threshold = 2
+        self.assertEqual(bernard_cells({"unfold_all": True}), (1000.0, 1000.0, 0.0))
+
+    def test_partner_ledger_unfolded_partner_lists_its_partnerless_counterpart_under_a_tag(
+        self,
+    ):
+        report = self.env.ref("account.partner_ledger_report")
+        tag = self.env["res.partner.tag"].create({"name": "ledger tag"})
+        bernard = self._create_partner(
+            name="Bernard Gagnant", tag_ids=[Command.set(tag.ids)]
+        )
+        _invoice, misc_move = self._payment_through_partnerless_misc(bernard)
+        options = self._generate_options(
+            report,
+            "2019-03-01",
+            "2019-03-31",
+            default_options={"unfold_all": True, "partner_categories": tag.ids},
+        )
+        self.assertIn(
+            misc_move.name, [line["name"] for line in report._get_lines(options)]
+        )
+
+    def test_partner_ledger_unfold_all_of_a_letter_expands_only_report_partners(self):
+        report = self.env.ref("account.partner_ledger_report")
+        handler = self.env["account.partner.ledger.report.handler"]
+        bernard = self._create_partner(name="Bernard Gagnant")
+        idle = self._create_partner(name="Bertrand Idle")
+        self._payment_through_partnerless_misc(bernard)
+        options = self._generate_options(report, "2019-03-01", "2019-03-31")
+        report._init_currency_table(options)
+        prefix_line_id = report._get_generic_line_id(
+            None, None, markup={"groupby_prefix_group": "b"}
+        )
+        batch = handler._custom_unfold_all_batch_data_generator(
+            report,
+            options,
+            {
+                "_report_expand_unfoldable_line_partner_ledger_prefix_group": [
+                    {"id": prefix_line_id}
+                ]
+            },
+        )
+        self.assertIn(bernard.id, batch["aml_values"])
+        self.assertNotIn(idle.id, batch["aml_values"])
+
+    def _setup_deferred_expense(self, method):
+        self.env.company.account_config_id.write(
+            {
+                "generate_deferred_expense_entries_method": method,
+                "deferred_expense_amount_computation_method": "month",
+                "deferred_expense_journal_id": self.company_data[
+                    "default_journal_misc"
+                ].id,
+                "deferred_expense_account_id": self.company_data[
+                    "default_account_deferred_expense"
+                ].id,
+            }
+        )
+        bill = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2023-01-01",
+                "date": "2023-01-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "deferred",
+                            "account_id": self.company_data[
+                                "default_account_expense"
+                            ].id,
+                            "price_unit": 1200.0,
+                            "tax_ids": [Command.clear()],
+                            "deferred_start_date": "2023-01-01",
+                            "deferred_end_date": "2023-12-31",
+                        }
+                    )
+                ],
+            }
+        )
+        bill.action_post()
+        self.env.cr.cache.pop("report_deferred_lines", None)
+        return bill
+
+    def test_deferred_comparison_columns_follow_the_dates_in_either_order(self):
+        report = self.env.ref("account.deferred_expense_report")
+        self._setup_deferred_expense("manual")
+        options = self._generate_options(report, "2023-04-01", "2023-04-30")
+
+        def total_line(period_order):
+            compared = self._update_comparison_filter(
+                options, report, "previous_period", 2, period_order=period_order
+            )
+            self.env.cr.cache.pop("report_deferred_lines", None)
+            line = report._get_lines(compared)[-1]
+            return [
+                (column["expression_label"], column["date_from"], cell["no_format"])
+                for column, cell in zip(
+                    compared["columns"], line["columns"], strict=True
+                )
+            ]
+
+        descending = total_line("descending")
+        self.assertEqual(
+            [(label, amount) for label, _date_from, amount in descending],
+            [
+                ("total", 1200.0),
+                ("not_started", 0.0),
+                ("before", 100.0),
+                ("current", 100.0),
+                ("current", 100.0),
+                ("current", 100.0),
+                ("recognized", 400.0),
+                ("later", 800.0),
+            ],
+        )
+        self.assertEqual(
+            [
+                date_from
+                for label, date_from, _amount in descending
+                if label == "current"
+            ],
+            ["2023-02-01", "2023-03-01", "2023-04-01"],
+        )
+        self.assertEqual(total_line("ascending"), descending)
+
+    def test_deferred_audit_of_before_stops_before_the_first_compared_period(self):
+        report = self.env.ref("account.deferred_expense_report")
+        handler = self.env["account.deferred.expense.report.handler"]
+        self._setup_deferred_expense("on_validation")
+        options = self._update_comparison_filter(
+            self._generate_options(report, "2023-04-01", "2023-04-30"),
+            report,
+            "previous_period",
+            1,
+        )
+        account_line = report._get_lines(options)[0]
+        before_column = next(
+            column
+            for column in options["columns"]
+            if column["expression_label"] == "before"
+        )
+        action = handler.action_audit_cell(
+            options,
+            {
+                "calling_line_dict_id": account_line["id"],
+                "expression_label": "before",
+                "column_group_key": before_column["column_group_key"],
+            },
+        )
+        audited_dates = set(
+            self.env["account.move.line"]
+            .search(action["domain"])
+            .filtered(
+                lambda line: (
+                    line.account_id == self.company_data["default_account_expense"]
+                )
+            )
+            .mapped("date")
+        )
+        self.assertTrue(audited_dates)
+        self.assertLess(max(audited_dates), datetime.date(2023, 3, 1))
+
+    def test_bank_reconciliation_report_renders_without_a_bank_journal(self):
+        company = self.env["res.company"].create({"name": "no bank company"})
+        self.env.user.company_ids |= company
+        report = (
+            self.env.ref("account.bank_reconciliation_report")
+            .with_company(company)
+            .with_context(allowed_company_ids=company.ids)
+        )
+        options = self._generate_options(report, "2019-01-01", "2019-01-31")
+        self.assertFalse(options["bank_reconciliation_report_journal_id"])
+        lines = report._get_lines(options)
+        misc_line = next(line for line in lines if line["name"] == "Misc. operations")
+        self.assertFalse(misc_line["columns"][-1]["no_format"])
+
+    def test_aged_audit_lists_what_the_cell_sums(self):
+        report = self.env.ref("account.aged_receivable_report")
+        handler = self.env["account.aged.receivable.report.handler"]
+        partner = self._create_partner(name="aged purchase journal partner")
+        move = self.env["account.move"].create(
+            {
+                "date": "2025-01-01",
+                "journal_id": self.company_data["default_journal_purchase"].id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "debit": 300.0,
+                            "partner_id": partner.id,
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "credit": 300.0,
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                        }
+                    ),
+                ],
+            }
+        )
+        move.action_post()
+        receivable_line = move.line_ids.filtered("partner_id")
+        options = self._generate_options(
+            report,
+            "2025-03-31",
+            "2025-03-31",
+            default_options={"partner_ids": partner.ids},
+        )
+        total_line = report._get_lines(options)[-1]
+        self.assertEqual(self._cells(options, total_line, "total"), (300.0,))
+
+        line_dict_id = self._get_basic_line_dict_id_from_report_line_ref(
+            "account.aged_receivable_line"
+        )
+        action = handler.action_audit_cell(
+            options, {"calling_line_dict_id": line_dict_id, "expression_label": "total"}
+        )
+        self.assertIn(
+            receivable_line, self.env["account.move.line"].search(action["domain"])
+        )
+
+    def test_trial_balance_expanding_journal_items_leaves_the_options_alone(self):
+        report = self.env.ref("account.trial_balance_report")
+        self.init_invoice(
+            "out_invoice", invoice_date="2019-03-01", amounts=[100.0], post=True
+        )
+        options = self._generate_options(report, "2019-03-01", "2019-03-31")
+        before = copy.deepcopy(options["column_groups"])
+        account_line = next(
+            line
+            for line in report._get_lines(options)
+            if report._get_model_info_from_id(line["id"])[0] == "account.account"
+        )
+        expanded_lines = report._expand_unfoldable_line(
+            "_report_expand_unfoldable_line_with_groupby",
+            account_line["id"],
+            "id",
+            options,
+            None,
+            0,
+            None,
+        )
+        self.assertTrue(expanded_lines)
+        self.assertEqual(options["column_groups"], before)
+        initial_balance_keys = {
+            key
+            for key, group in options["column_groups"].items()
+            if group["forced_options"]["trial_balance_column_type"] == "initial_balance"
+        }
+        for line in expanded_lines:
+            for column, cell in zip(options["columns"], line["columns"], strict=True):
+                if column["column_group_key"] in initial_balance_keys:
+                    self.assertFalse(cell.get("no_format"))
+
+    def test_trial_balance_group_search_ignores_other_companies_groups(self):
+        report = self.env.ref("account.trial_balance_report")
+        self.env["account.group"].create(
+            {
+                "name": "Zebra group",
+                "code_prefix_start": "1",
+                "code_prefix_end": "6",
+                "company_id": self.company_data_2["company"].id,
+            }
+        )
+        self.init_invoice(
+            "out_invoice", invoice_date="2019-03-01", amounts=[100.0], post=True
+        )
+        options = self._generate_options(
+            report,
+            "2019-03-01",
+            "2019-03-31",
+            default_options={
+                "hierarchy": True,
+                "unfold_all": True,
+                "export_mode": "print",
+                "filter_search_bar": "Zebra",
+            },
+        )
+        account_lines = [
+            line
+            for line in report._get_lines(options)
+            if report._get_model_info_from_id(line["id"])[0] == "account.account"
+        ]
+        self.assertFalse(account_lines)
