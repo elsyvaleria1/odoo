@@ -430,13 +430,18 @@ class WizardAccountMoveSend(models.TransientModel):
 
     def _update_preferred_settings(self) -> None:
         self.check_singleton()
+        partner = self.move_id.commercial_partner_id
         if (
-            not self.move_id.partner_id.invoice_template_pdf_report_id
+            not partner.invoice_template_pdf_report_id
             and self.pdf_report_id != self._get_default_pdf_report_id(self.move_id)
         ):
-            self.move_id.partner_id.sudo().invoice_template_pdf_report_id = (
-                self.pdf_report_id
+            _debug.logic(
+                "preferred_pdf_report_saved",
+                move=self.move_id,
+                partner=partner,
+                report=self.pdf_report_id,
             )
+            partner.sudo().invoice_template_pdf_report_id = self.pdf_report_id
 
     @api.model
     @_debug.perf.timed

@@ -12,7 +12,7 @@ from typing import Any, Self
 import psycopg
 from markupsafe import Markup
 
-from odoo import api, fields, models, modules
+from odoo import api, fields, models
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.db.schema import column_exists, create_column
 from odoo.exceptions import (
@@ -46,6 +46,7 @@ from odoo.tools.mail import is_html_empty
 from odoo.tools.misc import StackMap
 from odoo.tools.safe_eval import safe_eval
 
+from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
 
 declare_authority_keys(
@@ -8384,8 +8385,9 @@ class AccountMove(models.Model):
     def _get_invoice_report_filename(self, extension="pdf", report=None):
         self.check_singleton()
         if not report:
-            report = self.partner_id.invoice_template_pdf_report_id or self.env.ref(
-                "account.account_invoices"
+            report = (
+                self.commercial_partner_id.invoice_template_pdf_report_id
+                or self.env.ref("account.account_invoices")
             )
         if report.print_report_name and isinstance(report.print_report_name, str):
             file_name = safe_eval(report.print_report_name, {"object": self})
@@ -8609,9 +8611,7 @@ class AccountMove(models.Model):
 
         return self.invoice_line_ids.filtered(show_line).sorted("sequence")
 
-    @staticmethod
-    def _can_commit() -> bool:
-        return not modules.module.current_test
+    _can_commit = staticmethod(can_commit)
 
     _IMPORT_TEMPLATES = {
         "entry": (

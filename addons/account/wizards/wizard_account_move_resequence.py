@@ -118,9 +118,14 @@ class WizardAccountMoveResequence(models.TransientModel):
         self.first_name = ""
         for record in self:
             if record.move_ids:
-                record.first_name = min(
-                    record.move_ids._origin.mapped(lambda move: move.name or "")
+                first_move = min(
+                    record.move_ids._origin,
+                    key=lambda move: (
+                        move.sequence_prefix or "",
+                        move.sequence_number or 0,
+                    ),
                 )
+                record.first_name = first_move.name or ""
 
     @api.depends("new_values", "ordering", "sequence_number_reset")
     @_debug.perf.timed

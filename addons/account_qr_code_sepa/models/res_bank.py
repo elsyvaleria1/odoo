@@ -1,7 +1,7 @@
 from odoo import api, models
 
 from odoo.addons.account.tools import (
-    is_valid_structured_reference,
+    is_valid_structured_reference_for_country,
     normalize_structured_reference,
 )
 
@@ -19,8 +19,8 @@ class ResPartnerBankAccount(models.Model):
         structured_communication,
     ):
         if qr_method == "sct_qr":
-            if structured_communication and is_valid_structured_reference(
-                structured_communication
+            if is_valid_structured_reference_for_country(
+                structured_communication, (self.sanitized_acc_number or "")[:2]
             ):
                 structured_communication = normalize_structured_reference(
                     structured_communication

@@ -21,6 +21,7 @@ class AccountReportBudget(models.Model):
         comodel_name="account.report.budget.item",
         inverse_name="budget_id",
         string="Items",
+        copy=True,
     )
     company_id = fields.Many2one(
         comodel_name="res.company",
@@ -148,27 +149,12 @@ class AccountReportBudget(models.Model):
     def copy_data(self, default=None):
         _debug.lifecycle("copy_data", records=self)
         vals_list = super().copy_data(default=default)
+        if default and "name" in default:
+            return vals_list
         return [
             dict(vals, name=self.env._("%s (copy)", budget.name))
-            for budget, vals in zip(self, vals_list, strict=False)
+            for budget, vals in zip(self, vals_list, strict=True)
         ]
-
-    @_debug.perf.timed
-    def copy(self, default=None):
-        _debug.lifecycle("copy", records=self)
-        new_budgets = super().copy(default)
-        for old_budget, new_budget in zip(self, new_budgets, strict=False):
-            for item in old_budget.item_ids:
-                item.copy(
-                    {
-                        "budget_id": new_budget.id,
-                        "account_id": item.account_id.id,
-                        "amount": item.amount,
-                        "date": item.date,
-                    }
-                )
-
-        return new_budgets
 
 
 class AccountReportBudgetItem(models.Model):

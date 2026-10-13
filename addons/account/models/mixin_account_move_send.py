@@ -3,10 +3,11 @@ from collections import defaultdict
 
 from markupsafe import Markup
 
-from odoo import Command, api, models, modules, tools
+from odoo import Command, api, models, tools
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 
+from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.web.models.ir_actions_report import PDF_OPTIONS_DATA_KEY
 
 _logger = logging.getLogger(__name__)
@@ -275,7 +276,9 @@ class MixinAccountMoveSend(models.AbstractModel):
 
     @api.model
     @_debug.perf.timed
-    def _get_default_mail_partner_ids(self, move, mail_template, mail_lang):
+    def _get_default_mail_partner_ids(
+        self, move, mail_template, mail_lang, no_create=False
+    ):
         partners = self.env["res.partner"].with_company(move.company_id)
         if mail_template.use_default_to:
             defaults = move._message_get_default_recipients()[move.id]
@@ -296,10 +299,21 @@ class MixinAccountMoveSend(models.AbstractModel):
             else:
                 email_to = ""
 
-        partners |= move._partner_get_or_create_from_emails_single(
-            tools.email_split(email_cc or "") + tools.email_split(email_to or ""),
-            no_create=False,
+        emails = tools.email_split(email_cc or "") + tools.email_split(email_to or "")
+        found = move._partner_get_or_create_from_emails_single(
+            emails, no_create=no_create
         )
+        partners |= found
+        if no_create:
+            known = set(found.mapped("email_normalized"))
+            missing = dict.fromkeys(
+                email
+                for email in map(tools.email_normalize, emails)
+                if email and email not in known
+            )
+            partners |= partners.concat(
+                *(partners.new({"name": email, "email": email}) for email in missing)
+            )
 
         if not mail_template.use_default_to and mail_template.partner_to:
             partner_to = self._get_mail_default_field_value_from_template(
@@ -313,6 +327,7 @@ class MixinAccountMoveSend(models.AbstractModel):
             template=mail_template,
             use_default_to=mail_template.use_default_to,
             candidates=len(partners),
+            no_create=no_create,
             allow_without_mail=bool(
                 self.env.context.get("allow_partners_without_mail")
             ),
@@ -990,9 +1005,7 @@ class MixinAccountMoveSend(models.AbstractModel):
                     )
                 )
 
-    @api.model
-    def _can_commit(self) -> bool:
-        return not (tools.config["test_enable"] or modules.module.current_test)
+    _can_commit = staticmethod(can_commit)
 
     @api.model
     def _call_web_service_before_invoice_pdf_render(self, invoices_data) -> None:
@@ -1027,7 +1040,7 @@ class MixinAccountMoveSend(models.AbstractModel):
         invoices_data_pdf = {
             invoice: invoice_data
             for invoice, invoice_data in invoices_data.items()
-            if not invoice_data.get("error") or invoice_data.get("error_but_continue")
+            if not invoice_data.get("error")
         }
 
         batch_size = self.env.registry.settings.get(

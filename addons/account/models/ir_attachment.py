@@ -1,11 +1,10 @@
-import io
-import zipfile
-
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.filesystem import guess_mimetype
 from odoo.tools.misc import format_date
+
+from odoo.addons.account.tools.zip_archive import prepare_zip_from_data
 
 _debug = DebugLog(__name__)
 
@@ -15,13 +14,12 @@ class IrAttachment(models.Model):
 
     @_debug.perf.timed
     def _prepare_zip_from_attachments(self):
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(
-            buffer, "w", compression=zipfile.ZIP_DEFLATED
-        ) as zipfile_obj:
-            for attachment in self:
-                zipfile_obj.writestr(attachment.display_name, attachment.raw)
-        return buffer.getvalue()
+        return prepare_zip_from_data(
+            [
+                {"filename": attachment.display_name, "content": attachment.raw}
+                for attachment in self
+            ]
+        )
 
     def _filter_restricted_audit_trail(self):
         move_attachments = self.filtered(

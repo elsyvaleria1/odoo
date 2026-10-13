@@ -118,7 +118,13 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
             ],
         )
 
-        result = self.acc_sepa_iban._prepare_qr_payload(
+        acc_nl_iban = self.env["res.partner.bank.account"].create(
+            {
+                "acc_number": "NL91ABNA0417164300",
+                "partner_id": self.company_data["company"].partner_id.id,
+            }
+        )
+        result = acc_nl_iban._prepare_qr_payload(
             qr_method="sct_qr",
             amount=100.0,
             currency=self.env.ref("base.EUR"),
@@ -135,7 +141,7 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
                 "SCT",
                 "",
                 "company_1_data",
-                "BE15001559627230",
+                "NL91ABNA0417164300",
                 "EUR100.0",
                 "",
                 "5000056789012345",
@@ -143,3 +149,20 @@ class TestSEPAQRCode(AccountTestInvoicingCommon):
                 "",
             ],
         )
+
+    def test_structured_field_holds_only_references_of_the_creditor_country(self):
+        def remittance(communication):
+            payload = self.acc_sepa_iban._prepare_qr_payload(
+                qr_method="sct_qr",
+                amount=100.0,
+                currency=self.env.ref("base.EUR"),
+                debtor_partner=None,
+                free_communication=communication,
+                structured_communication=communication,
+            )
+            return payload[9], payload[10]
+
+        self.assertEqual(remittance("RF18 5390 0754 7034"), ("RF18539007547034", ""))
+        self.assertEqual(remittance("+++020/3430/57642+++"), ("020343057642", ""))
+        for communication in ("1234567", "79927398713", "5000056789012345"):
+            self.assertEqual(remittance(communication), ("", communication))

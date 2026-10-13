@@ -189,6 +189,7 @@ from . import test_marin_report_fiscalyear_anchor
 from . import test_marin_return_closing_date
 from . import test_marin_return_fixes
 from . import test_marin_i18n_placeholders
+from . import test_marin_misc_fixes
 from . import test_access_matrix
 from . import test_home_tile_journals
 from . import test_journal_entry_report

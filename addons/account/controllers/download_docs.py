@@ -1,5 +1,3 @@
-import io
-import zipfile
 from itertools import chain
 
 from odoo import http
@@ -7,6 +5,8 @@ from odoo.exceptions import UserError
 from odoo.http import prepare_content_disposition_header, request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import str2bool
+
+from odoo.addons.account.tools.zip_archive import prepare_zip_from_data
 
 _debug = DebugLog(__name__)
 
@@ -18,14 +18,6 @@ def _get_headers(filename, filetype, content):
         ("Content-Disposition", prepare_content_disposition_header(filename)),
         ("X-Content-Type-Options", "nosniff"),
     ]
-
-
-def _prepare_zip_from_data(docs_data):
-    buffer = io.BytesIO()
-    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as zipfile_obj:
-        for doc_data in docs_data:
-            zipfile_obj.writestr(doc_data["filename"], doc_data["content"])
-    return buffer.getvalue()
 
 
 class AccountDocumentDownloadController(http.Controller):
@@ -103,7 +95,7 @@ class AccountDocumentDownloadController(http.Controller):
             )
             return request.prepare_response(doc_data["content"], headers)
         if len(docs_data) > 1:
-            zip_content = _prepare_zip_from_data(docs_data)
+            zip_content = prepare_zip_from_data(docs_data)
             headers = _get_headers(
                 request.env._("invoices") + ".zip", "application/zip", zip_content
             )
@@ -122,25 +114,10 @@ class AccountDocumentDownloadController(http.Controller):
         )
         moves.check_access("read")
 
-        def rename_duplicates(docs):
-            seen = {}
-            for doc in docs:
-                name = doc["filename"]
-                if name not in seen:
-                    seen[name] = 0
-                else:
-                    seen[name] += 1
-                    base, *ext = name.rsplit(".", 1)
-                    new_name = f"{base} ({seen[name]})" + (f".{ext[0]}" if ext else "")
-                    doc["filename"] = new_name
-                    seen[new_name] = 0
-            return docs
-
         if docs_data := list(
             chain.from_iterable(move._get_move_zip_export_docs() for move in moves)
         ):
-            docs_data = rename_duplicates(docs_data)
-            zip_content = _prepare_zip_from_data(docs_data)
+            zip_content = prepare_zip_from_data(docs_data)
             headers = _get_headers(
                 request.env._("Invoices") + ".zip", "application/zip", zip_content
             )

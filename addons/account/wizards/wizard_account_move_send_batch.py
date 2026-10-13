@@ -17,7 +17,7 @@ class WizardAccountMoveSendBatch(models.TransientModel):
         required=True,
     )
     summary_data = fields.Json(compute="_compute_summary_data")
-    alerts = fields.Json(compute="_compute_alerts")
+    alerts = fields.Json(compute="_compute_summary_data")
 
     @api.model
     @_debug.perf.timed
@@ -28,6 +28,26 @@ class WizardAccountMoveSendBatch(models.TransientModel):
             move_ids = self.env.context.get("active_ids", [])
             results["move_ids"] = [Command.set(move_ids)]
         return results
+
+    @api.model
+    def _get_preview_sending_settings(self, move) -> dict:
+        sending_methods = self._get_default_sending_methods(move)
+        settings = {
+            "sending_methods": sending_methods,
+            "extra_edis": self._get_default_extra_edis(move),
+            "invoice_edi_format": self._get_default_invoice_edi_format(
+                move, sending_methods=sending_methods
+            ),
+        }
+        if "email" in sending_methods:
+            mail_template = self._get_default_mail_template_id(move)
+            settings["mail_partner_ids"] = self._get_default_mail_partner_ids(
+                move,
+                mail_template,
+                self._get_default_mail_lang(move, mail_template),
+                no_create=True,
+            )
+        return settings
 
     @api.depends("move_ids")
     @_debug.perf.timed
@@ -41,18 +61,21 @@ class WizardAccountMoveSendBatch(models.TransientModel):
         sending_methods["manual"] = self.env._("Manually")
 
         for wizard in self:
+            moves = wizard.move_ids._origin
+            moves_data = {
+                move: self._get_preview_sending_settings(move) for move in moves
+            }
             edi_counter = Counter()
             sending_method_counter = Counter()
 
-            for move in wizard.move_ids._origin:
-                edi_counter += Counter(list(self._get_default_extra_edis(move)))
-                sending_settings = self._get_default_sending_settings(move)
+            for move, move_data in moves_data.items():
+                edi_counter += Counter(list(move_data["extra_edis"]))
                 sending_method_counter += Counter(
                     [
                         sending_method
-                        for sending_method in self._get_default_sending_methods(move)
+                        for sending_method in move_data["sending_methods"]
                         if self._is_applicable_to_move(
-                            sending_method, move, **sending_settings
+                            sending_method, move, **move_data
                         )
                     ]
                 )
@@ -60,7 +83,7 @@ class WizardAccountMoveSendBatch(models.TransientModel):
             if _debug.pipeline.enabled:
                 _debug.pipeline(
                     "send_summary_counted",
-                    move=wizard.move_ids._origin,
+                    move=moves,
                     edis=dict(edi_counter),
                     sending_methods=dict(sending_method_counter),
                 )
@@ -77,15 +100,7 @@ class WizardAccountMoveSendBatch(models.TransientModel):
                 }
 
             wizard.summary_data = summary_data
-
-    @api.depends("summary_data")
-    def _compute_alerts(self) -> None:
-        for wizard in self:
-            moves_data = {
-                move: self._get_default_sending_settings(move)
-                for move in wizard.move_ids._origin
-            }
-            wizard.alerts = self._get_alerts(wizard.move_ids._origin, moves_data)
+            wizard.alerts = self._get_alerts(moves, moves_data)
 
     @api.constrains("move_ids")
     @_debug.perf.timed

@@ -170,6 +170,7 @@ def is_valid_structured_reference_for_country(
 ) -> bool:
     check_per_country = {
         "BE": is_valid_structured_reference_be,
+        "DK": is_valid_structured_reference_dk,
         "FI": is_valid_structured_reference_fi,
         "NO": is_valid_structured_reference_no_se,
         "SE": is_valid_structured_reference_no_se,
@@ -177,7 +178,10 @@ def is_valid_structured_reference_for_country(
         "SI": is_valid_structured_reference_si,
     }
 
-    reference = reference or ""
-    if check := check_per_country.get(country_code.upper()):
-        return bool(check(reference))
-    return bool(is_valid_structured_reference_iso(reference))
+    if not reference:
+        return False
+    check = check_per_country.get((country_code or "").upper())
+    if check and check(reference):
+        _debug.logic("country_reference_accepted", country=country_code.upper())
+        return True
+    return is_valid_structured_reference_iso(reference)

@@ -301,7 +301,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                 order_line.qty_transferred_at_date - order_line.qty_invoiced_at_date
             )
             price_subtotal = order_line.tax_ids.compute_all(
-                order_line.price_unit,
+                order_line.price_unit * (1 - (order_line.discount or 0.0) / 100),
                 currency=order_line.order_id.currency_id,
                 quantity=qty_to_invoice,
                 product=order_line.product_id,
@@ -397,18 +397,24 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
             total_currency += amount_currency
         return values, total, total_currency
 
-    def _get_accrual_analytic_distribution(self, orders):
-        analytic_distribution = {}
-        total = sum(order.amount_total for order in orders)
-        for line in orders.line_ids if total else ():
-            if not line.analytic_distribution:
-                continue
-            ratio = line.price_total / total
-            for account_id, distribution in line.analytic_distribution.items():
-                analytic_distribution[account_id] = (
-                    analytic_distribution.get(account_id, 0) + distribution * ratio
-                )
-        return analytic_distribution
+    def _get_accrual_analytic_distribution(self, accrual_vals_list) -> dict:
+        total = sum(vals["debit"] - vals["credit"] for vals in accrual_vals_list)
+        if self.company_id.currency_id.is_zero(total):
+            return {}
+        analytic_distribution = defaultdict(float)
+        for vals in accrual_vals_list:
+            ratio = (vals["debit"] - vals["credit"]) / total
+            for account_id, distribution in (
+                vals.get("analytic_distribution") or {}
+            ).items():
+                analytic_distribution[account_id] += distribution * ratio
+        _debug.logic(
+            "accrual_analytic_weighted",
+            accrual=self,
+            lines=len(accrual_vals_list),
+            accounts=len(analytic_distribution),
+        )
+        return dict(analytic_distribution)
 
     def _prepare_perpetual_valuation_aml_vals(
         self, orders, is_purchase, amounts_by_perpetual_account
@@ -462,6 +468,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
         self.check_singleton()
         orders, lines, is_purchase = self._get_accrual_orders_and_lines()
         move_lines = []
+        accrual_vals_list = []
         orders_with_entries = orders.browse()
         total_balance = 0.0
         total_amount_currency = 0.0
@@ -480,13 +487,11 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
             if len(orders) == 1 and product_lines and self.amount and order.line_ids:
                 total_balance = self.amount
                 total_amount_currency = self._to_order_currency(order, self.amount)
-                move_lines.append(
-                    Command.create(
-                        self._prepare_manual_accrual_aml_vals(
-                            order, product_lines[0], is_purchase
-                        )
-                    )
+                manual_vals = self._prepare_manual_accrual_aml_vals(
+                    order, product_lines[0], is_purchase
                 )
+                accrual_vals_list.append(manual_vals)
+                move_lines.append(Command.create(manual_vals))
                 orders_with_entries |= order
             else:
                 order_vals, order_balance, order_amount_currency = (
@@ -495,6 +500,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                     )
                 )
                 if order_vals:
+                    accrual_vals_list += order_vals
                     move_lines += [Command.create(vals) for vals in order_vals]
                     total_balance += order_balance
                     total_amount_currency += order_amount_currency
@@ -519,7 +525,7 @@ class WizardAccountMoveCreateAccrual(models.TransientModel):
                         is_purchase,
                         label=self.env._("Accrued total"),
                         analytic_distribution=self._get_accrual_analytic_distribution(
-                            orders
+                            accrual_vals_list
                         ),
                     )
                 )

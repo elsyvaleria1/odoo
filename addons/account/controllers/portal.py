@@ -7,10 +7,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import email_normalize, email_normalize_all
 from odoo.tools.misc import resolve_hash_signed
 
-from odoo.addons.account.controllers.download_docs import (
-    _get_headers,
-    _prepare_zip_from_data,
-)
+from odoo.addons.account.controllers.download_docs import _get_headers
+from odoo.addons.account.tools.zip_archive import prepare_zip_from_data
 from odoo.addons.portal.controllers.portal import CustomerPortal
 from odoo.addons.portal.controllers.portal import pager as portal_pager
 
@@ -268,7 +266,7 @@ class PortalAccount(CustomerPortal):
                 )
             else:
                 filename = invoice_sudo._get_invoice_report_filename(extension="zip")
-                zip_content = _prepare_zip_from_data(docs_data)
+                zip_content = prepare_zip_from_data(docs_data)
                 headers = _get_headers(filename, "application/zip", zip_content)
                 return request.prepare_response(zip_content, headers)
         elif report_type in ("html", "pdf", "text"):
@@ -282,7 +280,7 @@ class PortalAccount(CustomerPortal):
             ):
                 request.update_context(lang=partner_lang)
             pdf_report_name = (
-                invoice_sudo.partner_id.invoice_template_pdf_report_id.report_name
+                invoice_sudo.commercial_partner_id.invoice_template_pdf_report_id.report_name
                 or "account.account_invoices"
             )
             return self._show_report(

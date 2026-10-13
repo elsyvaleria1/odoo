@@ -493,3 +493,72 @@ class TestAccruedPurchaseOrders(AccountTestInvoicingCommon):
             msg="An error should be raised if two different currencies are used for Accrued Expense Entry.",
         ):
             accrued_wizard._prepare_accrual_move_data()
+
+    def test_accrued_order_with_tax_included_applies_the_discount(self):
+        tax_10_included = self.env["account.tax"].create(
+            {
+                "name": "Tax 10% included",
+                "amount": 10.0,
+                "type_tax_use": "purchase",
+                "price_include_override": "tax_included",
+            }
+        )
+        self.purchase_order.line_ids.write(
+            {"tax_ids": [Command.set(tax_10_included.ids)], "discount": 10.0}
+        )
+        self.purchase_order.line_ids.qty_transferred = 5
+        lines = (
+            self.env["account.move"]
+            .search(self.wizard.create_entries()["domain"])
+            .line_ids
+        )
+        self.assertRecordValues(
+            lines[:3],
+            [
+                {
+                    "account_id": self.account_expense.id,
+                    "debit": 0.0,
+                    "credit": 4090.91,
+                },
+                {"account_id": self.alt_exp_account.id, "debit": 0.0, "credit": 818.18},
+                {
+                    "account_id": self.account_revenue.id,
+                    "debit": 4909.09,
+                    "credit": 0.0,
+                },
+            ],
+        )
+
+    def test_accrued_total_analytic_ignores_fully_billed_lines(self):
+        line_a, line_b = self.purchase_order.line_ids
+        line_a.qty_transferred = 10
+        move = self.purchase_order.create_invoice()
+        move.invoice_date = "2020-01-01"
+        move.action_post()
+        line_b.qty_transferred = 5
+        lines = (
+            self.env["account.move"]
+            .search(
+                self.wizard.with_context(
+                    accrual_entry_date="2020-01-30"
+                ).create_entries()["domain"]
+            )
+            .line_ids
+        )
+        self.assertRecordValues(
+            lines[:2],
+            [
+                {
+                    "account_id": self.alt_exp_account.id,
+                    "debit": 0.0,
+                    "credit": 1000.0,
+                    "analytic_distribution": {str(self.analytic_account_b.id): 100.0},
+                },
+                {
+                    "account_id": self.account_revenue.id,
+                    "debit": 1000.0,
+                    "credit": 0.0,
+                    "analytic_distribution": {str(self.analytic_account_b.id): 100.0},
+                },
+            ],
+        )

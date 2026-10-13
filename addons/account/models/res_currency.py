@@ -182,6 +182,9 @@ class ResCurrency(models.Model):
         currency_table_build_query = SQL(" UNION ALL ").join(
             SQL("(%s)", builder) for builder in table_builders
         )
+        self.env["res.currency.rate"].flush_model(
+            ["currency_id", "company_id", "name", "rate"]
+        )
         cr = self.env.cr
         cr.execute(SQL("DROP TABLE IF EXISTS account_currency_table"))
         cr.execute(
@@ -216,6 +219,26 @@ class ResCurrency(models.Model):
             main_company.currency_id.id
         ]
 
+    def _get_currency_table_rates(self, scope: CurrencyTableScope) -> SQL:
+        return SQL(
+            """(
+                SELECT rate.id, rate.currency_id, rate.name, rate.rate
+                FROM res_currency_rate rate
+                WHERE rate.company_id = %(main_company_id)s
+                   OR (
+                       rate.company_id IS NULL
+                       AND NOT EXISTS (
+                           SELECT 1
+                           FROM res_currency_rate own_rate
+                           WHERE own_rate.currency_id = rate.currency_id
+                             AND own_rate.company_id = %(main_company_id)s
+                             AND own_rate.name <= rate.name
+                       )
+                   )
+            )""",
+            main_company_id=scope.main_company_id,
+        )
+
     def _get_table_builder_domestic_currency(self, companies, use_cta_rates) -> SQL:
         return SQL(
             "SELECT * FROM (VALUES %(rows)s) AS domestic_rates",
@@ -242,16 +265,15 @@ class ResCurrency(models.Model):
                     'current',
                     CASE WHEN rate.id IS NOT NULL THEN %(main_company_unit_factor)s / rate.rate ELSE 1 END
                 FROM res_company other_company
-                LEFT JOIN res_currency_rate rate
+                LEFT JOIN %(rates)s rate
                     ON rate.currency_id = other_company.currency_id
                     AND rate.name <= %(date_to)s
-                    AND rate.company_id = %(main_company_id)s
                 WHERE
                     other_company.id IN %(other_company_ids)s
                 ORDER BY other_company.id, rate.name DESC
             """,
             period_key=period_key,
-            main_company_id=scope.main_company_id,
+            rates=self._get_currency_table_rates(scope),
             other_company_ids=scope.other_company_ids,
             date_to=date_to,
             main_company_unit_factor=main_company_unit_factor,
@@ -275,14 +297,13 @@ class ResCurrency(models.Model):
                     'historical',
                     %(main_company_unit_factor)s / rate.rate
                 FROM res_company other_company
-                JOIN res_currency_rate rate
+                JOIN %(rates)s rate
                     ON rate.currency_id = other_company.currency_id
                 WHERE
                     other_company.id IN %(other_company_ids)s
-                    AND rate.company_id = %(main_company_id)s
                     AND rate.name <= %(date_to)s
             """,
-            main_company_id=scope.main_company_id,
+            rates=self._get_currency_table_rates(scope),
             other_company_ids=scope.other_company_ids,
             main_company_unit_factor=main_company_unit_factor,
             date_to=date_to,
@@ -327,13 +348,12 @@ class ResCurrency(models.Model):
                             ) - rate.name::TIMESTAMP
                         ) AS number_of_days
                     FROM res_company other_company
-                    JOIN res_currency_rate rate
+                    JOIN %(rates)s rate
                         ON rate.currency_id = other_company.currency_id
                     WHERE
                     rate.name <= %(date_to)s
                     AND rate.name >= %(date_from)s
                     AND other_company.id IN %(other_company_ids)s
-                    AND rate.company_id = %(main_company_id)s
 
                     UNION ALL
 
@@ -345,15 +365,13 @@ class ResCurrency(models.Model):
 
                         FROM res_company other_company
 
-                        LEFT JOIN res_currency_rate in_period_rate
+                        LEFT JOIN %(rates)s in_period_rate
                             ON in_period_rate.currency_id = other_company.currency_id
                             AND in_period_rate.name <= %(date_to)s
                             AND in_period_rate.name >= %(date_from)s
-                            AND in_period_rate.company_id = %(main_company_id)s
 
-                        LEFT JOIN res_currency_rate out_period_rate
+                        LEFT JOIN %(rates)s out_period_rate
                             ON out_period_rate.currency_id = other_company.currency_id
-                            AND out_period_rate.company_id = %(main_company_id)s
                             AND out_period_rate.name < %(date_from)s
 
                         WHERE
@@ -364,7 +382,7 @@ class ResCurrency(models.Model):
                 GROUP BY rate_with_days.other_company_id
             """,
             period_key=period_key,
-            main_company_id=scope.main_company_id,
+            rates=self._get_currency_table_rates(scope),
             other_company_ids=scope.other_company_ids,
             date_from=date_from,
             date_to=date_to,

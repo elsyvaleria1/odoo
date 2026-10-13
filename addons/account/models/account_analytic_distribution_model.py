@@ -1,7 +1,10 @@
-import re
-
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
+
+from odoo.addons.account.tools.account_prefix import (
+    get_account_prefix_placeholder,
+    split_account_prefixes,
+)
 
 _debug = DebugLog(__name__)
 
@@ -35,20 +38,23 @@ class AccountAnalyticDistributionModel(models.Model):
 
     def _get_applicable_models(self, vals):
         applicable_models = super()._get_applicable_models(vals)
+        account_code = vals.get("account_prefix") or ""
 
-        delimiter_pattern = re.compile(r"[;,]\s*")
-
-        return applicable_models.filtered(
-            lambda model: (
-                not model.account_prefix
-                or any(
-                    (vals.get("account_prefix") or "").startswith(prefix)
-                    for prefix in delimiter_pattern.split(
-                        model.account_prefix.replace(" ", "")
-                    )
+        def matches_account(model) -> bool:
+            prefixes = split_account_prefixes(model.account_prefix)
+            if not prefixes:
+                return True
+            matched = account_code.startswith(prefixes)
+            if not matched:
+                _debug.logic(
+                    "distribution_model_rejected",
+                    model=model,
+                    reason="account_prefix",
+                    prefixes=prefixes,
                 )
-            )
-        )
+            return matched
+
+        return applicable_models.filtered(matches_account)
 
     @_debug.perf.timed
     def _create_domain(self, fname, value) -> list:
@@ -59,26 +65,6 @@ class AccountAnalyticDistributionModel(models.Model):
     @api.depends("analytic_precision")
     @_debug.perf.timed
     def _compute_prefix_placeholder(self) -> None:
-        expense_account = self.env["account.account"].search(
-            [
-                *self.env["account.account"]._check_company_domain(self.env.company),
-                ("account_type", "=", "expense"),
-            ],
-            limit=1,
+        self.prefix_placeholder = get_account_prefix_placeholder(
+            self.env, "expense", "60, 61, 62"
         )
-        _debug.logic("expense_account_resolved", account=expense_account)
-        for model in self:
-            account_prefixes = "60, 61, 62"
-            if expense_account:
-                prefix_base = expense_account.code[:2]
-                try:
-                    prefix_num = int(prefix_base)
-                    account_prefixes = (
-                        f"{prefix_num}, {prefix_num + 1}, {prefix_num + 2}"
-                    )
-                except ValueError:
-                    pass
-
-            model.prefix_placeholder = self.env._(
-                "e.g. %(prefix)s", prefix=account_prefixes
-            )

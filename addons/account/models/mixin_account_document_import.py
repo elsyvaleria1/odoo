@@ -7,13 +7,14 @@ from copy import deepcopy
 from lxml import etree
 from markupsafe import Markup
 
-from odoo import api, models, modules, tools
+from odoo import api, models
 from odoo.exceptions import RedirectWarning
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.documents import Document, canonical_mimetypes
 from odoo.libs.filesystem import guess_mimetype
 from odoo.tools import groupby
 
+from odoo.addons.account.tools.commit import can_commit
 from odoo.addons.account.tools.import_file_type import is_pdf
 
 _logger = logging.getLogger(__name__)
@@ -21,13 +22,9 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
-def _can_commit() -> bool:
-    return not (tools.config["test_enable"] or modules.module.current_test)
-
-
 @contextmanager
 def rollbackable_transaction(cr):
-    if not _can_commit():
+    if not can_commit():
         yield
         return
 
