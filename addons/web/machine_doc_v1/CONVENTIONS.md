@@ -385,9 +385,11 @@ under `models/` (group by concern: CRUD in `web_read.py`, grouping in
 - `static/src/model/` — Client-side relational data model (Record, StaticList, DynamicList, etc.)
 - `static/src/public/` — Public (anonymous) page features
 
-### Static Libraries (DO NOT MODIFY)
-Everything under `static/lib/` is vendored third-party code.
-Never edit these files. If a library needs updating, replace the entire directory.
+### Static libraries
+`static/lib/` holds vendored libraries, the internal HOOT libraries and the
+generated `popper_compat/` build. Follow `static/lib/README.md` when replacing a
+release or recording a fork change. Regenerate build outputs from their source;
+preserve version probes, licenses, build recipes and divergence markers.
 
 ### OWL component file convention
 

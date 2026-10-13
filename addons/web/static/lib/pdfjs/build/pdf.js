@@ -20,10 +20,10 @@
  * JavaScript code in this page
  */
 
-
-
-
-
+/**
+ * pdfjsVersion = 6.1.200
+ * pdfjsBuild = 6353acefe
+ */
  var __webpack_modules__ = ({
 
  9306

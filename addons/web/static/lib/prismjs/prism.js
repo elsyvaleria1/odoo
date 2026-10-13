@@ -1,5 +1,5 @@
-
-
+/* PrismJS 1.30.0
+https://prismjs.com/download#themes=prism&languages=markup+css+clike+javascript+diff+java+javadoclike+jsdoc+json+markdown+python+sass+scss+sql+typescript */
 /// <reference lib="WebWorker"/>
 
 var _self = (typeof window !== 'undefined')

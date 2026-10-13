@@ -486,12 +486,6 @@ assert_eq "_pl selects via Intl.PluralRules with an 'other' fallback" \
     "$(grep -c 'forms\[category\] ?? forms.other' "$WEB/static/src/core/translation.js")" "1"
 
 # ------- OWL bundle -------
-assert_eq "OWL bundle bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.es.js")" "315529"
-assert_eq "OWL runtime bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.runtime.es.js")" "220025"
-assert_eq "OWL compiler module bytes" "$(stat -c '%s' "$WEB/static/lib/owl/owl.compiler.es.js")" "96504"
-assert_eq "OWL version string" \
-    "$(grep -oE 'version = "[0-9]+\.[0-9]+\.[0-9]+[^"]*"' "$WEB/static/lib/owl/owl.es.js" | head -1)" \
-    'version = "3.0.0-alpha.49"'
 assert_eq "OWL ships ESM only: full build, runtime, compiler module" \
     "$(ls "$WEB/static/lib/owl/" | tr '\n' ' ')" "owl.compiler.es.js owl.es.js owl.runtime.es.js "
 
@@ -781,23 +775,8 @@ assert_eq "versions.json pins every static/lib library dir, and nothing else" \
 # Each pinned version is re-derived from the shipped files through its probe:
 # a library replaced without its pin, or a pin bumped without its files, is a
 # version nobody vendored.
-LIB_DRIFT="$("$VENV_PY" - "$WEB/static/lib" <<'PYEOF' 2>/dev/null
-import json, pathlib, re, sys
-lib = pathlib.Path(sys.argv[1])
-drift = []
-for name, pin in json.load(open(lib / "versions.json"))["libs"].items():
-    probe = pin.get("probe")
-    if not probe:
-        continue
-    pattern = probe["pattern"].replace("{version}", re.escape(pin["version"]))
-    path = lib / name / probe["file"]
-    if not path.is_file() or not re.search(pattern, path.read_text(errors="replace"), re.M):
-        drift.append(name)
-print(",".join(drift) or 0)
-PYEOF
-)"
-assert_eq "every versions.json probe finds its pinned version in the shipped files" \
-    "${LIB_DRIFT:-PARSE_FAILED}" "0"
+assert_eq "versions.json probes and SHA-256 pins match the shipped libraries" \
+    "$("$VENV_PY" "$REPO/tooling/assets/check_vendored_libs.py" "$WEB/static/lib"; echo $?)" "0"
 # popper_compat.esm.js is built from in-tree source that keeps changing: a stale
 # build serves the import-map pages an engine the bundled pages no longer run.
 if ! skip_missing "$REPO/node_modules/.bin/esbuild" "popper_compat build freshness" 1; then

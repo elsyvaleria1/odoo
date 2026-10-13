@@ -79,7 +79,7 @@ Top-level layout of `addons/web/` (detailed maps are separate docs):
 | `controllers/` | 24 `.py` — HTTP endpoints (22 Controller classes, 76 route handlers) | `ROUTE_MAP.md` |
 | `models/` | 28 `.py` — ORM extensions (27 model files: web_read, web_read_group, ir_http, …) | `MODEL_MAP.md` |
 | `static/src/` | 910 JavaScript/OWL source files across 249 directories (FSD layers) | `DIRECTORY_MAP.md` |
-| `static/lib/` | 19 directories (18 vendored libraries + generated `popper_compat/`) — DO NOT MODIFY | `static/lib/versions.json` |
+| `static/lib/` | 19 directories (18 vendored libraries + generated `popper_compat/`) — update procedures in `static/lib/README.md` | `static/lib/versions.json` |
 | `static/tests/` | 850 `.js` (incl. 778 `*.test.js` Hoot suites), mirroring the `static/src/` tree | `TEST_TAGS.md` |
 | `tests/` | 82 Python test files (`test_*.py`) | `TEST_TAGS.md` |
 | `machine_doc_v1/` | This directory: `COMPONENT_DIAGRAM.md` (18 audit areas) · `FLOW_DIAGRAM.md` (14 sequence diagrams) · `LAZY_VIEW_LOADING.md` · `VIEW_TEARDOWN_COST.md` (both decision records: investigated, not pursued) · `LIST_EDIT_RENDER_COST.md` (decision record: row-level waste fixed, renderer-level amplification measured and not pursued) · `HOME_DASHBOARD.md` (the data tiles: server, layers, client, tint) · `UI_STABILITY.md` (decision record: what a navigation paints and what a write restyles, measured and fixed) · `FIRST_VISIT_ROUND_TRIPS.md` (decision record: an action not yet cached comes with its views) · the maps below · `factcheck.sh` | — |
@@ -484,9 +484,9 @@ importer). Bundles inline the source module instead — only import-map pages (t
 IoT box homepage, the database manager, the error page) load the built copy.
 `owl` is `dist/owl.runtime.es.js` as `@odoo/owl`, plus `dist/owl.compiler.es.js` as
 `@odoo/owl/compiler` for the pages whose bundles may compile a template, and the
-combined `dist/owl.es.js` for the node precompiler; all built from the fork's own OWL branch (`Agro-Marin/owl`
-`3.0-marin` at `a47ea19c`, vendored in `e7c6f1e725a4`), not a published npm
-release; `static/lib/README.md` says what that branch changes. `hoot` and
+combined `dist/owl.es.js` for the node precompiler; all built from the fork's own
+OWL branch (`Agro-Marin/owl` `3.0-marin`) at the commit pinned in the manifest,
+not a published npm release; `static/lib/README.md` says what that branch changes. `hoot` and
 `hoot-dom` are internal, versioned with this repository.
 `axe-core` is test-only: the lazy `web.axe_lib` bundle, which the accessibility
 suite (`tests/webclient/accessibility.test.js`) preloads; no runtime bundle

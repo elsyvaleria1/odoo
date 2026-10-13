@@ -116,6 +116,9 @@ Because that build derives from in-tree code that changes (unlike a pinned upstr
 release), `web/machine_doc_v1/factcheck.sh` runs `build.sh --check` and fails if it
 is stale. After
 editing `popper_compat.js`, run `build.sh`.
+The same applies after changing any of its bundled imports. Preserve generated
+outputs, including their source labels; an independent edit breaks the freshness
+check even when executable statements stay the same.
 
 Behaviour is verified against real Popper rather than assumed: 60 placement
 scenarios in each text direction — every placement, at the viewport centre and each
@@ -178,6 +181,22 @@ find "$d" \( -name "*.js" -o -name "*.html" \) -print0 |
 
 `web/machine_doc_v1/factcheck.sh` holds this directory to `versions.json`: every
 library directory is pinned and nothing else, every `probe` finds its pinned version
-in the shipped files, and `popper_compat/build.sh --check` passes (skipped without
+in the shipped files, every `checksums` entry matches the artifact's SHA-256, and
+`popper_compat/build.sh --check` passes (skipped without
 esbuild in `node_modules`). `addons/web/tests/test_pdfjs_dist.py` gates the pdfjs
 build flavour. Nothing checks advisories against the pinned versions.
+
+OWL's manifest pins the source commit and all three shipped build artifacts.
+On a bump, verify that they come from the same build, then update their checksums
+with the commit. A byte count cannot detect a code change of the same length.
+The checksum pins include the shipped comments and formatting; an intentional
+artifact edit needs the same provenance and runtime verification as a rebuild.
+
+Version banners, license notices, build recipes, source hashes and `AgroMarin:`
+markers are metadata. Keep them during comment cleanup. In particular, Prism's
+banner names the custom language selection and Temporal's records its upstream
+source hash and build command.
+
+The manifest checker's regression suite runs with
+`python -m pytest tooling/assets -q`. It checks missing metadata, version drift,
+code corruption of the same length and an OWL compiler from another build.
