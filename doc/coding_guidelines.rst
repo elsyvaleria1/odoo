@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.88
+:Version: 7.89
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -815,36 +815,63 @@ and about its dependencies, and nothing checks either claim.
   was ``base_order`` until it became ``trade``.
 * **An application's companion takes the application's module name**:
   ``sale_team``, ``purchase_team``, ``stock_team``, ``mrp_team``.
+* **``l10n_<cc>`` leads every name it is in**:
+  ``l10n_mx_edi_approval_sale_telegram``, not
+  ``approval_sale_telegram_l10n_mx_edi``, so a country's modules list together
+  whatever they bridge. Only a test module's ``test_`` goes before it
+  (``test_l10n_be_hr_payroll_account`` tests ``l10n_be_hr_payroll_account``).
+  The country code is not a family word: ``l10n_ml`` is Mali, not ``_ml``.
 * **A family word means one thing, and no other family uses it.** ``speech``
   converts between audio and text: transcripts, dictation, synthesis.
   ``voice_command`` is the web client's spoken-command interface. ``voip`` is
-  telephony. Bare ``voice`` names no family: as a synonym of ``speech`` it does
-  not tell a reader which layer it means. A term of art that contains the word
-  (``speech_voiceprint``) is not the family's token.
-* **A family's own parts are base first, its host bridges host first.**
-  ``speech_local`` and ``speech_analysis`` are parts of ``speech``;
-  ``<host>_speech`` transcribes or reads aloud a host's audio (``mail_speech``,
-  ``document_speech``, ``phone_call_speech_analysis``), and
-  ``<host>_voice_command`` lets a host's screen answer spoken commands. The
-  prefix then lists a family's parts and the suffix its hosts; a bridge named
-  the other way round (``speech_telegram``) hides from its host and passes for
-  a part of the family.
-* **``ai`` and ``ml`` claim different dependencies.** ``ai_<x>`` and ``<x>_ai``
-  depend on the ``ai`` application (``ai_crm``, ``sign_ai``,
-  ``hr_recruitment_ai``); ``<family>_ml`` reaches a family through
-  ``integration_machine_learning`` and does not install ``ai`` (``speech_ml``,
-  ``extract_ml``); ``ai_gateway_ml`` connects the two. Why: ``ai`` brings
-  agents, sources and pgvector, and a name that suggests it reads as installing
-  it.
+  telephony, ``telegram`` the Telegram bot channel. Bare ``voice`` names no
+  family: as a synonym of ``speech`` it does not tell a reader which layer it
+  means. A term of art that contains the word (``speech_voiceprint``) is not
+  the family's token.
+* **A cross-cutting family's word has one place in every name.** ``ai``,
+  ``voip``, ``speech``, ``voice_command`` and ``telegram`` bridge into many
+  hosts, so the words of a bridge come in one order: ``l10n_<cc>``, then
+  ``ai`` or ``voip``, then the host, then ``speech`` or ``voice_command``, then
+  ``telegram``, then ``_ml`` (``voip_crm``, ``ai_livechat_telegram``,
+  ``mail_speech``, ``mail_speech_telegram``, ``speech_telegram``,
+  ``approval_telegram_ml``). A family's own parts follow its word
+  (``ai_fields``, ``voip_onsip``, ``speech_analysis``, ``telegram_proof``,
+  hence ``phone_call_speech_analysis``), and an extension of a bridge appends
+  to its whole name (``insight_telegram_delivery_tracking``). Why: each
+  family's bridges sort together, and the position tells the family word from
+  the host; each family keeps the place most of its bridges already held. An
+  application (``sale``, ``stock``, ``device``) has no fixed place: a bridge
+  between applications is ``{base}_{dimension}`` (``sale_stock``,
+  ``device_hr``).
+* **``ai`` and ``ml`` claim different dependencies.** ``ai_<x>`` depends on the
+  ``ai`` application (``ai_crm``, ``ai_document``); ``<x>_ml`` reaches the
+  model gateway, ``integration_machine_learning``, without installing ``ai``
+  (``speech_ml``, ``extract_ml``, ``approval_telegram_ml``); ``ai_gateway_ml``
+  connects the two. Why: ``ai`` brings agents, sources and pgvector, and a name
+  that suggests it reads as installing it. ``ai_auto_install`` installs ``ai``
+  without depending on it, and is the one name left open.
 * **Renames pending**
   (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
   ``voice``, ``voice_ai``, ``mail_voice``, ``stock_voice``,
   ``stock_barcode_voice`` → ``voice_command``, ``voice_command_ml``,
   ``mail_voice_command``, ``stock_voice_command``,
-  ``stock_barcode_voice_command``; ``speech_telegram``,
-  ``mail_speech_telegram``, ``account_speech_telegram`` → ``telegram_speech``,
-  ``mail_telegram_speech``, ``account_telegram_speech``. Each rename removes its
-  names from this list.
+  ``stock_barcode_voice_command``; ``sign_ai``, ``hr_recruitment_ai``,
+  ``esg_csrd_ai``, ``web_studio_ai_fields`` → ``ai_sign``,
+  ``ai_hr_recruitment``, ``ai_esg_csrd``, ``ai_fields_web_studio``;
+  ``device_voip`` → ``voip_device``; ``document_l10n_<cc>_hr_payroll``
+  (``be``, ``ch``, ``hk``, ``ke``) → ``l10n_<cc>_hr_payroll_document``;
+  ``document_l10n_mx_edi``, ``approval_account_l10n_mx_edi``,
+  ``approval_account_l10n_mx_edi_telegram`` → ``l10n_mx_edi_document``,
+  ``l10n_mx_edi_approval_account``, ``l10n_mx_edi_approval_account_telegram``;
+  ``partner_l10n_mx``, ``geoengine_l10n_mx`` → ``l10n_mx_partner``,
+  ``l10n_mx_geoengine``; ``agro_surface_l10n_mx``,
+  ``agro_surface_l10n_mx_map``, ``agro_surface_l10n_mx_map_account``,
+  ``agro_surface_l10n_mx_map_account_marin``,
+  ``agro_surface_l10n_mx_map_threed`` → ``l10n_mx_agro_surface``,
+  ``l10n_mx_agro_surface_map``, ``l10n_mx_agro_surface_map_account``,
+  ``l10n_mx_agro_surface_map_account_marin``,
+  ``l10n_mx_agro_surface_map_threed``. Each rename removes its names from this
+  list.
 * **A vendor's adapter is ``{domain}_{vendor}``**, domain first: the domain
   module holds what every provider shares and the setting that chooses one,
   the adapter one vendor's protocol (``captcha_recaptcha``,
@@ -6371,6 +6398,16 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.89
+     - 2026-10-13
+     - §1.5: one word order for a bridge of a cross-cutting family
+       (``l10n_<cc>``, ``ai`` / ``voip``, host, ``speech`` /
+       ``voice_command``, ``telegram``, ``_ml``) replaces "host bridges host
+       first", which ``ai_crm`` and ``voip_crm`` contradicted and which made
+       ``speech_telegram`` a false violation; ``l10n_<cc>`` leads every name;
+       ``<x>_ai`` leaves the ``ai`` bullet. The pending list drops the three
+       ``telegram_speech`` renames and gains four ``ai_*``, ``voip_device``
+       and fourteen ``l10n_<cc>_*`` names.
    * - 7.88
      - 2026-10-13
      - §1.5: ``speech_ai``, ``extract_ai`` and ``approval_ai_telegram`` are
