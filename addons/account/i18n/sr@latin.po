@@ -4958,7 +4958,7 @@ msgstr ""
 #: code:addons/account/models/bank_reconciliation_report.py:0
 #, fuzzy
 msgid "Balance of '%s'"
-msgstr "Saldo"
+msgstr "Saldo '%s'"
 
 #. module: account
 #: model:report.formula.line,name:account.balance_bank

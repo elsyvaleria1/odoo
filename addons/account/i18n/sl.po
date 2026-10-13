@@ -7366,8 +7366,6 @@ msgstr ""
 #: code:addons/account/models/account_report_ledger.py:0
 msgid "Could not determine carryover target automatically for expression %s."
 msgstr ""
-"Kode za kopijo ni bilo mogoče samodejno izračunati. Prosimo, ustvarite jo "
-"ročno."
 
 #. module: account
 #. odoo-python

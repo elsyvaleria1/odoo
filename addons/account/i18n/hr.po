@@ -593,7 +593,7 @@ msgstr ". Možda želite ovdje upisati broj."
 #. odoo-python
 #: code:addons/account/wizards/account_resequence.py:0
 msgid "... (%(nb_of_values)s other)"
-msgstr "... (%s ostalo)"
+msgstr "... (%(nb_of_values)s ostalo)"
 
 #. module: account
 #. odoo-javascript

@@ -9563,7 +9563,7 @@ msgstr "Чернова"
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
 msgid "Draft (%(currency_amount)s)"
-msgstr "Чернова"
+msgstr "Чернова (%(currency_amount)s)"
 
 #. module: account
 #. odoo-python

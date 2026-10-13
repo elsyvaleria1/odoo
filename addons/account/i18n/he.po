@@ -14494,7 +14494,7 @@ msgstr ""
 #. odoo-python
 #: code:addons/account/models/account_lock_exception.py:0
 msgid "Lock Date Exception %s"
-msgstr "חריגת תאריך נעילה"
+msgstr "חריגת תאריך נעילה %s"
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_lock_exception__lock_date_field
@@ -26092,7 +26092,7 @@ msgstr "אינך יכול לשנות את השדה %s של יומן שיש בו 
 #. odoo-python
 #: code:addons/account/models/account_move.py:0
 msgid "You cannot modify the following readonly fields on a posted move: %s"
-msgstr "אינך יכול לשנות את השדות הבאים שהם רק לקריאה בתנועה שנרשמה:"
+msgstr "אינך יכול לשנות את השדות הבאים שהם רק לקריאה בתנועה שנרשמה: %s"
 
 #. module: account
 #. odoo-python

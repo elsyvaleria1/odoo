@@ -26415,7 +26415,7 @@ msgstr "이 계정에 외화를 설정할 수 없습니다. 이미 다른 외화
 msgid ""
 "You cannot set a partner as an invoicing address of another if they have a "
 "different %(vat_label)s."
-msgstr "다른 %(vat_label) 항목이 적용되는 경우에는, 해당 파트너를 다른 파트너의 청구서 주소로 설정할 수 없습니다."
+msgstr "다른 %(vat_label)s 항목이 적용되는 경우에는, 해당 파트너를 다른 파트너의 청구서 주소로 설정할 수 없습니다."
 
 #. module: account
 #. odoo-python

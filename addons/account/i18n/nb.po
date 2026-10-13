@@ -574,7 +574,7 @@ msgstr ". Du vill nok skrive ett høyrer nummer her.."
 #. odoo-python
 #: code:addons/account/wizards/account_resequence.py:0
 msgid "... (%(nb_of_values)s other)"
-msgstr "... (%s andre)"
+msgstr "... (%(nb_of_values)s andre)"
 
 #. module: account
 #. odoo-javascript

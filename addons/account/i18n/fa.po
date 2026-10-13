@@ -26659,7 +26659,7 @@ msgstr ""
 msgid ""
 "You do not have the right to perform this operation as you do not have "
 "access to the following companies: %s."
-msgstr "شما حق انجام این عملیات را ندارید زیرا به شرکت های زیر دسترسی ندارید:"
+msgstr "شما حق انجام این عملیات را ندارید زیرا به شرکت های زیر دسترسی ندارید: %s."
 
 #. module: account
 #. odoo-python

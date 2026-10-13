@@ -23927,7 +23927,7 @@ msgstr "यह एंट्री असल में %s वाली एंट�
 #. odoo-python
 #: code:addons/account/wizards/account_automatic_entry_wizard.py:0
 msgid "This entry transfers the following amounts to %(destination)s"
-msgstr "यह एंट्री असल में %s वाली एंट्री का उल्टा है"
+msgstr ""
 
 #. module: account
 #: model:ir.model.fields,help:account.field_account_move_line__date_maturity

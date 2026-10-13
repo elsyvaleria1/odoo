@@ -7506,7 +7506,7 @@ msgstr "فكر في دفع %(btn_start)sالمبلغ كاملاً%(btn_end)s."
 msgid ""
 "Consider paying the amount with %(btn_start)searly payment "
 "discount%(btn_end)s instead."
-msgstr "يمكنك دفع المبلغ مع خصم الدفع المبكر (btn_start)s بدلاً من ذلك."
+msgstr "يمكنك دفع المبلغ مع %(btn_start)sخصم الدفع المبكر%(btn_end)s بدلاً من ذلك."
 
 #. module: account
 #. odoo-javascript
