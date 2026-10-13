@@ -1193,6 +1193,45 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         self.assertTrue(handler._get_lines(report, compared))
         self.assertFalse(handler._get_moves_to_defer(compared)[0])
 
+    def test_deferred_line_read_sees_the_writes_of_its_transaction(self):
+        report = self.env.ref("account.deferred_expense_report")
+        handler = self.env["account.deferred.expense.report.handler"]
+        self.env.company.account_config_id.write(
+            {
+                "generate_deferred_expense_entries_method": "manual",
+                "deferred_expense_amount_computation_method": "month",
+                "deferred_expense_journal_id": self.company_data[
+                    "default_journal_misc"
+                ].id,
+                "deferred_expense_account_id": self.company_data[
+                    "default_account_deferred_expense"
+                ].id,
+            }
+        )
+        bill = self._post_deferred_expense(
+            self.company_data["default_account_expense"],
+            "2023-01-01",
+            "2023-01-01",
+            "2023-12-31",
+            1200.0,
+        )
+        options = self._generate_options(report, "2023-01-01", "2023-01-31")
+        options["all_entries"] = True
+
+        def bill_row():
+            (row,) = (
+                row
+                for row in handler._get_deferred_line_rows(report, options)
+                if row["move_id"] == bill.id
+            )
+            return row
+
+        deferral_moves = handler._generate_deferral_entry(options)
+        self.assertTrue(deferral_moves)
+        self.assertTrue(bill_row()["is_already_generated"])
+        deferral_moves.action_draft()
+        self.assertFalse(bill_row()["is_already_generated"])
+
     def test_bank_reconciliation_report_defaults_to_the_active_company_journal(self):
         company_1 = self.env.company
         company_2 = self.company_data_2["company"]
@@ -1208,7 +1247,9 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             )
             self.assertEqual(journal.company_id, active)
 
-    def test_bank_reconciliation_outstanding_total_rounds_the_converted_sum(self):
+    def test_bank_reconciliation_outstanding_total_rounds_the_converted_sum_not_its_lines(
+        self,
+    ):
         currency = self.setup_other_currency("CHF", rates=[("2016-01-01", 1.4)])
         bank_journal = self.env["account.journal"].create(
             {
@@ -1236,12 +1277,19 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
             active_id=bank_journal.id, active_model=bank_journal._name
         )
         options = self._generate_options(report, "2019-01-31", "2019-01-31")
+        options["unfold_all"] = True
+        lines = report._get_lines(options)
         receipts = next(
-            line
-            for line in report._get_lines(options)
-            if line["name"] == "(+) Outstanding Receipts"
+            line for line in lines if line["name"] == "(+) Outstanding Receipts"
         )
+        receipt_amounts = [
+            line["columns"][-1]["no_format"]
+            for line in lines
+            if line.get("parent_id") == receipts["id"]
+        ]
         self.assertAlmostEqual(receipts["columns"][-1]["no_format"], 0.07)
+        self.assertEqual(receipt_amounts, [0.01] * 5)
+        self.assertAlmostEqual(sum(receipt_amounts), 0.05)
 
     def test_partner_ledger_unfold_all_of_a_letter_pages_each_partner(self):
         report = self.env.ref("account.partner_ledger_report")
@@ -1302,7 +1350,7 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         )
         self.assertEqual(keys(u_rows[None]), keys(unknown_rows))
 
-    def _currency_table_rate_at(self, company, rate_type, date):
+    def _currency_table_rate_at(self, company, rate_type, date, period_key=None):
         self.env.cr.execute(
             SQL(
                 """
@@ -1312,10 +1360,12 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                    AND rate_type = %(rate_type)s
                    AND (date_from IS NULL OR date_from <= %(date)s)
                    AND (date_next IS NULL OR date_next > %(date)s)
+                   %(period)s
                 """,
                 company_id=company.id,
                 rate_type=rate_type,
                 date=date,
+                period=SQL("AND period_key = %s", period_key) if period_key else SQL(),
             )
         )
         return [rate for (rate,) in self.env.cr.fetchall()]
@@ -1365,3 +1415,109 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                 rates = self._currency_table_rate_at(company, rate_type, date)
                 self.assertEqual(len(rates), 1, (rate_type, date))
                 self.assertAlmostEqual(rates[0], expected(date), msg=(rate_type, date))
+
+    def test_currency_table_rates_match_base_rates_around_every_rate(self):
+        main = self.env.company
+        root_id = main.root_id.id
+        both, shared_only, own_only, rateless = self.env["res.currency"].create(
+            [
+                {"name": name, "symbol": name[-1], "rounding": 0.01}
+                for name in ("QBO", "QSH", "QOW", "QNO")
+            ]
+        )
+        self.env["res.currency.rate"].create(
+            [
+                {
+                    "currency_id": currency.id,
+                    "company_id": company_id,
+                    "name": date,
+                    "rate": rate,
+                }
+                for currency, company_id, date, rate in (
+                    (both, False, "2029-01-01", 4.0),
+                    (both, False, "2029-07-01", 4.5),
+                    (both, root_id, "2030-01-01", 5.0),
+                    (both, False, "2030-03-01", 9.0),
+                    (both, root_id, "2030-07-01", 5.5),
+                    (shared_only, False, "2029-01-01", 2.0),
+                    (shared_only, False, "2029-07-01", 2.5),
+                    (own_only, root_id, "2029-07-01", 3.0),
+                    (own_only, root_id, "2030-01-01", 3.5),
+                )
+            ]
+        )
+        companies = self.env["res.company"].create(
+            [
+                {"name": f"{currency.name} Co", "currency_id": currency.id}
+                for currency in (both, shared_only, own_only, rateless)
+            ]
+        )
+        periods = [
+            ("before", "2028-06-01", "2028-06-30"),
+            ("first", "2029-03-01", "2029-03-31"),
+            ("change", "2029-06-16", "2029-07-15"),
+            ("own", "2030-02-15", "2030-03-14"),
+            ("after", "2030-08-01", "2030-08-31"),
+        ]
+        self.env["res.currency"]._create_currency_table(
+            main | companies, periods, use_cta_rates=True
+        )
+
+        def factor(date):
+            return main.currency_id._get_rates(main, date)[main.currency_id.id]
+
+        def base_rate(currency, date):
+            return currency._get_rates(main, date)[currency.id]
+
+        def only(rates, msg):
+            self.assertEqual(len(rates), 1, msg)
+            return rates[0]
+
+        for company in companies:
+            currency = company.currency_id
+            for key, date_from, date_to in periods:
+                start = datetime.date.fromisoformat(date_from)
+                days = [
+                    start + datetime.timedelta(days=offset)
+                    for offset in range(
+                        (datetime.date.fromisoformat(date_to) - start).days + 1
+                    )
+                ]
+                msg = (currency.name, key)
+                self.assertAlmostEqual(
+                    only(
+                        self._currency_table_rate_at(company, "current", date_to, key),
+                        msg,
+                    ),
+                    factor(date_to) / base_rate(currency, date_to),
+                    msg=msg,
+                )
+                self.assertAlmostEqual(
+                    only(
+                        self._currency_table_rate_at(company, "average", date_to, key),
+                        msg,
+                    ),
+                    sum(factor(date_to) / base_rate(currency, day) for day in days)
+                    / len(days),
+                    msg=msg,
+                )
+            if currency == rateless:
+                continue
+            for date in (
+                "2028-06-30",
+                "2029-01-01",
+                "2029-03-31",
+                "2029-07-01",
+                "2030-02-28",
+                "2030-03-01",
+                "2030-08-31",
+            ):
+                msg = (currency.name, "historical", date)
+                self.assertAlmostEqual(
+                    only(
+                        self._currency_table_rate_at(company, "historical", date),
+                        msg,
+                    ),
+                    factor(periods[-1][2]) / base_rate(currency, date),
+                    msg=msg,
+                )

@@ -24,6 +24,7 @@ CTA_RATE_TYPES = ("current", "historical", "average")
 class CurrencyTableScope:
     main_company_id: int
     other_company_ids: tuple
+    currency_ids: tuple
 
 
 class ResCurrency(models.Model):
@@ -143,6 +144,7 @@ class ResCurrency(models.Model):
             scope = CurrencyTableScope(
                 main_company_id=main_company.root_id.id,
                 other_company_ids=tuple(other_companies.ids),
+                currency_ids=tuple(other_companies.currency_id.ids),
             )
             for period_key, date_from, date_to in date_periods:
                 main_company_unit_factor = self._get_main_company_unit_factor(
@@ -224,16 +226,29 @@ class ResCurrency(models.Model):
         # a currency's first rate: its first own rate, else its first shared one.
         return SQL(
             """(
-                WITH firsts AS (
-                    SELECT currency_id,
-                           MIN(CASE WHEN company_id = %(main_company_id)s THEN name END) AS first_own_date,
-                           MIN(CASE WHEN company_id IS NULL THEN name END) AS first_shared_date
-                    FROM res_currency_rate
-                    WHERE (company_id = %(main_company_id)s OR company_id IS NULL)
-                      AND currency_id IN (
-                          SELECT currency_id FROM res_company WHERE id IN %(other_company_ids)s
-                      )
-                    GROUP BY currency_id
+                WITH firsts AS MATERIALIZED (
+                    SELECT currency.id AS currency_id,
+                           own_first.name AS first_own_date,
+                           COALESCE(own_first.rate, shared_first.rate) AS first_rate
+                    FROM res_currency currency
+                    LEFT JOIN LATERAL (
+                        SELECT own.name, own.rate
+                        FROM res_currency_rate own
+                        WHERE own.currency_id = currency.id
+                          AND own.company_id = %(main_company_id)s
+                        ORDER BY own.name
+                        LIMIT 1
+                    ) own_first ON TRUE
+                    LEFT JOIN LATERAL (
+                        SELECT shared.rate
+                        FROM res_currency_rate shared
+                        WHERE shared.currency_id = currency.id
+                          AND shared.company_id IS NULL
+                          AND own_first.name IS NULL
+                        ORDER BY shared.name, shared.id
+                        LIMIT 1
+                    ) shared_first ON TRUE
+                    WHERE currency.id IN %(currency_ids)s
                 )
                 SELECT rate.id, rate.currency_id, rate.name, rate.rate
                 FROM res_currency_rate rate
@@ -244,21 +259,12 @@ class ResCurrency(models.Model):
                        AND (firsts.first_own_date IS NULL OR rate.name < firsts.first_own_date)
                    )
                 UNION ALL
-                (
-                    SELECT DISTINCT ON (firsts.currency_id)
-                        NULL, firsts.currency_id, DATE '-infinity', rate.rate
-                    FROM firsts
-                    JOIN res_currency_rate rate
-                        ON rate.currency_id = firsts.currency_id
-                        AND rate.name = COALESCE(firsts.first_own_date, firsts.first_shared_date)
-                        AND rate.company_id IS NOT DISTINCT FROM (
-                            CASE WHEN firsts.first_own_date IS NOT NULL THEN %(main_company_id)s END
-                        )
-                    ORDER BY firsts.currency_id, rate.id
-                )
+                SELECT NULL, firsts.currency_id, DATE '-infinity', firsts.first_rate
+                FROM firsts
+                WHERE firsts.first_rate IS NOT NULL
             )""",
             main_company_id=scope.main_company_id,
-            other_company_ids=scope.other_company_ids,
+            currency_ids=scope.currency_ids,
         )
 
     def _get_table_builder_domestic_currency(self, companies, use_cta_rates) -> SQL:
@@ -279,7 +285,7 @@ class ResCurrency(models.Model):
     ) -> SQL:
         return SQL(
             """
-                SELECT DISTINCT ON (other_company.id)
+                SELECT
                     other_company.id,
                     %(period_key)s,
                     CAST(NULL AS DATE),
@@ -287,17 +293,16 @@ class ResCurrency(models.Model):
                     'current',
                     CASE WHEN rate.currency_id IS NOT NULL THEN %(main_company_unit_factor)s / rate.rate ELSE 1 END
                 FROM res_company other_company
-                LEFT JOIN %(rates)s rate
+                LEFT JOIN (%(rates)s) rate
                     ON rate.currency_id = other_company.currency_id
-                    AND rate.name <= %(date_to)s
                 WHERE
                     other_company.id IN %(other_company_ids)s
-                ORDER BY other_company.id, rate.name DESC
             """,
             period_key=period_key,
-            rates=self._get_currency_table_rates(scope),
+            rates=self._select_companies_rates(
+                scope.currency_ids, [scope.main_company_id], date_to
+            ),
             other_company_ids=scope.other_company_ids,
-            date_to=date_to,
             main_company_unit_factor=main_company_unit_factor,
         )
 

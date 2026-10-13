@@ -191,6 +191,14 @@ class AccountDeferredReportHandler(models.AbstractModel):
             search_condition=query.where_clause,
         )
 
+        for model_name in (
+            "account.move.line",
+            "account.move",
+            "account.account",
+            "product.product",
+            "product.template",
+        ):
+            self.env[model_name].flush_model()
         lines = self.env.execute_query_dict(query)
         _debug.perf.count("deferred_lines_fetched", rows=len(lines))
         return lines
