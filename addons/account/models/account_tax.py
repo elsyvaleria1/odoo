@@ -593,7 +593,7 @@ class AccountTax(models.Model):
             "currency_id": base_line["currency_id"].id,
             "analytic_distribution": base_line["analytic_distribution"],
             "account_id": base_line["account_id"].id,
-            "tax_ids": [Command.set(base_line["tax_ids"].ids)],
+            "tax_ids": [Command.set(sorted(base_line["tax_ids"].ids))],
         }
 
     @_debug.perf.timed
@@ -902,8 +902,18 @@ class AccountTax(models.Model):
             for tax_data in tax_details["taxes_data"]:
                 tax = tax_data["tax"]
                 for tax_rep_data in tax_data["tax_reps_data"]:
-                    grouping_key = frozendict(tax_rep_data["grouping_key"])
+                    grouping_key, flags = self._split_tax_line_grouping_key(
+                        tax_rep_data["grouping_key"]
+                    )
                     tax_line = tax_lines_mapping[grouping_key]
+                    for flag, value in flags.items():
+                        if flag in tax_line and tax_line[flag] != value:
+                            _debug.logic(
+                                "tax_line_flag_merged",
+                                flag=flag,
+                                grouping_key=grouping_key,
+                            )
+                        tax_line[flag] = tax_line.get(flag, False) or value
                     tax_line["name"] = base_line.get("manual_tax_line_name", tax.name)
                     tax_line["tax_base_amount"] += sign * tax_data["base_amount"]
                     tax_line["amount_currency"] += (
@@ -918,18 +928,19 @@ class AccountTax(models.Model):
         return tax_lines_mapping, base_lines_to_update
 
     @api.model
+    def _split_tax_line_grouping_key(self, grouping_key) -> tuple:
+        key, flags = {}, {}
+        for name, value in grouping_key.items():
+            (flags if name.startswith("__") else key)[name] = value
+        return frozendict(key), flags
+
+    @api.model
     def _remove_zero_tax_lines(self, tax_lines_mapping, company) -> dict:
         return {
-            frozendict(
-                {
-                    grouping_k: k[grouping_k]
-                    for grouping_k in k
-                    if not grouping_k.startswith("__")
-                }
-            ): v
+            k: {name: value for name, value in v.items() if not name.startswith("__")}
             for k, v in tax_lines_mapping.items()
             if (
-                k["__keep_zero_line"]
+                v.get("__keep_zero_line")
                 or (
                     not self.env["res.currency"]
                     .browse(k["currency_id"])

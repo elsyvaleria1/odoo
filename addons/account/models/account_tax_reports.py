@@ -1,3 +1,5 @@
+from collections import Counter
+
 from odoo import Command, api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.libs.debug_log import DebugLog
@@ -38,6 +40,13 @@ class AccountTaxUnit(models.Model):
         compute="_compute_fpos_synced",
         help="Technical field indicating whether Fiscal Positions exist for all companies in the unit",
     )
+    horizontal_group_id = fields.Many2one(
+        comodel_name="account.report.horizontal.group",
+        copy=False,
+        readonly=True,
+        ondelete="set null",
+        help="Report horizontal group splitting the tax report per member of this unit",
+    )
 
     @api.model_create_multi
     @_debug.perf.timed
@@ -50,6 +59,7 @@ class AccountTaxUnit(models.Model):
                 fields=sorted({key for vals in vals_list for key in vals}),
             )
         res = super().create(vals_list)
+        res._check_horizontal_group_names_free()
 
         horizontal_groups = self.env["account.report.horizontal.group"].create(
             [
@@ -90,6 +100,7 @@ class AccountTaxUnit(models.Model):
         generic_ec_sales_report.horizontal_group_ids |= horizontal_groups
 
         for tax_unit, horizontal_group in zip(res, horizontal_groups, strict=True):
+            tax_unit.horizontal_group_id = horizontal_group
             tax_unit._get_country_tax_report_variants().write(
                 {"horizontal_group_ids": [Command.link(horizontal_group.id)]}
             )
@@ -106,15 +117,32 @@ class AccountTaxUnit(models.Model):
         self.check_singleton()
         return f"[('account_config_id.account_tax_unit_ids', 'in', {self.id})]"
 
-    def _get_horizontal_group_by_unit(self) -> dict:
-        unit_by_domain = {unit._horizontal_group_rule_domain(): unit for unit in self}
-        rules = self.env["account.report.horizontal.group.rule"].search(
-            [
-                ("field_name", "=", "company_id"),
-                ("domain", "in", list(unit_by_domain)),
-            ]
+    def _check_horizontal_group_names_free(self) -> None:
+        names = Counter(unit.name for unit in self)
+        taken = {name for name, count in names.items() if count > 1}
+        taken.update(
+            self.env["account.report.horizontal.group"]
+            .search_fetch(
+                [
+                    ("name", "in", list(names)),
+                    ("id", "not in", self.horizontal_group_id.ids),
+                ],
+                ["name"],
+            )
+            .mapped("name")
         )
-        return {unit_by_domain[rule.domain]: rule.horizontal_group_id for rule in rules}
+        _debug.logic(
+            "tax_unit_horizontal_group_names_checked",
+            units=self,
+            taken=sorted(taken),
+        )
+        if taken:
+            raise ValidationError(
+                self.env._(
+                    "A report horizontal group is already named %(names)s: each tax unit needs a name of its own.",
+                    names=", ".join(sorted(taken)),
+                )
+            )
 
     def _get_country_tax_report_variants(self):
         self.check_singleton()
@@ -132,8 +160,11 @@ class AccountTaxUnit(models.Model):
             else {}
         )
         result = super().write(vals)
+        if "name" in vals:
+            self._check_horizontal_group_names_free()
         if "name" in vals or variants_before:
-            for unit, group in self._get_horizontal_group_by_unit().items():
+            for unit in self.filtered("horizontal_group_id"):
+                group = unit.horizontal_group_id
                 _debug.logic(
                     "tax_unit_horizontal_group_synced",
                     unit=unit,
@@ -239,9 +270,7 @@ class AccountTaxUnit(models.Model):
         self._get_tax_unit_fiscal_positions(
             companies=self.env["res.company"].search([])
         ).unlink()
-        horizontal_groups = self.env["account.report.horizontal.group"].union(
-            *self._get_horizontal_group_by_unit().values()
-        )
+        horizontal_groups = self.horizontal_group_id
         result = super().unlink()
         _debug.pipeline(
             "tax_unit_horizontal_groups_removed", horizontal_groups=horizontal_groups

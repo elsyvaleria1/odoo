@@ -2,7 +2,8 @@ from psycopg import IntegrityError
 
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
-from odoo.tests import tagged
+from odoo.modules.module import get_module_path, load_script
+from odoo.tests import new_test_user, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -500,12 +501,12 @@ class TestMarinTaxUnitHorizontalGroup(AccountTestInvoicingCommon):
         )
         cls.env.user.company_ids = [Command.link(company.id) for company in cls.members]
 
-    def _unit(self, name):
+    def _unit(self, name, country="base.be", vat="BE0999999922"):
         return self.env["account.tax.unit"].create(
             {
                 "name": name,
-                "country_id": self.env.ref("base.be").id,
-                "vat": "BE0999999922",
+                "country_id": self.env.ref(country).id,
+                "vat": vat,
                 "company_ids": [Command.set(self.members.ids)],
                 "main_company_id": self.members[0].id,
             }
@@ -562,6 +563,81 @@ class TestMarinTaxUnitHorizontalGroup(AccountTestInvoicingCommon):
         self.assertNotIn(group, be_variant.horizontal_group_ids)
         self.assertIn(group, nl_variant.horizontal_group_ids)
 
+    def test_unit_is_linked_to_the_horizontal_group_it_creates(self):
+        unit = self._unit("Unit linked")
+        self.assertEqual(unit.horizontal_group_id, self._group(unit))
+        self.assertEqual(unit.horizontal_group_id.name, "Unit linked")
+
+    def test_edited_rule_domain_keeps_the_group_linked(self):
+        unit = self._unit("Unit edited domain")
+        group = unit.horizontal_group_id
+        group.rule_ids.domain = (
+            f"[('account_config_id.account_tax_unit_ids', 'in', [{unit.id}])]"
+        )
+        unit.name = "Unit edited domain renamed"
+        self.assertEqual(group.name, "Unit edited domain renamed")
+        unit.unlink()
+        self.assertFalse(group.exists())
+
+    def _foreign_group(self, name):
+        return self.env["account.report.horizontal.group"].create(
+            {
+                "name": name,
+                "rule_ids": [
+                    Command.create({"field_name": "company_id", "domain": "[]"})
+                ],
+            }
+        )
+
+    def test_renaming_a_unit_to_a_taken_group_name_is_refused(self):
+        self._foreign_group("Unit taken")
+        unit = self._unit("Unit free")
+        with self.assertRaisesRegex(ValidationError, "Unit taken"):
+            unit.name = "Unit taken"
+        self.assertEqual(unit.horizontal_group_id.name, "Unit free")
+
+    def test_member_company_manager_renames_a_unit_and_its_group(self):
+        unit = self._unit("Unit managed")
+        self._foreign_group("Unit managed taken")
+        manager = new_test_user(
+            self.env,
+            login="tax_unit_member_manager",
+            groups="account.group_account_manager",
+            company_id=self.members[0].id,
+            company_ids=self.members.ids,
+        )
+        managed = unit.with_user(manager)
+        managed.name = "Unit managed renamed"
+        self.assertEqual(unit.horizontal_group_id.name, "Unit managed renamed")
+        with self.assertRaisesRegex(ValidationError, "Unit managed taken"):
+            managed.name = "Unit managed taken"
+
+    def test_creating_a_unit_with_a_taken_group_name_is_refused(self):
+        self._foreign_group("Unit taken at create")
+        with self.assertRaisesRegex(ValidationError, "Unit taken at create"):
+            self._unit("Unit taken at create")
+
+    def test_migration_links_a_unit_to_its_group_by_rule_domain(self):
+        linked = self._unit("Unit migrated")
+        unlinked = self._unit("Unit not linked", "base.nl", "NL000099998B57")
+        linked_group = linked.horizontal_group_id
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_tax_unit SET horizontal_group_id = NULL WHERE id = ANY(%s)",
+            [[linked.id, unlinked.id]],
+        )
+        unlinked.horizontal_group_id.rule_ids.domain = "[]"
+        self.env.invalidate_all()
+        self.assertFalse(linked.horizontal_group_id)
+        script = load_script(
+            f"{get_module_path('account')}/migrations/1.46/post-10-tax_unit_horizontal_group.py",
+            "odoo.addons.account.migrations.post_10_tax_unit_horizontal_group_1_46",
+        )
+        script.migrate(self.env.cr, "1.45")
+        self.env.invalidate_all()
+        self.assertEqual(linked.horizontal_group_id, linked_group)
+        self.assertFalse(unlinked.horizontal_group_id)
+
 
 @tagged("post_install", "-at_install")
 class TestMarinFiscalPositionAccountMapping(AccountTestInvoicingCommon):
@@ -614,3 +690,117 @@ class TestMarinFiscalPositionAccountMapping(AccountTestInvoicingCommon):
                 {"account_dest_id": "account.marin_fp_dest"},
             ),
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxLineAggregationFlags(AccountTestInvoicingCommon):
+    def _base_lines(self, tax, price_units):
+        AccountTax = self.env["account.tax"]
+        company = self.env.company
+        base_lines = [
+            AccountTax._prepare_base_line_for_taxes_computation(
+                None,
+                tax_ids=tax,
+                price_unit=price_unit,
+                quantity=1.0,
+                currency_id=company.currency_id,
+                partner_id=self.partner_a,
+                account_id=self.company_data["default_account_revenue"],
+            )
+            for price_unit in price_units
+        ]
+        AccountTax._add_tax_details_in_base_lines(base_lines, company)
+        AccountTax._round_base_lines_tax_details(base_lines, company)
+        AccountTax._add_accounting_data_in_base_lines_tax_details(base_lines, company)
+        return base_lines
+
+    def test_keep_zero_line_flag_does_not_split_the_aggregation(self):
+        tax = self.company_data["default_tax_sale"]
+        self.assertEqual(tax.amount, 15.0)
+        base_lines = self._base_lines(tax, (100.0, 200.0))
+        for tax_data in base_lines[1]["tax_details"]["taxes_data"]:
+            for tax_rep_data in tax_data["tax_reps_data"]:
+                tax_rep_data["grouping_key"] = {
+                    **tax_rep_data["grouping_key"],
+                    "__keep_zero_line": True,
+                }
+        tax_lines = self.env["account.tax"]._prepare_tax_lines(
+            base_lines, self.env.company
+        )["tax_lines_to_add"]
+        self.assertEqual(len(tax_lines), 1)
+        self.assertAlmostEqual(tax_lines[0]["amount_currency"], 45.0)
+        self.assertAlmostEqual(tax_lines[0]["tax_base_amount"], 300.0)
+        self.assertFalse([key for key in tax_lines[0] if key.startswith("__")])
+
+    def test_keep_zero_line_flag_survives_merging_with_an_unflagged_entry(self):
+        tax = self.company_data["default_tax_sale"].copy(
+            {"name": "zero rate", "amount": 0.0}
+        )
+        base_lines = self._base_lines(tax, (100.0, 200.0))
+        AccountTax = self.env["account.tax"]
+        self.assertFalse(
+            AccountTax._prepare_tax_lines(base_lines, self.env.company)[
+                "tax_lines_to_add"
+            ]
+        )
+        for tax_data in base_lines[1]["tax_details"]["taxes_data"]:
+            for tax_rep_data in tax_data["tax_reps_data"]:
+                tax_rep_data["grouping_key"] = {
+                    **tax_rep_data["grouping_key"],
+                    "__keep_zero_line": True,
+                }
+        tax_lines = AccountTax._prepare_tax_lines(base_lines, self.env.company)[
+            "tax_lines_to_add"
+        ]
+        self.assertEqual(len(tax_lines), 1)
+        self.assertAlmostEqual(tax_lines[0]["tax_base_amount"], 300.0)
+
+    def test_base_line_grouping_key_ignores_tax_order(self):
+        AccountTax = self.env["account.tax"]
+        taxes = self.company_data["default_tax_sale"] | self.tax_sale_b
+        keys = [
+            AccountTax._prepare_base_line_grouping_key(
+                AccountTax._prepare_base_line_for_taxes_computation(
+                    None,
+                    tax_ids=ordered,
+                    currency_id=self.env.company.currency_id,
+                    partner_id=self.partner_a,
+                )
+            )
+            for ordered in (taxes, taxes.browse(reversed(taxes.ids)))
+        ]
+        self.assertEqual(keys[0], keys[1])
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
+    def test_resync_overwrites_a_manually_edited_tax_line_label(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-01-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "line",
+                            "quantity": 1,
+                            "price_unit": 100.0,
+                            "tax_ids": [Command.set(tax.ids)],
+                        }
+                    )
+                ],
+            }
+        )
+        tax_line = invoice.line_ids.filtered(lambda line: line.display_type == "tax")
+        invoice.write(
+            {"line_ids": [Command.update(tax_line.id, {"name": "Edited label"})]}
+        )
+        self.assertEqual(tax_line.name, "Edited label")
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(
+            invoice.line_ids.filtered(lambda line: line.display_type == "tax"),
+            tax_line,
+        )
+        self.assertEqual(tax_line.name, tax.name)
