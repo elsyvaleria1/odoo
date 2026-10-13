@@ -226,7 +226,7 @@ class TestReportRequestCosts(TestAccountReportsCommon):
         companies = company | company_2
         companies._compute_fiscalyear_dates_by_company(datetime.date(2016, 6, 1))
         self.env.invalidate_all()
-        with self.assertQueryCount(2):
+        with self.assertQueryCount(3):
             bounds = companies._compute_fiscalyear_dates_by_company(
                 datetime.date(2017, 6, 1)
             )

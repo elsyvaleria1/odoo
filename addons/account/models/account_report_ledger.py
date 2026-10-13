@@ -2946,7 +2946,7 @@ class AccountReport(models.Model):
         )
         search_text = (options.get("filter_search_bar") or "").lower()
         lines = []
-        for company_id, line_id in company_to_line_id.items():
+        for company_id, line_id in sorted(company_to_line_id.items()):
             line_name = (
                 str(UNDISTR_LINE_NAME)
                 if len(self.env.companies) == 1
