@@ -111,6 +111,33 @@ class ResCompany(models.Model):
             limit=limit,
         )
 
+    def _get_vat_filing_company(self) -> Self:
+        self.check_singleton()
+        ancestors = self.with_privilege(
+            "base.privilege_read_company_hierarchy",
+            reason="a company finds the ancestor that files its VAT returns",
+        ).parent_ids
+        effective_vats = []
+        effective_vat = False
+        for ancestor in ancestors:
+            effective_vat = ancestor.vat or effective_vat
+            effective_vats.append(effective_vat)
+
+        filing_company = ancestors[-1]
+        for ancestor, ancestor_vat in zip(
+            reversed(ancestors), reversed(effective_vats), strict=True
+        ):
+            if ancestor_vat != effective_vat:
+                break
+            filing_company = ancestor
+        _debug.logic(
+            "vat_filing_company_resolved",
+            company=self,
+            vat=effective_vat,
+            filing_company=filing_company,
+        )
+        return self.browse(filing_company.id)
+
     def _get_branches_with_same_vat(self, accessible_only=False) -> Self:
         self.check_singleton()
 

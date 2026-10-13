@@ -437,14 +437,22 @@ class AccountReturn(models.Model):
 
     @api.model
     @_debug.perf.timed
+    def _get_deadline(
+        self, company, return_type, return_type_external_id, date_from, date_to
+    ):
+        if return_type_delay := return_type.with_company(company).deadline_days_delay:
+            return date_to + relativedelta(days=return_type_delay)
+        return self._evaluate_deadline(
+            company, return_type, return_type_external_id, date_from, date_to
+        )
+
+    @api.model
     def _evaluate_deadline(
         self, company, return_type, return_type_external_id, date_from, date_to
     ):
-        return_type_delay = return_type.with_company(company).deadline_days_delay
-        delay = (
-            return_type_delay or company.account_config_id.account_return_reminder_day
+        return date_to + relativedelta(
+            days=company.account_config_id.account_return_reminder_day
         )
-        return date_to + relativedelta(days=delay)
 
     @api.depends(
         "date_to",
@@ -457,7 +465,7 @@ class AccountReturn(models.Model):
             if account_return.is_completed:
                 continue
 
-            account_return.date_deadline = account_return._evaluate_deadline(
+            account_return.date_deadline = account_return._get_deadline(
                 account_return.company_id,
                 account_return.type_id,
                 account_return.type_external_id,

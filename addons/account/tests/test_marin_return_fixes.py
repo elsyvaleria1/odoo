@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from freezegun import freeze_time
 
+from odoo import Command
 from odoo.tests import tagged
 
 from odoo.addons.account.models.account_return_type import MONTHS_PER_PERIOD
@@ -186,3 +187,229 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         )["company"]
         self.return_type.with_company(branch).deadline_periodicity = "fiscalyear"
         self.assertEqual(self.return_type._get_periodicity_months_delay(branch), 18)
+
+    def _setup_branch(self, name, parent, vat=False):
+        with self._patch_returns_generation():
+            return self.setup_other_company(name=name, parent_id=parent.id, vat=vat)[
+                "company"
+            ]
+
+    def _assert_vat_filing(self, filing_by_company):
+        wizard_vals = {
+            "date_from": "2024-01-01",
+            "date_to": "2024-01-31",
+            "return_type_id": self.return_type.id,
+        }
+        for company, filing_company in filing_by_company.items():
+            with self.subTest(company=company.name):
+                self.assertEqual(company._get_vat_filing_company(), filing_company)
+                self.assertEqual(
+                    self.return_type._can_return_exist(company),
+                    company == filing_company,
+                )
+                wizard = self.env["wizard.account.return.create"].create(
+                    {**wizard_vals, "company_id": company.id}
+                )
+                self.assertEqual(
+                    wizard._get_return_company_and_tax_unit()[0], filing_company
+                )
+
+    def test_same_vat_sub_branch_resolves_to_the_root_that_files_for_it(self):
+        branch = self._setup_branch("Branch without VAT", self.root_company)
+        sub_branch = self._setup_branch(
+            "Sub-branch with the root's VAT", branch, vat=self.root_company.vat
+        )
+        self._assert_vat_filing(
+            {
+                self.root_company: self.root_company,
+                branch: self.root_company,
+                sub_branch: self.root_company,
+            }
+        )
+
+    def test_vat_filing_stops_at_a_branch_with_another_vat(self):
+        other_vat_branch = self._setup_branch(
+            "Branch with its own VAT", self.root_company, vat="US98765432"
+        )
+        vatless_sub_branch = self._setup_branch(
+            "Sub-branch without VAT", other_vat_branch
+        )
+        root_vat_sub_sub_branch = self._setup_branch(
+            "Sub-sub-branch with the root's VAT",
+            vatless_sub_branch,
+            vat=self.root_company.vat,
+        )
+        self._assert_vat_filing(
+            {
+                self.root_company: self.root_company,
+                other_vat_branch: other_vat_branch,
+                vatless_sub_branch: other_vat_branch,
+                root_vat_sub_sub_branch: root_vat_sub_sub_branch,
+            }
+        )
+
+    def _create_conditional_return_type(self):
+        report = self.env["report.formula"].create(
+            {
+                "root_report_id": self.env.ref("account.generic_ec_sales_report").id,
+                "name": "Marin Conditional EC Sales Report",
+            }
+        )
+        return_type = self.env["account.return.type"].create(
+            {
+                "name": "EC Sales List (Marin)",
+                "report_id": report.id,
+                "auto_generate": False,
+                "default_deadline_start_date": "2024-01-01",
+                "default_deadline_periodicity": "monthly",
+            }
+        )
+        self.env["ir.model.data"].create(
+            {
+                "module": "__test__",
+                "name": "marin_conditional_return_type",
+                "model": "account.return.type",
+                "res_id": return_type.id,
+            }
+        )
+        return return_type
+
+    def _create_tagged_entry(self, journal, tag, entry_date, post=True):
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "journal_id": journal.id,
+                "date": entry_date,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "credit": 100.0,
+                            "tax_tag_ids": [Command.set(tag.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_assets"
+                            ].id,
+                            "debit": 100.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        if post:
+            move.action_post()
+        return move
+
+    def test_conditional_return_needs_posted_activity_in_the_filing_scope(self):
+        return_type = self._create_conditional_return_type()
+        tag = self.env["account.account.tag"].create(
+            {"name": "Marin EC goods", "applicability": "taxes"}
+        )
+        branch = self._setup_branch("Branch without VAT", self.root_company)
+        branch_journal = self.env["account.journal"].create(
+            {
+                "name": "Branch Miscellaneous",
+                "code": "BMSC",
+                "type": "general",
+                "company_id": branch.id,
+            }
+        )
+
+        def generate():
+            self.env["account.return.type"]._generate_conditional_return(
+                "__test__.marin_conditional_return_type",
+                self.root_company,
+                None,
+                need_domain=[("tax_tag_ids", "in", tag.ids)],
+            )
+            return self.env["account.return"].search([("type_id", "=", return_type.id)])
+
+        self._create_tagged_entry(
+            self.company_data["default_journal_misc"], tag, "2023-12-10", post=False
+        )
+        self._create_tagged_entry(branch_journal, tag, "2024-01-05")
+        self.assertFalse(generate())
+
+        self._create_tagged_entry(branch_journal, tag, "2023-12-20")
+        returns = generate()
+        self.assertEqual(len(returns), 1)
+        self.assertEqual(returns.company_id, self.root_company)
+        self.assertEqual(
+            (returns.date_from, returns.date_to),
+            (date(2023, 12, 1), date(2023, 12, 31)),
+        )
+        self.assertIn(branch, returns.company_ids)
+
+    def test_conditional_return_probes_each_requested_period(self):
+        return_type = self._create_conditional_return_type()
+        tag = self.env["account.account.tag"].create(
+            {"name": "Marin EC services", "applicability": "taxes"}
+        )
+        self._create_tagged_entry(
+            self.company_data["default_journal_misc"], tag, "2023-11-15"
+        )
+        self.env["account.return.type"]._generate_conditional_return(
+            "__test__.marin_conditional_return_type",
+            self.root_company,
+            None,
+            need_domain=[("tax_tag_ids", "in", tag.ids)],
+            periods_back=range(-1, 4),
+        )
+        returns = self.env["account.return"].search([("type_id", "=", return_type.id)])
+        self.assertEqual(
+            [(r.date_from, r.date_to) for r in returns],
+            [(date(2023, 11, 1), date(2023, 11, 30))],
+        )
+
+    def test_conditional_return_without_need_domain_always_covers_the_previous_period(
+        self,
+    ):
+        return_type = self._create_conditional_return_type()
+        self.env["account.return.type"]._generate_conditional_return(
+            "__test__.marin_conditional_return_type", self.root_company, None
+        )
+        self.env["account.return.type"]._generate_conditional_return(
+            "__test__.marin_missing_return_type", self.root_company, None
+        )
+        returns = self.env["account.return"].search([("type_id", "=", return_type.id)])
+        self.assertEqual(
+            [(r.date_from, r.date_to) for r in returns],
+            [(date(2023, 12, 1), date(2023, 12, 31))],
+        )
+
+    def test_a_country_deadline_never_overrides_the_configured_delay(self):
+        def country_deadline(
+            account_return, company, return_type, xmlid, date_from, date_to
+        ):
+            return date(2099, 1, 1)
+
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        with patch.object(
+            self.registry["account.return"], "_evaluate_deadline", country_deadline
+        ):
+            self.assertEqual(
+                self.env["account.return"]._get_deadline(
+                    self.root_company,
+                    self.return_type,
+                    "__test__.marin_conditional_return_type",
+                    date(2024, 1, 1),
+                    date(2024, 1, 31),
+                ),
+                date(2099, 1, 1),
+            )
+            self.return_type.with_company(self.root_company).deadline_days_delay = 12
+            self.assertEqual(
+                self.env["account.return"]._get_deadline(
+                    self.root_company,
+                    self.return_type,
+                    "__test__.marin_conditional_return_type",
+                    date(2024, 1, 1),
+                    date(2024, 1, 31),
+                ),
+                date(2024, 2, 12),
+            )

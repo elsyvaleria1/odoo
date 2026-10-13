@@ -283,22 +283,15 @@ class AccountReturnType(models.Model):
         )
 
     def _can_return_exist(self, company, tax_unit=False) -> bool:
+        report_country = self.report_id.country_id
         is_foreign_vat = (
-            self.report_id
-            and company.tax_config_id.account_fiscal_country_id.code
-            != self.report_id.country_id.code
+            bool(report_country)
+            and company.tax_config_id.account_fiscal_country_id != report_country
         )
 
         is_tax_unit_main_comp = not tax_unit or tax_unit.main_company_id == company
 
-        all_branch_companies_with_same_vat = company._get_branches_with_same_vat()
-        sorted_branch_companies_with_same_vat = sorted(
-            all_branch_companies_with_same_vat,
-            key=lambda comp: len(comp._get_ancestor_ids(include_self=True)),
-        )
-        is_main_branch = (
-            not company.parent_id or company == sorted_branch_companies_with_same_vat[0]
-        )
+        is_main_branch = company == company._get_vat_filing_company()
 
         return is_foreign_vat or (is_tax_unit_main_comp and is_main_branch)
 
@@ -378,7 +371,10 @@ class AccountReturnType(models.Model):
     @api.model
     @_debug.perf.timed
     def _sync_all_returns(self, root_companies) -> None:
-        root_companies = root_companies.filtered(
+        # Return generation is one company-wide synchronisation, whoever
+        # triggers it: it reads and writes every company of the roots.
+        self = self.sudo()
+        root_companies = root_companies.with_env(self.env).filtered(
             lambda x: x.account_config_id.account_opening_date
         )
         if not root_companies:
@@ -387,8 +383,8 @@ class AccountReturnType(models.Model):
         _debug.pipeline("_sync_all_returns", root_companies=root_companies)
 
         all_tax_units_root_domain = [("company_ids", "child_of", root_companies.ids)]
-        all_tax_units = (
-            self.env["account.tax.unit"].sudo().search([*all_tax_units_root_domain])
+        all_tax_units = self.env["account.tax.unit"].search(
+            [*all_tax_units_root_domain]
         )
 
         all_domestic_tax_units = self.env["account.tax.unit"]
@@ -409,10 +405,8 @@ class AccountReturnType(models.Model):
             )
 
         fpos_root_company_domain = [("company_id", "child_of", root_companies.ids)]
-        all_foreign_vat_fpos = (
-            self.env["account.fiscal.position"]
-            .sudo()
-            .search([("foreign_vat", "!=", False), *fpos_root_company_domain])
+        all_foreign_vat_fpos = self.env["account.fiscal.position"].search(
+            [("foreign_vat", "!=", False), *fpos_root_company_domain]
         )
         for company, fiscal_positions in all_foreign_vat_fpos.grouped(
             lambda x: x.company_id
@@ -421,17 +415,13 @@ class AccountReturnType(models.Model):
                 self._generate_all_returns(country_code, company, None)
 
         return_root_company_domain = [("company_ids", "in", root_companies.ids)]
-        all_return_that_might_be_deleted = (
-            self.env["account.return"]
-            .sudo()
-            .search(
-                [
-                    ("date_lock", "=", False),
-                    ("is_completed", "=", False),
-                    ("manually_created", "=", False),
-                    *return_root_company_domain,
-                ]
-            )
+        all_return_that_might_be_deleted = self.env["account.return"].search(
+            [
+                ("date_lock", "=", False),
+                ("is_completed", "=", False),
+                ("manually_created", "=", False),
+                *return_root_company_domain,
+            ]
         )
         returns_to_unlink = self.env["account.return"]
         for return_to_check in all_return_that_might_be_deleted:
@@ -450,7 +440,7 @@ class AccountReturnType(models.Model):
             ),
             returns_to_unlink=returns_to_unlink,
         )
-        returns_to_unlink.sudo().unlink()
+        returns_to_unlink.unlink()
 
     @api.model
     @_debug.perf.timed
@@ -605,7 +595,7 @@ class AccountReturnType(models.Model):
                 period_date_from, period_date_to = self._get_period_boundaries(
                     main_company, date_pointer
                 )
-                deadline_date = self.env["account.return"]._evaluate_deadline(
+                deadline_date = self.env["account.return"]._get_deadline(
                     main_company, self, type_xml_id, period_date_from, period_date_to
                 )
                 if (
@@ -741,6 +731,66 @@ class AccountReturnType(models.Model):
         )
         account_returns._update_translated_name()
         return account_returns
+
+    def _get_previous_period_boundaries(self, main_company, periods_back=1) -> tuple:
+        months_per_period = self._get_periodicity_months_delay(main_company)
+        return self._get_period_boundaries(
+            main_company,
+            fields.Date.context_today(self)
+            - relativedelta(months=months_per_period * periods_back),
+        )
+
+    @api.model
+    @_debug.perf.timed
+    def _generate_conditional_return(
+        self,
+        return_type_xmlid,
+        main_company,
+        tax_unit,
+        need_domain=None,
+        periods_back=(1,),
+    ) -> None:
+        return_type = self.env.ref(return_type_xmlid, raise_if_not_found=False)
+        if not return_type:
+            _debug.logic("conditional_return_type_missing", xmlid=return_type_xmlid)
+            return
+
+        if need_domain is not None:
+            company_ids = (
+                self.env["account.return"]
+                ._get_company_ids(main_company, tax_unit, return_type.report_id)
+                .ids
+            )
+        for period_back in periods_back:
+            date_from, date_to = return_type._get_previous_period_boundaries(
+                main_company, period_back
+            )
+            if need_domain is not None:
+                has_activity = bool(
+                    self.env["account.move.line"].search_count(  # noqa: E8507 -- one LIMIT 1 probe per period, at most five periods
+                        [
+                            *need_domain,
+                            ("company_id", "in", company_ids),
+                            ("parent_state", "=", "posted"),
+                            ("date", ">=", date_from),
+                            ("date", "<=", date_to),
+                        ],
+                        limit=1,
+                    )
+                )
+                _debug.logic(
+                    "conditional_return_activity_checked",
+                    returntype=return_type,
+                    company=main_company,
+                    tax_unit=tax_unit,
+                    companies=company_ids,
+                    date_from=date_from,
+                    date_to=date_to,
+                    has_activity=has_activity,
+                )
+                if not has_activity:
+                    continue
+            return_type._try_create_return_for_period(date_from, main_company, tax_unit)
 
     @_debug.perf.timed
     def _try_create_return_for_period(

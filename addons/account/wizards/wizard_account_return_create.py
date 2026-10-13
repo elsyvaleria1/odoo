@@ -190,13 +190,7 @@ class WizardAccountReturnCreate(models.TransientModel):
 
     def _get_return_company_and_tax_unit(self) -> tuple:
         self.check_singleton()
-        all_branch_companies_with_same_vat = (
-            self.company_id._get_branches_with_same_vat()
-        )
-        root_company = min(
-            all_branch_companies_with_same_vat,
-            key=lambda comp: len(comp._get_ancestor_ids(include_self=True)),
-        )
+        root_company = self.company_id._get_vat_filing_company()
         tax_unit = (
             self.env["account.tax.unit"]
             .sudo()
