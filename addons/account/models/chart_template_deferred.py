@@ -3,11 +3,13 @@ from odoo.libs.debug_log import DebugLog
 
 _debug = DebugLog(__name__)
 
+SEPA_MODULES = ("account_iso20022", "account_bank_statement_import_camt")
+
 
 class AccountChartTemplate(models.AbstractModel):
     _inherit = "account.chart.template"
 
-    def _get_account_reconcile_res_company(self, chart_template) -> dict:
+    def _get_deferred_res_company(self, chart_template) -> dict:
         company = self.env.company
         data = self._prepare_chart_template_data(chart_template)
         company_data = data["res.company"].get(company.id, {})
@@ -94,37 +96,33 @@ class AccountChartTemplate(models.AbstractModel):
         _debug.lifecycle("_post_load_data", records=self)
         super()._post_load_data(template_code, company, template_data)
 
+        self._install_sepa_modules(company)
+
+    def _install_sepa_modules(self, companies) -> None:
         sepa_countries = self.env.ref("base.sepa_zone").country_ids
-        if _debug.logic.enabled:
-            _debug.logic(
-                "sepa_zone_checked",
-                company=company,
-                in_sepa=company.country_id in sepa_countries,
-            )
-        if company.country_id in sepa_countries:
-            sepa_module = (
-                self.env["ir.module.module"]
-                .sudo()
-                .search([("name", "=", "account_iso20022")], limit=1)
-            )
-            if sepa_module and sepa_module.state != "installed":
-                if _debug.logic.enabled:
-                    _debug.logic(
-                        "sepa_module_install_mode",
-                        company=company,
-                        module=sepa_module,
-                        immediate=bool(
-                            self.env.registry.ready
-                            and not modules.module.current_test
-                            and not self.env.context.get("install_demo")
-                        ),
-                    )
-                if (
-                    self.env.registry.ready
-                    and self.env.registry.ready
-                    and not modules.module.current_test
-                    and not self.env.context.get("install_demo")
-                ):
-                    sepa_module.button_immediate_install()
-                else:
-                    sepa_module.button_install()
+        in_sepa = any(company.country_id in sepa_countries for company in companies)
+        _debug.logic("sepa_zone_checked", companies=companies, in_sepa=in_sepa)
+        if not in_sepa:
+            return
+        sepa_modules = (
+            self.env["ir.module.module"]
+            .sudo()
+            .search([("name", "in", SEPA_MODULES), ("state", "=", "uninstalled")])
+        )
+        if not sepa_modules:
+            return
+        immediate = bool(
+            self.env.registry.ready
+            and not modules.module.current_test
+            and not self.env.context.get("install_demo")
+        )
+        _debug.logic(
+            "sepa_module_install_mode",
+            companies=companies,
+            modules=sepa_modules,
+            immediate=immediate,
+        )
+        if immediate:
+            sepa_modules.button_immediate_install()
+        else:
+            sepa_modules.button_install()

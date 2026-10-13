@@ -1,5 +1,4 @@
 import contextlib
-import itertools
 import re
 from bisect import bisect_left
 from collections import defaultdict
@@ -410,7 +409,7 @@ class AccountAccount(models.Model):
         self._compute_code()
 
     @api.depends_context("company", "uid")
-    @api.depends("code")
+    @api.depends("code", "company_ids")
     def _compute_placeholder_code(self) -> None:
         self.placeholder_code = False
         for record in self:
@@ -445,8 +444,8 @@ class AccountAccount(models.Model):
             )
         return [("id", "in", query)]
 
-    @api.depends_context("company")
-    @api.depends("code")
+    @api.depends_context("company", "uid")
+    @api.depends("placeholder_code")
     def _compute_account_root(self) -> None:
         for record in self:
             record.root_id = self.env["account.root"]._from_account_code(
@@ -750,15 +749,6 @@ class AccountAccount(models.Model):
             self.env._("Please create new accounts from the Chart of Accounts menu."),
         )
 
-    def _sort_vals_for_company_grouping(self, vals_list):
-        first_seen = {}
-        for index, vals in enumerate(vals_list):
-            first_seen.setdefault(repr(vals.get("company_ids", [])), index)
-        return sorted(
-            vals_list,
-            key=lambda vals: first_seen[repr(vals.get("company_ids", []))],
-        )
-
     def _update_vals_with_code(self, vals, companies, cache) -> None:
         if "prefix" in vals:
             prefix = vals.pop("prefix") or ""
@@ -787,18 +777,17 @@ class AccountAccount(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        records_list = []
-        vals_list = self._sort_vals_for_company_grouping(vals_list)
+        vals_list = [dict(vals) for vals in vals_list]
+        positions_by_company_ids = defaultdict(list)
+        for position, vals in enumerate(vals_list):
+            positions_by_company_ids[repr(vals.get("company_ids", []))].append(position)
+        created_ids = [0] * len(vals_list)
 
-        for company_ids, vals_list_for_company in itertools.groupby(
-            vals_list,
-            lambda v: v.get("company_ids", []),
-        ):
-            cache = set()
-            vals_list_for_company = list(vals_list_for_company)
-
+        for positions in positions_by_company_ids.values():
+            vals_list_for_company = [vals_list[position] for position in positions]
+            cache = {vals["code"] for vals in vals_list_for_company if vals.get("code")}
             company_ids = self._fields["company_ids"].convert_to_cache(
-                company_ids,
+                vals_list_for_company[0].get("company_ids", []),
                 self.browse(),
             )
             companies = self.env["res.company"].browse(company_ids)
@@ -826,10 +815,10 @@ class AccountAccount(models.Model):
             ).create(vals_list_for_company)
             new_accounts._sync_is_reconcilable()
             new_accounts._check_account_code()
+            for position, account_id in zip(positions, new_accounts.ids, strict=True):
+                created_ids[position] = account_id
 
-            records_list.append(new_accounts)
-
-        records = self.env["account.account"].union(*records_list)
+        records = self.browse(created_ids)
         records.flush_recordset()
         records.invalidate_recordset(fnames=["code", "code_store"])
         records._check_code_is_unique()

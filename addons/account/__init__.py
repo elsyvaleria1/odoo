@@ -5,26 +5,11 @@ def _load_deferred_accounts(env) -> None:
         ChartTemplate = env["account.chart.template"].with_company(company)
         ChartTemplate._load_data(
             {
-                "res.company": ChartTemplate._get_account_reconcile_res_company(
+                "res.company": ChartTemplate._get_deferred_res_company(
                     company.account_config_id.chart_template
                 ),
             }
         )
-
-
-def _install_sepa_modules(env) -> None:
-    companies = env["res.company"].search([])
-    if not any(
-        company.country_id and "SEPA" in company.country_id.country_group_codes
-        for company in companies
-    ):
-        return
-    env["ir.module.module"].search(
-        [
-            ("name", "in", ["account_iso20022", "account_bank_statement_import_camt"]),
-            ("state", "=", "uninstalled"),
-        ]
-    ).sudo().button_install()
 
 
 def _load_account_return_data(env) -> None:
@@ -51,7 +36,7 @@ def _load_account_return_data(env) -> None:
 
 
 def _account_post_init(env) -> None:
-    _install_sepa_modules(env)
+    env["account.chart.template"]._install_sepa_modules(env["res.company"].search([]))
     _load_deferred_accounts(env)
     _load_account_return_data(env)
 

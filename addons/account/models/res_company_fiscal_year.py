@@ -22,7 +22,7 @@ class ResCompany(models.Model):
             self.env["account.fiscal.year"]
             .search_fetch(
                 [
-                    ("company_id", "in", self.ids),
+                    ("company_id", "in", self.root_id.ids),
                     ("date_from", "<=", day + window),
                     ("date_to", ">=", day - window),
                 ],
@@ -33,7 +33,9 @@ class ResCompany(models.Model):
         return {
             company.id: company._compute_fiscalyear_dates(
                 current_date,
-                fiscal_years_by_company.get(company, self.env["account.fiscal.year"]),
+                fiscal_years_by_company.get(
+                    company.root_id, self.env["account.fiscal.year"]
+                ),
             )
             for company in self
         }

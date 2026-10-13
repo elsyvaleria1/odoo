@@ -52,7 +52,7 @@ class WizardAccountAccountMerge(models.TransientModel):
         return (
             super()
             ._get_mergeable_records()
-            .filtered(lambda a: a.account_type not in ("asset_bank", "asset_cash"))
+            .filtered(lambda a: a.account_type != "asset_cash")
         )
 
     @api.depends("is_group_by_name", "account_ids")

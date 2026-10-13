@@ -65,7 +65,8 @@ class AccountCodeMapping(models.Model):
             ]
         )
         for mapping, vals in zip(mappings, vals_list, strict=True):
-            mapping.code = vals["code"]
+            if "code" in vals:
+                mapping.code = vals["code"]
         return mappings
 
     def _search(self, domain, offset=0, limit=None, order=None, **kw) -> Query:
