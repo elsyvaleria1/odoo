@@ -2,9 +2,11 @@ from unittest.mock import patch
 
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
+from odoo.fields import Domain
 from odoo.tests import Form, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.common_reconcile import TestBankRecWidgetCommon
 
 
 @tagged("post_install", "-at_install")
@@ -483,3 +485,260 @@ class TestMarinBankRecFixes(AccountTestInvoicingCommon):
         manual.write({"match_label_param": "NOMATCH"})
         self.assertFalse(line.is_reconciled)
         self.assertEqual(self._proposal(line), automated)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinBankRecAuditFixes(TestBankRecWidgetCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.bank_journal = cls.company_data["default_journal_bank"]
+        cls.Line = cls.env["account.bank.statement.line"]
+
+    def _invoice(self, amount, currency=None, **kw):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2019-01-01",
+                "currency_id": (currency or self.env.company.currency_id).id,
+                "invoice_line_ids": [
+                    Command.create(
+                        {"name": "line", "price_unit": amount, "tax_ids": []}
+                    )
+                ],
+                **kw,
+            }
+        )
+        invoice.action_post()
+        return invoice
+
+    def _receivable(self, move):
+        return move.line_ids.filtered(
+            lambda line: line.account_id.account_type == "asset_receivable"
+        )
+
+    def _held_elsewhere(self, held):
+        return patch.object(
+            type(self.Line),
+            "_get_domain_settled_elsewhere",
+            lambda _self: Domain("id", "in", held.ids),
+        )
+
+    def test_a_failed_cron_batch_leaves_no_partial_entry(self):
+        tax = self.env["account.tax"].create({"name": "lock probe", "amount": 10})
+        model = self._create_reconcile_model(
+            trigger="auto_reconcile",
+            match_label="contains",
+            match_label_param="NOMATCH",
+            line_ids=[{"tax_ids": [Command.set(tax.ids)]}],
+        )
+        locked = self._create_st_line(100.0, payment_ref="LOCKPROBE 1")
+        free = self._create_st_line(50.0, payment_ref="FREE 1")
+        before = locked.move_id.line_ids
+        self.env.company.account_config_id.tax_lock_date = "2019-01-31"
+        model.with_context(defer_proposal_refresh=True).write(
+            {"match_label_param": "LOCKPROBE"}
+        )
+
+        (locked | free)._cron_try_auto_reconcile_statement_lines(batch_size=10)
+
+        locked.invalidate_recordset()
+        self.assertEqual(locked.move_id.line_ids, before)
+        self.assertFalse(locked.is_reconciled)
+        self.assertTrue(locked.cron_last_check)
+
+    def test_auto_reconcile_leaves_a_reconciled_line_alone(self):
+        st_line = self._create_st_line(
+            100.0, payment_ref="PAY C2PROBE77", partner_id=self.partner_a.id
+        )
+        st_line.set_line_bank_statement_line(self._receivable(self._invoice(100.0)).ids)
+        self.assertTrue(st_line.is_reconciled)
+        other = self._invoice(50.0, payment_reference="C2PROBE77")
+
+        st_line._try_auto_reconcile_statement_lines()
+
+        self.assertEqual(self._receivable(other).amount_residual, 50.0)
+        self.assertTrue(st_line.is_reconciled)
+
+    def test_draft_proposals_skip_a_line_settled_elsewhere(self):
+        self.env["account.move"].create(
+            [
+                {
+                    "move_type": "in_invoice",
+                    "partner_id": self.partner_a.id,
+                    "invoice_date": "2019-01-05",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {"name": "draft", "price_unit": amount, "tax_ids": []}
+                        )
+                    ],
+                }
+                for amount in (1234.5, 2345.6)
+            ]
+        )
+        held = self._create_st_line(-1234.5, payment_ref="HELD")
+        free = self._create_st_line(-2345.6, payment_ref="FREE")
+
+        with self._held_elsewhere(held):
+            (held | free)._try_auto_reconcile_statement_lines()
+
+        self.assertFalse(held.draft_match_proposal_ids)
+        self.assertTrue(free.draft_match_proposal_ids)
+
+    def test_a_new_model_skips_a_line_settled_elsewhere(self):
+        held = self._create_st_line(100.0, payment_ref="C3PROBE held")
+        free = self._create_st_line(100.0, payment_ref="C3PROBE free")
+
+        with self._held_elsewhere(held):
+            self._create_reconcile_model(
+                trigger="auto_reconcile",
+                match_label="contains",
+                match_label_param="C3PROBE",
+                line_ids=[{}],
+            )
+
+        self.assertEqual((held | free).mapped("is_reconciled"), [False, True])
+
+    def test_a_partner_taken_from_the_match_is_not_manual(self):
+        st_line = self._create_st_line(100.0)
+        st_line.set_line_bank_statement_line(self._receivable(self._invoice(100.0)).ids)
+        self.assertEqual(st_line.partner_id, self.partner_a)
+        self.assertFalse(st_line.is_partner_manual)
+
+    def _foreign_suspense_after(self, *invoices):
+        st_line = self._create_st_line(
+            100.0,
+            partner_id=self.partner_a.id,
+            foreign_currency_id=self.other_currency.id,
+            amount_currency=200.0,
+        )
+        for invoice in invoices:
+            st_line.set_line_bank_statement_line(self._receivable(invoice).ids)
+        return st_line.line_ids.filtered(
+            lambda line: line.account_id == self.bank_journal.suspense_account_id
+        )
+
+    def test_a_second_foreign_match_keeps_the_exact_open_amount(self):
+        suspense = self._foreign_suspense_after(
+            self._invoice(0.03, currency=self.other_currency),
+            self._invoice(0.03, currency=self.other_currency),
+        )
+        self.assertEqual(suspense.amount_currency, -199.94)
+
+    def test_a_foreign_match_after_a_company_currency_one_converts_it(self):
+        suspense = self._foreign_suspense_after(
+            self._invoice(30.0),
+            self._invoice(0.04, currency=self.other_currency),
+        )
+        self.assertEqual(suspense.amount_currency, -139.96)
+
+    def test_counterparty_key_follows_the_journal(self):
+        other_journal = self.company_data["default_journal_bank"].copy()
+        st_line = self._create_st_line(100.0, payment_ref="KEYPROBE")
+        st_line.move_id.action_draft()
+        with patch.object(
+            type(self.Line),
+            "_get_counterparty_key",
+            lambda line: line.journal_id.code,
+        ):
+            st_line.write({"name": "/", "journal_id": other_journal.id})
+            self.assertEqual(st_line.counterparty_key, other_journal.code)
+
+    def test_a_date_group_mixing_journals_shows_no_running_balance(self):
+        other_journal = self.bank_journal.copy()
+        self._create_st_line(10.0, date="2019-01-01")
+        self._create_st_line(1000.0, date="2019-01-01", journal_id=other_journal.id)
+        groups = self.Line.with_context(
+            show_running_balance_latest=True
+        ).formatted_read_group(
+            [
+                ("journal_id", "in", (self.bank_journal | other_journal).ids),
+                ("date", "=", "2019-01-01"),
+            ],
+            ["date:day"],
+            ["amount:sum"],
+        )
+        self.assertEqual([group["running_balance"] for group in groups], [False])
+        groups = self.Line.with_context(
+            show_running_balance_latest=True
+        ).formatted_read_group(
+            [("journal_id", "=", other_journal.id), ("date", "=", "2019-01-01")],
+            ["date:day"],
+            ["amount:sum"],
+        )
+        self.assertEqual([group["running_balance"] for group in groups], [1000.0])
+
+    def _charges_setup(self):
+        bank = self.env["res.partner"].create({"name": "The Charging Bank"})
+        self.bank_journal.write(
+            {"bank_charges_partner_id": bank.id, "bank_charges_pattern": r"^COM "}
+        )
+        lines = self._create_st_line(
+            -830.0, date="2019-03-04", payment_ref="COM SERV NET"
+        ) | self._create_st_line(-450.0, date="2019-03-05", payment_ref="COM ADMON")
+
+        def bill(total):
+            move = self.env["account.move"].create(
+                {
+                    "move_type": "in_invoice",
+                    "partner_id": bank.id,
+                    "invoice_date": "2019-04-01",
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "charges",
+                                "price_unit": total,
+                                "tax_ids": [],
+                                "account_id": self.company_data[
+                                    "default_account_expense"
+                                ].id,
+                            }
+                        )
+                    ],
+                }
+            )
+            move.action_post()
+            return move
+
+        return lines, bill
+
+    def test_period_charges_ignore_a_draft_transaction(self):
+        lines, bill = self._charges_setup()
+        drafted = self._create_st_line(
+            -100.0, date="2019-03-06", payment_ref="COM DRAFTED"
+        )
+        drafted.move_id.action_draft()
+        charges_bill = bill(1280.0)
+
+        lines._try_auto_reconcile_statement_lines()
+
+        self.assertEqual(lines.mapped("is_reconciled"), [True, True])
+        self.assertEqual(charges_bill.payment_state, "paid")
+        self.assertEqual(drafted.move_id.state, "draft")
+
+    def test_period_charges_count_only_what_is_still_open(self):
+        lines, bill = self._charges_setup()
+        other = self.env["account.move"].create(
+            {
+                "move_type": "in_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2019-03-01",
+                "invoice_line_ids": [
+                    Command.create({"name": "x", "price_unit": 30.0, "tax_ids": []})
+                ],
+            }
+        )
+        other.action_post()
+        lines[0].set_line_bank_statement_line(
+            other.line_ids.filtered(
+                lambda line: line.account_id.account_type == "liability_payable"
+            ).ids
+        )
+        self.assertFalse(lines[0].is_reconciled)
+        charges_bill = bill(1250.0)
+
+        lines._try_auto_reconcile_statement_lines()
+
+        self.assertEqual(lines.mapped("is_reconciled"), [True, True])
+        self.assertEqual(charges_bill.payment_state, "paid")

@@ -6,6 +6,7 @@ from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 
 from odoo import SUPERUSER_ID, api, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
 
@@ -279,13 +280,13 @@ class AccountBankStatementLine(models.Model):
         first = min(month for _j, month in periods)
         last = max(month for _j, month in periods) + relativedelta(months=1, days=-1)
         open_lines = self.search(
-            [
-                ("journal_id", "in", journals.ids),
-                ("is_reconciled", "=", False),
-                ("amount", "<", 0),
-                ("date", ">=", first),
-                ("date", "<=", last),
-            ],
+            Domain("journal_id", "in", journals.ids)
+            & Domain("state", "=", "posted")
+            & Domain("is_reconciled", "=", False)
+            & Domain("amount", "<", 0)
+            & Domain("date", ">=", first)
+            & Domain("date", "<=", last)
+            & ~self._get_domain_settled_elsewhere(),
             order="id",
         )
         lines_by_period = defaultdict(self.browse)
@@ -301,7 +302,7 @@ class AccountBankStatementLine(models.Model):
                 journal,
                 payables_by_journal[journal],
                 month + relativedelta(months=1, days=-1),
-                -sum(month_lines.mapped("amount")),
+                -sum(st_line._get_unmatched_amounts()[0] for st_line in month_lines),
             )
             if not bill_lines:
                 continue

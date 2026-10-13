@@ -83,7 +83,9 @@ class AccountBankStatementLine(models.Model):
                     + sum((lines_to_set - liquidity_lines).mapped("amount_currency"))
                     + lines_to_add_amount_currency
                 )
-                is_same_currency = len(lines_to_set.currency_id) == 1 and all(
+                is_same_currency = (
+                    lines_to_set - liquidity_lines
+                ).currency_id <= self.foreign_currency_id and all(
                     line["currency_id"] == self.foreign_currency_id.id
                     for line in lines_to_add
                 )
@@ -115,7 +117,7 @@ class AccountBankStatementLine(models.Model):
                             "account.privilege_set_matched_partner",
                             reason="a matched bank transaction takes the partner of "
                             "the items it was matched with",
-                        ).partner_id = partner
+                        ).write({"partner_id": partner.id, "is_partner_manual": False})
                     move.line_ids.filtered(
                         lambda line: not line.partner_id
                     ).partner_id = partner

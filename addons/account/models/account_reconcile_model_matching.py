@@ -2,6 +2,7 @@ import logging
 from collections import defaultdict
 
 from odoo import SUPERUSER_ID, api, fields, models
+from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.profiling import PhaseTimer
 from odoo.tools import SQL
@@ -484,15 +485,13 @@ class AccountReconcileModel(models.Model):
             self._trigger_reconciliation_model(statement_line)
 
     def _get_unreconciled_statement_lines(self):
+        StatementLine = self.env["account.bank.statement.line"]
         if not self:
-            return self.env["account.bank.statement.line"]
-        return self.env["account.bank.statement.line"].search(
-            [
-                *self.env["account.bank.statement.line"]._check_company_domain(
-                    self.company_id
-                ),
-                ("is_reconciled", "=", False),
-            ]
+            return StatementLine
+        return StatementLine.search(
+            Domain(StatementLine._check_company_domain(self.company_id))
+            & Domain("is_reconciled", "=", False)
+            & ~StatementLine._get_domain_settled_elsewhere()
         )
 
     def _clear_statement_line_proposals(self, statement_lines):

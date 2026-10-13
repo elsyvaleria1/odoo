@@ -32,6 +32,7 @@ _AMOUNT_SYNCED_FIELDS = frozenset(
 _LABEL_SYNCED_FIELDS = frozenset({"payment_ref", "partner_id"})
 
 _ANCHOR_AGGREGATE = "internal_index:max"
+_JOURNAL_COUNT_AGGREGATE = "journal_id:count_distinct"
 
 
 class AccountBankStatementLine(models.Model):
@@ -567,21 +568,33 @@ class AccountBankStatementLine(models.Model):
         limit=None,
         order=None,
     ) -> list[dict]:
-        borrow_anchor = self._shows_running_balance(groupby) and (
-            _ANCHOR_AGGREGATE not in aggregates
+        shows_running_balance = self._shows_running_balance(groupby)
+        borrowed = (
+            [
+                spec
+                for spec in self._get_running_balance_aggregates(groupby)
+                if spec not in aggregates
+            ]
+            if shows_running_balance
+            else []
         )
         result = super().formatted_read_group(
             domain,
             groupby,
-            (*aggregates, _ANCHOR_AGGREGATE) if borrow_anchor else aggregates,
+            (*aggregates, *borrowed),
             having=having,
             offset=offset,
             limit=limit,
             order=order,
         )
-        if self._shows_running_balance(groupby):
-            self._add_group_running_balance(result, pop_anchor=borrow_anchor)
+        if shows_running_balance:
+            self._add_group_running_balance(result, groupby, borrowed)
         return result
+
+    def _get_running_balance_aggregates(self, groupby) -> list[str]:
+        if "journal_id" in groupby:
+            return [_ANCHOR_AGGREGATE]
+        return [_ANCHOR_AGGREGATE, _JOURNAL_COUNT_AGGREGATE]
 
     def _shows_running_balance(self, groupby) -> bool:
         if not self.env.context.get("show_running_balance_latest"):
@@ -591,13 +604,17 @@ class AccountBankStatementLine(models.Model):
             for spec in groupby
         )
 
-    def _add_group_running_balance(self, result, pop_anchor) -> None:
+    def _add_group_running_balance(self, result, groupby, borrowed) -> None:
+        pins_journal = "journal_id" in groupby
         anchor_indexes = [
-            group_line.pop(_ANCHOR_AGGREGATE)
-            if pop_anchor
-            else group_line[_ANCHOR_AGGREGATE]
+            group_line[_ANCHOR_AGGREGATE]
+            if pins_journal or group_line[_JOURNAL_COUNT_AGGREGATE] == 1
+            else None
             for group_line in result
         ]
+        for group_line in result:
+            for spec in borrowed:
+                group_line.pop(spec)
         anchors = self.search(
             [("internal_index", "in", [index for index in anchor_indexes if index])]
         )
@@ -605,8 +622,15 @@ class AccountBankStatementLine(models.Model):
         balance_by_index = {
             anchor.internal_index: anchor.running_balance for anchor in anchors
         }
+        _debug.logic(
+            "group_running_balance",
+            groups=len(result),
+            mixed_journal_groups=anchor_indexes.count(None),
+        )
         for group_line, index in zip(result, anchor_indexes, strict=True):
-            group_line["running_balance"] = balance_by_index.get(index) or 0.0
+            group_line["running_balance"] = (
+                balance_by_index.get(index) or 0.0 if index else False
+            )
 
     @_debug.perf.timed
     def action_undo_reconciliation(self) -> None:

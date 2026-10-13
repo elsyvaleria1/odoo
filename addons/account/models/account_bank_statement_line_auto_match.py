@@ -3,7 +3,6 @@ from datetime import timedelta
 
 from odoo import api, fields, models, modules, service
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
-from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL
@@ -111,7 +110,8 @@ class AccountBankStatementLine(models.Model):
             _logger.warning(
                 "Error while processing statement lines: %s", exc, exc_info=exc
             )
-            if not isinstance(exc, UserError) and can_commit:
+            fresh_snapshot = isinstance(exc, PG_RETRY_EXCEPTIONS) and can_commit
+            if fresh_snapshot:
                 _logger.warning(
                     "_cron_try_auto_reconcile_statement_lines will rollback the cursor"
                 )
@@ -123,7 +123,7 @@ class AccountBankStatementLine(models.Model):
                 "cron_batch_retried_per_line",
                 automatch=st_lines,
                 error=type(exc).__name__,
-                rolled_back=not isinstance(exc, UserError) and can_commit,
+                rolled_back=fresh_snapshot,
                 given_up=given_up,
             )
 
@@ -139,8 +139,13 @@ class AccountBankStatementLine(models.Model):
                 if not st_lines:
                     return
 
-                with _debug.perf(
-                    "automatch_cron_batch", cr=self.env.cr, st_lines_count=len(st_lines)
+                with (
+                    _debug.perf(
+                        "automatch_cron_batch",
+                        cr=self.env.cr,
+                        st_lines_count=len(st_lines),
+                    ),
+                    self.env.cr.savepoint(),
                 ):
                     st_lines._try_auto_reconcile_statement_lines(company_id=company_id)
                 st_lines.cron_last_check = self.env.cr.now()
@@ -273,7 +278,7 @@ class AccountBankStatementLine(models.Model):
     ) -> bool:
         if currency.compare_amounts(residual, amount) == 0:
             return True
-        if limit and currency.compare_amounts(abs(amount - residual), limit) <= 0:
+        if self._is_payment_difference_written_off(currency, amount - residual, limit):
             return True
         if (
             discount_date
@@ -317,7 +322,7 @@ class AccountBankStatementLine(models.Model):
             )
             if any(
                 applies
-                and self._settles_residual(
+                and st_line._settles_residual(
                     currency,
                     amount,
                     residual,
@@ -325,7 +330,7 @@ class AccountBankStatementLine(models.Model):
                     aml.discount_date,
                     st_line.date,
                     tolerance,
-                    limit if currency == st_line.company_currency_id else 0.0,
+                    limit,
                 )
                 for applies, currency, residual, discounted, amount in readings
             ):
@@ -471,17 +476,26 @@ class AccountBankStatementLine(models.Model):
         )
         self.env["account.payment"].flush_model(["move_id", "journal_id", "memo"])
 
-    @_debug.perf.timed
+    def _filtered_auto_reconcilable(self):
+        return self.filtered(
+            lambda st_line: not st_line.is_reconciled
+        ) - self.filtered_domain(self._get_domain_settled_elsewhere())
+
     def _try_auto_reconcile_statement_lines(
         self, company_id=None, detect_partner=True
     ) -> None:
-        settled_elsewhere = self.filtered_domain(self._get_domain_settled_elsewhere())
-        if settled_elsewhere:
-            if remaining := self - settled_elsewhere:
-                remaining._try_auto_reconcile_statement_lines(
-                    company_id=company_id, detect_partner=detect_partner
-                )
-            return
+        st_lines = self._filtered_auto_reconcilable()
+        if st_lines != self:
+            _debug.logic("automatch_lines_left_alone", automatch=self - st_lines)
+        if st_lines:
+            st_lines._match_by_auto_reconcile_rules(
+                company_id=company_id, detect_partner=detect_partner
+            )
+
+    @_debug.perf.timed
+    def _match_by_auto_reconcile_rules(
+        self, company_id=None, detect_partner=True
+    ) -> None:
         st_move_ids = self.mapped("move_id").ids
         self.lock_for_update()
 

@@ -55,10 +55,10 @@ class AccountBankStatementLine(models.Model):
         self._propose_draft_matches()
 
     def _propose_draft_matches(self) -> None:
-        remaining = self.exists().filtered(
-            lambda st_line: (
-                not st_line.is_reconciled and not st_line.draft_match_proposal_ids
-            )
+        remaining = (
+            self.exists()
+            ._filtered_auto_reconcilable()
+            .filtered(lambda st_line: not st_line.draft_match_proposal_ids)
         )
         if not remaining:
             return

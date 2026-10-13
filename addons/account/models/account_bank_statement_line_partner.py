@@ -81,7 +81,7 @@ class AccountBankStatementLine(models.Model):
                 }
         return super().write(vals)
 
-    @api.depends("payment_ref")
+    @api.depends("payment_ref", "journal_id")
     def _compute_counterparty_key(self) -> None:
         for st_line in self:
             st_line.counterparty_key = st_line._get_counterparty_key()
