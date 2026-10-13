@@ -279,6 +279,22 @@ class AccountMove(models.Model):
 
     @api.model
     def _pend_collected_partials(self, pairs) -> None:
+        pendable = [
+            (posted, draft, amount, amount_currency)
+            for posted, draft, amount, amount_currency in pairs
+            if posted.parent_state == "posted" and draft.parent_state == "draft"
+        ]
+        kept = [
+            pair
+            for pair in pendable
+            if pair[0].partner_id.commercial_partner_id
+            == pair[1].partner_id.commercial_partner_id
+        ]
+        if len(kept) != len(pendable):
+            _debug.logic(
+                "partials_released_across_partners",
+                released=len(pendable) - len(kept),
+            )
         vals_list = [
             {
                 "posted_line_id": posted.id,
@@ -288,8 +304,7 @@ class AccountMove(models.Model):
                 "currency_id": draft.currency_id.id,
                 "origin": "reset_to_draft",
             }
-            for posted, draft, amount, amount_currency in pairs
-            if posted.parent_state == "posted" and draft.parent_state == "draft"
+            for posted, draft, amount, amount_currency in kept
         ]
         if vals_list:
             self.env["account.pending.match"].create(vals_list)

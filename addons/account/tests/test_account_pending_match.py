@@ -326,6 +326,51 @@ class TestAccountPendingMatch(PendingMatchCommon):
 
         self._assert_back_in_queue(st_line, bill)
 
+    def test_resetting_a_move_matched_with_a_partnerless_item_releases_it(self):
+        invoice = self.init_invoice(
+            "out_invoice", invoice_date="2019-01-01", amounts=[100.0], post=True
+        )
+        receivable = invoice.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        collection = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2019-01-05",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": receivable.account_id.id,
+                            "balance": -receivable.balance,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_journal_bank"
+                            ].default_account_id.id,
+                            "balance": receivable.balance,
+                        }
+                    ),
+                ],
+            }
+        )
+        collection.action_post()
+        collected = collection.line_ids.filtered(
+            lambda line: line.account_id == receivable.account_id
+        )
+        self.assertFalse(collected.partner_id)
+        (receivable + collected).reconcile()
+
+        invoice.action_draft()
+
+        self.assertFalse(
+            self.env["account.pending.match"].search(
+                [("posted_line_id", "=", collected.id)]
+            )
+        )
+        self.assertEqual(collected.amount_residual, -receivable.balance)
+
     def test_a_draft_below_its_match_sends_the_transaction_back(self):
         bill = self._draft(250.0)
         st_line = self._match_on_bank(bill)
