@@ -225,27 +225,37 @@ class PosUrbanPiperController(http.Controller):
                 ]
             )
         )
+        store_country = pos_config_sudo.company_id.country_id
+        phone = customer["phone"]
+        phone_leaf = (
+            (
+                "phone_ids.sanitized",
+                "=",
+                request.env["phone.number"]._normalize_number(phone, store_country),
+            )
+            if phone
+            else ("phone_ids.number", "=", phone)
+        )
         customer_sudo = (
             request.env["res.partner"]
             .sudo()
-            .search(
-                [
-                    ("name", "=", customer["name"]),
-                    ("phone_ids.number", "=", customer["phone"]),
-                ],
-                limit=1,
-            )
+            .search([("name", "=", customer["name"]), phone_leaf], limit=1)
         )
+        address = {
+            "street": customer_address.get("line_1"),
+            "street2": customer_address.get("line_2"),
+            "city": customer_address.get("city"),
+            "zip": customer_address.get("pin"),
+        }
+        if store_country:
+            address["country_id"] = store_country.id
         if not customer_sudo:
-            store_country = pos_config_sudo.company_id.country_id
             customer_sudo = (
                 request.env["res.partner"]
                 .sudo()
-                .with_context(default_country_id=store_country.id)
                 .create(
                     {
                         "name": customer["name"],
-                        "country_id": store_country.id,
                         "phone_ids": [
                             Command.create(
                                 {"number": customer["phone"], "type": "mobile"}
@@ -254,23 +264,12 @@ class PosUrbanPiperController(http.Controller):
                         if customer.get("phone")
                         else False,
                         "email": customer["email"],
-                        "street": customer_address.get("line_1"),
-                        "street2": customer_address.get("line_2"),
-                        "city": customer_address.get("city"),
-                        "zip": customer_address.get("pin"),
+                        **address,
                     }
                 )
             )
         else:
-            customer_sudo.write(
-                {
-                    "email": customer["email"],
-                    "street": customer_address.get("line_1"),
-                    "street2": customer_address.get("line_2"),
-                    "zip": customer_address.get("pin"),
-                    "city": customer_address.get("city"),
-                }
-            )
+            customer_sudo.write({"email": customer["email"], **address})
 
         def get_prep_time(details):
             data = details.get("prep_time")

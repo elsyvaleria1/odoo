@@ -1,16 +1,21 @@
 import logging
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.db import BaseCursor
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import frozendict
+from odoo.tools import SQL, frozendict
 
 from ..tools import SETTLED_STATES, NotDelivered, Verdict
 
 _logger = logging.getLogger(__name__)
 
 _OPEN_STATES = ("draft", "queued", "sent")
+
+DISPATCH_LOCK_TIMEOUT = "5s"
 
 _SUBJECT_HOOKS = {
     "settled": "_on_transmission_settled",
@@ -270,6 +275,10 @@ class ExchangeTransmission(models.Model):
             self._notify_subjects()
         return result
 
+    def unlink(self):
+        self.env["exchange.transmission.dispatch"]._gc_unlinked(self.ids)
+        return super().unlink()
+
     def _notify_subjects(self) -> None:
         for subject in {transmission.subject_id for transmission in self}:
             subject._on_transmission_changed()
@@ -395,15 +404,23 @@ class ExchangeTransmission(models.Model):
                 len(dispatched),
                 dispatched.channel_id.display_name,
             )
+            if isinstance(error, NotDelivered):
+                dispatched._release_dispatch()
             now = fields.Datetime.now()
             for transmission in dispatched:
-                transmission.dispatch_count += 1
+                if not isinstance(error, NotDelivered):
+                    transmission.dispatch_count += 1
                 transmission._record_failure(protocol, error, now)
             return
 
+        undelivered = dispatched.filtered(
+            lambda transmission: isinstance(outcomes.get(transmission.id), NotDelivered)
+        )
+        undelivered._release_dispatch()
         now = fields.Datetime.now()
         for transmission in dispatched:
-            transmission.dispatch_count += 1
+            if transmission not in undelivered:
+                transmission.dispatch_count += 1
             outcome = outcomes.get(transmission.id)
             if isinstance(outcome, Exception):
                 _logger.error(
@@ -424,17 +441,23 @@ class ExchangeTransmission(models.Model):
             transmission._record_answer(protocol, outcome, now)
 
     def _claim_dispatch(self):
-        self.flush_recordset()
-        with self.env.registry.cursor() as cr:
-            cr.use_read_committed()
-            claimed, unseen = self.env(cr=cr)[
+        self.env.flush_all()
+        with self._open_dispatch_cursor() as cr:
+            claimed, lost = self.env(cr=cr)[
                 "exchange.transmission.dispatch"
             ]._insert_claims(
-                {transmission.id: transmission.dispatch_count for transmission in self}
+                {
+                    transmission.id: (
+                        transmission.dispatch_count,
+                        transmission._get_ask_identity(),
+                        transmission.company_id.id,
+                    )
+                    for transmission in self
+                }
             )
         held = self.filtered(
             lambda transmission: (
-                transmission.id not in claimed and transmission.id not in unseen
+                transmission.id not in claimed and transmission.id not in lost
             )
         )
         if held:
@@ -442,7 +465,46 @@ class ExchangeTransmission(models.Model):
                 "Left %s transmission(s) another sender handed to the counterparty",
                 len(held),
             )
-        return self - held
+        for transmission in self.browse(lost):
+            _logger.info(
+                "Left transmission %s unsent: a transmission of the same ask was "
+                "handed to the counterparty in a transaction that did not commit",
+                transmission.id,
+            )
+            transmission._update_lost_dispatch(*lost[transmission.id])
+        return self.filtered(lambda transmission: transmission.id in claimed)
+
+    def _release_dispatch(self) -> None:
+        if not self:
+            return
+        with self._open_dispatch_cursor() as cr:
+            self.env(cr=cr)["exchange.transmission.dispatch"]._release_claims(
+                {transmission.id: transmission.dispatch_count for transmission in self}
+            )
+
+    @contextmanager
+    def _open_dispatch_cursor(self) -> Iterator[BaseCursor]:
+        with self.env.registry.cursor() as cr:
+            cr.use_read_committed()
+            cr.execute(
+                SQL(
+                    "SELECT set_config('lock_timeout', %s, true)",
+                    DISPATCH_LOCK_TIMEOUT,
+                )
+            )
+            yield cr
+
+    def _get_ask_identity(self) -> str:
+        self.check_singleton()
+        subject = self.subject_id
+        return "|".join(
+            (
+                f"{subject._name},{subject.id}",
+                str(self.channel_id.id),
+                self.intent,
+                self.document_kind or "",
+            )
+        )
 
     def _record_answer(self, protocol, verdict: Verdict | None, date_sent) -> None:
         self.check_singleton()

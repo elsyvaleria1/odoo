@@ -4,6 +4,11 @@ from odoo.http import request
 from odoo.tools import consteq
 from odoo.tools.image import image_data_uri
 
+HOST_SEARCH_LEAVES = {
+    ("display_name", "ilike"): str,
+    ("department_id", "="): int,
+}
+
 
 class Frontdesk(http.Controller):
     def _get_additional_info(self, frontdesk, lang, is_mobile=False):
@@ -27,6 +32,35 @@ class Frontdesk(http.Controller):
             return time_difference.total_seconds() <= 3600 and consteq(
                 frontdesk._get_tmp_code(), token[:64]
             )
+
+    def _host_domain(self, frontdesk) -> Domain:
+        domain = Domain(
+            [
+                ("company_id", "=", frontdesk.company_id.id),
+                "|",
+                ("work_email", "!=", False),
+                ("phone_ids", "!=", False),
+            ]
+        )
+        if frontdesk.host_ids:
+            domain &= Domain("id", "in", frontdesk.host_ids.ids)
+        return domain
+
+    def _host_search_domain(self, domain) -> Domain:
+        if not isinstance(domain, list):
+            raise request.prepare_not_found_error()
+        leaves = []
+        for item in domain:
+            if item == "&":
+                continue
+            if not (isinstance(item, list) and len(item) == 3):
+                raise request.prepare_not_found_error()
+            field_name, operator, value = item
+            expected = HOST_SEARCH_LEAVES.get((field_name, operator))
+            if expected is None or type(value) is not expected:
+                raise request.prepare_not_found_error()
+            leaves.append(Domain(field_name, operator, value))
+        return Domain.AND(leaves)
 
     @http.route(
         "/kiosk/<int:frontdesk_id>/<string:token>",
@@ -119,19 +153,7 @@ class Frontdesk(http.Controller):
         frontdesk = request.env["frontdesk.frontdesk"].sudo().browse(frontdesk_id)
         if not frontdesk.exists() or not self._is_token_valid(frontdesk, token):
             raise request.prepare_not_found_error()
-        base_domain = Domain(
-            [
-                ("company_id", "=", frontdesk.company_id.id),
-                "|",
-                ("work_email", "!=", False),
-                ("phone_ids", "!=", False),
-            ]
-        )
-        if frontdesk.host_ids:
-            base_domain = Domain.AND(
-                [base_domain, [("id", "in", frontdesk.host_ids.ids)]]
-            )
-        domain = Domain.AND([domain, base_domain])
+        domain = self._host_search_domain(domain) & self._host_domain(frontdesk)
         employees = (
             request.env["hr.employee"]
             .sudo()
@@ -172,20 +194,9 @@ class Frontdesk(http.Controller):
             .search([("company_id", "=", frontdesk.company_id.id)])
         )
         department_list = []
+        host_domain = self._host_domain(frontdesk)
         for department in departments:
-            employee_domain = Domain(
-                [
-                    ("department_id", "=", department.id),
-                    ("company_id", "=", frontdesk.company_id.id),
-                    "|",
-                    ("work_email", "!=", False),
-                    ("phone_ids", "!=", False),
-                ]
-            )
-            if frontdesk.host_ids:
-                employee_domain = Domain.AND(
-                    [employee_domain, [("id", "in", frontdesk.host_ids.ids)]]
-                )
+            employee_domain = host_domain & Domain("department_id", "=", department.id)
             employee_count = (
                 request.env["hr.employee"].sudo().search_count(employee_domain)
             )
@@ -209,22 +220,29 @@ class Frontdesk(http.Controller):
         frontdesk = request.env["frontdesk.frontdesk"].sudo().browse(frontdesk_id)
         if not frontdesk.exists() or not self._is_token_valid(frontdesk, token):
             raise request.prepare_not_found_error()
-        visitor = request.env["frontdesk.visitor"].browse(visitor_id)
         vals = {"state": "checked_in"}
-        if visitor:
+        if visitor_id:
+            visitor_sudo = request.env["frontdesk.visitor"].sudo().browse(visitor_id)
+            if not visitor_sudo.exists() or visitor_sudo.station_id != frontdesk:
+                raise request.prepare_not_found_error()
             if kwargs.get("drink_ids"):
-                visitor_sudo = visitor.sudo()
+                drinks = frontdesk.drink_ids.filtered(
+                    lambda drink: drink.id in kwargs["drink_ids"]
+                )
                 visitor_sudo.write(
-                    {
-                        "drink_ids": [
-                            Command.link(drink_id)
-                            for drink_id in kwargs.get("drink_ids")
-                        ]
-                    }
+                    {"drink_ids": [Command.link(drink.id) for drink in drinks]}
                 )
                 return visitor_sudo._notify_to_people()
-            return visitor.sudo().write(vals)
+            return visitor_sudo.write(vals)
         else:
+            hosts = (
+                request.env["hr.employee"]
+                .sudo()
+                .search(
+                    self._host_domain(frontdesk)
+                    & Domain("id", "in", list(kwargs.get("host_ids") or []))
+                )
+            )
             vals.update(
                 {
                     "station_id": frontdesk.id,
@@ -244,9 +262,7 @@ class Frontdesk(http.Controller):
                     "email": kwargs.get("email"),
                     "check_in": fields.Datetime.now(),
                     "company": kwargs.get("company"),
-                    "host_ids": [
-                        Command.link(host_id) for host_id in kwargs.get("host_ids")
-                    ],
+                    "host_ids": [Command.set(hosts.ids)],
                 }
             )
             visitor = request.env["frontdesk.visitor"].sudo().create(vals)

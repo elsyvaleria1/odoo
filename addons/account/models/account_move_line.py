@@ -40,6 +40,16 @@ _OWNED_AMOUNT_FIELDS = frozenset(
     {"balance", "debit", "credit", "amount_currency", "currency_id"}
 )
 _OWNED_LINE_FIELDS = _OWNED_AMOUNT_FIELDS | {"account_id", "partner_id"}
+_POSTED_LINE_FIELDS = frozenset(
+    {
+        "product_id",
+        "product_uom_id",
+        "quantity",
+        "price_unit",
+        "discount",
+        "deductible_amount",
+    }
+)
 
 _NON_ACCOUNTABLE_SQL_TUPLE = "({})".format(
     ", ".join(f"'{display_type}'" for display_type in NON_ACCOUNTABLE_DISPLAY_TYPES)
@@ -2512,6 +2522,7 @@ class AccountMoveLine(models.Model):
             container["records"] = lines
         _debug.pipeline("lines_created_synced", lines=lines, moves=moves)
 
+        lines._check_posted_line_create()
         lines._check_tax_lock_date()
 
         lines._log_tracked_change(
@@ -2565,6 +2576,52 @@ class AccountMoveLine(models.Model):
         if self.payment_role in ("write_off", "suspense"):
             return _OWNED_AMOUNT_FIELDS
         return _OWNED_LINE_FIELDS if self.payment_role else frozenset()
+
+    def _is_invoice_product_line(self) -> bool:
+        self.check_singleton()
+        return self.display_type == "product" and self.move_id.is_invoice(
+            include_receipts=True
+        )
+
+    def _get_posted_protected_fields(self) -> frozenset:
+        self.check_singleton()
+        if self._is_invoice_product_line():
+            return _POSTED_LINE_FIELDS | _OWNED_AMOUNT_FIELDS
+        return _POSTED_LINE_FIELDS
+
+    def _check_posted_line_create(self) -> None:
+        if self.env.context.get("skip_readonly_check"):
+            return
+        for line in self:
+            if line.parent_state != "posted" or not line._is_invoice_product_line():
+                continue
+            _debug.logic("posted_line_create_refused", line=line)
+            raise UserError(
+                self.env._(
+                    "You cannot add the invoice line %(line)s to the posted entry "
+                    "%(move)s, you should reset the journal entry to draft to do so.",
+                    line=line.name or line.product_id.display_name,
+                    move=line.move_id.display_name,
+                )
+            )
+
+    def _check_posted_line_write(self, changed_fields) -> None:
+        self.check_singleton()
+        protected = changed_fields & self._get_posted_protected_fields()
+        if not protected:
+            return
+        _debug.logic("posted_line_write_refused", line=self, fields=sorted(protected))
+        raise UserError(
+            self.env._(
+                "You cannot modify the %(fields)s of the posted journal item "
+                "%(line)s, you should reset the journal entry to draft to do so.",
+                line=self.display_name,
+                fields=", ".join(
+                    self._fields[fname].get_description(self.env)["string"]
+                    for fname in sorted(protected)
+                ),
+            )
+        )
 
     def _get_entry_owner(self):
         self.check_singleton()
@@ -2636,6 +2693,7 @@ class AccountMoveLine(models.Model):
         fiscal_fields = set(protected_fields["fiscal"])
         tax_fields = set(protected_fields["tax"])
         reconciliation_fields = set(protected_fields["reconciliation"])
+        skip_readonly_check = self.env.context.get("skip_readonly_check")
         AccountMove = self.env["account.move"]
 
         line_to_write = self
@@ -2664,6 +2722,8 @@ class AccountMoveLine(models.Model):
                         "You cannot modify the taxes related to a posted journal item, you should reset the journal entry to draft to do so."
                     )
                 )
+            if posted and not skip_readonly_check:
+                line._check_posted_line_write(changed_fields)
             if posted and changed_fields & fiscal_fields:
                 line.move_id._check_fiscal_lock_dates()
             if posted and changed_fields & tax_fields:

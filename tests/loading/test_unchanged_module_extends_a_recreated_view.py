@@ -169,6 +169,25 @@ def test_at_install_tests_read_a_view_an_unchanged_module_extends(tmp_path_facto
             addons,
             data_dir,
             "-u",
+            PARENT,
+            "--test-enable",
+            "--test-tags",
+            f"/{PARENT}",
+        )
+        assert "unchanged modules left as installed" in run.stdout
+        assert f"Module {PARENT}: 1 at_install test(s) deferred" in run.stdout
+        assert "0 failed, 0 error(s) of 1 tests" in run.stdout, (
+            "with no module tested in line after it, the held test read the view "
+            "before the unchanged child's extension was put back:\n"
+            + run.stdout[-4000:]
+        )
+        assert run.returncode == 0, run.stdout[-4000:]
+
+        run = _run_odoo_bin(
+            db,
+            addons,
+            data_dir,
+            "-u",
             f"{PARENT},{LAST}",
             "--test-enable",
             "--test-tags",

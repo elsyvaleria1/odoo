@@ -999,6 +999,42 @@ class TestPartnerCompanyDependentSync(TransactionCase):
         with self._barcode_as_a_commercial_field():
             self.assertQueriesConstant(create_contacts, small=5, large=10)
 
+    def test_a_moved_contact_brings_its_own_contacts_to_the_new_parent_value(self):
+        Partner = self.env["res.partner"]
+        other = self.env["res.company"].create({"name": "Moved Co"})
+        old_parent, new_parent = Partner.create(
+            [
+                {"name": "Old Parent", "is_company": True},
+                {"name": "New Parent", "is_company": True},
+            ]
+        )
+        old_parent.with_company(other).barcode = "MOVED-OLD"
+        new_parent.with_company(other).barcode = "MOVED-NEW"
+        self.env.flush_all()
+        with self._barcode_as_a_commercial_field():
+            contact = Partner.create(
+                {"name": "Moved Contact", "parent_id": old_parent.id}
+            )
+            assistants = Partner.create(
+                [
+                    {"name": "Moved Assistant", "parent_id": contact.id},
+                    {
+                        "name": "Archived Assistant",
+                        "parent_id": contact.id,
+                        "active": False,
+                    },
+                ]
+            )
+            self.assertEqual(
+                assistants.with_company(other).mapped("barcode"),
+                ["MOVED-OLD", "MOVED-OLD"],
+            )
+            contact.parent_id = new_parent
+        self.assertEqual(
+            (contact | assistants).with_company(other).mapped("barcode"),
+            ["MOVED-NEW"] * 3,
+        )
+
 
 @tagged("res_partner")
 class TestPartnerDuplicateIdentifiers(TransactionCase):

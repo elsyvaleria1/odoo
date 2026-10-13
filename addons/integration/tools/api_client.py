@@ -4,6 +4,8 @@ import json
 import logging
 import random
 import re
+import ssl
+import traceback
 import uuid
 from datetime import datetime
 from typing import Any
@@ -15,6 +17,7 @@ from urllib3.exceptions import ConnectTimeoutError, ReadTimeoutError
 from urllib3.exceptions import ProxyError as URLLibProxyError
 from urllib3.exceptions import SSLError as URLLibSSLError
 from urllib3.util.retry import Retry
+from urllib3.util.ssl_match_hostname import CertificateError as URLLibCertificateError
 
 from odoo import fields
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
@@ -53,6 +56,25 @@ class _ShapedRetry(Retry):
         clone = super().new(**kw)
         clone.backoff_type = self.backoff_type
         return clone
+
+    def increment(
+        self,
+        method=None,
+        url=None,
+        response=None,
+        error=None,
+        _pool=None,
+        _stacktrace=None,
+    ):
+        if (
+            error is not None
+            and method is not None
+            and not self._is_method_retryable(method)
+            and not self._is_connection_error(error)
+            and not (isinstance(error, URLLibSSLError) and _is_handshake_failure(error))
+        ):
+            raise error.with_traceback(_stacktrace)
+        return super().increment(method, url, response, error, _pool, _stacktrace)
 
     def is_retry(self, method, status_code, has_retry_after=False) -> bool:
         if status_code == 429 and not self._is_method_retryable(method):
@@ -125,7 +147,6 @@ def _is_exhausted_read_timeout(exc) -> bool:
 
 _UNSENT_REQUEST_ERRORS = (
     requests.exceptions.ConnectTimeout,
-    requests.exceptions.SSLError,
     requests.exceptions.ProxyError,
     requests.exceptions.InvalidURL,
     requests.exceptions.InvalidSchema,
@@ -135,7 +156,7 @@ _UNSENT_REQUEST_ERRORS = (
     requests.exceptions.URLRequired,
 )
 
-_UNSENT_CONNECTION_REASONS = (ConnectTimeoutError, URLLibSSLError, URLLibProxyError)
+_UNSENT_CONNECTION_REASONS = (ConnectTimeoutError, URLLibProxyError)
 
 
 def _is_unsent(exc: requests.exceptions.RequestException) -> bool:
@@ -144,7 +165,19 @@ def _is_unsent(exc: requests.exceptions.RequestException) -> bool:
     if not isinstance(exc, requests.exceptions.ConnectionError) or not exc.args:
         return False
     reason = getattr(exc.args[0], "reason", exc.args[0])
+    if isinstance(reason, URLLibSSLError):
+        return _is_handshake_failure(reason)
     return isinstance(reason, _UNSENT_CONNECTION_REASONS)
+
+
+def _is_handshake_failure(error: URLLibSSLError) -> bool:
+    cause = error.args[0] if error.args else None
+    if isinstance(cause, (ssl.SSLCertVerificationError, URLLibCertificateError)):
+        return True
+    return isinstance(cause, ssl.SSLError) and any(
+        frame.f_code is ssl.SSLSocket.do_handshake.__code__
+        for frame, _line in traceback.walk_tb(cause.__traceback__)
+    )
 
 
 def _masked_cause(exc: BaseException) -> BaseException:
@@ -418,6 +451,16 @@ class OutboundAPIClient:
         try:
             self._update_request_kwargs(url, kwargs)
             self._check_credential_host(url, kwargs)
+        except CommError as error:
+            self.connection._release_call(attempt)
+            error.is_delivered = False
+            raise
+        except requests.exceptions.RequestException as error:
+            self.connection._release_call(attempt)
+            raise CommError(
+                self.env._("Request failed: %s") % redact.mask_text(str(error)),
+                is_delivered=False,
+            ) from _masked_cause(error)
         except BaseException:
             self.connection._release_call(attempt)
             raise

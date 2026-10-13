@@ -480,6 +480,35 @@ class Many2many(_RelationalMulti):
             for vals in vals_list
         ]
 
+    def _pairs_linked_by_create(
+        self, owners: BaseModel, created: BaseModel, linked: list[bool]
+    ) -> set[tuple[IdType, IdType]]:
+        caches = [
+            invf._get_cache(created.env)
+            for invf in owners.pool.field_inverses[self]
+            if invf.is_many2many and invf.model_name == created._name
+        ]
+        pairs: set[tuple[IdType, IdType]] = set()
+        for y, owner_linked in zip(created._ids, linked, strict=True):
+            if not owner_linked:
+                continue
+            linked_owner_ids = {
+                x
+                for cache in caches
+                if isinstance(ids := cache.get(y), tuple)
+                for x in ids
+            }
+            pairs.update((x, y) for x in owners._ids if x in linked_owner_ids)
+        _debug.logic(
+            "field.many2many.linked_by_create",
+            model=self.model_name,
+            field=self.name,
+            created=len(created),
+            owner_linked=sum(linked),
+            confirmed=len(pairs),
+        )
+        return pairs
+
     def _write_real_apply_commands(
         self,
         records_commands_list: typing.Any,
@@ -511,13 +540,9 @@ class Many2many(_RelationalMulti):
                 vals_list, linked = self._with_owner_link(
                     recs, [vals for _ref, vals in delta.created]
                 )
-                created_ids = comodel.create(vals_list)._ids
-                stored_pairs.update(
-                    (x, y)
-                    for y, owner_linked in zip(created_ids, linked, strict=True)
-                    if owner_linked
-                    for x in recs._ids
-                )
+                created = comodel.create(vals_list)
+                created_ids = created._ids
+                stored_pairs.update(self._pairs_linked_by_create(recs, created, linked))
             for x in recs._ids:
                 new_relation[x] = delta.get_final_ids(new_relation[x], created_ids)
             if delta.deleted:

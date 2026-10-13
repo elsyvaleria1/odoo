@@ -397,6 +397,16 @@ class TestVisitorStationCompany(TransactionCase):
 
         self.assertEqual(visitor.company_id, self.office)
 
+    def test_a_visitor_follows_its_station_into_another_company(self):
+        visitor = self.env["frontdesk.visitor"].create(
+            {"name": "Guest", "station_id": self.station.id}
+        )
+        branch = self.env["res.company"].create({"name": "Branch"})
+
+        self.station.company_id = branch
+
+        self.assertEqual(visitor.company_id, branch)
+
     def test_a_host_is_on_leave_on_the_stations_company_holiday(self):
         self.assertNotEqual(
             self.env.company.resource_calendar_id, self.office.resource_calendar_id
@@ -424,3 +434,81 @@ class TestVisitorStationCompany(TransactionCase):
         self.assertIn(
             "Your host isn't available", visitor.message_ids.mapped("subject")
         )
+
+    def test_visitors_of_two_companies_hear_of_their_own_hosts_leave(self):
+        branch = self.env["res.company"].create({"name": "Branch"})
+        branch_station = self.env["frontdesk.frontdesk"].create(
+            {"name": "Hall", "company_id": branch.id, "ask_email": "required"}
+        )
+        branch_host = self.env["hr.employee"].create(
+            {
+                "name": "Branch Host",
+                "company_id": branch.id,
+                "work_email": "b@example.com",
+            }
+        )
+        check_in = datetime.now()
+        for company in (self.office, branch):
+            self.env["resource.schedule.exception"].create(
+                {
+                    "name": "Holiday",
+                    "date_from": check_in - timedelta(hours=1),
+                    "date_to": check_in + timedelta(hours=1),
+                    "calendar_id": company.resource_calendar_id.id,
+                }
+            )
+
+        visitors = self.env["frontdesk.visitor"].create(
+            [
+                {
+                    "name": name,
+                    "email": f"{name}@example.com",
+                    "station_id": station.id,
+                    "host_ids": [Command.link(host.id)],
+                    "check_in": check_in,
+                }
+                for name, station, host in (
+                    ("office-guest", self.station, self.host),
+                    ("branch-guest", branch_station, branch_host),
+                )
+            ]
+        )
+
+        for visitor, company, host in zip(
+            visitors, (self.office, branch), (self.host, branch_host), strict=True
+        ):
+            notice = visitor.message_ids.filtered(
+                lambda message: message.subject == "Your host isn't available"
+            )
+            self.assertEqual(notice.author_id, company.partner_id)
+            self.assertIn(host.name, notice.body)
+
+    def test_checking_in_visitors_with_drinks_notifies_each_drinks_people(self):
+        barista = self.env.ref("base.user_admin")
+        drink = self.env["frontdesk.drink"].create(
+            {"name": "Tea", "notify_user_ids": [Command.link(barista.id)]}
+        )
+        visitors = self.env["frontdesk.visitor"].create(
+            [
+                {
+                    "name": name,
+                    "station_id": self.station.id,
+                    "drink_ids": [Command.link(drink.id)],
+                }
+                for name in ("First", "Second")
+            ]
+        )
+
+        visitors.write({"state": "checked_in"})
+
+        chat = self.env["discuss.channel"]._get_or_create_chat(barista.partner_id.ids)
+        drink_notices = [
+            body
+            for body in chat.message_ids.mapped("body")
+            if "Requested Drink" in body
+        ]
+        self.assertEqual(len(drink_notices), 2)
+        for visitor in visitors:
+            self.assertTrue(
+                any(f'/{visitor.id}">{visitor.name}</a>' in b for b in drink_notices)
+            )

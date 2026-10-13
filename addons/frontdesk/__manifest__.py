@@ -1,6 +1,6 @@
 {
     "name": "Visitor Reception",
-    "version": "1.2",
+    "version": "1.3",
     "oldest_upgradable_version": "1.1",
     "category": "Human Resources/Frontdesk",
     "summary": "Register visitor check-ins and notify their hosts",

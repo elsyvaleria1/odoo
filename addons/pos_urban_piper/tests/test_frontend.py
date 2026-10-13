@@ -538,14 +538,17 @@ class TestFrontend(TestPosUrbanPiperCommon):
 
 
 class TestWebhookCustomer(TestPosUrbanPiperCommon):
-    def test_a_new_customers_number_is_read_in_the_stores_country(self):
-        belgium = self.env.ref("base.be")
-        self.urban_piper_config.company_id.country_id = belgium
-        elsewhere = self.env["res.company"].create(
-            {"name": "Elsewhere", "country_id": self.env.ref("base.us").id}
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.belgium = cls.env.ref("base.be")
+        cls.urban_piper_config.company_id.country_id = cls.belgium
+        cls.elsewhere = cls.env["res.company"].create(
+            {"name": "Elsewhere", "country_id": cls.env.ref("base.fr").id}
         )
-        self.urban_piper_config.open_ui()
-        provider = self.env.ref("pos_urban_piper.pos_delivery_provider_justeat")
+        cls.urban_piper_config.open_ui()
+
+    def _receive_order(self, name, phone, street="Rue Neuve 1"):
         payload = self.env[
             "wizard.pos.config.simulate.urbanpiper.order"
         ].test_order_json(
@@ -557,18 +560,54 @@ class TestWebhookCustomer(TestPosUrbanPiperCommon):
                 "packaging_charge": 0,
                 "delivery_charge": 0,
                 "delivery_instruction": False,
-                "delivery_provider_id": provider,
+                "delivery_provider_id": self.env.ref(
+                    "pos_urban_piper.pos_delivery_provider_justeat"
+                ),
                 "delivery_identifier": str(uuid.uuid4()),
                 "options_to_add": [],
             }
         )
-        payload["customer"].update({"name": "Lotte Peeters", "phone": "0478 12 34 56"})
-
-        with MockRequest(self.env, context={"allowed_company_ids": elsewhere.ids}):
-            self.assertEqual(request.env.company, elsewhere)
+        payload["customer"].update({"name": name, "phone": phone})
+        payload["customer"]["address"]["line_1"] = street
+        with MockRequest(self.env, context={"allowed_company_ids": self.elsewhere.ids}):
+            self.assertEqual(request.env.company, self.elsewhere)
             PosUrbanPiperController()._create_order(payload)
+        return self.env["res.partner"].search([("name", "=", name)])
 
-        customer = self.env["res.partner"].search([("name", "=", "Lotte Peeters")])
+    def test_a_new_customers_number_is_read_in_the_stores_country(self):
+        french_line = self.env["phone.number"].create({"number": "+33 4 78 12 34 56"})
+        self.env["res.partner"].create(
+            {"name": "Lyon shop", "phone_ids": [Command.link(french_line.id)]}
+        )
+
+        customer = self._receive_order("Lotte Peeters", "0478 12 34 56")
+
         self.assertEqual(customer.phone_ids.sanitized, "+32478123456")
-        self.assertEqual(customer.phone_ids.country_id, belgium)
-        self.assertEqual(customer.country_id, belgium)
+        self.assertEqual(customer.phone_ids.country_id, self.belgium)
+        self.assertEqual(customer.country_id, self.belgium)
+
+    def test_a_returning_customer_is_found_however_their_number_was_written(self):
+        known = self.env["res.partner"].create(
+            {
+                "name": "Lotte Peeters",
+                "country_id": self.belgium.id,
+                "phone_ids": [Command.create({"number": "+32 478 12 34 56"})],
+            }
+        )
+
+        customer = self._receive_order("Lotte Peeters", "0478 12 34 56")
+
+        self.assertEqual(customer, known)
+
+    def test_a_returning_customers_address_is_in_the_delivering_stores_country(self):
+        self._receive_order("Lotte Peeters", "+32 478 12 34 56")
+        netherlands = self.env.ref("base.nl")
+        self.urban_piper_config.company_id.country_id = netherlands
+
+        customer = self._receive_order(
+            "Lotte Peeters", "+32 478 12 34 56", street="Damrak 1"
+        )
+
+        self.assertEqual(customer.street, "Damrak 1")
+        self.assertEqual(customer.country_id, netherlands)
+        self.assertEqual(customer.phone_ids.sanitized, "+32478123456")

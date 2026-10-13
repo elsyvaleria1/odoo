@@ -160,6 +160,85 @@ class TestAccountMoveOutInvoiceOnchanges(AccountTestInvoicingCommon):
         with self.assertRaisesRegex(UserError, "lock date"):
             inv.line_ids.tax_tag_ids = tax_tag.ids
 
+    def test_out_invoice_posted_line_amount_fields_frozen(self):
+        invoice = self.init_invoice(
+            "out_invoice", products=self.product_a + self.product_b, post=True
+        )
+        line = invoice.invoice_line_ids.filtered(
+            lambda l: l.product_id == self.product_a
+        )
+        for vals in (
+            {"price_unit": 5.0},
+            {"quantity": 3.0},
+            {"discount": 50.0},
+            {"product_id": self.product_b.id},
+            {"product_uom_id": self.uom_dozen.id},
+            {"balance": -500.0},
+            {"amount_currency": -500.0},
+        ):
+            with (
+                self.subTest(vals=vals),
+                self.assertRaisesRegex(UserError, "posted journal item"),
+            ):
+                line.write(vals)
+        with self.assertRaisesRegex(UserError, "add the invoice line"):
+            self.env["account.move.line"].create(
+                {"move_id": invoice.id, "name": "extra", "price_unit": 100.0}
+            )
+        self.assertRecordValues(
+            line,
+            [
+                {
+                    "product_id": self.product_a.id,
+                    "price_unit": 1000.0,
+                    "quantity": 1.0,
+                    "price_subtotal": 1000.0,
+                    "balance": -1000.0,
+                }
+            ],
+        )
+
+        line.write({"price_unit": 1000.0, "name": "renamed"})
+        line.analytic_distribution = False
+        self.assertEqual(line.name, "renamed")
+
+        invoice.action_draft()
+        line.price_unit = 5.0
+        self.assertRecordValues(line, [{"price_subtotal": 5.0, "balance": -5.0}])
+
+    def test_entry_posted_line_business_fields_frozen(self):
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_revenue"
+                            ].id,
+                            "product_id": self.product_a.id,
+                            "quantity": 2.0,
+                            "balance": -100.0,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": self.company_data[
+                                "default_account_receivable"
+                            ].id,
+                            "balance": 100.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        move.action_post()
+        product_line = move.line_ids.filtered("product_id")
+        with self.assertRaisesRegex(UserError, "posted journal item"):
+            product_line.quantity = 5.0
+        product_line.name = "renamed"
+        self.assertEqual(product_line.quantity, 2.0)
+
     @freeze_time("2020-01-15")
     def test_out_invoice_onchange_invoice_date(self):
         for tax_date, invoice_date, accounting_date in [

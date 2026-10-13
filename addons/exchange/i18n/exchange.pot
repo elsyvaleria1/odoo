@@ -193,6 +193,11 @@ msgid "Archived"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__ask_identity
+msgid "Ask Identity"
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__attachment_id
 msgid "Attachment"
 msgstr ""
@@ -305,6 +310,7 @@ msgstr ""
 #. module: exchange
 #: model:ir.model.fields,field_description:exchange.field_exchange_channel__company_id
 #: model:ir.model.fields,field_description:exchange.field_exchange_transmission__company_id
+#: model:ir.model.fields,field_description:exchange.field_exchange_transmission_dispatch__company_id
 msgid "Company"
 msgstr ""
 
@@ -1147,6 +1153,15 @@ msgid "Test Connection"
 msgstr ""
 
 #. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission_dispatch__ask_identity
+msgid ""
+"The ask a transmission claimed before it was committed carries: its subject,"
+" channel, intent and document kind. A claim whose transmission never "
+"committed tells the next transmission of the same ask that the document was "
+"already handed off."
+msgstr ""
+
+#. module: exchange
 #: model:ir.model.fields,help:exchange.field_exchange_transmission__subject_id
 msgid "The business record this transmission is about."
 msgstr ""
@@ -1248,6 +1263,14 @@ msgid ""
 "The three things 'EDI' names -- fiscal clearance, partner interchange, "
 "document import -- on the record rather than in a module name. Only "
 "'partner' is interchange in the strict sense."
+msgstr ""
+
+#. module: exchange
+#: model:ir.model.fields,help:exchange.field_exchange_transmission_dispatch__transmission_id
+msgid ""
+"The transmission handed off. Not a foreign key: a transmission created in "
+"the transaction that sends it is claimed before it is committed, and its "
+"claim must outlive that transaction rolling back."
 msgstr ""
 
 #. module: exchange

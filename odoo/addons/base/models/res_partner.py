@@ -1746,6 +1746,8 @@ class ResPartner(models.Model):
             sync_vals = sync_vals_by_key[key]
             partners.write(sync_vals)
             partners._sync_commercial_fields_to_descendants(list(sync_vals))
+        if synced and self._company_dependent_commercial_fields():
+            synced |= synced._get_contact_descendants()
         synced._sync_company_dependent_commercial_fields()
 
     def _sync_company_dependent_commercial_fields(self) -> None:

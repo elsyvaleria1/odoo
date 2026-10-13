@@ -99,7 +99,7 @@ class FrontdeskVisitor(models.Model):
             vals["served"] = True
         return super().write(vals)
 
-    @api.depends("station_id")
+    @api.depends("station_id.company_id")
     def _compute_company_id(self) -> None:
         for visitor in self:
             visitor.company_id = visitor.station_id.company_id
@@ -175,7 +175,11 @@ class FrontdeskVisitor(models.Model):
         for visitor in self:
             if visitor.drink_ids.notify_user_ids:
                 action = visitor.env.ref("frontdesk.action_frontdesk_visitor").id
-                name = f"{self.name} ({self.company})" if self.company else self.name
+                name = (
+                    f"{visitor.name} ({visitor.company})"
+                    if visitor.company
+                    else visitor.name
+                )
                 msg = self.env._(
                     "%(name)s just checked-in. Requested Drink: %(drink)s.",
                     name=Markup('<a href="%s">%s</a>')
@@ -252,12 +256,11 @@ class FrontdeskVisitor(models.Model):
         return [resource.id for resource in resources if leaves[resource.id]._items]
 
     def _check_and_notify_visitor(self) -> None:
-        resources = [host.resource_id for host in self.host_ids]
         odoobot = self.env.ref("base.partner_root")
-        author = self.station_id.company_id.partner_id
         for visitor in self:
+            author = visitor.station_id.company_id.partner_id
             resources_on_leave = visitor._check_resources_leave(
-                resources, visitor.check_in
+                visitor.host_ids.resource_id, visitor.check_in
             )
             hosts_on_leave = visitor.host_ids.filtered_domain(
                 [("resource_id", "in", resources_on_leave)]

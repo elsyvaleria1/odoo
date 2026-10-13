@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from odoo.fields import Command
 from odoo.tests.common import TransactionCase
 
@@ -114,6 +116,58 @@ class TestMany2manyCommands(TransactionCase):
         )
         self.assertEqual(len(disc.categories), 2)
         self.assertEqual(set(disc.categories.mapped("name")), {"Cat X", "Cat Y"})
+
+    def _linked_category_ids(self, disc):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "SELECT category FROM test_orm_discussion_category WHERE discussion = %s",
+            [disc.id],
+        )
+        return sorted(row[0] for row in self.env.cr.fetchall())
+
+    def _relation_inserts(self, write):
+        cr = self.env.cr
+        execute = cr.execute
+        inserts = []
+
+        def spy(query, params=None, *args, **kwargs):
+            if "INSERT INTO" in str(query) and "test_orm_discussion_category" in str(
+                query
+            ):
+                inserts.append(query)
+            return execute(query, params, *args, **kwargs)
+
+        with patch.object(cr, "execute", spy):
+            write()
+            self.env.flush_all()
+        return inserts
+
+    def test_create_command_inserts_the_owner_link_once(self):
+        disc = self._make_discussion()
+        inserts = self._relation_inserts(
+            lambda: disc.write({"categories": [Command.create({"name": "Once"})]})
+        )
+        self.assertEqual(len(inserts), 1)
+        self.assertEqual(self._linked_category_ids(disc), disc.categories.ids)
+
+    def test_create_command_links_when_the_created_record_drops_the_owner_link(self):
+        disc = self._make_discussion()
+        Category = type(self.env["test_orm.category"])
+        create = Category.create
+
+        def create_without_discussions(model, vals_list):
+            return create(
+                model,
+                [
+                    {key: value for key, value in vals.items() if key != "discussions"}
+                    for vals in vals_list
+                ],
+            )
+
+        with patch.object(Category, "create", create_without_discussions):
+            disc.write({"categories": [Command.create({"name": "Dropped"})]})
+        self.assertEqual(disc.categories.mapped("name"), ["Dropped"])
+        self.assertEqual(self._linked_category_ids(disc), disc.categories.ids)
 
     def test_delete_command(self):
         cat_temp = self.env["test_orm.category"].create({"name": "Temporary"})

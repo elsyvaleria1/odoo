@@ -117,14 +117,17 @@ class ExchangeProtocol(models.AbstractModel):
 
     def _send_batch(self, transmissions) -> dict[int, Verdict | Exception]:
         outcomes: dict[int, Verdict | Exception] = {}
-        for transmission in transmissions:
+        for index, transmission in enumerate(transmissions):
+            is_calling = False
             try:
                 with self.env.cr.savepoint():
                     document = self._prepare_sealed_message(transmission)
+                    is_calling = True
                     outcomes[transmission.id] = self._send_message(
                         transmission, document
                     )
             except PG_RETRY_EXCEPTIONS:
+                transmissions[index + 1 if is_calling else index :]._release_dispatch()
                 raise
             except Exception as error:
                 outcomes[transmission.id] = error
