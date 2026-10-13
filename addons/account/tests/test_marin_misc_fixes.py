@@ -1,7 +1,7 @@
 import io
 import zipfile
 
-from odoo import Command
+from odoo import Command, modules
 from odoo.tests import tagged
 from odoo.tools import SQL
 
@@ -412,3 +412,41 @@ class TestMarinAnalyticButtonsCountWhatTheyOpen(AccountTestInvoicingCommon):
             opened = self.env["account.move"].search(action()["domain"])
             self.assertEqual(opened, posted, count_field)
             self.assertEqual(analytic_account[count_field], len(opened), count_field)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTaxReturnSystrayGroup(AccountTestInvoicingCommon):
+    def test_tax_return_activities_open_as_tax_returns_in_kanban(self):
+        tax_return = self.env["account.return"].create(
+            {
+                "name": "Systray Return",
+                "type_id": self.env["account.return.type"]
+                .create(
+                    {
+                        "name": "Systray Return Type",
+                        "report_id": self.env.ref("account.generic_tax_report").id,
+                    }
+                )
+                .id,
+                "company_id": self.company_data["company"].id,
+                "date_from": "2019-01-01",
+                "date_to": "2019-01-31",
+            }
+        )
+        tax_return.activity_schedule(
+            "mail.mail_activity_data_todo", user_id=self.env.uid
+        )
+
+        groups = [
+            group
+            for group in self.env["res.users"]._get_activity_groups()
+            if group["model"] == "account.return"
+        ]
+
+        self.assertEqual(len(groups), 1)
+        self.assertEqual(groups[0]["name"], "Tax Returns")
+        self.assertEqual(groups[0]["view_type"], "kanban")
+        self.assertEqual(
+            groups[0]["icon"], modules.module.get_module_icon_path("account")
+        )
+        self.assertEqual(groups[0]["due_count"], 1)

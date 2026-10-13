@@ -1,4 +1,4 @@
-from odoo import api, models, modules
+from odoo import api, models
 
 
 class ResUsers(models.Model):
@@ -7,13 +7,10 @@ class ResUsers(models.Model):
     @api.model
     def _get_activity_groups(self):
         activities = super()._get_activity_groups()
-
         for activity in activities:
             if activity["model"] == "account.return":
                 activity |= {
                     "name": self.env._("Tax Returns"),
-                    "icon": modules.module.get_module_icon_path("account"),
                     "view_type": "kanban",
                 }
-
         return activities
