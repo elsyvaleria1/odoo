@@ -62,6 +62,7 @@ class AccountAnalyticLine(models.Model):
         )
 
     @api.depends("amount", "move_line_id.balance", "auto_account_id")
+    @api.depends_context("selected_analytic_plan")
     def _compute_analytic_coverage(self) -> None:
         plan_id = self.env.context.get("selected_analytic_plan")
         self.analytic_coverage = 0.0

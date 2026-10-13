@@ -6802,6 +6802,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:account.field_account_payment__company_currency_id
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_create_accrual__currency_id
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_pay__company_currency_id
+#: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__company_currency_id
 msgid "Company Currency"
 msgstr ""
 
@@ -14320,11 +14321,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_reconcile_auto__line_ids
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__line_ids
 msgid "Line"
-msgstr ""
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__line_currency_id
-msgid "Line Currency"
 msgstr ""
 
 #. module: account

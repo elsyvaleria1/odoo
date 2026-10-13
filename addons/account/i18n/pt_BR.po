@@ -7120,6 +7120,7 @@ msgstr "Conta bancária da empresa"
 #: model:ir.model.fields,field_description:account.field_account_partial_reconcile__company_currency_id
 #: model:ir.model.fields,field_description:account.field_account_payment__company_currency_id
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_pay__company_currency_id
+#: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__company_currency_id
 msgid "Company Currency"
 msgstr "Moeda da empresa"
 
@@ -14798,11 +14799,6 @@ msgstr "Licenças ou serviços de informática (como reparos ou atualizações)"
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__line_ids
 msgid "Line"
 msgstr "Linha"
-
-#. module: account
-#: model:ir.model.fields,field_description:account.field_wizard_account_move_line_split__line_currency_id
-msgid "Line Currency"
-msgstr ""
 
 #. module: account
 #: model:account.reconcile.model,name:account.1_reconcile_from_label

@@ -1100,3 +1100,35 @@ class TestMarinReconcileWizardAudit(AccountTestInvoicingCommon):
         self.assertEqual(
             line.with_context(selected_analytic_plan=plan_2.id).analytic_coverage, 0.0
         )
+
+    def test_analytic_line_coverage_follows_the_selected_plan(self):
+        self.env.user.group_ids += self.env.ref("analytic.group_analytic_accounting")
+        plan_1, plan_2 = self.env["account.analytic.plan"].create(
+            [{"name": "Line coverage plan 1"}, {"name": "Line coverage plan 2"}]
+        )
+        analytic = self.env["account.analytic.account"].create(
+            {"name": "Line coverage AA", "plan_id": plan_1.id}
+        )
+        move = self._entry(
+            [
+                {
+                    "account_id": self.revenue_account.id,
+                    "balance": 100.0,
+                    "analytic_distribution": {str(analytic.id): 60},
+                },
+                {"account_id": self.receivable_account.id, "balance": -100.0},
+            ]
+        )
+        analytic_line = move.line_ids.analytic_line_ids
+        self.assertEqual(
+            analytic_line.with_context(
+                selected_analytic_plan=plan_1.id
+            ).analytic_coverage,
+            0.6,
+        )
+        self.assertEqual(
+            analytic_line.with_context(
+                selected_analytic_plan=plan_2.id
+            ).analytic_coverage,
+            0.0,
+        )
