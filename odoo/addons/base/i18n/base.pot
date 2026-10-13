@@ -2789,7 +2789,7 @@ msgid "AI Agent Management"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_extract_ai
+#: model:ir.module.module,shortdesc:base.module_extract_ml
 msgid "AI Document Field Extraction"
 msgstr ""
 
@@ -5462,7 +5462,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_approval_ai_telegram
+#: model:ir.module.module,description:base.module_approval_telegram_ml
 msgid ""
 "Adds a guided request-intake flow, optional model-based category "
 "suggestions, manual category selection and confirmation before creation. "
@@ -16246,7 +16246,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_approval_ai_telegram
+#: model:ir.module.module,summary:base.module_approval_telegram_ml
 msgid ""
 "Collect approval requests from text or voice with optional AI classification"
 msgstr ""
@@ -26580,7 +26580,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_extract_ai
+#: model:ir.module.module,summary:base.module_extract_ml
 msgid ""
 "Extract schema-defined fields through configured text and vision models"
 msgstr ""
@@ -44698,7 +44698,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_speech_ai
+#: model:ir.module.module,description:base.module_speech_ml
 msgid ""
 "Registers speech readers and writers that select eligible gateway models and"
 " invoke supported transcription or synthesis operations. Model availability "
@@ -44708,7 +44708,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_extract_ai
+#: model:ir.module.module,description:base.module_extract_ml
 msgid ""
 "Registers text and vision extraction strategies using schema-generated "
 "prompts and the machine-learning gateway. Requires a configured model "
@@ -46004,7 +46004,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_speech_ai
+#: model:ir.module.module,summary:base.module_speech_ml
 msgid ""
 "Route transcription and synthesis through configured model-gateway services"
 msgstr ""
@@ -49227,7 +49227,7 @@ msgid "Specify industries to classify your contacts and draw up reports."
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_speech_ai
+#: model:ir.module.module,shortdesc:base.module_speech_ml
 msgid "Speech - Model Gateway Engines"
 msgstr ""
 
@@ -51250,7 +51250,7 @@ msgid "Telegram Account Statements"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_approval_ai_telegram
+#: model:ir.module.module,shortdesc:base.module_approval_telegram_ml
 msgid "Telegram Approval Request Assistant"
 msgstr ""
 

@@ -6918,7 +6918,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_extract_ai
+#: model:ir.module.module,description:base.module_extract_ml
 msgid ""
 "\n"
 "Document Extraction - AI Readers\n"
@@ -13848,7 +13848,7 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_speech_ai
+#: model:ir.module.module,description:base.module_speech_ml
 msgid ""
 "\n"
 "Speech - AI Engines\n"
@@ -36085,7 +36085,7 @@ msgid "Document Extraction"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_extract_ai
+#: model:ir.module.module,shortdesc:base.module_extract_ml
 msgid "Document Extraction - AI Readers"
 msgstr ""
 
@@ -39987,7 +39987,7 @@ msgid "Generates Intrastat XML report for declaration."
 msgstr "Generuje raport XML Intrastat dla deklaracji."
 
 #. module: base
-#: model:ir.module.module,summary:base.module_extract_ai
+#: model:ir.module.module,summary:base.module_extract_ml
 msgid "Generative strategies for extract, on the gateway_ml registry"
 msgstr ""
 
@@ -57501,7 +57501,7 @@ msgid "Speech"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_speech_ai
+#: model:ir.module.module,shortdesc:base.module_speech_ml
 msgid "Speech - AI Engines"
 msgstr ""
 
@@ -61657,7 +61657,7 @@ msgid "Transcribe recordings on this server when no vendor may serve"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_speech_ai
+#: model:ir.module.module,summary:base.module_speech_ml
 msgid "Transcription and synthesis engines on the gateway_ml registry"
 msgstr ""
 
