@@ -4675,6 +4675,12 @@ msgid "Audit account"
 msgstr ""
 
 #. module: account
+#. odoo-python
+#: code:addons/account/models/res_users.py:0
+msgid "Audits"
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields.selection,name:account.selection__account_config__fiscalyear_last_month__8
 msgid "August"
 msgstr ""
@@ -21758,7 +21764,7 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_chart_template.py:0
-#: code:addons/account/models/res_users_reports.py:0
+#: code:addons/account/models/res_users.py:0
 #: model:account.journal,name:account.1_tax_returns
 #: model:account.journal,name:account.2_tax_returns
 #: model:ir.ui.menu,name:account.menu_action_account_return

@@ -484,9 +484,6 @@
                                     class="btn btn-primary">
                                     New
                                 </button>
-                                <widget
-                                    name="account_onboarding"
-                                    t-if="journal_is_empty and dashboard['onboarding']" />
                             </t>
                             <t t-if="journal_type == 'purchase'">
                                 <div t-if="!journal_is_empty" class="d-flex">

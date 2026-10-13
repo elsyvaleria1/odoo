@@ -13,8 +13,3 @@ class TaxConfig(models.Model):
                     "Cannot change Price Tax computation method on a company that has already started invoicing."
                 )
             )
-
-    def action_save_onboarding_sale_tax(self) -> None:
-        self.env["onboarding.onboarding.step"].action_validate_step(
-            "account.onboarding_onboarding_step_sales_tax"
-        )

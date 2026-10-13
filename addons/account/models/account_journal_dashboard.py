@@ -993,33 +993,25 @@ class AccountJournal(models.Model):
 
     @_debug.perf.timed
     def _update_onboarding_data(self, dashboard_data) -> None:
-        journal_onboarding_map = {
-            "sale": "account_invoice",
-            "general": "account_dashboard",
-        }
-        onboarding_data = defaultdict(dict)
+        general_journals = self.filtered(lambda journal: journal.type == "general")
         onboarding_progresses = (
             self.env["onboarding.progress"]
             .sudo()
             .search(
                 [
-                    (
-                        "onboarding_id.route_name",
-                        "in",
-                        [*journal_onboarding_map.values()],
-                    ),
-                    ("company_id", "in", self.company_id.ids),
+                    ("onboarding_id.route_name", "=", "account_dashboard"),
+                    ("company_id", "in", general_journals.company_id.ids),
                 ]
             )
+            if general_journals
+            else self.env["onboarding.progress"]
         )
+        onboarding_by_company = {}
         for progress in onboarding_progresses:
             ob = progress.onboarding_id
             ob_vals = ob.with_company(progress.company_id)._prepare_rendering_values()
-            onboarding_data[progress.company_id][ob.route_name] = ob_vals
-            onboarding_data[progress.company_id][ob.route_name][
-                "current_onboarding_state"
-            ] = ob.current_onboarding_state
-            onboarding_data[progress.company_id][ob.route_name]["steps"] = [
+            ob_vals["current_onboarding_state"] = ob.current_onboarding_state
+            ob_vals["steps"] = [
                 {
                     "id": step.id,
                     "title": step.title,
@@ -1029,16 +1021,19 @@ class AccountJournal(models.Model):
                 }
                 for step in ob_vals["steps"]
             ]
+            onboarding_by_company[progress.company_id] = ob_vals
         _debug.pipeline(
             "onboarding_resolved",
-            journals=self,
+            journals=general_journals,
             progresses=onboarding_progresses,
-            companies=len(onboarding_data),
+            companies=len(onboarding_by_company),
         )
         for journal in self:
-            dashboard_data[journal.id]["onboarding"] = onboarding_data[
-                journal.company_id
-            ].get(journal_onboarding_map.get(journal.type))
+            dashboard_data[journal.id]["onboarding"] = (
+                onboarding_by_company.get(journal.company_id)
+                if journal in general_journals
+                else None
+            )
 
     def _get_draft_sales_purchases_query(self):
         return self.env["account.move"]._search(

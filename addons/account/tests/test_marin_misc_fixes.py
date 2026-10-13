@@ -2,7 +2,7 @@ import io
 import zipfile
 
 from odoo import Command, modules
-from odoo.tests import tagged
+from odoo.tests import new_test_user, tagged
 from odoo.tools import SQL
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -416,37 +416,162 @@ class TestMarinAnalyticButtonsCountWhatTheyOpen(AccountTestInvoicingCommon):
 
 @tagged("post_install", "-at_install")
 class TestMarinTaxReturnSystrayGroup(AccountTestInvoicingCommon):
-    def test_tax_return_activities_open_as_tax_returns_in_kanban(self):
-        tax_return = self.env["account.return"].create(
+    def _create_return_with_activity(self, name, return_type):
+        account_return = self.env["account.return"].create(
             {
-                "name": "Systray Return",
-                "type_id": self.env["account.return.type"]
-                .create(
-                    {
-                        "name": "Systray Return Type",
-                        "report_id": self.env.ref("account.generic_tax_report").id,
-                    }
-                )
-                .id,
+                "name": name,
+                "type_id": return_type.id,
                 "company_id": self.company_data["company"].id,
                 "date_from": "2019-01-01",
                 "date_to": "2019-01-31",
             }
         )
-        tax_return.activity_schedule(
+        account_return.activity_schedule(
             "mail.mail_activity_data_todo", user_id=self.env.uid
         )
+        return account_return
 
-        groups = [
-            group
+    def test_tax_returns_and_audits_open_in_their_own_kanban(self):
+        tax_return = self._create_return_with_activity(
+            "Systray Return",
+            self.env["account.return.type"].create(
+                {
+                    "name": "Systray Return Type",
+                    "report_id": self.env.ref("account.generic_tax_report").id,
+                }
+            ),
+        )
+        audit = self._create_return_with_activity(
+            "Systray Audit", self.env.ref("account.default_audit_return_type")
+        )
+
+        groups = {
+            group["name"]: group
             for group in self.env["res.users"]._get_activity_groups()
             if group["model"] == "account.return"
-        ]
+        }
 
-        self.assertEqual(len(groups), 1)
-        self.assertEqual(groups[0]["name"], "Tax Returns")
-        self.assertEqual(groups[0]["view_type"], "kanban")
-        self.assertEqual(
-            groups[0]["icon"], modules.module.get_module_icon_path("account")
+        self.assertEqual(set(groups), {"Tax Returns", "Audits"})
+        for name, account_return, subkey, action_xmlid, kanban_xmlid, search_xmlid in (
+            (
+                "Tax Returns",
+                tax_return,
+                "",
+                "account.action_view_account_return",
+                "account.account_return_kanban_view",
+                "account.account_return_search_view",
+            ),
+            (
+                "Audits",
+                audit,
+                "audit",
+                "account.action_view_account_audit",
+                "account.account_audit_kanban_view",
+                "account.account_audit_search_view",
+            ),
+        ):
+            group = groups[name]
+            self.assertEqual(group["subkey"], subkey, name)
+            self.assertEqual(group["view_type"], "kanban", name)
+            self.assertEqual(
+                self.env["account.return"].search(group["domain"]), account_return
+            )
+            self.assertEqual(
+                group["icon"], modules.module.get_module_icon_path("account")
+            )
+            action = self.env.ref(action_xmlid)
+            self.assertEqual(action.view_id, self.env.ref(kanban_xmlid), name)
+            self.assertEqual(action.search_view_id, self.env.ref(search_xmlid), name)
+            self.assertEqual(group["due_count"], 1, name)
+
+    def test_a_user_of_one_company_sees_only_its_returns_grouped(self):
+        company = self.company_data["company"]
+        other_company = self.setup_other_company()["company"]
+        user = new_test_user(
+            self.env,
+            login="systray_restricted",
+            groups="account.group_account_user",
+            company_id=company.id,
+            company_ids=[Command.set(company.ids)],
         )
-        self.assertEqual(groups[0]["due_count"], 1)
+        audit_type = self.env.ref("account.default_audit_return_type")
+        audit = self._create_return_with_activity("Systray Audit", audit_type)
+        other_audit = (
+            self.env["account.return"]
+            .sudo()
+            .create(
+                {
+                    "name": "Other Company Audit",
+                    "type_id": audit_type.id,
+                    "company_id": other_company.id,
+                    "date_from": "2019-01-01",
+                    "date_to": "2019-01-31",
+                }
+            )
+        )
+        for account_return in audit | other_audit:
+            account_return.sudo().activity_schedule(
+                "mail.mail_activity_data_todo", user_id=user.id
+            )
+
+        groups = (
+            self.env["res.users"]
+            .with_user(user)
+            .with_context(allowed_company_ids=company.ids)
+            ._get_activity_groups()
+        )
+
+        self.assertEqual(
+            [(group["model"], group["name"]) for group in groups],
+            [("account.return", "Audits"), ("mail.activity", "Other activities")],
+        )
+        self.assertEqual(self.env["account.return"].search(groups[0]["domain"]), audit)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinJournalDashboardOnboarding(AccountTestInvoicingCommon):
+    def test_only_the_general_journal_carries_the_dashboard_onboarding(self):
+        sale_journal = self.company_data["default_journal_sale"]
+        general_journal = self.company_data["default_journal_misc"]
+        dashboard_data = (
+            sale_journal | general_journal
+        )._get_journal_dashboard_data_batched()
+
+        self.assertIsNone(dashboard_data[sale_journal.id]["onboarding"])
+        onboarding = dashboard_data[general_journal.id]["onboarding"]
+        self.assertEqual(
+            [step["action"] for step in onboarding["steps"]],
+            [
+                "action_view_step_company_data",
+                "action_view_step_fiscal_year",
+                "action_view_step_chart_of_accounts",
+            ],
+        )
+        Step = self.env["onboarding.onboarding.step"]
+        for step in onboarding["steps"]:
+            self.assertTrue(callable(getattr(Step, step["action"], None)))
+
+    def test_every_account_step_belongs_to_an_onboarding_and_has_its_action(self):
+        steps = self.env["onboarding.onboarding.step"].search(
+            [
+                (
+                    "id",
+                    "in",
+                    self.env["ir.model.data"]
+                    .search(
+                        [
+                            ("module", "=", "account"),
+                            ("model", "=", "onboarding.onboarding.step"),
+                        ]
+                    )
+                    .mapped("res_id"),
+                )
+            ]
+        )
+        self.assertTrue(steps)
+        for step in steps:
+            self.assertTrue(step.onboarding_ids, step.panel_step_open_action_name)
+            self.assertTrue(
+                callable(getattr(step, step.panel_step_open_action_name, None)),
+                step.panel_step_open_action_name,
+            )

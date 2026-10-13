@@ -25,14 +25,8 @@ class WizardReportConfigUpdateLayout(models.TransientModel):
     def action_save_layout(self):
         _debug.lifecycle("action_save_layout", records=self)
         res = super().action_save_layout()
-        if step := self.env.ref(
-            "account.onboarding_onboarding_step_base_document_layout",
-            raise_if_not_found=False,
-        ):
-            for company_id in self.company_id:
-                step.with_company(company_id).action_set_just_done()
-            if res.get("context"):
-                res["context"]["dialog_size"] = "large"
+        if res.get("context"):
+            res["context"]["dialog_size"] = "large"
         return res
 
     def _get_preview_template(self):

@@ -72,6 +72,7 @@
   "@mail/core/public_web/messaging_menu/messaging_menu_model:MessagingMenu.prototype :: setup :: mail_telegram | whatsapp": "Each calls super.setup() first and declares its own distinct tab field; the shared inverse collects all tabs and visibleTabs sorts by sequence then id, independently of patch order.",
   "@mail/core/web/activity:Activity.prototype :: setup :: calendar | voip": "setup: each calls super.setup() first and only sets fields of its own",
   "@mail/core/web/activity_group_opener:activityGroupOpener :: availableViews :: account | project_todo": "each answers its own group (model or to-do) and defers to super",
+  "@mail/core/web/activity_group_opener:activityGroupOpener :: execute :: account | document": "each answers its own model and defers to super",
   "@mail/core/web/activity_group_opener:activityGroupOpener :: open :: calendar | hr_expense": "each answers its own group (model, to-do or mobile kanban) and defers to super",
   "@mail/core/web/activity_group_opener:activityGroupOpener :: open :: calendar | project_todo": "each answers its own group (model, to-do or mobile kanban) and defers to super",
   "@mail/core/web/activity_group_opener:activityGroupOpener :: open :: crm | hr_expense": "each answers its own group (model, to-do or mobile kanban) and defers to super",
