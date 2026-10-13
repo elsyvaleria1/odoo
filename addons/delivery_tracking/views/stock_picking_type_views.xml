@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+
     <record id="view_picking_type_form_carrier_tracking" model="ir.ui.view">
         <field name="name">stock.picking.type.form.carrier.tracking</field>
         <field name="model">stock.picking.type</field>
@@ -14,4 +15,5 @@
             </field>
         </field>
     </record>
+
 </odoo>
