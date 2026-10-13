@@ -141,6 +141,29 @@ class TestDriverScreen(TripFixtureMixin, HttpCase):
         self.assertNotIn("__SFT_DRIVER_VERSION__", worker.text)
         self.assertEqual(script.status_code, 200)
 
+    def test_the_site_vouches_for_the_driver_app_once_configured(self):
+        self.assertEqual(self.url_open("/.well-known/assetlinks.json").json(), [])
+
+        params = self.env["ir.config_parameter"].sudo()
+        params.set_param("stock_fleet_trace.driver_app_package", "mx.example.driver")
+        params.set_param("stock_fleet_trace.driver_app_sha256", "aa:0a, BB:1C")
+        links = self.url_open("/.well-known/assetlinks.json")
+
+        self.assertEqual(links.status_code, 200)
+        self.assertEqual(
+            links.json(),
+            [
+                {
+                    "relation": ["delegate_permission/common.handle_all_urls"],
+                    "target": {
+                        "namespace": "android_app",
+                        "package_name": "mx.example.driver",
+                        "sha256_cert_fingerprints": ["AA:0A", "BB:1C"],
+                    },
+                }
+            ],
+        )
+
     def test_the_driver_screen_asks_for_a_login(self):
         page = self.url_open("/stock_fleet_trace/driver", allow_redirects=False)
 

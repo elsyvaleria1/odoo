@@ -10,6 +10,8 @@ from odoo.tools import file_open
 DRIVER_PAGE = "/stock_fleet_trace/driver"
 DRIVER_STATIC = "stock_fleet_trace/static/driver"
 DRIVER_SHELL_FILES = ("app.js", "canonical.js", "db.js", "driver.css", "sw.js")
+ASSET_LINKS_PACKAGE = "stock_fleet_trace.driver_app_package"
+ASSET_LINKS_FINGERPRINTS = "stock_fleet_trace.driver_app_sha256"
 
 
 def _driver_terms(env):
@@ -253,6 +255,39 @@ class StockFleetTraceOffline(http.Controller):
                 ("Cache-Control", "no-cache"),
             ],
         )
+
+    @http.route(
+        "/.well-known/assetlinks.json",
+        methods=["GET"],
+        type="http",
+        auth="public",
+        readonly=True,
+    )
+    def driver_asset_links(self):
+        """Digital Asset Links of the Android app wrapping the driver screen.
+
+        Chrome hides its address bar in the app only once this site names the
+        app's package and the SHA-256 of its signing certificate.
+        """
+        env = request.env
+        settings = env.registry.settings
+        package = settings.get(env, ASSET_LINKS_PACKAGE, False)
+        fingerprints = settings.get(env, ASSET_LINKS_FINGERPRINTS, False) or ""
+        statements = []
+        if package and fingerprints.strip():
+            statements.append(
+                {
+                    "relation": ["delegate_permission/common.handle_all_urls"],
+                    "target": {
+                        "namespace": "android_app",
+                        "package_name": package.strip(),
+                        "sha256_cert_fingerprints": fingerprints.replace(",", " ")
+                        .upper()
+                        .split(),
+                    },
+                }
+            )
+        return request.prepare_json_response(statements)
 
     @http.route(
         f"{DRIVER_PAGE}/trips",

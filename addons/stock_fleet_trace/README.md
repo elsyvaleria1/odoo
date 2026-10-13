@@ -204,6 +204,7 @@ Chrome on Android installs it and it reopens without signal.
 | `GET /stock_fleet_trace/driver/manifest.webmanifest` | The manifest: scope and start URL `/stock_fleet_trace/driver`, standalone. |
 | `GET /stock_fleet_trace/driver/sw.js` | The service worker (`auth="public"`), with `Service-Worker-Allowed: /stock_fleet_trace/driver`. Its version is a hash of the files in `static/driver/`: changing one makes phones install the new version. |
 | `/stock_fleet_trace/driver/trips` | JSON-RPC: the traced trips, planned, loaded or in transit, the user drives (`operator_id.user_id`) or supervises. |
+| `GET /.well-known/assetlinks.json` | Digital Asset Links (`auth="public"`) for an Android app that wraps this page as a Trusted Web Activity: the package in system parameter `stock_fleet_trace.driver_app_package`, the SHA-256 of its signing certificate in `stock_fleet_trace.driver_app_sha256` (several separated by commas or spaces). Until both are set it answers `[]` and Chrome shows its address bar inside the app. |
 
 The package route also answers `chain_head`, the trip's last received
 `event_hash`, where a phone with no events of its own starts its chain.
