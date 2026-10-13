@@ -1027,7 +1027,12 @@ class AccountMove(models.Model):
             for tax_line_vals in tax_results["tax_lines_to_add"]
         )
         for tax_line_vals, _grouping_key, values in tax_results["tax_lines_to_update"]:
-            stage_update(tax_line_vals["record"], values)
+            tax_line = tax_line_vals["record"]
+            if tax_line.is_name_manual:
+                values = {key: value for key, value in values.items() if key != "name"}
+            elif "name" in values:
+                values = {**values, "is_name_manual": False}
+            stage_update(tax_line, values)
 
         return to_delete, to_create, to_update
 

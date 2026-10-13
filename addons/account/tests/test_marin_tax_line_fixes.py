@@ -3,7 +3,7 @@ from psycopg import IntegrityError
 from odoo import Command, fields
 from odoo.exceptions import ValidationError
 from odoo.modules.module import get_module_path, load_script
-from odoo.tests import new_test_user, tagged
+from odoo.tests import Form, new_test_user, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -861,9 +861,8 @@ class TestMarinTaxLineAggregationFlags(AccountTestInvoicingCommon):
 
 @tagged("post_install", "-at_install")
 class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
-    def test_resync_overwrites_a_manually_edited_tax_line_label(self):
-        tax = self.company_data["default_tax_sale"]
-        invoice = self.env["account.move"].create(
+    def _invoice(self, tax):
+        return self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
                 "partner_id": self.partner_a.id,
@@ -880,14 +879,73 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
                 ],
             }
         )
-        tax_line = invoice.line_ids.filtered(lambda line: line.display_type == "tax")
+
+    @staticmethod
+    def _tax_line(invoice):
+        return invoice.line_ids.filtered(lambda line: line.display_type == "tax")
+
+    def test_resync_keeps_a_manually_edited_tax_line_label(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        self.assertFalse(tax_line.is_name_manual)
         invoice.write(
             {"line_ids": [Command.update(tax_line.id, {"name": "Edited label"})]}
         )
-        self.assertEqual(tax_line.name, "Edited label")
+        self.assertTrue(tax_line.is_name_manual)
         invoice.invoice_line_ids.price_unit = 200.0
-        self.assertEqual(
-            invoice.line_ids.filtered(lambda line: line.display_type == "tax"),
-            tax_line,
-        )
-        self.assertEqual(tax_line.name, tax.name)
+        self.assertEqual(self._tax_line(invoice), tax_line)
+        self.assertEqual(tax_line.name, "Edited label")
+        self.assertAlmostEqual(tax_line.amount_currency, -200.0 * tax.amount / 100)
+
+    def test_resync_rewrites_an_unedited_tax_line_label_from_the_tax(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        tax.name = "Renamed tax"
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(tax_line.name, "Renamed tax")
+        self.assertFalse(tax_line.is_name_manual)
+
+    def test_changed_tax_recreates_the_line_with_the_new_tax_label(self):
+        tax = self.company_data["default_tax_sale"]
+        other_tax = tax.copy({"name": "Other tax", "amount": 10.0})
+        invoice = self._invoice(tax)
+        self._tax_line(invoice).name = "Edited label"
+        invoice.invoice_line_ids.tax_ids = other_tax
+        new_tax_line = self._tax_line(invoice)
+        self.assertEqual(new_tax_line.tax_line_id, other_tax)
+        self.assertEqual(new_tax_line.name, "Other tax")
+        self.assertFalse(new_tax_line.is_name_manual)
+
+    def test_label_edited_in_the_form_survives_a_price_change(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        index = invoice.line_ids.ids.index(tax_line.id)
+        with Form(invoice) as move_form:
+            with move_form.line_ids.edit(index) as line_form:
+                line_form.name = "Edited in form"
+        self.assertEqual(tax_line.name, "Edited in form")
+        self.assertTrue(tax_line.is_name_manual)
+        with Form(invoice) as move_form:
+            with move_form.invoice_line_ids.edit(0) as line_form:
+                line_form.price_unit = 300.0
+        self.assertEqual(self._tax_line(invoice), tax_line)
+        self.assertEqual(tax_line.name, "Edited in form")
+        self.assertAlmostEqual(tax_line.amount_currency, -300.0 * tax.amount / 100)
+
+    def test_label_edited_in_the_form_survives_a_price_change_in_the_same_form(self):
+        tax = self.company_data["default_tax_sale"]
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        index = invoice.line_ids.ids.index(tax_line.id)
+        with Form(invoice) as move_form:
+            with move_form.line_ids.edit(index) as line_form:
+                line_form.name = "Edited in form"
+            with move_form.invoice_line_ids.edit(0) as line_form:
+                line_form.price_unit = 300.0
+        self.assertEqual(self._tax_line(invoice), tax_line)
+        self.assertEqual(tax_line.name, "Edited in form")
+        self.assertTrue(tax_line.is_name_manual)
+        self.assertAlmostEqual(tax_line.amount_currency, -300.0 * tax.amount / 100)

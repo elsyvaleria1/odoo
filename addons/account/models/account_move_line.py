@@ -172,6 +172,10 @@ class AccountMoveLine(models.Model):
         readonly=False,
         tracking=True,
     )
+    is_name_manual = fields.Boolean(
+        string="Label Edited",
+        help="The label of this tax line was edited by hand: resynchronizing the taxes keeps it instead of rewriting it from the tax.",
+    )
     translated_product_name = fields.Text(compute="_compute_translated_product_name")
     debit = fields.Monetary(
         currency_field="company_currency_id",
@@ -2702,6 +2706,15 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         if not vals:
             return True
+        if "name" in vals and "is_name_manual" not in vals:
+            renamed_tax_lines = self.filtered(
+                lambda line: line.display_type == "tax" and line.name != vals["name"]
+            )
+            if renamed_tax_lines and renamed_tax_lines != self:
+                (self - renamed_tax_lines).write(vals)
+                return renamed_tax_lines.write(vals)
+            if renamed_tax_lines:
+                vals = {**vals, "is_name_manual": True}
         self._check_deferred_account_change(vals)
         vals = self._normalize_vals(vals)
 
