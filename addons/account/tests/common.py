@@ -1384,6 +1384,7 @@ class AccountTestInvoicingCommon(ProductCommon):
             "cash_rounding_base_amount": company_currency,
             "non_deductible_tax_amount_currency": currency,
             "non_deductible_tax_amount": company_currency,
+            "computed_tax_amount_currency": currency,
         }
 
         current_values = {
