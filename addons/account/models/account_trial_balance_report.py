@@ -449,9 +449,9 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                         (SELECT distinct account_account.id
                         FROM account_account
                         LEFT JOIN account_group ON
-                            account_group.company_id = %(root_company_id)s
+                            account_group.company_id = ANY(%(root_company_ids)s)
                             AND (
-                                LEFT(account_account.code_store->>%(company_id)s, LENGTH(code_prefix_start)) BETWEEN
+                                LEFT(account_account.code_store->>account_group.company_id::text, LENGTH(code_prefix_start)) BETWEEN
                                     code_prefix_start
                                 AND code_prefix_end
                             )
@@ -459,8 +459,9 @@ class AccountTrialBalanceReportHandler(models.AbstractModel):
                             OR  account_group.code_prefix_start ILIKE %(filter_search_bar)s)
                         )""",
                         lang=self.env.lang or "en_US",
-                        company_id=str(self.env.company.root_id.id),
-                        root_company_id=self.env.company.root_id.id,
+                        root_company_ids=self.env["res.company"]
+                        .browse(report.get_report_company_ids(options))
+                        .root_id.ids,
                         filter_search_bar="%" + options["filter_search_bar"] + "%",
                     ),
                 )

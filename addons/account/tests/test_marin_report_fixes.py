@@ -1014,6 +1014,45 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
                 if column["column_group_key"] in initial_balance_keys:
                     self.assertFalse(cell.get("no_format"))
 
+    def test_trial_balance_group_search_reaches_every_selected_root(self):
+        report = self.env.ref("account.trial_balance_report")
+        company_2 = self.company_data_2["company"]
+        self.env["account.group"].create(
+            {
+                "name": "Zebra group",
+                "code_prefix_start": "1",
+                "code_prefix_end": "6",
+                "company_id": company_2.id,
+            }
+        )
+        self.init_invoice(
+            "out_invoice",
+            invoice_date="2019-03-01",
+            amounts=[100.0],
+            post=True,
+            company=company_2,
+        )
+        both = self.env.company | company_2
+        report = report.with_context(allowed_company_ids=both.ids)
+        options = self._generate_options(
+            report,
+            "2019-03-01",
+            "2019-03-31",
+            default_options={
+                "hierarchy": True,
+                "unfold_all": True,
+                "export_mode": "print",
+                "filter_search_bar": "Zebra",
+            },
+        )
+        accounts = self.env["account.account"].browse(
+            report._get_model_info_from_id(line["id"])[1]
+            for line in report._get_lines(options)
+            if report._get_model_info_from_id(line["id"])[0] == "account.account"
+        )
+        self.assertTrue(accounts)
+        self.assertTrue(all(company_2 in account.company_ids for account in accounts))
+
     def test_trial_balance_group_search_ignores_other_companies_groups(self):
         report = self.env.ref("account.trial_balance_report")
         self.env["account.group"].create(
