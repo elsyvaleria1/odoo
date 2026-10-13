@@ -2351,7 +2351,7 @@ class AccountMove(models.Model):
                 move.state in {"draft", "posted"}
                 and move.payment_state in ("not_paid", "partial")
                 and move.is_invoice(include_receipts=True)
-                and move.commercial_partner_id
+                and (move.state == "posted" or move.commercial_partner_id)
             )
         )
         if not eligible:

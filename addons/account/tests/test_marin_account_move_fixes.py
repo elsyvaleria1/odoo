@@ -1166,9 +1166,44 @@ class TestMarinMoveBatchBFixes(AccountTestInvoicingCommon):
         self.assertFalse(invoice.invoice_outstanding_credits_debits_widget)
         self.assertFalse(invoice.invoice_has_outstanding)
 
+    def test_a_posted_partnerless_receipt_still_lists_partnerless_credits(self):
+        credit = self._receivable_entry(-100.0)
+        receipt = self.env["account.move"].create(
+            {
+                "move_type": "out_receipt",
+                "invoice_date": "2026-01-10",
+                "invoice_line_ids": [
+                    Command.create({"name": "line", "price_unit": 100.0})
+                ],
+            }
+        )
+        receipt.action_post()
+
+        self.assertTrue(receipt.invoice_has_outstanding)
+        listed = receipt.invoice_outstanding_credits_debits_widget["content"]
+        self.assertIn(
+            credit.line_ids.filtered(lambda line: line.credit).id,
+            [line["id"] for line in listed],
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestMarinMoveAttachmentsDownload(AccountTestInvoicingHttpCommon):
+    def test_a_download_with_no_document_is_not_found(self):
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_line_ids": [Command.create({"price_unit": 100.0})],
+            }
+        )
+        invoice.action_post()
+        self.authenticate(self.env.user.login, self.env.user.login)
+
+        res = self.url_open(f"/account/download_move_attachments/{invoice.id}")
+
+        self.assertEqual(res.status_code, 404)
+
     def test_a_move_without_documents_does_not_break_the_zip(self):
         with_pdf, without_pdf = self.env["account.move"].create(
             [

@@ -1,5 +1,7 @@
 from itertools import chain
 
+from werkzeug.exceptions import NotFound
+
 from odoo import http
 from odoo.exceptions import UserError
 from odoo.http import prepare_content_disposition_header, request
@@ -100,7 +102,7 @@ class AccountDocumentDownloadController(http.Controller):
                 request.env._("invoices") + ".zip", "application/zip", zip_content
             )
             return request.prepare_response(zip_content, headers)
-        return None
+        raise NotFound
 
     @http.route(
         '/account/download_move_attachments/<models("account.move"):moves>',
@@ -122,4 +124,4 @@ class AccountDocumentDownloadController(http.Controller):
                 request.env._("Invoices") + ".zip", "application/zip", zip_content
             )
             return request.prepare_response(zip_content, headers)
-        return None
+        raise NotFound
