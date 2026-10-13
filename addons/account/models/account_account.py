@@ -12,11 +12,11 @@ from odoo.tools import SQL, Query
 ACCOUNT_REGEX = re.compile(r"(?:(\S*\d+\S*))?(.*)")
 ACCOUNT_CODE_REGEX = re.compile(r"^[A-Za-z0-9.\-/]+$")
 ACCOUNT_CODE_NUMBER_REGEX = re.compile(r"(.*?)(\d*)(\D*?)$")
-RECONCILABLE_WITHOUT_FLAG_TYPES = ("asset_cash", "liability_credit_card")
+LIQUIDITY_ACCOUNT_TYPES = ("asset_cash", "liability_credit_card")
 
 
 def allows_reconciliation(account_type: str, reconcile: bool) -> bool:
-    return bool(reconcile) or account_type in RECONCILABLE_WITHOUT_FLAG_TYPES
+    return bool(reconcile) or account_type in LIQUIDITY_ACCOUNT_TYPES
 
 
 _debug = DebugLog(__name__)
@@ -368,11 +368,20 @@ class AccountAccount(models.Model):
                     ),
                 ),
             )
-        if self.filtered(
-            lambda a: a.account_type == "asset_cash" and len(a.company_ids) > 1
+        if shared := self.filtered(
+            lambda a: (
+                a.account_type in LIQUIDITY_ACCOUNT_TYPES and len(a.company_ids) > 1
+            )
         ):
+            _debug.logic(
+                "liquidity_account_shared_refused",
+                accounts=shared,
+                companies=shared.company_ids,
+            )
             raise ValidationError(
-                self.env._("Bank & Cash accounts cannot be shared between companies."),
+                self.env._(
+                    "Bank, Cash and Credit Card accounts cannot be shared between companies."
+                ),
             )
 
     @api.depends_context("company")
@@ -605,11 +614,7 @@ class AccountAccount(models.Model):
                 "liability_payable",
             ):
                 account.reconcile = True
-            elif account.account_type in (
-                "asset_cash",
-                "liability_credit_card",
-                "off_balance",
-            ):
+            elif account.account_type in (*LIQUIDITY_ACCOUNT_TYPES, "off_balance"):
                 account.reconcile = False
 
     @api.depends_context("company")

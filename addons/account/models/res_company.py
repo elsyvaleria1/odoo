@@ -8,6 +8,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, format_list
 from odoo.tools.misc import format_date
 
+from odoo.addons.account.models.account_account import LIQUIDITY_ACCOUNT_TYPES
+
 _debug = DebugLog(__name__)
 
 
@@ -192,7 +194,7 @@ class ResCompany(models.Model):
                 [
                     *self.env["account.account"]._check_company_domain(self),
                     ("code", "=like", old_code + "%"),
-                    ("account_type", "in", ("asset_cash", "liability_credit_card")),
+                    ("account_type", "in", LIQUIDITY_ACCOUNT_TYPES),
                 ],
                 order="code asc",
             )

@@ -5,7 +5,7 @@ from itertools import batched
 from odoo import SUPERUSER_ID, Command, api
 from odoo.tools import SQL, float_is_zero
 
-from odoo.addons.account.models.account_account import RECONCILABLE_WITHOUT_FLAG_TYPES
+from odoo.addons.account.models.account_account import LIQUIDITY_ACCOUNT_TYPES
 
 _logger = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def _normalise_reconcilable(env) -> None:
                    )
          RETURNING id, is_reconcilable
             """,
-            types=list(RECONCILABLE_WITHOUT_FLAG_TYPES),
+            types=list(LIQUIDITY_ACCOUNT_TYPES),
         )
     )
     rows = [

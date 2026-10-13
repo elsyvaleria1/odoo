@@ -383,7 +383,7 @@ class AccountMoveLine(models.Model):
         "the full reconcile if it exists.",
     )
     is_account_reconcile = fields.Boolean(
-        related="account_id.reconcile",
+        related="account_id.is_reconcilable",
         string="Account Reconcile",
     )
 

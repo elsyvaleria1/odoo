@@ -1132,3 +1132,53 @@ class TestMarinReconcileWizardAudit(AccountTestInvoicingCommon):
             ).analytic_coverage,
             0.0,
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinTransferWizardSourceCompany(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.company_data_2 = cls.setup_other_company()
+
+    def _posted_line(self, company_data):
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2017-01-01",
+                "journal_id": company_data["default_journal_misc"].id,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "account_id": company_data["default_account_revenue"].id,
+                            "balance": -100.0,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "account_id": company_data["default_account_receivable"].id,
+                            "balance": 100.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        move.action_post()
+        return move.line_ids.filtered(lambda line: line.balance < 0)
+
+    def test_source_company_of_unrelated_companies_is_a_user_error(self):
+        lines = self._posted_line(self.company_data) | self._posted_line(
+            self.company_data_2
+        )
+        wizard = self.env["wizard.account.move.line.transfer"].new(
+            {"move_line_ids": [Command.set(lines.ids)]}
+        )
+        with self.assertRaisesRegex(UserError, "belonging to different companies"):
+            wizard._get_source_lines_company()
+
+    def test_source_company_of_no_lines_is_a_user_error(self):
+        wizard = self.env["wizard.account.move.line.transfer"].new(
+            {"move_line_ids": [Command.clear()]}
+        )
+        with self.assertRaisesRegex(UserError, "only be used on journal items"):
+            wizard._get_source_lines_company()

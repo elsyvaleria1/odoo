@@ -5606,7 +5606,7 @@ msgstr "Bank- und Kassenbuchungen"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr ""
 "Bank- & Kassenkonten können nicht zwischen Unternehmen geteilt werden."
 

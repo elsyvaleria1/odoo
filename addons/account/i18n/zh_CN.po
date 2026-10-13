@@ -5297,7 +5297,7 @@ msgstr "银行和现金分录"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr "公司之间不能共享银行和现金账户。"
 
 #. module: account

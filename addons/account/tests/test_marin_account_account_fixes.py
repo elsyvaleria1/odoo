@@ -2,7 +2,7 @@ from datetime import date
 from unittest.mock import patch
 
 from odoo import Command
-from odoo.exceptions import AccessError
+from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import new_test_user, tagged
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
@@ -51,6 +51,43 @@ class TestMarinAccountAccountFixes(AccountTestInvoicingCommon):
             "a user without the group must not be served the privileged user's name",
         )
 
+    def test_liquidity_lines_show_their_residual(self):
+        bank_account = self.company_data["default_journal_bank"].default_account_id
+        credit_card_account = self.env["account.account"].create(
+            {
+                "name": "Residual Card",
+                "code": "190601",
+                "account_type": "liability_credit_card",
+            }
+        )
+        current_account = self.env["account.account"].create(
+            {
+                "name": "Residual Current",
+                "code": "190602",
+                "account_type": "asset_current",
+            }
+        )
+        self.assertFalse(any((bank_account | credit_card_account).mapped("reconcile")))
+        move = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2017-01-01",
+                "line_ids": [
+                    Command.create({"account_id": bank_account.id, "balance": 100.0}),
+                    Command.create(
+                        {"account_id": credit_card_account.id, "balance": -60.0}
+                    ),
+                    Command.create(
+                        {"account_id": current_account.id, "balance": -40.0}
+                    ),
+                ],
+            }
+        )
+        self.assertEqual(
+            move.line_ids.filtered("is_account_reconcile").account_id,
+            bank_account | credit_card_account,
+        )
+
 
 @tagged("post_install", "-at_install")
 class TestMarinAccountAccountMultiCompany(AccountTestInvoicingCommon):
@@ -66,6 +103,12 @@ class TestMarinAccountAccountMultiCompany(AccountTestInvoicingCommon):
         return self.env["account.account"].with_context(
             allowed_company_ids=self.both_companies.ids
         )
+
+    def _code_mapping_commands(self, code):
+        return [
+            Command.create({"company_id": company.id, "code": code})
+            for company in self.both_companies
+        ]
 
     def test_create_returns_records_in_input_order_across_companies(self):
         vals_list = [
@@ -202,6 +245,90 @@ class TestMarinAccountAccountMultiCompany(AccountTestInvoicingCommon):
         self.assertFalse(
             account_one.root_id,
             "root_id is derived from placeholder_code, which differs per user",
+        )
+
+    def test_a_credit_card_account_cannot_be_created_for_two_companies(self):
+        with self.assertRaisesRegex(ValidationError, "cannot be shared"):
+            self._accounts().create(
+                {
+                    "name": "Shared Credit Card",
+                    "account_type": "liability_credit_card",
+                    "company_ids": [Command.set(self.both_companies.ids)],
+                    "code_mapping_ids": self._code_mapping_commands("190501"),
+                }
+            )
+
+    def test_a_shared_account_cannot_become_a_credit_card_account(self):
+        account = self._accounts().create(
+            {
+                "name": "Shared Current",
+                "account_type": "liability_current",
+                "company_ids": [Command.set(self.both_companies.ids)],
+                "code_mapping_ids": self._code_mapping_commands("190502"),
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "cannot be shared"):
+            account.account_type = "liability_credit_card"
+
+    def test_a_credit_card_account_cannot_gain_a_second_company(self):
+        account = self._accounts().create(
+            {
+                "name": "Credit Card",
+                "code": "190503",
+                "account_type": "liability_credit_card",
+                "company_ids": [Command.set(self.company_1.ids)],
+            }
+        )
+        with self.assertRaisesRegex(ValidationError, "cannot be shared"):
+            account.write(
+                {
+                    "company_ids": [Command.link(self.company_2.id)],
+                    "code_mapping_ids": [
+                        Command.create(
+                            {"company_id": self.company_2.id, "code": "190503"}
+                        )
+                    ],
+                }
+            )
+
+    def test_merge_wizard_leaves_out_credit_card_accounts(self):
+        Account = self._accounts()
+        credit_cards = Account.create(
+            [
+                {
+                    "name": "Merge Card",
+                    "code": "190504",
+                    "account_type": "liability_credit_card",
+                    "company_ids": [Command.set(company.ids)],
+                }
+                for company in self.both_companies
+            ]
+        )
+        currents = Account.create(
+            [
+                {
+                    "name": "Merge Current",
+                    "code": "190505",
+                    "account_type": "liability_current",
+                    "company_ids": [Command.set(company.ids)],
+                }
+                for company in self.both_companies
+            ]
+        )
+        wizard = (
+            self.env["wizard.account.account.merge"]
+            .with_context(
+                allowed_company_ids=self.both_companies.ids,
+                active_model="account.account",
+                active_ids=(credit_cards | currents).ids,
+            )
+            .create({})
+        )
+        self.assertEqual(
+            wizard.wizard_line_ids.filtered(
+                lambda line: line.display_type == "account"
+            ).account_id,
+            currents,
         )
 
 

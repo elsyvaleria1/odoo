@@ -5240,7 +5240,7 @@ msgstr "העברות בנקאיות ובמזומן"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr "בנק & מזומנים לא יכולים להיות משותפים בין חברות."
 
 #. module: account

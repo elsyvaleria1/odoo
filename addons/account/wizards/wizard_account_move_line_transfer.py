@@ -472,9 +472,23 @@ class WizardAccountMoveLineTransfer(models.TransientModel):
         return line_vals
 
     def _get_source_lines_company(self):
+        companies = self.move_line_ids.company_id
+        if not companies:
+            _debug.logic("transfer_source_company_refused", reason="no_lines")
+            raise UserError(self.env._("This can only be used on journal items"))
+        if len(companies.root_id) > 1:
+            _debug.logic(
+                "transfer_source_company_refused",
+                reason="unrelated_companies",
+                roots=companies.root_id,
+            )
+            raise UserError(
+                self.env._(
+                    "You cannot use this wizard on journal entries belonging to different companies."
+                )
+            )
         common_ancestors = reduce(
-            operator.and_,
-            (company.parent_ids for company in self.move_line_ids.company_id),
+            operator.and_, (company.parent_ids for company in companies)
         )
         return max(common_ancestors, key=lambda company: len(company.parent_ids))
 

@@ -3,6 +3,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.tools import SQL
 
+from odoo.addons.account.models.account_account import LIQUIDITY_ACCOUNT_TYPES
+
 _debug = DebugLog(__name__)
 
 
@@ -52,7 +54,7 @@ class WizardAccountAccountMerge(models.TransientModel):
         return (
             super()
             ._get_mergeable_records()
-            .filtered(lambda a: a.account_type != "asset_cash")
+            .filtered(lambda a: a.account_type not in LIQUIDITY_ACCOUNT_TYPES)
         )
 
     @api.depends("is_group_by_name", "account_ids")

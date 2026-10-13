@@ -5983,7 +5983,7 @@ msgstr "Bank va naqd pul harakatlari"
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
 #, fuzzy
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr ""
 "Bank va naqd pul hisoblarini kompaniyalar o‘rtasida bo‘lishib bo‘lmaydi."
 

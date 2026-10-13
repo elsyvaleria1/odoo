@@ -5290,7 +5290,7 @@ msgstr "銀行/現金残高推移"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr "銀行 & 現金勘定科目は会社間では共有できません。"
 
 #. module: account

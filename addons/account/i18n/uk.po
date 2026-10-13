@@ -5195,7 +5195,7 @@ msgstr "Банківські та готівкові переміщення"
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
-msgid "Bank & Cash accounts cannot be shared between companies."
+msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
 msgstr ""
 "Банківські та готівкові рахунки не можна спільно використовувати між "
 "компаніями."
