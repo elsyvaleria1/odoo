@@ -33,8 +33,18 @@ _debug = DebugLog(__name__)
 _bridge_log = get_asset_logger("bridge")
 
 
-def _rw_escalation_expected() -> bool:
+def _is_rw_escalation_expected() -> bool:
     return bool(modules.module.current_test) or config["test_enable"]
+
+
+def _log_bridge_creation_failure() -> None:
+    expected = _is_rw_escalation_expected()
+    _logger.log(
+        logging.DEBUG if expected else logging.WARNING,
+        "Bridge attachment escalation to a read-write cursor "
+        "failed; falling back to data: URIs",
+        exc_info=not expected,
+    )
 
 
 class BridgeUse(NamedTuple):
@@ -42,6 +52,83 @@ class BridgeUse(NamedTuple):
     specifier: str
     binding: str
     line: int
+
+
+class _BridgeShimSources(NamedTuple):
+    sources_by_specifier: dict[str, str]
+    star_fallback_specifiers: tuple[str, ...]
+
+
+class _ParentBridgeShimSources(NamedTuple):
+    sources_by_specifier: dict[str, str]
+    skipped_tests: int
+    skip_legacy_tests: bool
+
+
+class _BridgeUrls(NamedTuple):
+    urls_by_specifier: dict[str, str]
+    star_fallback_count: int
+
+
+class _BridgeUrlContents(NamedTuple):
+    urls_by_specifier: dict[str, str]
+    contents_by_url: dict[str, str]
+
+
+class PageProvidedBridgeUrls(NamedTuple):
+    urls_by_specifier: dict[str, str]
+    per_file_specifiers: set[str]
+
+
+def _prepare_bridge_url_contents(
+    sources_by_specifier: dict[str, str],
+) -> _BridgeUrlContents:
+    urls_by_specifier: dict[str, str] = {}
+    contents_by_url: dict[str, str] = {}
+    for specifier, content in sources_by_specifier.items():
+        content_hash = cache_hash(content.encode("utf-8"))[:32]
+        url = f"{ESM_BRIDGE_URL_PREFIX}{content_hash}.js"
+        urls_by_specifier[specifier] = url
+        contents_by_url[url] = content
+    return _BridgeUrlContents(urls_by_specifier, contents_by_url)
+
+
+def _prepare_inline_bridge_urls(
+    contents: _BridgeUrlContents, missing_urls: set[str]
+) -> dict[str, str]:
+    return {
+        specifier: (
+            url
+            if url not in missing_urls
+            else f"data:text/javascript;charset=utf-8,{quote(contents.contents_by_url[url])}"
+        )
+        for specifier, url in contents.urls_by_specifier.items()
+    }
+
+
+def _prepare_bridge_shim_sources(
+    specifiers: Iterable[str],
+    resolver: _BridgeExportResolver,
+    *,
+    strict: bool = False,
+    wait: bool = False,
+) -> _BridgeShimSources:
+    sources_by_specifier: dict[str, str] = {}
+    star_fallback_specifiers: list[str] = []
+    for specifier in sorted(specifiers):
+        names, has_default = resolver.source_exports(specifier)
+        if strict:
+            sources_by_specifier[specifier] = _strict_stub_source(specifier, names)
+            continue
+        shim, is_star_fallback = _bridge_shim_source(
+            specifier, names, has_default, wait=wait
+        )
+        sources_by_specifier[specifier] = shim
+        if is_star_fallback:
+            star_fallback_specifiers.append(specifier)
+    return _BridgeShimSources(
+        sources_by_specifier, tuple(star_fallback_specifiers)
+    )
 
 
 def get_evaluation_time_bridge_uses(
@@ -121,19 +208,15 @@ class BridgeShimManager:
             rows=len(stale),
         )
 
-    def _persist_bridge_shims(
+    def _get_or_create_bridge_urls(
         self,
         shims_by_spec: dict[str, str],
     ) -> dict[str, str]:
         if not shims_by_spec:
             return {}
-        url_by_spec: dict[str, str] = {}
-        content_by_url: dict[str, str] = {}
-        for spec, content in shims_by_spec.items():
-            content_hash = cache_hash(content.encode("utf-8"))[:32]
-            url = f"{ESM_BRIDGE_URL_PREFIX}{content_hash}.js"
-            url_by_spec[spec] = url
-            content_by_url[url] = content
+        contents = _prepare_bridge_url_contents(shims_by_spec)
+        url_by_spec = contents.urls_by_specifier
+        content_by_url = contents.contents_by_url
         Attachment = self.env["ir.attachment"].sudo()
         existing = Attachment.search_fetch(
             Attachment._get_domain_generated_assets()
@@ -167,54 +250,46 @@ class BridgeShimManager:
         outside_request = not request
         if outside_request:
             self.env["ir.attachment"].with_user(SUPERUSER_ID).create(to_create)
-        if outside_request or self._persist_bridges_via_rw_cursor(to_create):
-            log_event(
-                _bridge_log,
-                logging.INFO,
-                "bridges_persisted",
-                bundle=self.bundle_name,
-                new=len(to_create),
-                reused=len(content_by_url) - len(to_create),
-                total=len(url_by_spec),
-            )
-            return url_by_spec
-
-        missing_urls = {item["url"] for item in to_create}
+        else:
+            try:
+                self._create_bridge_attachments_via_rw_cursor(to_create)
+            except Exception:
+                _log_bridge_creation_failure()
+                missing_urls = {item["url"] for item in to_create}
+                return self._prepare_fallback_bridge_urls(contents, missing_urls)
         log_event(
             _bridge_log,
-            logging.DEBUG if _rw_escalation_expected() else logging.WARNING,
+            logging.INFO,
+            "bridges_persisted",
+            bundle=self.bundle_name,
+            new=len(to_create),
+            reused=len(content_by_url) - len(to_create),
+            total=len(url_by_spec),
+        )
+        return url_by_spec
+
+    def _create_bridge_attachments_via_rw_cursor(
+        self, to_create: list[dict[str, Any]]
+    ) -> None:
+        with self.env.registry.cursor(readonly=False) as rw_cr:
+            rw_env = Environment(rw_cr, SUPERUSER_ID, {})
+            rw_env["ir.attachment"].create(to_create)
+
+    def _prepare_fallback_bridge_urls(
+        self, contents: _BridgeUrlContents, missing_urls: set[str]
+    ) -> dict[str, str]:
+        log_event(
+            _bridge_log,
+            logging.DEBUG if _is_rw_escalation_expected() else logging.WARNING,
             "bridges_inlined_no_rw_cursor",
             bundle=self.bundle_name,
             inline=len(missing_urls),
-            reused=len(content_by_url) - len(missing_urls),
-            total=len(url_by_spec),
+            reused=len(contents.contents_by_url) - len(missing_urls),
+            total=len(contents.urls_by_specifier),
         )
-        return {
-            spec: (
-                url
-                if url not in missing_urls
-                else f"data:text/javascript;charset=utf-8,{quote(content_by_url[url])}"
-            )
-            for spec, url in url_by_spec.items()
-        }
+        return _prepare_inline_bridge_urls(contents, missing_urls)
 
-    def _persist_bridges_via_rw_cursor(self, to_create: list[dict[str, Any]]) -> bool:
-        try:
-            with self.env.registry.cursor(readonly=False) as rw_cr:
-                rw_env = Environment(rw_cr, SUPERUSER_ID, {})
-                rw_env["ir.attachment"].create(to_create)
-        except Exception:
-            expected = _rw_escalation_expected()
-            _logger.log(
-                logging.DEBUG if expected else logging.WARNING,
-                "Bridge attachment escalation to a read-write cursor "
-                "failed; falling back to data: URIs",
-                exc_info=not expected,
-            )
-            return False
-        return True
-
-    def _prepare_parent_self_bridge(self) -> dict[str, str]:
+    def _prepare_parent_self_shim_sources(self) -> _ParentBridgeShimSources:
         source_map = ModuleSourceMap(self.native_modules)
         exports_cache: dict[str, set[str]] = {}
 
@@ -241,7 +316,13 @@ class BridgeShimManager:
             shim, _star = _bridge_shim_source(specifier, names, has_default=False)
             shims_by_spec[specifier] = shim
 
-        bridges = self._persist_bridge_shims(shims_by_spec)
+        return _ParentBridgeShimSources(
+            shims_by_spec, skipped_tests, skip_legacy_tests
+        )
+
+    def _get_or_create_parent_self_bridge_urls(self) -> dict[str, str]:
+        sources = self._prepare_parent_self_shim_sources()
+        bridges = self._get_or_create_bridge_urls(sources.sources_by_specifier)
         log_event(
             _bridge_log,
             logging.DEBUG,
@@ -254,8 +335,8 @@ class BridgeShimManager:
             bundle=self.bundle_name,
             modules=len(self.native_modules),
             shims=len(bridges),
-            skipped_tests=skipped_tests,
-            skip_legacy_tests=skip_legacy_tests,
+            skipped_tests=sources.skipped_tests,
+            skip_legacy_tests=sources.skip_legacy_tests,
         )
         return bridges
 
@@ -338,7 +419,6 @@ class BridgeShimManager:
         if not specifiers:
             return {}
         resolver = _BridgeExportResolver(external_libs(), self.bundle_name)
-        shims: dict[str, str] = {}
         with _debug.perf(
             "esm_bridges.shim_sources",
             bundle=self.bundle_name,
@@ -346,18 +426,12 @@ class BridgeShimManager:
             strict=strict,
             wait=wait,
         ):
-            for spec in sorted(specifiers):
-                src_names, has_default = resolver.source_exports(spec)
-                if strict:
-                    shims[spec] = _strict_stub_source(spec, src_names)
-                    continue
-                shim, _star = _bridge_shim_source(
-                    spec, src_names, has_default, wait=wait
-                )
-                shims[spec] = shim
-        return shims
+            sources = _prepare_bridge_shim_sources(
+                specifiers, resolver, strict=strict, wait=wait
+            )
+        return sources.sources_by_specifier
 
-    def _prepare_native_to_legacy_bridge(
+    def _get_or_create_native_to_legacy_bridge_urls(
         self,
         native_specifiers: set[str],
         modules: Sequence[ModuleSource] | None = None,
@@ -367,7 +441,9 @@ class BridgeShimManager:
         discovered, ext_seen = self._discover_bridge_specifiers(
             native_specifiers, set(external_libs()), modules=modules
         )
-        bridge_map, star_fallback = self._prepare_bridge_map(discovered)
+        bridge_map, star_fallback = self._get_or_create_bridge_urls_and_fallback_count(
+            discovered
+        )
         log_event(
             _bridge_log,
             logging.DEBUG,
@@ -382,36 +458,31 @@ class BridgeShimManager:
         )
         return bridge_map
 
-    def _prepare_bridge_map(
+    def _get_or_create_bridge_urls_and_fallback_count(
         self,
         discovered: Iterable[str],
         resolver: _BridgeExportResolver | None = None,
-    ) -> tuple[dict[str, str], int]:
+    ) -> _BridgeUrls:
         if resolver is None:
             resolver = _BridgeExportResolver(external_libs(), self.bundle_name)
-        shims_by_spec: dict[str, str] = {}
-        star_fallback = 0
-        for specifier in sorted(discovered):
-            src_names, has_default = resolver.source_exports(specifier)
-            shim, is_star_fallback = _bridge_shim_source(
-                specifier, src_names, has_default
+        sources = _prepare_bridge_shim_sources(discovered, resolver)
+        for specifier in sources.star_fallback_specifiers:
+            _debug.logic(
+                "esm_bridges.star_fallback",
+                bundle=self.bundle_name,
+                spec=specifier,
             )
-            shims_by_spec[specifier] = shim
-            if is_star_fallback:
-                star_fallback += 1
-                _debug.logic(
-                    "esm_bridges.star_fallback",
-                    bundle=self.bundle_name,
-                    spec=specifier,
-                )
-        return self._persist_bridge_shims(shims_by_spec), star_fallback
+        return _BridgeUrls(
+            self._get_or_create_bridge_urls(sources.sources_by_specifier),
+            len(sources.star_fallback_specifiers),
+        )
 
-    def prepare_page_provided_bridges(
+    def get_or_create_page_provided_bridge_urls(
         self,
         native_specifiers: set[str],
         provided: frozenset[str] | set[str],
         modules: Sequence[ModuleSource] | None = None,
-    ) -> tuple[dict[str, str], set[str]]:
+    ) -> PageProvidedBridgeUrls:
         if modules is None:
             modules = self.native_modules
         resolver = _BridgeExportResolver(external_libs(), self.bundle_name)
@@ -423,7 +494,9 @@ class BridgeShimManager:
             resolver=resolver,
         )
         bridged = [spec for spec in discovered if spec in provided]
-        bridge_map, star_fallback = self._prepare_bridge_map(bridged, resolver)
+        bridge_map, star_fallback = self._get_or_create_bridge_urls_and_fallback_count(
+            bridged, resolver
+        )
         per_file = discovered.keys() - set(bridged)
         log_event(
             _bridge_log,
@@ -434,7 +507,7 @@ class BridgeShimManager:
             per_file=len(per_file),
             star_fallback=star_fallback,
         )
-        return bridge_map, per_file
+        return PageProvidedBridgeUrls(bridge_map, per_file)
 
 
 def _lexed_imports(

@@ -871,7 +871,7 @@ class TestEsmAssetGc(TransactionCase):
 
         manager = BridgeShimManager(self.env, "test_assetsbundle.gc_probe", [])
         with patch("odoo.tools.assets.esm_bridges.cache_hash", return_value=digest):
-            manager._persist_bridge_shims({"@probe/spec": "export const p = 1;\n"})
+            manager._get_or_create_bridge_urls({"@probe/spec": "export const p = 1;\n"})
         aged.invalidate_recordset(["write_date"])
 
         self.assertGreater(
@@ -891,7 +891,7 @@ class TestEsmAssetGc(TransactionCase):
         before = young.write_date
         manager = BridgeShimManager(self.env, "test_assetsbundle.gc_probe", [])
         with patch("odoo.tools.assets.esm_bridges.cache_hash", return_value=digest):
-            manager._persist_bridge_shims({"@probe/spec": "export const p = 1;\n"})
+            manager._get_or_create_bridge_urls({"@probe/spec": "export const p = 1;\n"})
         young.invalidate_recordset(["write_date"])
         self.assertEqual(young.write_date, before)
 
@@ -904,7 +904,7 @@ class TestEsmAssetGc(TransactionCase):
         set_cursor_readonly_until_cleanup(self)
         manager = BridgeShimManager(self.env, "test_assetsbundle.gc_probe", [])
         with patch("odoo.tools.assets.esm_bridges.cache_hash", return_value=digest):
-            manager._persist_bridge_shims({"@probe/spec": "export const p = 1;\n"})
+            manager._get_or_create_bridge_urls({"@probe/spec": "export const p = 1;\n"})
         aged.invalidate_recordset(["write_date"])
         self.assertEqual(aged.write_date, before)
 

@@ -344,7 +344,7 @@ class AssetsBundle:
                 _map(header["alias"], asset.url, "alias")
 
         bridge_import_map = (
-            self._bridges._prepare_native_to_legacy_bridge(set(import_map))
+            self._bridges._get_or_create_native_to_legacy_bridge_urls(set(import_map))
             if with_bridges
             else {}
         )

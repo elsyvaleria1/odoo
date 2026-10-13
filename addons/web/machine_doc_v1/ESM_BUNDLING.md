@@ -737,7 +737,7 @@ env["ir.config_parameter"].sudo().set_param("web.esbuild.timeout_s", "60")
 | A dynamic child is served per file in production and stays so | The runtime group compiled but persisting it failed after both the read-write escalation and the request cursor (a database-level fault); `_get_runtime_group_urls_uncached` caches the empty result on purpose, so the group is not re-compiled on every request while the database faults | `odoo.assets.attach WARNING event=runtime_group_save_failed` once, then `odoo.assets.fallback INFO event=runtime_child_per_file` per request; any `assets` cache clear (attachment unlink, *Clear cache*, restart) retries the compile |
 | `Failed to resolve module specifier "@html_editor/components/switch/switch"` on `/?debug=tests`, only on the first read-only render of a changed `web.assets_tests` | The satellite was declined (no build its snapshot can read) and served per file beside the compiled page. A per-file module that imports a page-carried module **relatively** (`video_plugin.js` → `./media_dialog/video_selector.js`) resolves to the file's url, which the specifier key of its bridge never matched: the page module was evaluated a second time from source, and its own imports, which nothing had reason to map, failed. Since 2026-10-04 the per-file branch also keys every page-provided bridge by the module's url (`_get_bridge_url_aliases`), and a later map drops a url key whose url an earlier map already loads as a module (`import_map_names`), so a per-file provider keeps its own copy | `TestPerFileSecondaryOnAPage.test_a_relative_import_of_a_page_carried_module_reaches_its_bridge` walks the per-file map as the browser does |
 | A read-only test cursor keeps declining a bundle after the cause is gone | `_get_esm_variant_nodes_cached` remembers a readonly decline per (bundle, params, satellites, page scope) in the `assets` LRU so the same test run does not retry a compile it cannot persist | `odoo.debug` `readonly_decline_remembered`; `clear_cache("assets")` drops the memo with everything else, which is the intended retry |
-| `[registry] Duplicate add for key "…" … (first registration wins)` console.warn in debug | Module loaded twice (separate instances) — `registry.add` is first-wins and warns rather than throwing | Missing bridge shim (happy path is an attachment URL; `data:` URI only as the read-only-cursor fallback); check `_prepare_native_to_legacy_bridge` |
+| `[registry] Duplicate add for key "…" … (first registration wins)` console.warn in debug | Module loaded twice (separate instances) — `registry.add` is first-wins and warns rather than throwing | Missing bridge shim (happy path is an attachment URL; `data:` URI only as the read-only-cursor fallback); check `_get_or_create_native_to_legacy_bridge_urls` |
 | Test `patchWithCleanup(Klass.prototype, …)` has no effect; production code keeps using unpatched method | Parent + satellite each load their own copy of the same `@web/*` module → `Klass` in test bundle is a different class than the one the production controller instantiates | Add fingerprint logger to module body — two distinct `MODULE LOADED` events means two evaluations. Root cause is usually a sibling manifest (e.g. `spreadsheet/__manifest__.py` pulls `web/static/src/views/graph/graph_model.js` into `spreadsheet.o_spreadsheet`, which is then `('include',)`'d by the satellite test bundle). Fix wires the satellite import through the parent's self-bridge via the `prod_import_map[alias] = shim` override in `_get_esm_nodes_prod` (`ir_qweb_assets.py`). |
 
 ### A split page evaluates each module once (`bundle_double_eval_<addon>` floors)
@@ -868,13 +868,20 @@ path after `ir.attachment.unlink`'s assets-cache clear.
 
 Persistence is decoupled from the request transaction:
 `IrQweb._save_esm_attachment_rows` (bundle/templates/sourcemap) and
-`BridgeShimManager._persist_bridges_via_rw_cursor` (loader bridges) create
+`BridgeShimManager._create_bridge_attachments_via_rw_cursor` (loader bridges) create
 attachment rows through a dedicated read-write registry cursor that commits
 independently, so a request rollback can never orphan an ormcached bundle
 URL, and read-only replica renders persist + reference by URL instead of
 inlining the bundle. Inlining survives only as the degradation path when no
 writable cursor exists at all (read-only test cursors, primary down). A content
 revert (A → B → A) publishes the earlier build again, which makes it current.
+
+Bridge source preparation is independent of attachment storage:
+`prepare_shim_sources` and `_prepare_parent_self_shim_sources` build JavaScript
+without a database environment. The `get_or_create` bridge methods resolve
+URLs and persist missing attachments. `_create_bridge_attachments_via_rw_cursor`
+returns nothing and raises on failure; `_get_or_create_bridge_urls` handles that
+failure by inlining only the missing sources, preserving existing attachment URLs.
 
 **Current-cursor guard (deadlock avoidance).** The out-of-band cursor exists
 ONLY to survive an HTTP-request rollback. When there is no request — registry
@@ -892,7 +899,7 @@ guards are intentionally NOT identical:**
   what one test class compiled serves the next; a writable test cursor also
   keeps a copy of the rows, not of the build, which the snapshot could not see
   conflicting with the committed one. With no request, the current cursor.
-- `_persist_bridge_shims`: `if not request:` → current cursor, else the rw
+- `_get_or_create_bridge_urls`: `if not request:` → current cursor, else the rw
   cursor **even under a test**. A bare `current_test` branch here would break
   HttpCase tours: the browser fetches loader-bridge URLs on SEPARATE
   TestCursors, and only the `registry.cursor()` path publishes rows visible to

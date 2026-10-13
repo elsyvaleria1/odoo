@@ -3,6 +3,7 @@ import subprocess
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
+from urllib.parse import unquote
 
 from odoo.tests.common import TransactionCase
 from odoo.tools.assets.esm_bridges import BridgeShimManager
@@ -115,9 +116,11 @@ class TestBridgeHashWidth(BridgeRequestBoundCase):
     def test_bridge_url_hash_is_32_hex(self):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=True
+            BridgeShimManager,
+            "_create_bridge_attachments_via_rw_cursor",
+            return_value=None
         ):
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/test_hash": "export default 1;"}
             )
         basename = urls["@web/test_hash"].rsplit("/", 1)[-1]
@@ -132,9 +135,11 @@ class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
         self._set_cursor_readonly_until_cleanup()
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=True
+            BridgeShimManager,
+            "_create_bridge_attachments_via_rw_cursor",
+            return_value=None
         ) as escalate:
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/ro_test": "export default 1;"}
             )
         escalate.assert_called_once()
@@ -146,9 +151,11 @@ class TestBridgeReadonlyEscalation(BridgeRequestBoundCase):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
         self._set_cursor_readonly_until_cleanup()
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=False
+            BridgeShimManager,
+            "_create_bridge_attachments_via_rw_cursor",
+            side_effect=RuntimeError("primary unavailable")
         ) as escalate:
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/ro_test2": "export default 2;"}
             )
         escalate.assert_called_once()
@@ -162,9 +169,11 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
             self.env.cr.readonly, "precondition: the request cursor is writable"
         )
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=True
+            BridgeShimManager,
+            "_create_bridge_attachments_via_rw_cursor",
+            return_value=None
         ) as escalate:
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/decoupled": "export const decoupled = 1;"}
             )
         escalate.assert_called_once()
@@ -180,9 +189,11 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
     def test_unwritable_primary_falls_back_to_data_uris(self):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor", return_value=False
+            BridgeShimManager,
+            "_create_bridge_attachments_via_rw_cursor",
+            side_effect=RuntimeError("primary unavailable")
         ):
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/degraded": "export const degraded = 2;"}
             )
         self.assertTrue(
@@ -190,14 +201,43 @@ class TestBridgePersistenceDecoupled(BridgeRequestBoundCase):
             "data: URIs are reserved for a genuinely unwritable primary",
         )
 
+    def test_failure_inlines_only_missing_bridge_content(self):
+        manager = AssetsBundle("web.assets_web", [], env=self.env)._bridges
+        with patch("odoo.http.request", None):
+            reused = manager._get_or_create_bridge_urls(
+                {"@probe/reused": "export const reused = 7;"}
+            )["@probe/reused"]
+        missing_source = "export const missing = 'café / ? # %';"
+        with (
+            patch.object(
+                BridgeShimManager,
+                "_create_bridge_attachments_via_rw_cursor",
+                side_effect=RuntimeError("primary unavailable"),
+            ) as create,
+            self.assertLogs("odoo.tools.assets.esm_bridges", level="DEBUG") as logged,
+        ):
+            urls = manager._get_or_create_bridge_urls(
+                {
+                    "@probe/reused": "export const reused = 7;",
+                    "@probe/missing": missing_source,
+                    "@probe/same_content": missing_source,
+                }
+            )
+        self.assertEqual(urls["@probe/reused"], reused)
+        self.assertEqual(urls["@probe/missing"], urls["@probe/same_content"])
+        self.assertEqual(unquote(urls["@probe/missing"].split(",", 1)[1]), missing_source)
+        create.assert_called_once()
+        self.assertEqual(len(create.call_args.args[0]), 1)
+        self.assertIn("failed; falling back to data: URIs", "\n".join(logged.output))
+
 
 class TestBridgeNoRequestPersistence(TransactionCase):
     def test_no_request_persists_on_current_cursor(self):
         bundle = AssetsBundle("web.assets_web", [], env=self.env)
         with patch.object(
-            BridgeShimManager, "_persist_bridges_via_rw_cursor"
+            BridgeShimManager, "_create_bridge_attachments_via_rw_cursor"
         ) as escalate:
-            urls = bundle._bridges._persist_bridge_shims(
+            urls = bundle._bridges._get_or_create_bridge_urls(
                 {"@web/no_request": "export const no_request = 3;"}
             )
         escalate.assert_not_called()
@@ -211,6 +251,23 @@ class TestBridgeNoRequestPersistence(TransactionCase):
             attachment,
             "the bridge row must be visible on the current cursor",
         )
+
+    def test_identical_sources_share_one_attachment_and_are_reused(self):
+        manager = AssetsBundle("web.assets_web", [], env=self.env)._bridges
+        sources = dict.fromkeys(
+            ("@probe/first", "@probe/second"), "export const shared_probe = 11;"
+        )
+        urls = manager._get_or_create_bridge_urls(sources)
+        self.assertEqual(urls["@probe/first"], urls["@probe/second"])
+        attachments = self.env["ir.attachment"].sudo().search(
+            [("url", "=", urls["@probe/first"])]
+        )
+        self.assertEqual(len(attachments), 1)
+        self.assertEqual(attachments.raw, sources["@probe/first"].encode())
+        with patch.object(
+            type(attachments), "create", side_effect=AssertionError("unexpected creation")
+        ):
+            self.assertEqual(manager._get_or_create_bridge_urls(sources), urls)
 
 
 class TestBridgeShimSources(TransactionCase):
@@ -229,7 +286,38 @@ class TestBridgeShimSources(TransactionCase):
         self.assertRegex(shim, r"_e\d+ as registry\b")
 
     def test_no_specifiers_means_no_work(self):
-        self.assertEqual(self._manager().prepare_shim_sources(set()), {})
+        with patch(
+            "odoo.tools.assets.esm_bridges._BridgeExportResolver",
+            side_effect=AssertionError("unexpected source resolution"),
+        ):
+            self.assertEqual(self._manager().prepare_shim_sources(set()), {})
+
+    def test_source_preparation_needs_no_database_environment(self):
+        manager = self._manager()
+        del manager.env
+        for strict, wait in ((False, False), (False, True), (True, False), (True, True)):
+            with self.subTest(strict=strict, wait=wait):
+                shim = manager.prepare_shim_sources(
+                    {"@web/core/registry"}, strict=strict, wait=wait
+                )["@web/core/registry"]
+                self.assertRegex(shim, r"_e\d+ as registry\b")
+                if strict:
+                    self.assertIn("throw new Error(", shim)
+                    self.assertNotIn("await new Promise(", shim)
+                else:
+                    self.assertEqual("await new Promise(" in shim, wait)
+
+    def test_persisted_and_inline_bridges_have_the_same_source(self):
+        manager = self._manager()
+        specifiers = {"@web/core/registry", "@probe/missing_module"}
+        sources = manager.prepare_shim_sources(specifiers)
+        urls, fallback_count = manager._get_or_create_bridge_urls_and_fallback_count(
+            specifiers
+        )
+        self.assertEqual(fallback_count, 1)
+        for specifier, url in urls.items():
+            attachment = self.env["ir.attachment"].sudo().search([("url", "=", url)])
+            self.assertEqual(attachment.raw.decode(), sources[specifier])
 
     def test_a_strict_stub_throws_instead_of_waiting(self):
         stub = self._manager().prepare_shim_sources(
@@ -318,7 +406,7 @@ class TestParentSelfBridge(TransactionCase):
             _Mod("@a/two", "export const TWO = 2;\n"),
         )
         with self.assertLogs("odoo.assets.bridge", level="DEBUG"):
-            bridges = manager._prepare_parent_self_bridge()
+            bridges = manager._get_or_create_parent_self_bridge_urls()
 
         self.assertEqual(sorted(bridges), ["@a/one", "@a/two"])
         self.assertTrue(
@@ -337,12 +425,12 @@ class TestParentSelfBridge(TransactionCase):
         with (
             patch.object(
                 type(manager),
-                "_persist_bridge_shims",
+                "_get_or_create_bridge_urls",
                 lambda _self, shims: captured.update(shims) or {},
             ),
             self.assertLogs("odoo.assets.bridge", level="DEBUG"),
         ):
-            manager._prepare_parent_self_bridge()
+            manager._get_or_create_parent_self_bridge_urls()
 
         shim = captured["@a/face"]
         for name in ("A", "B", "C"):
@@ -354,13 +442,24 @@ class TestParentSelfBridge(TransactionCase):
             _Mod("../legacy/thing", "export const X = 1;\n"),
         )
         with self.assertLogs("odoo.assets.bridge", level="DEBUG"):
-            bridges = manager._prepare_parent_self_bridge()
+            bridges = manager._get_or_create_parent_self_bridge_urls()
 
         self.assertEqual(list(bridges), ["@a/one"])
 
     def test_no_native_modules_means_no_bridges(self):
         manager = self._manager()
-        self.assertEqual(manager._prepare_parent_self_bridge(), {})
+        self.assertEqual(manager._get_or_create_parent_self_bridge_urls(), {})
+
+    def test_parent_source_preparation_needs_no_database_environment(self):
+        manager = self._manager(
+            _Mod("@a/base", "export const BASE = 1;\n"),
+            _Mod("@a/face", "export * from './base';\nexport const OWN = 2;\n"),
+        )
+        del manager.env
+        sources = manager._prepare_parent_self_shim_sources().sources_by_specifier
+        self.assertEqual(list(sources), ["@a/base", "@a/face"])
+        for name in ("BASE", "OWN"):
+            self.assertRegex(sources["@a/face"], rf"_e\d+ as {name}\b")
 
 
 class TestBridgeRwCursorEscalation(TransactionCase):
@@ -402,7 +501,9 @@ class TestBridgeRwCursorEscalation(TransactionCase):
         self.addCleanup(self._cleanup_rows)
         manager = AssetsBundle("web.assets_web", [], env=self.env)._bridges
 
-        self.assertTrue(manager._persist_bridges_via_rw_cursor(self._to_create("ok")))
+        self.assertIsNone(
+            manager._create_bridge_attachments_via_rw_cursor(self._to_create("ok"))
+        )
 
         with Registry(get_db_name()).cursor() as cr:
             cr.execute(
@@ -411,11 +512,13 @@ class TestBridgeRwCursorEscalation(TransactionCase):
             )
             self.assertEqual(cr.fetchone()[0], 1)
 
-    def test_a_failed_escalation_reports_false_rather_than_raising(self):
+    def test_a_failed_creation_rolls_back_and_raises(self):
         manager = AssetsBundle("web.assets_web", [], env=self.env)._bridges
         bad = self._to_create("bad")
         bad[0]["no_such_field_on_ir_attachment"] = 1
 
-        with self.assertLogs("odoo.tools.assets.esm_bridges", level="DEBUG") as logged:
-            self.assertFalse(manager._persist_bridges_via_rw_cursor(bad))
-        self.assertIn("escalation to a read-write cursor", "\n".join(logged.output))
+        with self.assertRaises(ValueError):
+            manager._create_bridge_attachments_via_rw_cursor(bad)
+        self.assertFalse(
+            self.env["ir.attachment"].sudo().search([("url", "=", bad[0]["url"])])
+        )

@@ -122,7 +122,7 @@ class _NativeStubBundle:
     def _bridges(self):
         return self
 
-    def _prepare_native_to_legacy_bridge(self, specifiers, modules=None):
+    def _get_or_create_native_to_legacy_bridge_urls(self, specifiers, modules=None):
         self.bridge_input = set(specifiers)
         return {"@legacy/shim": "data:text/javascript,"}
 

@@ -549,7 +549,7 @@ class TestParentSelfBridge(TransactionCase):
             js=True,
             css=False,
         )
-        bridges = setup_ab._bridges._prepare_parent_self_bridge()
+        bridges = setup_ab._bridges._get_or_create_parent_self_bridge_urls()
         native_specs = {a.module_path for a in setup_ab.native_modules}
         self.assertGreater(len(bridges), 0)
         for spec, url in list(bridges.items())[:20]:
@@ -4287,14 +4287,14 @@ class TestPageBundleExportSurface(TransactionCase):
         )
         self.env.registry.clear_cache("assets")
         bridged = []
-        prepare = esm_bridges.BridgeShimManager._prepare_native_to_legacy_bridge
+        get_or_create_bridges = esm_bridges.BridgeShimManager._get_or_create_native_to_legacy_bridge_urls
 
         def spy(manager, *args, **kwargs):
             bridged.append(manager.bundle_name)
-            return prepare(manager, *args, **kwargs)
+            return get_or_create_bridges(manager, *args, **kwargs)
 
         with patch.object(
-            esm_bridges.BridgeShimManager, "_prepare_native_to_legacy_bridge", spy
+            esm_bridges.BridgeShimManager, "_get_or_create_native_to_legacy_bridge_urls", spy
         ):
             consumers = IrQweb._get_export_consumers(
                 "web.report_assets_common", bundle, params, []

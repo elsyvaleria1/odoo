@@ -1665,7 +1665,7 @@ class IrQweb(models.AbstractModel):
                 bundle, dynamic_bundles, assets_params, with_test_satellites
             )
             bridges = dynamic_bundles[0]._bridges
-            bridge_map, per_file = bridges.prepare_page_provided_bridges(
+            bridge_map, per_file = bridges.get_or_create_page_provided_bridge_urls(
                 set(import_map) | child_specifiers,
                 carried,
                 modules=combined_modules,
@@ -1750,7 +1750,7 @@ class IrQweb(models.AbstractModel):
     ) -> None:
         self_bridges = {
             spec: shim
-            for spec, shim in asset_bundle._bridges._prepare_parent_self_bridge().items()
+            for spec, shim in asset_bundle._bridges._get_or_create_parent_self_bridge_urls().items()
             if spec not in served_by_children
         }
         import_map.update(self_bridges)
@@ -1959,7 +1959,7 @@ class IrQweb(models.AbstractModel):
         )
         if provided:
             bridge_map, discovered = (
-                asset_bundle._bridges.prepare_page_provided_bridges(
+                asset_bundle._bridges.get_or_create_page_provided_bridge_urls(
                     all_native_specifiers, provided, modules=combined_native_modules
                 )
             )
