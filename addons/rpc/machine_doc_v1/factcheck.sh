@@ -7,7 +7,7 @@
 # database is render the document; TestOpenAPIContract does that, and the
 # assertions below are what holds between runs of it.
 
-set -u
+set -eu
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 _fc_root="$SCRIPT_DIR"
 while [[ "$_fc_root" != "/" && ! -f "$_fc_root/odoo-bin" ]]; do
@@ -15,6 +15,7 @@ while [[ "$_fc_root" != "/" && ! -f "$_fc_root/odoo-bin" ]]; do
 done
 # shellcheck source=/dev/null
 source "$_fc_root/doc/machine_doc/factcheck_env.sh"
+export PYTHONPATH="$_fc_root${PYTHONPATH:+:$PYTHONPATH}"
 
 MOD="$(dirname "$SCRIPT_DIR")"
 DOCS=("$SCRIPT_DIR"/*.md)
