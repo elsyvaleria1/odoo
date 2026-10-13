@@ -2284,7 +2284,9 @@ class AccountAccount(models.Model):
             skipped=not working_file,
         )
         if not working_file:
-            return SQL()
+            if field_expr == "audit_var_percentage":
+                return SQL("NULL::numeric")
+            return SQL("0.0::numeric")
 
         if field_expr in ("audit_debit", "audit_credit", "audit_balance"):
             field_name = field_expr.replace("audit_", "")

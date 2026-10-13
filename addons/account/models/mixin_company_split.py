@@ -236,6 +236,7 @@ class MixinCompanySplit(models.AbstractModel):
             new = self.copy(
                 default={
                     **self._unmerge_copy_defaults(),
+                    "company_ids": [Command.set(company.ids)],
                     **{
                         fname: _filtered_of_company(self[fname], company)
                         for fname in check_company_fields

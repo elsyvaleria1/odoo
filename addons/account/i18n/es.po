@@ -5609,7 +5609,9 @@ msgstr "Movimientos bancarios y de caja"
 #. odoo-python
 #: code:addons/account/models/account_account.py:0
 msgid "Bank, Cash and Credit Card accounts cannot be shared between companies."
-msgstr "No es posible compartir las cuentas de banco y caja entre compañías."
+msgstr ""
+"No es posible compartir las cuentas de banco, caja y tarjeta de crédito entre "
+"compañías."
 
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_journal__bank_account_id
