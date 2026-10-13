@@ -5,7 +5,7 @@ from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.integration_machine_learning.tools import MlResult
 
-ROUTER = "odoo.addons.extract_ai.models.ai_extractors.get_router"
+ROUTER = "odoo.addons.extract_ml.models.ai_extractors.get_router"
 JSONRPC = "odoo.addons.iap.tools.iap_tools.iap_jsonrpc"
 PNG = base64.b64decode(
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="

@@ -8,7 +8,7 @@ reaches an approver, the bot **pushes** it to their chat and lets them
 inline buttons — no slash commands. Browsing all pending requests is handled by
 a **Mini App** (web view) opened from the bot's chat menu button.
 
-Complementary to ``approval_ai_telegram`` (the requester side, which
+Complementary to ``approval_telegram_ml`` (the requester side, which
 creates the request from natural language / voice). Together they move the full
 approval round-trip to Telegram.
 

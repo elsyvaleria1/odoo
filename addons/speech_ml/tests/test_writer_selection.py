@@ -6,7 +6,7 @@ from odoo.tests.common import TransactionCase
 
 from odoo.addons.integration_machine_learning.tests.common import credential_for
 from odoo.addons.integration_machine_learning.tools.router import MlRouter
-from odoo.addons.speech_ai.tools.writers import AiSpeech
+from odoo.addons.speech_ml.tools.writers import AiSpeech
 
 
 @tagged("post_install", "-at_install")

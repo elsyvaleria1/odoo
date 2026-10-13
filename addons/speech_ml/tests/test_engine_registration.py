@@ -2,7 +2,7 @@ from odoo.libs.documents import TEXT, get_writers
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.speech_ai.tools.writers import AiSpeech, written_by
+from odoo.addons.speech_ml.tools.writers import AiSpeech, written_by
 
 
 @tagged("post_install", "-at_install")

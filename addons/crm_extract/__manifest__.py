@@ -8,7 +8,7 @@
     "license": "Other OSI approved licence",
     "depends": [
         "crm_enterprise",
-        "extract_ai",
+        "extract_ml",
     ],
     "auto_install": True,
 }

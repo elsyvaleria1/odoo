@@ -108,7 +108,7 @@ class TestRequestIntakeAuthority(SmartApprovalTestBase):
         self.env["ir.config_parameter"].set_param(_THRESHOLD, "0.9")
         params = self.env["ir.config_parameter"].with_user(self.test_user)
         privileged = params.with_privilege(
-            "approval_ai_telegram.privilege_read_confidence_threshold"
+            "approval_telegram_ml.privilege_read_confidence_threshold"
         )
 
         with self.assertRaises(AccessError):

@@ -41,7 +41,7 @@ class AiTranscription(BaseReader):
     mimetypes = RECORDING_MIMETYPES
     yields = (CUES,)
     cost = METERED
-    module = "speech_ai"
+    module = "speech_ml"
     async_only = True
 
     def available(self, options: Mapping[str, Any]) -> bool:

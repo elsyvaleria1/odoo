@@ -42,7 +42,7 @@ class AiSpeech(BaseWriter):
     name = "ai_speech"
     mimetype = ""
     consumes = TEXT
-    module = "speech_ai"
+    module = "speech_ml"
 
     def __init__(self, mimetype: str) -> None:
         self.name = f"ai_speech_{mimetype.rsplit('/', 1)[-1]}"

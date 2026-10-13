@@ -8,7 +8,7 @@ from .common import SpeechCase, StubTranscription
 from odoo.addons.integration_machine_learning.tools import MlResult
 from odoo.addons.speech_analysis.tools.schema import MOMENT_KINDS, PURPOSE
 
-ROUTER = "odoo.addons.extract_ai.models.ai_extractors.get_router"
+ROUTER = "odoo.addons.extract_ml.models.ai_extractors.get_router"
 
 FIRST = [
     Cue(0.0, 2.0, "buenos días", "SPEAKER_0"),

@@ -1344,7 +1344,7 @@ class TelegramHandlerApprovalAi(models.AbstractModel):
         param = (
             bot.env["ir.config_parameter"]
             .with_privilege(
-                "approval_ai_telegram.privilege_read_confidence_threshold",
+                "approval_telegram_ml.privilege_read_confidence_threshold",
                 reason="the intake reads how sure a suggested category must be",
             )
             .get_param(

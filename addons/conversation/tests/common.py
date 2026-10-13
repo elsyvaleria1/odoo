@@ -13,7 +13,7 @@ from odoo.tests.common import TransactionCase
 
 from odoo.addons.integration_machine_learning.tools import MlResult
 
-ROUTER = "odoo.addons.extract_ai.models.ai_extractors.get_router"
+ROUTER = "odoo.addons.extract_ml.models.ai_extractors.get_router"
 
 TWO_VOICES = [
     Cue(0.4, 1.2, "¿Bueno?", "SPEAKER_0"),

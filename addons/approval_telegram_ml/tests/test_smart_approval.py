@@ -7,7 +7,7 @@ from odoo import Command, fields
 from odoo.tests import Form, tagged
 
 from odoo.addons.approval.tests.common import pool_step
-from odoo.addons.approval_ai_telegram.services.approval_assistant import (
+from odoo.addons.approval_telegram_ml.services.approval_assistant import (
     ApprovalAssistant,
 )
 from odoo.addons.integration_machine_learning.tests.common import connect
@@ -37,7 +37,7 @@ class SmartApprovalTestBase(TelegramBotTestCase):
 class TestSmartApprovalData(SmartApprovalTestBase):
     def test_intake_commands_registered(self):
         command = self.env.ref(
-            "approval_ai_telegram.command_solicitar", raise_if_not_found=False
+            "approval_telegram_ml.command_solicitar", raise_if_not_found=False
         )
         self.assertTrue(command, "The /solicitar command record should exist.")
         self.assertEqual(command.name, "/solicitar")
@@ -66,7 +66,7 @@ class TestSmartApprovalData(SmartApprovalTestBase):
 
     def test_has_solicitar_command_gates_page(self):
         self.assertFalse(self.test_bot.has_solicitar_command)
-        command = self.env.ref("approval_ai_telegram.command_solicitar")
+        command = self.env.ref("approval_telegram_ml.command_solicitar")
         self.test_bot.write({"command_ids": [(4, command.id)]})
         self.assertTrue(self.test_bot.has_solicitar_command)
 
@@ -200,7 +200,7 @@ class TestAiProvider(SmartApprovalTestBase):
     def test_switching_provider_clears_a_model_of_another_vendor(self):
         groq = self.env.ref("integration_machine_learning.ai_provider_groq")
         self.test_bot.command_ids = [
-            Command.link(self.env.ref("approval_ai_telegram.command_solicitar").id)
+            Command.link(self.env.ref("approval_telegram_ml.command_solicitar").id)
         ]
         with Form(self.test_bot) as form:
             form.smart_approval_ai_enabled = True
@@ -219,7 +219,7 @@ class TestSmartApprovalFlow(SmartApprovalTestBase):
             {
                 "command_ids": [
                     Command.link(
-                        self.env.ref("approval_ai_telegram.command_solicitar").id
+                        self.env.ref("approval_telegram_ml.command_solicitar").id
                     )
                 ]
             }
@@ -457,7 +457,7 @@ class TestSolicitarFlowGuard(SmartApprovalTestBase):
             {
                 "command_ids": [
                     Command.link(
-                        self.env.ref("approval_ai_telegram.command_solicitar").id
+                        self.env.ref("approval_telegram_ml.command_solicitar").id
                     )
                 ]
             }

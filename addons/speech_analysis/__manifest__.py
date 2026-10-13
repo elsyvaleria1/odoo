@@ -9,7 +9,7 @@
     "license": "Other OSI approved licence",
     "depends": [
         "speech",
-        "extract_ai",
+        "extract_ml",
     ],
     "data": [
         "security/ir.access.csv",

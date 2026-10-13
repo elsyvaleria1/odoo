@@ -7,7 +7,7 @@ from odoo.addons.extract.tools.schema import (
     known_schemas,
     sums_to,
 )
-from odoo.addons.extract_ai.models.prompt import prepare_prompt
+from odoo.addons.extract_ml.models.prompt import prepare_prompt
 
 _SCHEMA = Schema(
     name="test_bill",

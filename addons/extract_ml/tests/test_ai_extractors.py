@@ -4,7 +4,7 @@ from odoo.libs.documents import Document
 from odoo.tests.common import TransactionCase, tagged
 
 from odoo.addons.extract.tools import GENERATIVE, known_schemas
-from odoo.addons.extract_ai.models.ai_extractors import (
+from odoo.addons.extract_ml.models.ai_extractors import (
     LlmTextExtractor,
     LlmVisionExtractor,
     _media_type,
@@ -38,7 +38,7 @@ class TestAiExtractors(TransactionCase):
 
     def _run(self, reader, source, orchestrator, doc_type="invoice", wanted=()):
         with patch(
-            "odoo.addons.extract_ai.models.ai_extractors.get_router",
+            "odoo.addons.extract_ml.models.ai_extractors.get_router",
             return_value=orchestrator,
         ):
             return reader.extract(source, doc_type, wanted, env=self.env)

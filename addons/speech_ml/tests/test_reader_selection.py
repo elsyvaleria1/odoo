@@ -8,8 +8,8 @@ from odoo.tests.common import TransactionCase
 from odoo.tools import mute_logger
 
 from odoo.addons.integration_machine_learning.tools.router import MlRouter
-from odoo.addons.speech_ai.tools.purposes import TRANSCRIPTION_PURPOSE
-from odoo.addons.speech_ai.tools.readers import AiTranscription, _pick_timed_model
+from odoo.addons.speech_ml.tools.purposes import TRANSCRIPTION_PURPOSE
+from odoo.addons.speech_ml.tools.readers import AiTranscription, _pick_timed_model
 
 _OGG = b"OggS" + b"\x00" * 64
 
@@ -24,7 +24,7 @@ class TestReaderSelection(TransactionCase):
             {"name": "openai", "endpoint_id": endpoint.id, "bearer_token": "K"}
         )
         cls.openai = cls.env.ref("integration_machine_learning.ai_provider_openai")
-        cls.transcription = cls.env.ref("speech_ai.purpose_speech_transcription")
+        cls.transcription = cls.env.ref("speech_ml.purpose_speech_transcription")
 
     def _allow(self, *providers, company=None):
         return self.env["integration.ml.policy"].create(
@@ -191,7 +191,7 @@ class TestCanTranscribeFollowsTheAttachmentsCompany(TransactionCase):
         self.env["integration.ml.policy"].create(
             {
                 "company_id": other.id,
-                "purpose_id": self.env.ref("speech_ai.purpose_speech_transcription").id,
+                "purpose_id": self.env.ref("speech_ml.purpose_speech_transcription").id,
                 "provider_ids": [
                     (
                         6,

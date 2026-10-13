@@ -15,7 +15,7 @@ class TestApprovalAiTelegramAccessMatrix(AccessMatrixCase):
             "ir.config_parameter",
             "confidence_threshold",
             note="the request intake reads it only through "
-            "approval_ai_telegram.privilege_read_confidence_threshold, which no "
+            "approval_telegram_ml.privilege_read_confidence_threshold, which no "
             "user holds",
             admin_a="rwcd",
         ),

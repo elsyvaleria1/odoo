@@ -11,7 +11,7 @@
     "depends": [
         "speech",
         "mail_speech",
-        "speech_ai",
+        "speech_ml",
         "speech_analysis",
     ],
     "data": [

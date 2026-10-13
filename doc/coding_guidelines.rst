@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.87
+:Version: 7.88
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -832,15 +832,15 @@ and about its dependencies, and nothing checks either claim.
 * **``ai`` and ``ml`` claim different dependencies.** ``ai_<x>`` and ``<x>_ai``
   depend on the ``ai`` application (``ai_crm``, ``sign_ai``,
   ``hr_recruitment_ai``); ``<family>_ml`` reaches a family through
-  ``integration_machine_learning`` and does not install ``ai``;
-  ``ai_gateway_ml`` connects the two. Why: ``ai`` brings agents, sources and
-  pgvector, and a name that suggests it reads as installing it.
+  ``integration_machine_learning`` and does not install ``ai`` (``speech_ml``,
+  ``extract_ml``); ``ai_gateway_ml`` connects the two. Why: ``ai`` brings
+  agents, sources and pgvector, and a name that suggests it reads as installing
+  it.
 * **Renames pending**
   (``agromarin-knowledge/plans/2026-10-13-speech-voice-module-naming-plan.md``):
-  ``speech_ai``, ``extract_ai``, ``approval_ai_telegram`` → ``speech_ml``,
-  ``extract_ml``, ``approval_telegram_ml``; ``voice``, ``voice_ai``,
-  ``mail_voice``, ``stock_voice``, ``stock_barcode_voice`` → ``voice_command``,
-  ``voice_command_ml``, ``mail_voice_command``, ``stock_voice_command``,
+  ``voice``, ``voice_ai``, ``mail_voice``, ``stock_voice``,
+  ``stock_barcode_voice`` → ``voice_command``, ``voice_command_ml``,
+  ``mail_voice_command``, ``stock_voice_command``,
   ``stock_barcode_voice_command``; ``speech_telegram``,
   ``mail_speech_telegram``, ``account_speech_telegram`` → ``telegram_speech``,
   ``mail_telegram_speech``, ``account_telegram_speech``. Each rename removes its
@@ -6371,6 +6371,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.88
+     - 2026-10-13
+     - §1.5: ``speech_ai``, ``extract_ai`` and ``approval_ai_telegram`` are
+       ``speech_ml``, ``extract_ml`` and ``approval_telegram_ml`` (base
+       1.154); ``speech_ml`` and ``extract_ml`` become the rule's ``_ml``
+       examples and leave the pending-renames list.
    * - 7.87
      - 2026-10-13
      - §1.5: a family word means one thing (``speech`` audio and text,
