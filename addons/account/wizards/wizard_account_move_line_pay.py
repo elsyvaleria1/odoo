@@ -30,7 +30,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
         store=True,
         readonly=False,
     )
-    hide_writeoff_section = fields.Boolean(compute="_compute_hide_writeoff_section")
     communication = fields.Char(
         string="Memo",
         compute="_compute_communication",
@@ -292,12 +291,8 @@ class WizardAccountMoveLinePay(models.TransientModel):
         memo = self.env.cr.cache.get(_PAYMENT_JOURNALS_CACHE_KEY)
         if memo is not None and company in memo:
             return memo[company]
-        journals = self.env["account.journal"].search(
-            [
-                *self.env["account.journal"]._check_company_domain(company),
-                ("type", "in", ("bank", "cash", "credit")),
-            ]
-        )
+        Journal = self.env["account.journal"]
+        journals = Journal.search(Journal._get_payment_journal_domain(company))
         if memo is not None:
             memo[company] = journals
         return journals
@@ -323,11 +318,10 @@ class WizardAccountMoveLinePay(models.TransientModel):
         currency_domain = [("currency_id", "=", foreign_currency_id)]
         partner_bank_domain = [("bank_account_id", "=", bank_account_id)]
 
-        default_domain = [
-            *self.env["account.journal"]._check_company_domain(company),
-            ("type", "in", ("bank", "cash", "credit")),
-            ("id", "in", self.available_journal_ids.ids),
-        ]
+        Journal = self.env["account.journal"]
+        candidates = self.available_journal_ids._origin.filtered_domain(
+            Journal._get_payment_journal_domain(company)
+        ).sorted()
 
         if bank_account_id:
             extra_domains = (
@@ -343,7 +337,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             )
 
         for extra_domain in extra_domains:
-            journal = self._get_first_journal(default_domain + extra_domain)
+            journal = candidates.filtered_domain(extra_domain)[:1]
             if journal:
                 _debug.logic(
                     "batch_journal_chosen",
@@ -363,10 +357,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
             currency_id=foreign_currency_id,
         )
         return self.env["account.journal"]
-
-    @api.model
-    def _get_first_journal(self, domain):
-        return self.env["account.journal"].search(domain, limit=1)
 
     @api.model
     def _get_batch_available_partner_banks(self, batch_result, journal):
@@ -550,7 +540,17 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 wizard.batches
             )
 
-    @api.depends("payment_channel_id", "line_ids", "group_payment", "bank_account_id")
+    @api.depends(
+        "batches",
+        "total_amounts_to_pay",
+        "installments_mode",
+        "can_edit_wizard",
+        "group_payment",
+        "journal_id",
+        "bank_account_id",
+        "payment_channel_id",
+        "require_partner_bank_account",
+    )
     @_debug.perf.timed
     def _compute_trust_values(self) -> None:
         for wizard in self:
@@ -558,25 +558,17 @@ class WizardAccountMoveLinePay(models.TransientModel):
             untrusted_accounts = self.env["res.partner.bank.account"]
             missing_account_partners = self.env["res.partner"]
 
-            total_payment_count = len(wizard.batches)
-            if not wizard.group_payment:
-                total_amount_values = wizard.total_amounts_to_pay
-                total_payment_count = len(total_amount_values["lines"])
-
-            for batch in wizard.batches:
-                batch_account = wizard.bank_account_id or wizard._get_batch_account(
-                    batch
-                )
-                if wizard.require_partner_bank_account:
-                    if not batch_account:
-                        missing_account_partners += batch["lines"].partner_id
-                    elif not batch_account.allow_out_payment:
-                        untrusted_payments_count += (
-                            1
-                            if wizard.group_payment
-                            else len(batch["lines"] & total_amount_values["lines"])
-                        )
-                        untrusted_accounts |= batch_account
+            payment_batches = wizard._get_payment_batches()
+            total_payment_count = len(payment_batches)
+            for batch in payment_batches:
+                if not wizard._requires_trusted_recipient(batch):
+                    continue
+                batch_account = wizard._get_batch_recipient_account(batch)
+                if not batch_account:
+                    missing_account_partners |= batch["lines"].partner_id
+                elif not batch_account.allow_out_payment:
+                    untrusted_payments_count += 1
+                    untrusted_accounts |= batch_account
 
             _debug.logic(
                 "trust_values_computed",
@@ -628,20 +620,17 @@ class WizardAccountMoveLinePay(models.TransientModel):
 
                 wizard.can_edit_wizard = False
 
-    @api.depends("batches", "amount")
+    @api.depends("batches", "amount", "installments_mode", "total_amounts_to_pay")
     @_debug.perf.timed
     def _compute_can_group_payments(self) -> None:
         for wizard in self:
             if len(wizard.batches) == 1:
                 lines = wizard.batches[0]["lines"]
-                wizard.can_group_payments = len(lines) != 1 and not (
-                    len(lines.move_id) == 1
-                    and lines.move_id.is_invoice(include_receipts=True)
-                )
+                wizard.can_group_payments = len(lines.move_id) > 1
             else:
-                total_amounts_to_pay = wizard.total_amounts_to_pay
+                lines_to_pay = wizard._get_lines_to_pay()
                 wizard.can_group_payments = any(
-                    len(batch_result["lines"] & total_amounts_to_pay["lines"]) != 1
+                    len((batch_result["lines"] & lines_to_pay).move_id) > 1
                     for batch_result in wizard.batches
                 )
 
@@ -698,13 +687,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
     @_debug.perf.timed
     def _compute_journal_id(self) -> None:
         Journal = self.env["account.journal"]
-        fallback_journals = Journal.search(
-            [
-                *Journal._check_company_domain(self.company_id),
-                ("type", "in", ("bank", "cash", "credit")),
-                ("id", "in", self.available_journal_ids.ids),
-            ]
-        )
         for wizard in self:
             if wizard.journal_id in wizard.available_journal_ids:
                 continue
@@ -723,15 +705,18 @@ class WizardAccountMoveLinePay(models.TransientModel):
                 batch = wizard.batches[0]
                 wizard.journal_id = wizard._get_batch_journal(batch)
             else:
+                fallback_journals = (
+                    wizard.available_journal_ids._origin.filtered_domain(
+                        Journal._get_payment_journal_domain(wizard.company_id)
+                    ).sorted()
+                )
                 _debug.logic(
                     "register_journal_chosen",
                     register=wizard,
                     source="fallback",
                     fallback_journals=fallback_journals,
                 )
-                wizard.journal_id = fallback_journals.filtered_domain(
-                    Journal._check_company_domain(wizard.company_id)
-                )[:1]
+                wizard.journal_id = fallback_journals[:1]
 
     @api.depends("can_edit_wizard", "journal_id")
     def _compute_available_bank_account_ids(self) -> None:
@@ -748,15 +733,9 @@ class WizardAccountMoveLinePay(models.TransientModel):
     def _compute_bank_account_id(self) -> None:
         for wizard in self:
             if wizard.can_edit_wizard:
-                batch = wizard.batches[0]
-                bank_account_id = batch["payment_values"]["bank_account_id"]
-                available_partner_banks = wizard.available_bank_account_ids._origin
-                if bank_account_id and bank_account_id in available_partner_banks.ids:
-                    wizard.bank_account_id = self.env[
-                        "res.partner.bank.account"
-                    ].browse(bank_account_id)
-                else:
-                    wizard.bank_account_id = available_partner_banks[:1]
+                wizard.bank_account_id = wizard._select_batch_partner_bank(
+                    wizard.batches[0], wizard.available_bank_account_ids._origin
+                )
             else:
                 wizard.bank_account_id = None
 
@@ -1329,11 +1308,6 @@ class WizardAccountMoveLinePay(models.TransientModel):
             else:
                 wizard.payment_difference_handling = False
 
-    @api.depends("early_payment_discount_mode")
-    def _compute_hide_writeoff_section(self) -> None:
-        for wizard in self:
-            wizard.hide_writeoff_section = wizard.early_payment_discount_mode
-
     @api.depends(
         "bank_account_id",
         "amount",
@@ -1409,16 +1383,10 @@ class WizardAccountMoveLinePay(models.TransientModel):
                     )
                 )
 
-            if "journal_id" in res and not self.env["account.journal"].browse(
+            Journal = self.env["account.journal"]
+            if "journal_id" in res and not Journal.browse(
                 res["journal_id"]
-            ).filtered_domain(
-                [
-                    *self.env["account.journal"]._check_company_domain(
-                        lines.company_id
-                    ),
-                    ("type", "in", ("bank", "cash", "credit")),
-                ]
-            ):
+            ).filtered_domain(Journal._get_payment_journal_domain(lines.company_id)):
                 del res["journal_id"]
 
             available_lines = self.env["account.move.line"]
@@ -1428,10 +1396,7 @@ class WizardAccountMoveLinePay(models.TransientModel):
             for line in lines:
                 if line.account_type not in valid_account_types:
                     continue
-                if line.currency_id:
-                    if line.currency_id.is_zero(line.amount_residual_currency):
-                        continue
-                elif line.company_currency_id.is_zero(line.amount_residual):
+                if line.currency_id.is_zero(line.amount_residual_currency):
                     continue
                 available_lines |= line
 
@@ -1795,21 +1760,61 @@ class WizardAccountMoveLinePay(models.TransientModel):
             [vals["to_reconcile"].move_id for vals in to_process]
         )
 
+    def _is_single_payment_mode(self) -> bool:
+        return self.can_edit_wizard and (
+            len(self.batches[0]["lines"]) == 1 or self.group_payment
+        )
+
+    def _get_lines_to_pay(self):
+        if self.installments_mode in ("next", "overdue", "before_date"):
+            return self.total_amounts_to_pay["lines"]
+        return self.line_ids._origin
+
+    def _get_payment_batches(self) -> list:
+        if self._is_single_payment_mode():
+            return self.batches[:1]
+        lines_to_pay = self._get_lines_to_pay()
+        _debug.logic(
+            "batched_payments_scope",
+            register=self,
+            installments_mode=self.installments_mode,
+            group_payment=self.group_payment,
+            lines_to_pay=lines_to_pay,
+        )
+        batches = self.batches
+        if not self.group_payment:
+            batches = self._split_batches_per_move(batches, lines_to_pay)
+        return [
+            {**batch_result, "lines": lines}
+            for batch_result in batches
+            if (lines := batch_result["lines"] & lines_to_pay)
+        ]
+
+    def _requires_trusted_recipient(self, batch_result) -> bool:
+        return (
+            self.require_partner_bank_account
+            and batch_result["payment_values"]["payment_type"] == "outbound"
+        )
+
+    def _get_batch_recipient_account(self, batch_result):
+        if self._is_single_payment_mode():
+            return self.bank_account_id
+        return self._get_batch_account(batch_result)
+
     def _get_payable_batches(self):
-        batches = []
-        for batch in self.batches:
-            batch_account = self._get_batch_account(batch)
-            if self.require_partner_bank_account and (
-                not batch_account or not batch_account.allow_out_payment
-            ):
-                continue
-            batches.append(batch)
+        payment_batches = self._get_payment_batches()
+        batches = [
+            batch
+            for batch in payment_batches
+            if not self._requires_trusted_recipient(batch)
+            or self._get_batch_recipient_account(batch).allow_out_payment
+        ]
 
         if _debug.logic.enabled:
             _debug.logic(
                 "payable_batches_filtered",
                 register=self,
-                batches=len(self.batches),
+                batches=len(payment_batches),
                 payable=len(batches),
                 require_partner_bank=self.require_partner_bank_account,
             )
@@ -1871,59 +1876,23 @@ class WizardAccountMoveLinePay(models.TransientModel):
         )
         return new_batches
 
-    def _get_batched_payments_to_process(self, batches) -> tuple:
-        lines_to_pay = (
-            self._get_total_amounts_to_pay(batches)["lines"]
-            if self.installments_mode in ("next", "overdue", "before_date")
-            else self.line_ids
-        )
-        _debug.logic(
-            "batched_payments_scope",
-            register=self,
-            installments_mode=self.installments_mode,
-            group_payment=self.group_payment,
-            lines_to_pay=lines_to_pay,
-        )
-        if not self.group_payment:
-            batches = self._split_batches_per_move(batches, lines_to_pay)
-
-        to_process = []
-        filtered_batches = []
-        for batch_result in batches:
-            filtered_lines = batch_result["lines"] & lines_to_pay
-            if not filtered_lines:
-                continue
-            batch_result = {**batch_result, "lines": filtered_lines}
-            filtered_batches.append(batch_result)
-            to_process.append(
-                {
-                    "create_vals": self._create_payment_vals_from_batch(batch_result),
-                    "to_reconcile": batch_result["lines"],
-                    "batch": batch_result,
-                }
-            )
-        _debug.pipeline(
-            "batched_payments_prepared",
-            register=self,
-            batches=len(batches),
-            kept_batches=len(filtered_batches),
-        )
-        return filtered_batches, to_process
+    def _get_batch_payment_to_process(self, batch_result) -> dict:
+        return {
+            "create_vals": self._create_payment_vals_from_batch(batch_result),
+            "to_reconcile": batch_result["lines"],
+            "batch": batch_result,
+        }
 
     @_debug.perf.timed
     def _create_payments(self):
         self.check_singleton()
         batches = self._get_payable_batches()
 
-        first_batch_result = batches[0]
-        edit_mode = self.can_edit_wizard and (
-            len(first_batch_result["lines"]) == 1 or self.group_payment
-        )
-
+        edit_mode = self._is_single_payment_mode()
         if edit_mode:
-            to_process = [self._get_single_payment_to_process(first_batch_result)]
+            to_process = [self._get_single_payment_to_process(batches[0])]
         else:
-            batches, to_process = self._get_batched_payments_to_process(batches)
+            to_process = [self._get_batch_payment_to_process(b) for b in batches]
         if _debug.logic.enabled:
             _debug.logic(
                 "_create_payments",
@@ -2006,15 +1975,18 @@ class WizardAccountMoveLinePay(models.TransientModel):
             )
         return action
 
-    def _get_batch_account(self, batch_result):
+    @api.model
+    def _select_batch_partner_bank(self, batch_result, available_partner_banks):
         bank_account_id = batch_result["payment_values"]["bank_account_id"]
-        available_partner_banks = self._get_batch_available_partner_banks(
-            batch_result, self.journal_id
-        )
         if bank_account_id and bank_account_id in available_partner_banks.ids:
-            return self.env["res.partner.bank.account"].browse(bank_account_id)
-        else:
-            return available_partner_banks[:1]
+            return available_partner_banks.browse(bank_account_id)
+        return available_partner_banks[:1]
+
+    def _get_batch_account(self, batch_result):
+        return self._select_batch_partner_bank(
+            batch_result,
+            self._get_batch_available_partner_banks(batch_result, self.journal_id),
+        )
 
     @_debug.perf.timed
     def action_view_untrusted_bank_accounts(self):

@@ -34,7 +34,6 @@
                 <field name="available_payment_channel_ids" invisible="1" />
                 <field name="available_bank_account_ids" invisible="1" />
                 <field name="company_currency_id" invisible="1" />
-                <field name="hide_writeoff_section" invisible="1" />
                 <field name="writeoff_is_exchange_account" invisible="1" />
                 <field name="untrusted_bank_account_ids" invisible="1" />
                 <field name="missing_account_partners" invisible="1" />
@@ -42,7 +41,7 @@
                 <div
                     role="alert"
                     class="alert alert-info"
-                    invisible="not hide_writeoff_section">
+                    invisible="not early_payment_discount_mode">
                     <p class="m-0">
                         <b>Early Payment Discount of <field name="payment_difference" /> has been
                             applied.</b>
@@ -113,7 +112,7 @@
                                 invisible="is_register_payment_on_draft" />
                             <div
                                 class="o_inner_group grid col-lg-12 p-0"
-                                invisible="hide_writeoff_section or payment_difference_handling == 'open'">
+                                invisible="early_payment_discount_mode or payment_difference_handling == 'open'">
                                 <div
                                     class="o_wrap_field d-flex d-sm-contents flex-column mb-3 mb-sm-0">
                                     <div

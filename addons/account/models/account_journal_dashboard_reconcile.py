@@ -2,6 +2,8 @@ from odoo import models
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import formatLang
 
+from odoo.addons.account.models.account_journal import LIQUIDITY_TYPES
+
 _debug = DebugLog(__name__)
 
 
@@ -13,7 +15,7 @@ class AccountJournal(models.Model):
         _debug.lifecycle("action_view_reconcile", records=self)
         self.check_singleton()
 
-        if self.type in ("bank", "cash", "credit"):
+        if self.type in LIQUIDITY_TYPES:
             return self.env[
                 "account.bank.statement.line"
             ]._action_view_bank_reconciliation_widget(
@@ -89,9 +91,7 @@ class AccountJournal(models.Model):
     @_debug.perf.timed
     def open_action(self):
         _debug.lifecycle("open_action", records=self)
-        if self.type in ("bank", "cash", "credit") and not self.env.context.get(
-            "action_name"
-        ):
+        if self.type in LIQUIDITY_TYPES and not self.env.context.get("action_name"):
             self.check_singleton()
             return self.env[
                 "account.bank.statement.line"

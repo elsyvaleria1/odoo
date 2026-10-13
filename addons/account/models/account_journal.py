@@ -1508,6 +1508,12 @@ class AccountJournal(models.Model):
         return values
 
     @api.model
+    def _get_payment_journal_domain(self, company) -> Domain:
+        return self._check_company_domain(company) & Domain(
+            "type", "in", LIQUIDITY_TYPES
+        )
+
+    @api.model
     def _get_domain_selectable(self) -> list:
         return [
             "|",

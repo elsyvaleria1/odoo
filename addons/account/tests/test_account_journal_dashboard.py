@@ -765,6 +765,46 @@ class TestAccountJournalDashboardSigns(TestAccountJournalDashboardCommon):
                     format_amount(self.env, display, self.par_currency),
                 )
 
+    @freeze_time("2019-06-01")
+    def test_bills_to_review_carry_the_sign_of_the_bills_to_pay(self):
+        for code, currency in (("FXR1", None), ("FXR2", self.par_currency)):
+            with self.subTest(currency=currency):
+                journal = self._journal_in("purchase", code, currency)
+                bill = self._post(
+                    journal,
+                    "in_invoice",
+                    1000,
+                    currency or self.company_data["currency"],
+                )
+                bill.checked = False
+                data = journal._get_journal_dashboard_data_batched()[journal.id]
+                self.assertEqual(data["number_to_check"], 1)
+                self.assertEqual(data["to_check_balance"], data["sum_waiting"])
+                self.assertEqual(
+                    data["to_check_balance"],
+                    format_amount(
+                        self.env, 1000, currency or self.company_data["currency"]
+                    ),
+                )
+
+    @freeze_time("2019-06-01")
+    def test_due_graph_of_a_foreign_currency_journal_is_in_the_journal_currency(self):
+        quarter = self.setup_other_currency("CHF", rates=[("1900-01-01", 4.0)])
+        for jtype, move_type, code in (
+            ("sale", "out_invoice", "FXG1"),
+            ("purchase", "in_invoice", "FXG2"),
+        ):
+            with self.subTest(journal_type=jtype):
+                journal = self._journal_in(jtype, code, quarter)
+                self._post(journal, move_type, 1000, quarter)
+
+                graph = journal._prepare_sale_purchase_graph_data()[journal.id][0]
+                self.assertFalse(graph["is_sample_data"])
+                self.assertEqual(graph["values"][0]["value"], 1000)
+                self.assertEqual(
+                    self._sums(journal)[1], format_amount(self.env, 1000, quarter)
+                )
+
     def test_the_negative_residual_set_is_the_outbound_set(self):
         self.assertEqual(
             sorted(self.env["account.move"].get_outbound_types()),

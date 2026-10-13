@@ -7,6 +7,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import SQL, frozendict
 from odoo.tools.authority_keys import declare_authority_keys
 
+from odoo.addons.account.models.account_journal import LIQUIDITY_TYPES
+
 _debug = DebugLog(__name__)
 
 _ENTRIES_JUST_CREATED = "account_payment_entries_just_created"
@@ -648,13 +650,8 @@ class AccountPayment(models.Model):
         )
 
     def _get_default_journal(self, company):
-        return self.env["account.journal"].search(
-            [
-                *self.env["account.journal"]._check_company_domain(company),
-                ("type", "in", ["bank", "cash", "credit"]),
-            ],
-            limit=1,
-        )
+        Journal = self.env["account.journal"]
+        return Journal.search(Journal._get_payment_journal_domain(company), limit=1)
 
     @api.depends("journal_id")
     def _compute_company_id(self):
@@ -890,7 +887,7 @@ class AccountPayment(models.Model):
                 "|",
                 ("company_id", "parent_of", company.id),
                 ("company_id", "child_of", company.id),
-                ("type", "in", ("bank", "cash", "credit")),
+                ("type", "in", LIQUIDITY_TYPES),
             ]
         )
 
@@ -2070,16 +2067,6 @@ class AccountPayment(models.Model):
         self.check_singleton()
         return self.reconciled_bill_ids.with_context(create=False)._get_records_action(
             name=self.env._("Paid Bills"),
-        )
-
-    @_debug.perf.timed
-    def button_open_statement_lines(self):
-        _debug.lifecycle("button_open_statement_lines", records=self)
-        self.check_singleton()
-        return self.reconciled_statement_line_ids.with_context(
-            create=False
-        )._get_records_action(
-            name=self.env._("Matched Transactions"),
         )
 
     @_debug.perf.timed

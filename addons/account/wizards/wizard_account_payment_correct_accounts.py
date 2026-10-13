@@ -126,6 +126,16 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
             raise UserError(
                 self.env._("Choose an account different from the current one.")
             )
+        if self.env["account.move"].search_count(
+            [("reclassified_payment_id", "=", payment.id), ("state", "=", "posted")],
+            limit=1,
+        ):
+            raise UserError(
+                self.env._(
+                    "This payment's accounts were already reclassified by a journal "
+                    "entry; correct that entry instead."
+                )
+            )
         if (
             "counterpart_account_id" in changes
             and self.counterpart_account_id.account_type
@@ -188,6 +198,19 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
         to_match = []
         for fname, (old, new) in changes.items():
             for line in lines_per_field[fname]:
+                if line.account_id.is_reconcilable:
+                    balance = line.amount_residual
+                    amount_currency = line.amount_residual_currency
+                else:
+                    balance = line.balance
+                    amount_currency = line.amount_currency
+                if line.currency_id.is_zero(
+                    amount_currency
+                ) and line.company_currency_id.is_zero(balance):
+                    _debug.logic(
+                        "reclassification_line_skipped", line=line, reason="settled"
+                    )
+                    continue
                 common = {
                     "name": self.env._(
                         "Reclassification of %(payment)s", payment=payment.display_name
@@ -199,17 +222,24 @@ class WizardAccountPaymentCorrectAccounts(models.TransientModel):
                     {
                         **common,
                         "account_id": old.id,
-                        "balance": -line.balance,
-                        "amount_currency": -line.amount_currency,
+                        "balance": -balance,
+                        "amount_currency": -amount_currency,
                     },
                     {
                         **common,
                         "account_id": new.id,
-                        "balance": line.balance,
-                        "amount_currency": line.amount_currency,
+                        "balance": balance,
+                        "amount_currency": amount_currency,
                     },
                 ]
                 to_match.append((line, old))
+        if not line_vals:
+            raise UserError(
+                self.env._(
+                    "Nothing is left open on the lines to reclassify: they are fully "
+                    "matched."
+                )
+            )
         entry = self.env["account.move"].create(
             {
                 "move_type": "entry",

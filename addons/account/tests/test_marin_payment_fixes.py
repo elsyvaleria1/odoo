@@ -407,3 +407,231 @@ class TestMarinPaymentFixes(AccountTestInvoicingCommon):
                 "no_such_method_code"
             )
         )
+
+
+@tagged("post_install", "-at_install")
+class TestMarinPayWizardBatches(AccountTestInvoicingCommon):
+    def _register(self, moves, **vals):
+        return (
+            self.env["wizard.account.move.line.pay"]
+            .with_context(active_model="account.move", active_ids=moves.ids)
+            .create(vals)
+        )
+
+    def _bank_account(self, acc_number, trusted):
+        return self.env["res.partner.bank.account"].create(
+            {
+                "acc_number": acc_number,
+                "partner_id": self.partner_a.id,
+                "acc_type": "bank",
+                "allow_out_payment": trusted,
+            }
+        )
+
+    def _needing_bank_account(self):
+        return patch.object(
+            type(self.env["account.payment"]),
+            "_get_method_codes_needing_bank_account",
+            lambda records: ["manual"],
+        )
+
+    def test_trust_check_reads_the_bank_account_chosen_in_the_wizard(self):
+        untrusted = self._bank_account("111111", trusted=False)
+        trusted = self._bank_account("222222", trusted=True)
+        bill = self.init_invoice(
+            "in_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-01",
+            amounts=[100],
+        )
+        bill.bank_account_id = untrusted
+        bill.action_post()
+
+        with self._needing_bank_account():
+            wizard = self._register(bill, bank_account_id=trusted.id)
+            self.assertTrue(wizard.require_partner_bank_account)
+            self.assertEqual(wizard.untrusted_payments_count, 0)
+            payment = wizard._create_payments()
+
+        self.assertEqual(payment.bank_account_id, trusted)
+        self.assertEqual(
+            bill.payment_state, self.env["account.move"]._get_invoice_in_payment_state()
+        )
+
+    def test_an_inbound_payment_is_not_held_to_a_trusted_recipient_account(self):
+        invoice = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-01",
+            amounts=[100],
+            post=True,
+        )
+
+        with self._needing_bank_account():
+            wizard = self._register(invoice)
+            self.assertTrue(wizard.require_partner_bank_account)
+            self.assertFalse(wizard.missing_account_partners)
+            payment = wizard._create_payments()
+
+        self.assertEqual(payment.payment_type, "inbound")
+        self.assertNotEqual(payment.state, "draft")
+
+    def test_payment_count_counts_moves_not_installments(self):
+        invoices = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_b,
+            invoice_date="2017-01-01",
+            amounts=[100],
+            post=True,
+        ) + self.init_invoice(
+            "out_invoice",
+            partner=self.partner_b,
+            invoice_date="2017-01-01",
+            amounts=[200],
+            post=True,
+        )
+        self.assertEqual(
+            len(invoices.line_ids.filtered(lambda l: l.display_type == "payment_term")),
+            4,
+        )
+
+        wizard = self._register(invoices, payment_date="2026-01-01")
+        self.assertFalse(wizard.group_payment)
+        self.assertEqual(wizard.total_payments_amount, 2)
+
+        payments = wizard._create_payments()
+        self.assertEqual(len(payments), 2)
+
+    def test_payment_count_of_several_partners_counts_moves(self):
+        invoices = self.init_invoice(
+            "out_invoice",
+            partner=self.partner_b,
+            invoice_date="2017-01-01",
+            amounts=[100],
+            post=True,
+        ) + self.init_invoice(
+            "out_invoice",
+            partner=self.partner_a,
+            invoice_date="2017-01-01",
+            amounts=[200],
+            post=True,
+        )
+
+        wizard = self._register(invoices, payment_date="2026-01-01")
+        self.assertFalse(wizard.can_edit_wizard)
+        self.assertFalse(wizard.can_group_payments)
+        self.assertEqual(wizard.total_payments_amount, 2)
+        self.assertEqual(len(wizard._create_payments()), 2)
+
+    def test_untrusted_count_counts_moves_not_installments(self):
+        untrusted = self._bank_account("333333", trusted=False)
+        bills = self.env["account.move"]
+        for amount in (100, 200):
+            bill = self.init_invoice(
+                "in_invoice",
+                partner=self.partner_a,
+                invoice_date="2017-01-01",
+                amounts=[amount],
+            )
+            bill.invoice_payment_term_id = self.pay_terms_b
+            bill.bank_account_id = untrusted
+            bill.action_post()
+            bills += bill
+
+        with self._needing_bank_account():
+            wizard = self._register(bills, payment_date="2026-01-01")
+            self.assertFalse(wizard.group_payment)
+            self.assertEqual(wizard.total_payments_amount, 2)
+            self.assertEqual(wizard.untrusted_payments_count, 2)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinPaymentReclassification(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.receivable = cls.company_data["default_account_receivable"]
+        cls.other_receivable = cls.copy_account(cls.receivable, {"name": "AR RC"})
+
+    def _payment(self):
+        payment = self.env["account.payment"].create(
+            {
+                "amount": 100.0,
+                "date": "2026-08-01",
+                "partner_id": self.partner_a.id,
+                "partner_type": "customer",
+                "payment_type": "inbound",
+                "journal_id": self.company_data["default_journal_bank"].id,
+                "counterpart_account_id": self.other_receivable.id,
+            }
+        )
+        payment.action_post()
+        return payment
+
+    def _reclassify(self, payment, account):
+        wizard = (
+            self.env["wizard.account.payment.correct.accounts"]
+            .with_context(default_payment_id=payment.id)
+            .create({"date": "2026-09-05"})
+        )
+        self.assertTrue(wizard.is_locked)
+        wizard.counterpart_account_id = account
+        wizard.action_correct()
+        return self.env["account.move"].search(
+            [("reclassified_payment_id", "=", payment.id)]
+        )
+
+    def test_a_reclassified_payment_is_not_reclassified_twice(self):
+        payment = self._payment()
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+        self.assertEqual(len(self._reclassify(payment, self.receivable)), 1)
+
+        with self.assertRaises(UserError):
+            self._reclassify(payment, self.receivable)
+        self.assertEqual(
+            self.env["account.move"].search_count(
+                [("reclassified_payment_id", "=", payment.id)]
+            ),
+            1,
+        )
+
+    def test_reclassification_moves_only_the_open_part_of_the_counterpart(self):
+        payment = self._payment()
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": self.partner_a.id,
+                "invoice_date": "2026-08-01",
+                "invoice_line_ids": [
+                    Command.create(
+                        {
+                            "name": "goods",
+                            "price_unit": 60.0,
+                            "tax_ids": [Command.clear()],
+                        }
+                    )
+                ],
+            }
+        )
+        term_line = invoice.line_ids.filtered(
+            lambda line: line.display_type == "payment_term"
+        )
+        term_line.account_id = self.other_receivable
+        invoice.action_post()
+        counterpart = payment._seek_for_lines()[1]
+        (counterpart + term_line).reconcile()
+        self.assertAlmostEqual(counterpart.amount_residual, -40.0)
+        self.env.company.account_config_id.fiscalyear_lock_date = "2026-08-31"
+
+        reclass = self._reclassify(payment, self.receivable)
+
+        self.assertEqual(
+            sorted(reclass.line_ids.mapped(lambda l: (l.account_id.id, l.balance))),
+            sorted([(self.other_receivable.id, 40.0), (self.receivable.id, -40.0)]),
+        )
+        self.assertTrue(counterpart.reconciled)
+        self.assertFalse(
+            reclass.line_ids.filtered(
+                lambda l: l.account_id == self.other_receivable and not l.reconciled
+            )
+        )

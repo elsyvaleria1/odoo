@@ -2,6 +2,7 @@ import ast
 import random
 from collections import Counter, defaultdict
 from datetime import date, timedelta
+from itertools import pairwise
 from typing import NamedTuple
 
 from babel.dates import format_date, format_datetime
@@ -14,9 +15,10 @@ from odoo.release import version_info
 from odoo.tools import SQL
 from odoo.tools.misc import get_lang
 
+from odoo.addons.account.models.account_journal import LIQUIDITY_TYPES
+
 _debug = DebugLog(__name__)
 
-BANK_CASH_TYPES = ("bank", "cash", "credit")
 SALE_PURCHASE_TYPES = ("sale", "purchase")
 
 
@@ -89,7 +91,7 @@ class AccountJournal(models.Model):
     @api.depends_context("allowed_company_ids", "tz")
     def _compute_bank_position(self) -> None:
         bank_cash_journals = self.filtered(
-            lambda journal: journal.type in BANK_CASH_TYPES
+            lambda journal: journal.type in LIQUIDITY_TYPES
         )
         other_journals = self - bank_cash_journals
         other_journals.has_statement_lines = False
@@ -121,7 +123,7 @@ class AccountJournal(models.Model):
     @_debug.perf.timed
     def _compute_kanban_dashboard_graph(self) -> None:
         bank_cash_journals = self.filtered(
-            lambda journal: journal.type in BANK_CASH_TYPES
+            lambda journal: journal.type in LIQUIDITY_TYPES
         )
         bank_cash_graph_datas = bank_cash_journals._prepare_bank_cash_graph_data()
         for journal in bank_cash_journals:
@@ -408,39 +410,56 @@ class AccountJournal(models.Model):
         def format_month(d):
             return format_date(d, "MMM", locale=lang_code)
 
+        week_starts = [first_day_of_week + timedelta(days=7 * k) for k in range(-1, 4)]
+        bucket_filters = [
+            SQL("move.invoice_date_due < %s", week_starts[0]),
+            *(
+                SQL(
+                    "move.invoice_date_due >= %s AND move.invoice_date_due < %s",
+                    start,
+                    end,
+                )
+                for start, end in pairwise(week_starts)
+            ),
+            SQL("move.invoice_date_due >= %s", week_starts[-1]),
+        ]
+        outbound_types = self.env["account.move"].get_outbound_types()
+        bucket_selects = [
+            SQL(
+                "COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE %s), 0),"
+                " COALESCE(SUM((CASE WHEN move.move_type = ANY(%s) THEN -1 ELSE 1 END)"
+                " * move.amount_residual) FILTER (WHERE %s), 0)",
+                bucket_filter,
+                outbound_types,
+                bucket_filter,
+            )
+            for bucket_filter in bucket_filters
+        ]
         self.env.cr.execute(
-            """
-            SELECT move.journal_id,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due < %(start_week1)s), 0) AS total_before,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due >= %(start_week1)s AND invoice_date_due < %(start_week2)s), 0) AS total_week1,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due >= %(start_week2)s AND invoice_date_due < %(start_week3)s), 0) AS total_week2,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due >= %(start_week3)s AND invoice_date_due < %(start_week4)s), 0) AS total_week3,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due >= %(start_week4)s AND invoice_date_due < %(start_week5)s), 0) AS total_week4,
-                   COALESCE(SUM(move.amount_residual_signed) FILTER (WHERE invoice_date_due >= %(start_week5)s), 0) AS total_after
-              FROM account_move move
-             WHERE move.journal_id = ANY(%(journal_ids)s)
-               AND move.state = 'posted'
-               AND move.payment_state in ('not_paid', 'partial')
-               AND move.move_type = ANY(%(invoice_types)s)
-               AND move.company_id = ANY(%(company_ids)s)
-          GROUP BY move.journal_id
-            """,
-            {
-                "invoice_types": list(self.env["account.move"].get_invoice_types(True)),
-                "journal_ids": self.ids,
-                "company_ids": self.env.companies.ids,
-                "start_week1": first_day_of_week + timedelta(days=-7),
-                "start_week2": first_day_of_week + timedelta(days=0),
-                "start_week3": first_day_of_week + timedelta(days=7),
-                "start_week4": first_day_of_week + timedelta(days=14),
-                "start_week5": first_day_of_week + timedelta(days=21),
-            },
+            SQL(
+                """
+                SELECT move.journal_id, move.company_id, move.currency_id, %s
+                  FROM account_move move
+                 WHERE move.journal_id = ANY(%s)
+                   AND move.state = 'posted'
+                   AND move.payment_state in ('not_paid', 'partial')
+                   AND move.move_type = ANY(%s)
+                   AND move.company_id = ANY(%s)
+              GROUP BY move.journal_id, move.company_id, move.currency_id
+                """,
+                SQL(", ").join(bucket_selects),
+                self.ids,
+                list(self.env["account.move"].get_invoice_types(True)),
+                self.env.companies.ids,
+            )
         )
-        query_results = {r["journal_id"]: r for r in self.env.cr.dictfetchall()}
+        rows_per_journal = defaultdict(list)
+        for journal_id, company_id, currency_id, *sums in self.env.cr.fetchall():
+            rows_per_journal[journal_id].append((company_id, currency_id, sums))
         _debug.pipeline(
             "sale_purchase_graph_rows",
             journals=self,
-            journals_with_rows=len(query_results),
+            journals_with_rows=len(rows_per_journal),
             week_start=first_day_of_week,
         )
         result = {}
@@ -448,17 +467,25 @@ class AccountJournal(models.Model):
             currency = journal._dashboard_currency()
             graph_title, graph_key = journal._graph_title_and_key()
             sign = 1 if journal.type == "sale" else -1
-            journal_data = query_results.get(journal.id)
+            journal_rows = rows_per_journal.get(journal.id)
             data = self._get_due_week_buckets(first_day_of_week, format_month)
 
-            is_sample_data = not journal_data
+            is_sample_data = not journal_rows
             if not is_sample_data:
-                data[0]["value"] = currency.round(sign * journal_data["total_before"])
-                data[1]["value"] = currency.round(sign * journal_data["total_week1"])
-                data[2]["value"] = currency.round(sign * journal_data["total_week2"])
-                data[3]["value"] = currency.round(sign * journal_data["total_week3"])
-                data[4]["value"] = currency.round(sign * journal_data["total_week4"])
-                data[5]["value"] = currency.round(sign * journal_data["total_after"])
+                for index in range(len(bucket_filters)):
+                    _count, amount = self._count_results_and_sum_amounts(
+                        [
+                            {
+                                "company_id": company_id,
+                                "currency": currency_id,
+                                "amount_total_company": sums[2 * index],
+                                "amount_total": sums[2 * index + 1],
+                            }
+                            for company_id, currency_id, sums in journal_rows
+                        ],
+                        currency,
+                    )
+                    data[index]["value"] = sign * amount
             else:
                 graph_key = self.env._("Sample data")
                 sample = random.Random(journal.id)
@@ -651,7 +678,7 @@ class AccountJournal(models.Model):
     @_debug.perf.timed
     def _update_bank_cash_dashboard_data(self, dashboard_data) -> None:
         bank_cash_journals = self.filtered(
-            lambda journal: journal.type in BANK_CASH_TYPES
+            lambda journal: journal.type in LIQUIDITY_TYPES
         )
         _debug.logic(
             "bank_cash_scope",
@@ -815,6 +842,7 @@ class AccountJournal(models.Model):
 
         for journal in sale_purchase_journals:
             currency = journal._dashboard_currency()
+            sign = 1 if journal.type == "sale" else -1
             (number_waiting, sum_waiting) = self._count_results_and_sum_amounts(
                 query_results_to_pay[journal.id], currency
             )
@@ -858,7 +886,7 @@ class AccountJournal(models.Model):
             dashboard_data[journal.id].update(
                 {
                     "number_to_check": number_to_check,
-                    "to_check_balance": currency.format(sum_to_check),
+                    "to_check_balance": currency.format(sign * sum_to_check),
                     "title": self.env._("Bills to pay")
                     if journal.type == "purchase"
                     else self.env._("Invoices owed to you"),
@@ -866,12 +894,8 @@ class AccountJournal(models.Model):
                     "number_waiting": number_waiting,
                     "number_late": number_late,
                     "sum_draft": currency.format(sum_draft),
-                    "sum_waiting": currency.format(
-                        sum_waiting * (1 if journal.type == "sale" else -1)
-                    ),
-                    "sum_late": currency.format(
-                        sum_late * (1 if journal.type == "sale" else -1)
-                    ),
+                    "sum_waiting": currency.format(sign * sum_waiting),
+                    "sum_late": currency.format(sign * sum_late),
                     "has_sequence_holes": journal.has_sequence_holes,
                     "title_has_sequence_holes": title_has_sequence_holes,
                     "drag_drop_settings": drag_drop_settings,
@@ -886,7 +910,7 @@ class AccountJournal(models.Model):
             journal.id: {"to_reconcile": 0, "to_validate": 0, "late": 0}
             for journal in self
         }
-        bank_cash = self.filtered(lambda journal: journal.type in BANK_CASH_TYPES)
+        bank_cash = self.filtered(lambda journal: journal.type in LIQUIDITY_TYPES)
         if bank_cash:
             for (
                 journal_id,
@@ -1329,12 +1353,6 @@ class AccountJournal(models.Model):
         self.check_singleton()
         if self.env.context.get("action_name"):
             return self.env.context.get("action_name")
-        elif self.type == "bank":
-            return "action_bank_statement_tree"
-        elif self.type == "credit":
-            return "action_credit_statement_tree"
-        elif self.type == "cash":
-            return "action_view_bank_statement_tree"
         elif self.type == "sale":
             return "action_move_out_invoice_type"
         elif self.type == "purchase":
@@ -1412,8 +1430,6 @@ class AccountJournal(models.Model):
         _debug.lifecycle("open_payments_action", records=self)
         if payment_type == "outbound":
             action_ref = "account.action_account_payments_payable"
-        elif payment_type == "transfer":
-            action_ref = "account.action_account_payments_transfer"
         elif payment_type == "inbound":
             action_ref = "account.action_account_payments"
         else:
@@ -1433,13 +1449,6 @@ class AccountJournal(models.Model):
             default_journal_id=self.id,
             search_default_journal_id=self.id,
         )
-        if payment_type == "transfer":
-            action["context"].update(
-                {
-                    "default_partner_id": self.company_id.partner_id.id,
-                    "default_is_internal_transfer": True,
-                }
-            )
         if mode == "form":
             action["views"] = [[False, "form"]]
         return action
@@ -1614,18 +1623,6 @@ class AccountJournal(models.Model):
                     "views": [(False, "form")],
                 }
             )
-        return action
-
-    def create_bank_statement(self):
-        action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
-            "account.action_bank_statement_tree"
-        )
-        action.update(
-            {
-                "views": [[False, "form"]],
-                "context": {"default_journal_id": self.id},
-            }
-        )
         return action
 
     def create_customer_payment(self):
