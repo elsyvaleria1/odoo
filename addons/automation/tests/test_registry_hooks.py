@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from unittest.mock import patch
 
+from odoo import fields
 from odoo.tests.common import TransactionCase
 
 
@@ -51,3 +52,24 @@ class TestRegistryHooks(TransactionCase):
             rule.trigger = "on_hand"
 
         self.assertTrue(calls)
+
+    def test_recording_the_last_run_keeps_the_registry_cache(self):
+        rule = self._rule("on_hand")
+        self.env.registry.cache_invalidated.clear()
+
+        rule.last_run = fields.Datetime.now()
+
+        self.assertNotIn("default", self.env.registry.cache_invalidated)
+
+    def test_resequencing_rules_reorders_the_cached_lookup(self):
+        first = self._rule("on_create")
+        second = self._rule("on_create")
+        first.sequence, second.sequence = 1, 2
+        lookup = ("res.partner", ("on_create",))
+        ids = self.Rule._get_automation_ids(*lookup)
+        self.assertLess(ids.index(first.id), ids.index(second.id))
+
+        second.sequence = 0
+
+        ids = self.Rule._get_automation_ids(*lookup)
+        self.assertLess(ids.index(second.id), ids.index(first.id))

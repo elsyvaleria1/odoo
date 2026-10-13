@@ -515,7 +515,12 @@ class AutomationRule(models.Model):
         clear_templates = self._has_trigger_onchange()
         patched_before = self._patches_models()
         res = super().write(vals)
-        self.env.registry.clear_cache()
+        # _get_automation_ids caches which rules apply and in what order, so
+        # only a field that changes that answer may clear the registry-wide
+        # cache: the timed cron writes last_run every run, and clearing on it
+        # made every worker rebuild its caches on its next request.
+        if set(vals).intersection([*self.CRITICAL_FIELDS, "sequence"]):
+            self.env.registry.clear_cache()
         if set(vals).intersection(self.CRITICAL_FIELDS):
             if "model_id" in vals:
                 self._clean_action_server_ids()

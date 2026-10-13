@@ -34,9 +34,12 @@ registry_invalidated = True  ← signals other workers to reload
 `_get_actions()` is backed by `@ormcache` (`_get_automation_ids`). It runs on
 every patched ORM call before we know whether a rule applies — measured at one
 SELECT per call — so the result is cached and invalidated by
-`automation.rule.create/write/unlink`, which clear it **unconditionally**: the
-cache stores execution order as well as membership, so a bare `sequence` edit
-changes the answer just as much as a `CRITICAL_FIELDS` one.
+`automation.rule.create/unlink`, which clear it unconditionally, and by `write`
+when `vals` touches `CRITICAL_FIELDS` or `sequence`: the cache stores execution
+order as well as membership, so a bare `sequence` edit changes the answer just
+as much as a `CRITICAL_FIELDS` one. Any other field (notably `last_run`, which
+the timed cron writes on every run) leaves it alone, because a clear is
+registry-wide and signals every worker to rebuild all its caches.
 
 The factory-function pattern (closures) is **mandatory** — it prevents the
 classic loop-closure bug where all patched methods end up sharing the last
