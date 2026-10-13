@@ -49,3 +49,41 @@ def test_the_holder_thread_runs_on_the_module_operation_budget(base_db):
         "cancelled mid-load, leaving its modules 'to install'"
     )
     assert not after
+
+
+@requires_pg
+def test_a_failed_operation_releases_its_locks_on_rollback_and_logs_no_error(
+    base_db, caplog
+):
+    import logging
+
+    import psycopg
+    import pytest
+
+    import odoo.db
+    from odoo.modules.loading import lock_module_operations
+
+    connection = odoo.db.db_connect(base_db)
+    with connection.cursor() as cr, connection.cursor() as observer:
+        cr.execute("SELECT pg_backend_pid()")
+        (pid,) = cr.fetchone()
+        with (
+            caplog.at_level(logging.ERROR, logger="odoo"),
+            pytest.raises(psycopg.errors.UndefinedTable),
+        ):
+            with lock_module_operations(cr, base_db):
+                cr.execute("SELECT FROM no_such_table", log_exceptions=False)
+        errors = [r.getMessage() for r in caplog.records if r.levelno >= logging.ERROR]
+        assert errors == [], (
+            "releasing the locks inside the aborted transaction logged a second failure"
+        )
+        cr.rollback()
+        observer.execute(
+            "SELECT count(*) FROM pg_locks WHERE pid = %s AND locktype = 'advisory'",
+            (pid,),
+        )
+        assert observer.fetchone() == (0,), (
+            "the module-operations and job-admission locks outlived the rollback"
+        )
+        with lock_module_operations(observer, base_db):
+            pass

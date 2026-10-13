@@ -1,5 +1,6 @@
 import contextlib
 import datetime
+import functools
 import gc
 import itertools
 import logging
@@ -9,7 +10,7 @@ import time
 import traceback
 import types
 import typing
-from collections.abc import Collection, Iterable, Mapping
+from collections.abc import Callable, Collection, Iterable, Mapping
 
 import psycopg
 
@@ -2396,11 +2397,42 @@ def lock_module_operations(cr: typing.Any, db_name: str) -> typing.Iterator[None
 
 
 def _unlock_module_operations(cr: typing.Any, db_name: str) -> None:
-    try:
-        cr.execute("SELECT pg_advisory_unlock(%s)", [_MODULE_OPERATIONS_LOCK_KEY])
-    except psycopg.Error as e:
-        _debug.logic("modules.operations_lock.unlock_deferred", error=type(e).__name__)
+    release_session_lock(
+        cr, tools.SQL("%s", _MODULE_OPERATIONS_LOCK_KEY), "Module operations"
+    )
     _debug.lifecycle("modules.operations_lock.released", db=db_name)
+
+
+def release_session_lock(
+    cr: typing.Any,
+    key: tools.SQL,
+    holder: str,
+    *,
+    shared: bool = False,
+    then: Callable[[], None] | None = None,
+) -> None:
+    unlock = tools.SQL(
+        "SELECT pg_advisory_unlock_shared(%s)"
+        if shared
+        else "SELECT pg_advisory_unlock(%s)",
+        key,
+    )
+    if cr.in_failed_transaction():
+        _debug.logic("session_lock.release_deferred", holder=holder, reason="aborted")
+        cr.postrollback.add(functools.partial(cr.execute, unlock))
+        if then is not None:
+            cr.postrollback.add(then)
+        return
+    try:
+        cr.execute(unlock)
+    except psycopg.Error:
+        _logger.warning(
+            "%s: could not release its session lock, leaving it to the connection pool",
+            holder,
+        )
+        _debug.logic("session_lock.release_failed", holder=holder, reason="pg_error")
+    if then is not None:
+        then()
 
 
 def load_modules(

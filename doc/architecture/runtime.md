@@ -248,7 +248,8 @@ keeps two refreshes apart, or one followed by a write to the row a concurrent
 holder also writes, which the level's first-updater-wins rule already rejects.
 A **session** lock is released after the transaction that did the work
 commits, or the next holder's snapshot misses that work
-(`odoo/modules/loading.py`, `lock_module_operations`).
+(`odoo/modules/loading.py`, `lock_module_operations`); when that transaction is
+aborted, after its rollback (`release_session_lock`).
 
 Rows derived in SQL from other rows (the access graph's reach table) take the
 same first-updater-wins rule on purpose: every write that changes what reaches

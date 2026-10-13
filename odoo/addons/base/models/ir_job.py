@@ -4,7 +4,7 @@ import socket
 import threading
 import time
 import traceback
-from collections.abc import Callable, Iterator
+from collections.abc import Iterator
 from contextlib import contextmanager
 from datetime import datetime, timedelta
 from enum import StrEnum
@@ -29,7 +29,11 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.worker_thread import working_on_database
 from odoo.models import GC_UNLINK_LIMIT
-from odoo.modules.loading import ModuleOperationInProgress, holds_module_operations
+from odoo.modules.loading import (
+    ModuleOperationInProgress,
+    holds_module_operations,
+    release_session_lock,
+)
 from odoo.modules.registry import Registry
 from odoo.service import get_job_real_time_budget
 from odoo.service.transaction import is_retryable
@@ -206,7 +210,7 @@ def _job_session_lock(cr, job_id: int, *, blocking: bool = True) -> Iterator[boo
         try:
             yield True
         finally:
-            _release_session_lock(cr, _advisory_key_sql(job_id), f"Job {job_id}")
+            release_session_lock(cr, _advisory_key_sql(job_id), f"Job {job_id}")
 
 
 class JobsStillRunning(ModuleOperationInProgress):
@@ -243,7 +247,7 @@ def hold_off_jobs(cr, wait_s: int) -> None:
 
 
 def let_jobs_in(cr) -> None:
-    _release_session_lock(
+    release_session_lock(
         cr,
         JOB_ADMISSION_LOCK,
         "Module operation",
@@ -286,44 +290,7 @@ def _job_admission(cr) -> Iterator[bool]:
         try:
             yield True
         finally:
-            _release_session_lock(cr, JOB_ADMISSION_LOCK, "Job admission", shared=True)
-
-
-def _release_session_lock(
-    cr,
-    key: SQL,
-    holder: str,
-    *,
-    shared: bool = False,
-    then: Callable[[], None] | None = None,
-) -> None:
-    unlock = SQL(
-        "SELECT pg_advisory_unlock_shared(%s)"
-        if shared
-        else "SELECT pg_advisory_unlock(%s)",
-        key,
-    )
-    try:
-        cr.execute(unlock)
-    except psycopg.errors.InFailedSqlTransaction:
-        _logger.info(
-            "%s: its transaction is aborted, releasing its session lock "
-            "after the rollback",
-            holder,
-        )
-        _debug.logic("session_lock.release_deferred", holder=holder, reason="aborted")
-        cr.postrollback.add(partial(cr.execute, unlock))
-        if then is not None:
-            cr.postrollback.add(then)
-        return
-    except psycopg.Error:
-        _logger.warning(
-            "%s: could not release its session lock, leaving it to the connection pool",
-            holder,
-        )
-        _debug.logic("session_lock.release_failed", holder=holder, reason="pg_error")
-    if then is not None:
-        then()
+            release_session_lock(cr, JOB_ADMISSION_LOCK, "Job admission", shared=True)
 
 
 class DelayedProxy:

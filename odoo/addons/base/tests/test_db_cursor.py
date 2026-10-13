@@ -6589,6 +6589,12 @@ class TestCloseRunsHooksOnALiveCursor(BaseCase):
         cr.close()
         self.assertEqual(seen, ["postR"])
 
+    def test_a_statement_of_a_postrollback_hook_is_ended_on_close(self):
+        cr = registry().cursor()
+        cr.postrollback.add(partial(cr.execute, "SELECT 1"))
+        with self.assertNoLogs("psycopg.pool", level="WARNING"):
+            cr.close()
+
     def test_rollback_runs_even_if_logging_raises(self):
         cr = registry().cursor()
         seen = []
