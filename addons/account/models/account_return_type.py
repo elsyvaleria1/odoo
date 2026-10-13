@@ -290,21 +290,74 @@ class AccountReturnType(models.Model):
         )
 
     def _get_domain_filing_country(self, company, filing_country):
-        if filing_country == company.tax_config_id.account_fiscal_country_id:
-            return Domain("country_id", "in", [filing_country.id, False])
+        fiscal_country = company.tax_config_id.account_fiscal_country_id
+        if filing_country == fiscal_country:
+            # Domestic returns are whatever is not filed for a current foreign-VAT
+            # country, so those stamped with a former fiscal country are found.
+            foreign_countries = (
+                company.tax_config_id.multi_vat_foreign_country_ids - fiscal_country
+            )
+            return Domain("country_id", "=", False) | Domain(
+                "country_id", "not in", foreign_countries.ids
+            )
         return Domain("country_id", "=", filing_country.id)
+
+    def _is_replaced_by_a_country_type(self, country) -> bool:
+        if (
+            not country
+            or self.country_id
+            or not self.auto_generate
+            or not self.is_tax_return_type
+        ):
+            return False
+        country_types = self.search(
+            [("country_id", "=", country.id), ("report_id", "!=", False)]
+        )
+        return any(country_types.mapped("is_tax_return_type"))
+
+    def _is_filed_by_an_ancestor(self, company, country) -> bool:
+        ancestors = company.with_privilege(
+            "base.privilege_read_company_hierarchy",
+            reason="a foreign-VAT return is filed by the ancestor whose return covers "
+            "the company",
+        ).parent_ids
+        covering_ancestors = (ancestors - company).filtered(
+            lambda ancestor: company in ancestor._get_branches_with_same_vat()
+        )
+        if not covering_ancestors:
+            return False
+        FiscalPosition = self.env["account.fiscal.position"]
+        return bool(
+            FiscalPosition.search_count(
+                [
+                    *FiscalPosition._get_domain_company_compatible(covering_ancestors),
+                    ("foreign_vat", "!=", False),
+                    ("country_id", "=", country.id),
+                ],
+                limit=1,
+            )
+        )
 
     def _can_return_exist(self, company, tax_unit=False, country=None) -> bool:
         country = country or self.country_id
-        is_foreign_vat = (
-            bool(country) and company.tax_config_id.account_fiscal_country_id != country
-        )
+        fiscal_country = company.tax_config_id.account_fiscal_country_id
+        if self._is_replaced_by_a_country_type(country or fiscal_country):
+            _debug.logic(
+                "return_replaced_by_a_country_type",
+                returntype=self,
+                company=company,
+                country=country or fiscal_country,
+            )
+            return False
+
+        if country and country != fiscal_country:
+            return bool(tax_unit) or not self._is_filed_by_an_ancestor(company, country)
 
         is_tax_unit_main_comp = not tax_unit or tax_unit.main_company_id == company
 
         is_main_branch = company == company._get_vat_filing_company()
 
-        return is_foreign_vat or (is_tax_unit_main_comp and is_main_branch)
+        return is_tax_unit_main_comp and is_main_branch
 
     @api.model
     @_debug.perf.timed
@@ -637,9 +690,9 @@ class AccountReturnType(models.Model):
                 ]
             )
         )
-        existing_returns.filtered(
-            lambda account_return: not account_return.country_id
-        ).country_id = filing_country
+        existing_returns = self._carry_returns_to_filing_country(
+            existing_returns, filing_country
+        )
         if existing_returns and not allow_duplicates:
             existing_periods = {
                 (account_return.date_from, account_return.date_to): self.env[
@@ -763,6 +816,45 @@ class AccountReturnType(models.Model):
         )
         account_returns._update_translated_name()
         return account_returns
+
+    def _carry_returns_to_filing_country(self, existing_returns, filing_country):
+        stale_returns = existing_returns.filtered(
+            lambda account_return: account_return.country_id != filing_country
+        )
+        if not stale_returns:
+            return existing_returns
+        filed_periods = {
+            (account_return.date_from, account_return.date_to)
+            for account_return in existing_returns - stale_returns
+        }
+        unstamped_returns = stale_returns.filtered(
+            lambda account_return: not account_return.country_id
+        )
+        unposted_returns = (stale_returns - unstamped_returns).filtered(
+            lambda account_return: (
+                not account_return.date_lock and not account_return.is_completed
+            )
+        )
+        superseded_returns = unposted_returns.filtered(
+            lambda account_return: (
+                (account_return.date_from, account_return.date_to) in filed_periods
+            )
+        )
+        carried_returns = unstamped_returns + unposted_returns - superseded_returns
+        carried_returns.country_id = filing_country
+        carried_returns._update_translated_name()
+        dropped_returns = superseded_returns.filtered(
+            lambda account_return: not account_return.manually_created
+        )
+        _debug.logic(
+            "returns_carried_to_filing_country",
+            returntype=self,
+            country=filing_country,
+            carried=carried_returns,
+            dropped=dropped_returns,
+        )
+        dropped_returns.unlink()
+        return existing_returns - dropped_returns
 
     def _get_transition_period(self, grid_periods, posted_returns) -> tuple | None:
         if not posted_returns:

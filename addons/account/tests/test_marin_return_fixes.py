@@ -6,7 +6,6 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError
-from odoo.modules.module import get_module_path, load_script
 from odoo.tests import tagged
 
 from odoo.addons.account.models.account_return_type import MONTHS_PER_PERIOD
@@ -816,42 +815,185 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         self.assertEqual(created.country_id, belgium)
         self.assertEqual(created.date_to, date(2024, 1, 31))
 
-    def test_migration_fills_the_return_country(self):
-        belgium = self.env.ref("base.be")
-        belgian_type = self.env["account.return.type"].create(
+    def _create_belgian_tax_type(self, auto_generate):
+        return self.env["account.return.type"].create(
             {
                 "name": "VAT Return (Marin, BE)",
                 "report_id": self.tax_report.id,
-                "country_id": belgium.id,
+                "country_id": self.env.ref("base.be").id,
+                "default_deadline_start_date": "2024-01-01",
+                "auto_generate": auto_generate,
+            }
+        )
+
+    def _january_returns(self, return_type, company=None):
+        return self.env["account.return"].search(
+            [
+                ("type_id", "=", return_type.id),
+                ("company_id", "=", (company or self.root_company).id),
+                ("date_from", "=", "2024-01-01"),
+            ]
+        )
+
+    def test_a_country_tax_type_files_its_country_instead_of_the_countryless_type(
+        self,
+    ):
+        domestic_tax, belgian_tax, _belgian_accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        belgian_type = self._create_belgian_tax_type(auto_generate=True)
+        countryless_returns = self._january_returns_of_the_countryless_type()
+        self.assertEqual(
+            countryless_returns.country_id,
+            self.root_company.tax_config_id.account_fiscal_country_id,
+        )
+        belgian_return = self._january_returns(belgian_type)
+        self.assertEqual(len(belgian_return), 1)
+        self.env["account.return"].search(
+            [("type_id", "=", belgian_type.id), ("date_to", "<", "2024-01-01")]
+        )._as_workflow_step().write({"is_completed": True})
+
+        for tax_return in countryless_returns + belgian_return:
+            tax_return.action_validate(bypass_failing_tests=True)
+
+        self.assertEqual(
+            self._closed_tax_amounts(
+                countryless_returns + belgian_return, domestic_tax + belgian_tax
+            ),
+            sorted([(domestic_tax.name, 15.0), ("BE 21%", 210.0)]),
+        )
+
+    def test_a_country_tax_type_filed_by_hand_also_replaces_the_countryless_type(
+        self,
+    ):
+        self._post_a_domestic_and_a_belgian_sale()
+        self._january_returns_of_the_countryless_type()
+        self._create_belgian_tax_type(auto_generate=False)
+
+        countryless_returns = self._january_returns_of_the_countryless_type()
+
+        self.assertEqual(
+            countryless_returns.country_id,
+            self.root_company.tax_config_id.account_fiscal_country_id,
+        )
+
+    def test_a_countryless_type_is_not_filed_where_the_fiscal_country_has_a_type(
+        self,
+    ):
+        self._post_a_domestic_and_a_belgian_sale()
+        self.assertTrue(self._january_returns(self.return_type))
+        self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, domestic)",
+                "report_id": self.tax_report.id,
+                "country_id": self.root_company.tax_config_id.account_fiscal_country_id.id,
                 "auto_generate": False,
             }
         )
-        returns = self.env["account.return"].create(
-            [
-                {
-                    "name": f"January {return_type.name}",
-                    "type_id": return_type.id,
-                    "company_id": self.root_company.id,
-                    "date_from": "2024-01-01",
-                    "date_to": "2024-01-31",
-                }
-                for return_type in (self.return_type, belgian_type)
-            ]
-        )
-        self.env.flush_all()
-        self.env.cr.execute(
-            "UPDATE account_return SET country_id = NULL WHERE id = ANY(%s)",
-            [returns.ids],
-        )
-        self.env.invalidate_all()
-        script = load_script(
-            f"{get_module_path('account')}/migrations/1.50/post-10-return_country.py",
-            "odoo.addons.account.migrations.post_10_return_country_1_50",
-        )
-        script.migrate(self.env.cr, "1.49")
-        self.env.invalidate_all()
 
         self.assertEqual(
-            returns.mapped("country_id"),
-            self.root_company.tax_config_id.account_fiscal_country_id + belgium,
+            self._january_returns_of_the_countryless_type().country_id,
+            self.env.ref("base.be"),
+        )
+
+    def test_a_fiscal_country_change_carries_the_unposted_countryless_returns(self):
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        self.root_company.account_config_id.account_opening_date = "2023-01-01"
+        former_country = self.root_company.tax_config_id.account_fiscal_country_id
+        self._january_returns_of_the_countryless_type()
+        returns = self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id)]
+        )
+        posted = returns.filtered("is_completed")
+        self.assertTrue(posted)
+        self.assertTrue(returns - posted)
+
+        canada = self.env.ref("base.ca")
+        self.root_company.tax_config_id.account_fiscal_country_id = canada
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertEqual(
+            self.env["account.return"].search([("type_id", "=", self.return_type.id)]),
+            returns,
+        )
+        self.assertEqual(posted.country_id, former_country)
+        self.assertEqual((returns - posted).country_id, canada)
+
+    def test_a_move_to_a_foreign_vat_country_keeps_one_return_per_period(self):
+        belgium = self.env.ref("base.be")
+        self._post_a_domestic_and_a_belgian_sale()
+        self._january_returns_of_the_countryless_type()
+        returns = self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id)]
+        )
+        belgian_returns = returns.filtered(
+            lambda account_return: account_return.country_id == belgium
+        )
+        posted = returns.filtered("is_completed")
+        self.assertTrue(returns - belgian_returns - posted)
+
+        self.env["account.fiscal.position"].search(
+            [("company_id", "=", self.root_company.id), ("country_id", "=", belgium.id)]
+        ).active = False
+        self.root_company.tax_config_id.account_fiscal_country_id = belgium
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        self.assertEqual(
+            self.env["account.return"].search([("type_id", "=", self.return_type.id)]),
+            belgian_returns | posted,
+        )
+
+    def test_the_eu_check_suite_runs_on_tax_returns_only(self):
+        self.root_company.tax_config_id.account_fiscal_country_id = self.env.ref(
+            "base.be"
+        )
+        annual_closing, tax_return = self.env["account.return"].create(
+            [
+                {
+                    "name": f"{return_type.name} 2023",
+                    "type_id": return_type.id,
+                    "company_id": self.root_company.id,
+                    "date_from": "2023-01-01",
+                    "date_to": "2023-12-31",
+                }
+                for return_type in (
+                    self.env.ref("account.annual_corporate_tax_return_type"),
+                    self.return_type,
+                )
+            ]
+        )
+        suite_runs = []
+        run_eu_suite = self.registry["account.return"]._check_suite_eu_vat_report
+
+        def record_eu_suite(account_return, check_codes_to_ignore):
+            suite_runs.append(account_return)
+            return run_eu_suite(account_return, check_codes_to_ignore)
+
+        with patch.object(
+            self.registry["account.return"],
+            "_check_suite_eu_vat_report",
+            record_eu_suite,
+        ):
+            (annual_closing + tax_return).refresh_checks()
+
+        self.assertEqual(annual_closing.country_id, tax_return.country_id)
+        self.assertEqual(suite_runs, [tax_return])
+
+    def test_a_same_vat_branch_files_no_foreign_return_its_root_covers(self):
+        belgium = self.env.ref("base.be")
+        self._post_a_domestic_and_a_belgian_sale()
+        branch = self._create_foreign_vat_branch(belgium)
+        branch.account_config_id.account_opening_date = "2023-01-01"
+
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+        root_belgian_returns = self._january_returns(self.return_type).filtered(
+            lambda account_return: account_return.country_id == belgium
+        )
+        self.assertEqual(len(root_belgian_returns), 1)
+        self.assertIn(branch, root_belgian_returns.company_ids)
+        self.assertFalse(
+            self.env["account.return"].search(
+                [("company_id", "=", branch.id), ("country_id", "=", belgium.id)]
+            )
         )

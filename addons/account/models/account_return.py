@@ -2640,7 +2640,9 @@ class AccountReturn(models.Model):
         self.check_singleton()
         checks = []
         europe_country_group = self.env.ref("base.europe")
-        if self.country_id.code in europe_country_group.mapped("country_ids.code"):
+        if (
+            self.type_id.country_id or self.is_tax_return
+        ) and self.country_id.code in europe_country_group.mapped("country_ids.code"):
             checks += self._check_suite_eu_vat_report(check_codes_to_ignore)
 
         if self.is_tax_return:
