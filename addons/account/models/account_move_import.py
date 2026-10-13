@@ -75,7 +75,12 @@ class AccountMove(models.Model):
         ):
             move = self or self.create({})
             container["records"] = move
-            yield move
+            previous_lines = move.invoice_line_ids
+            try:
+                yield move.with_context(disable_onchange_name_predictive=True)
+            finally:
+                for line in move.invoice_line_ids - previous_lines:
+                    line._onchange_name_predictive()
 
     @contextmanager
     def _disable_discount_precision(self):

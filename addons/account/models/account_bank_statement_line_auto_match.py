@@ -617,11 +617,6 @@ class AccountBankStatementLine(models.Model):
 class AccountMove(models.Model):
     _inherit = "account.move"
 
-    def _post_entries(self):
-        posted = super()._post_entries()
-        posted._trigger_statement_line_auto_reconcile()
-        return posted
-
     def _trigger_statement_line_auto_reconcile(self) -> None:
         documents = self.filtered(
             lambda move: (

@@ -1252,9 +1252,11 @@ class AccountMoveLine(models.Model):
                 product_uom_id=line.product_uom_id,
             )
 
-    @api.depends("product_id", "product_uom_id")
+    @api.depends("product_id", "product_uom_id", "move_id.closing_return_id")
     def _compute_tax_ids(self) -> None:
-        for line in self:
+        closing_lines = self.filtered(lambda line: line.move_id.closing_return_id)
+        closing_lines.tax_ids = False
+        for line in self - closing_lines:
             if (
                 line.display_type
                 in (*NON_ACCOUNTABLE_DISPLAY_TYPES, "payment_term", "cogs")
@@ -1269,6 +1271,8 @@ class AccountMoveLine(models.Model):
 
     @_debug.perf.timed
     def _get_computed_taxes(self):
+        if self.move_id.deferred_original_move_ids:
+            return self.tax_ids
         self.check_singleton()
 
         company_domain = self.env["account.tax"]._check_company_domain(
@@ -2037,6 +2041,7 @@ class AccountMoveLine(models.Model):
             self.tax_ids
             or self.tax_line_id
             or self.tax_tag_ids.filtered(lambda x: x.applicability == "taxes")
+            or self.move_id.closing_return_id
         )
 
     @_debug.perf.timed
@@ -2688,6 +2693,7 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("write", records=self, fields=sorted(vals))
         if not vals:
             return True
+        self._check_deferred_account_change(vals)
         vals = self._normalize_vals(vals)
 
         self._check_write_on_hashed_entry(vals)
@@ -2731,32 +2737,33 @@ class AccountMoveLine(models.Model):
             self.move_id._sync_dynamic_lines(move_container),
             self._sync_invoice({"records": self}),
         ):
-            self = line_to_write
-            if not self:
+            if not line_to_write:
                 _debug.logic("write_no_field_would_change")
-                return True
-            tracking_snapshot = self._snapshot_tracked_values(vals)
+                result = True
+            else:
+                tracking_snapshot = line_to_write._snapshot_tracked_values(vals)
 
-            result = super().write(vals)
-            if "account_id" in vals:
-                self._assign_statement_suspense_role()
-            self.move_id._check_entry_shape()
-            if any(field in vals for field in ["account_id", "currency_id"]):
-                self._check_account_is_usable()
+                result = super(AccountMoveLine, line_to_write).write(vals)
+                if "account_id" in vals:
+                    line_to_write._assign_statement_suspense_role()
+                line_to_write.move_id._check_entry_shape()
+                if any(field in vals for field in ["account_id", "currency_id"]):
+                    line_to_write._check_account_is_usable()
 
-            self.browse(tax_lock_check_ids)._check_tax_lock_date()
+                self.browse(tax_lock_check_ids)._check_tax_lock_date()
 
-            self._log_tracked_change(
-                lambda link: self.env._("Journal Item %s updated", link),
-                lambda line, fnames: (line, tracking_snapshot.get(line.id, {})),
-            )
-            if "analytic_line_ids" in vals:
-                self.filtered(
-                    lambda l: l.parent_state == "draft"
-                ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
+                line_to_write._log_tracked_change(
+                    lambda link: self.env._("Journal Item %s updated", link),
+                    lambda line, fnames: (line, tracking_snapshot.get(line.id, {})),
+                )
+                if "analytic_line_ids" in vals:
+                    line_to_write.filtered(
+                        lambda l: l.parent_state == "draft"
+                    ).analytic_line_ids.with_context(skip_analytic_sync=True).unlink()
 
-        if "account_id" in vals or "analytic_distribution" in vals:
-            self._rebuild_posted_analytic_lines()
+        if line_to_write and ("account_id" in vals or "analytic_distribution" in vals):
+            line_to_write._rebuild_posted_analytic_lines()
+        self._remove_lost_pending_matches(vals)
         return result
 
     def _is_valid_field_parameter(self, field, name) -> bool:
@@ -2819,6 +2826,8 @@ class AccountMoveLine(models.Model):
         if not self:
             return True
 
+        if pending := self.filtered("pending_match_amount"):
+            pending._release_pending_matches()
         if not self.env.context.get("entry_owner_sync") and not self.env.context.get(
             "dynamic_unlink"
         ):
@@ -2910,6 +2919,7 @@ class AccountMoveLine(models.Model):
         _debug.lifecycle("copy_data", records=self)
         vals_list = super().copy_data(default=default)
 
+        reverse_cancel = "move_reverse_cancel" in self.env.context
         for line, vals in zip(self, vals_list, strict=True):
             if line.display_type == "payment_term" and line.move_id.is_invoice(True):
                 vals.pop("name", None)
@@ -2920,6 +2930,9 @@ class AccountMoveLine(models.Model):
                 vals.pop("balance", None)
             if self.env.context.get("include_business_fields"):
                 line._copy_data_extend_business_fields(vals)
+            if reverse_cancel:
+                vals["deferred_start_date"] = line.deferred_start_date
+                vals["deferred_end_date"] = line.deferred_end_date
         return vals_list
 
     def _field_to_sql(
@@ -4482,18 +4495,30 @@ class AccountMoveLine(models.Model):
                     ("res_id", "in", self.payment_id.ids),
                 ]
             )
+        if self.move_id.closing_return_id:
+            domains.append(
+                [
+                    ("res_model", "=", "account.return"),
+                    ("res_id", "in", self.move_id.closing_return_id.ids),
+                ]
+            )
         _debug.logic("attachment_domains_built", lines=self, domains=len(domains))
         return domains
 
     @api.model
     def _get_attachment_by_record(self, id_model2attachments, move_line):
-        return (
+        attachment_id = (
             id_model2attachments.get(("account.move", move_line.move_id.id))
             or id_model2attachments.get(
                 ("account.bank.statement", move_line.statement_id.id)
             )
             or id_model2attachments.get(("account.payment", move_line.payment_id.id))
         )
+        if not attachment_id and move_line.move_id.closing_return_id:
+            attachment_id = id_model2attachments.get(
+                ("account.return", move_line.move_id.closing_return_id.id)
+            )
+        return attachment_id
 
     @api.model
     def _get_domain_tax_exigible(self):

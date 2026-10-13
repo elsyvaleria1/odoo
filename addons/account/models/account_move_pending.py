@@ -131,18 +131,11 @@ class AccountMoveLine(models.Model):
     def _reconcile_or_pend(self, origin):
         return self._reconcile_plan_or_pend([self], origin)
 
-    def write(self, vals):
-        res = super().write(vals)
+    def _remove_lost_pending_matches(self, vals) -> None:
         if PENDING_SENSITIVE_FIELDS.intersection(vals) and (
             pending := self.filtered("pending_match_amount")
         ):
             pending._get_pending_matches()._drop_lost()
-        return res
-
-    def unlink(self):
-        if pending := self.filtered("pending_match_amount"):
-            pending._release_pending_matches()
-        return super().unlink()
 
     def _release_pending_matches(self) -> None:
         matches = self._get_pending_matches()
@@ -193,13 +186,11 @@ class AccountMove(models.Model):
         for move in self:
             move.pending_payment_amount = sum(move.pending_match_ids.mapped("amount"))
 
-    def write(self, vals):
-        res = super().write(vals)
+    def _remove_lost_pending_matches(self, vals) -> None:
         if "state" in vals and vals["state"] != "posted":
             lines = self.line_ids.filtered("pending_match_amount")
             if lines:
                 lines._get_pending_matches()._drop_lost()
-        return res
 
     def _get_pending_payments_widget_vals(self) -> list:
         self.check_singleton()

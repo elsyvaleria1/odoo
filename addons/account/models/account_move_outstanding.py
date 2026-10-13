@@ -1,5 +1,4 @@
 from collections import defaultdict
-from contextlib import contextmanager
 
 import markupsafe
 
@@ -37,25 +36,6 @@ class AccountMove(models.Model):
         return self.statement_line_id._action_view_bank_reconciliation_widget(
             extra_domain=[("statement_id", "in", self.statement_id.ids)],
         )
-
-    def _get_mail_thread_data_attachments(self):
-        res = super()._get_mail_thread_data_attachments()
-        from_bank_reco = self.env.context.get("from_bank_reco")
-        for move in self:
-            res[move.id] += move.statement_line_id.statement_id.attachment_ids
-            if from_bank_reco:
-                res[move.id] += move.line_ids.reconciled_lines_ids.move_attachment_ids
-        return res
-
-    @contextmanager
-    def _open_edi_creation(self):
-        with super()._open_edi_creation() as move:
-            previous_lines = move.invoice_line_ids
-            try:
-                yield move.with_context(disable_onchange_name_predictive=True)
-            finally:
-                for line in move.invoice_line_ids - previous_lines:
-                    line._onchange_name_predictive()
 
     @_debug.perf.timed
     def _get_domain_outstanding_bank_statement_lines(self) -> list:

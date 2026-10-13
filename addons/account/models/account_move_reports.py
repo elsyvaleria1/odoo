@@ -38,9 +38,7 @@ class AccountMove(models.Model):
             ],
         }
 
-    @_debug.perf.timed
-    def unlink(self):
-        _debug.lifecycle("unlink", unlink=self)
+    def _log_closing_entry_deletion(self) -> None:
         for move in self:
             if move.closing_return_id:
                 _debug.logic(
@@ -61,22 +59,6 @@ class AccountMove(models.Model):
                         ),
                         message_type="comment",
                     )
-        return super().unlink()
-
-    @_debug.perf.timed
-    def _post_entries(self):
-        _debug.lifecycle("_post_entries", records=self)
-        posted_moves = super()._post_entries()
-        posted_moves._update_accounts_audit_status()
-        return posted_moves
-
-    @_debug.perf.timed
-    def action_draft(self):
-        _debug.lifecycle("action_draft", records=self)
-        posted_moves = self.filtered(lambda move: move.state == "posted")
-        res = super().action_draft()
-        posted_moves._update_accounts_audit_status()
-        return res
 
     @_debug.perf.timed
     def _update_accounts_audit_status(self) -> None:

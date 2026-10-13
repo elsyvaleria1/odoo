@@ -399,6 +399,10 @@ class AccountMove(models.Model):
     def _get_mail_thread_data_attachments(self):
         res = super()._get_mail_thread_data_attachments()
         Send = self.env["mixin.account.move.send"]
+        from_bank_reco = self.env.context.get("from_bank_reco")
         for move in self:
             res[move.id] |= Send._get_invoice_extra_attachments(move)
+            res[move.id] += move.statement_line_id.statement_id.attachment_ids
+            if from_bank_reco:
+                res[move.id] += move.line_ids.reconciled_lines_ids.move_attachment_ids
         return res

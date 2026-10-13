@@ -46,21 +46,15 @@ class AccountMove(models.Model):
         copy=False,
     )
 
-    @_debug.perf.timed
-    def _post_entries(self):
-        _debug.lifecycle("_post_entries", records=self)
-        posted = super()._post_entries()
+    def _create_deferred_entries_on_validation(self) -> None:
         for move in self:
             if move._get_deferred_entries_method() == "on_validation" and any(
                 move.line_ids.mapped("deferred_start_date")
             ):
                 _debug.pipeline("deferral_validation_generating_entries", move=move)
                 move._create_deferred_entries()
-        return posted
 
-    @_debug.perf.timed
-    def action_draft(self):
-        _debug.lifecycle("action_draft", records=self)
+    def _remove_deferred_entries(self) -> None:
         if any(
             len(deferral_move.deferred_original_move_ids) > 1
             for deferral_move in self.deferred_move_ids
@@ -90,20 +84,18 @@ class AccountMove(models.Model):
             )
             for originals, reversals in reversals_by_original.items():
                 originals.deferred_move_ids |= reversals
-        return super().action_draft()
 
-    @_debug.perf.timed
-    def unlink(self):
-        _debug.lifecycle("unlink", unlink=self)
-        deferral_moves = self.filtered(
+    def _get_audit_protected_deferral_moves(self):
+        return self.filtered(
             lambda move: (
                 move._is_protected_by_audit_trail() and move.deferred_original_move_ids
             )
         )
-        for original in deferral_moves.deferred_original_move_ids:
-            original.deferred_move_ids -= deferral_moves
-        deferral_moves._reverse_moves()
-        return super(AccountMove, self - deferral_moves).unlink()
+
+    def _reverse_deferral_moves(self) -> None:
+        for original in self.deferred_original_move_ids:
+            original.deferred_move_ids -= self
+        self._reverse_moves()
 
     def _get_deferred_entries_method(self):
         self.check_singleton()
@@ -565,19 +557,7 @@ class AccountMoveLine(models.Model):
         exportable=False,
     )
 
-    @_debug.perf.timed
-    def copy_data(self, default=None):
-        _debug.lifecycle("copy_data", records=self)
-        data_list = super().copy_data(default=default)
-        for line, values in zip(self, data_list, strict=True):
-            if "move_reverse_cancel" in self.env.context:
-                values["deferred_start_date"] = line.deferred_start_date
-                values["deferred_end_date"] = line.deferred_end_date
-        return data_list
-
-    @_debug.perf.timed
-    def write(self, vals):
-        _debug.lifecycle("write", records=self, fields=sorted(vals))
+    def _check_deferred_account_change(self, vals) -> None:
         if "account_id" in vals:
             for line in self:
                 if (
@@ -597,7 +577,6 @@ class AccountMoveLine(models.Model):
                             move_name=line.move_id.display_name,
                         )
                     )
-        return super().write(vals)
 
     @api.depends("move_id.deferred_move_ids")
     def _compute_has_deferred_moves(self) -> None:
@@ -751,8 +730,3 @@ class AccountMoveLine(models.Model):
             "name": ref,
             "analytic_distribution": analytic_distribution,
         }
-
-    def _get_computed_taxes(self):
-        if self.move_id.deferred_original_move_ids:
-            return self.tax_ids
-        return super()._get_computed_taxes()

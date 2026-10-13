@@ -4991,6 +4991,7 @@ class AccountMove(models.Model):
         if any(field in vals for field in ["journal_id", "currency_id"]):
             self.line_ids._check_account_is_usable()
 
+        self._remove_lost_pending_matches(vals)
         return res
 
     def check_move_sequence_chain(self):
@@ -5076,9 +5077,13 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def unlink(self):
         _debug.lifecycle("unlink", unlink=self)
+        self._log_closing_entry_deletion()
+        deferral_moves = self._get_audit_protected_deferral_moves()
+        deferral_moves._reverse_deferral_moves()
+        remaining = self - deferral_moves
         with self.env.cr.savepoint():
-            self._update_sequence_made_gap(invalidate_current=True)
-            moves = self.with_context(skip_invoice_sync=True, dynamic_unlink=True)
+            remaining._update_sequence_made_gap(invalidate_current=True)
+            moves = remaining.with_context(skip_invoice_sync=True, dynamic_unlink=True)
             logger_message = moves._get_unlink_logger_message()
             moves.line_ids.remove_move_reconcile()
             moves.line_ids.unlink()
@@ -6710,6 +6715,9 @@ class AccountMove(models.Model):
             )
         zero_invoices._invoice_paid_hook()
 
+        self._trigger_statement_line_auto_reconcile()
+        self._create_deferred_entries_on_validation()
+        self._update_accounts_audit_status()
         return self
 
     @_debug.perf.timed
@@ -7421,6 +7429,8 @@ class AccountMove(models.Model):
     @_debug.perf.timed
     def action_draft(self):
         _debug.lifecycle("action_draft", records=self)
+        posted_moves = self.filtered(lambda move: move.state == "posted")
+        self._remove_deferred_entries()
         if any(move.state not in ("cancel", "posted") for move in self):
             raise UserError(
                 self.env._(
@@ -7452,6 +7462,7 @@ class AccountMove(models.Model):
         self._as_sending_queue().sending_data = False
 
         self._detach_attachments()
+        posted_moves._update_accounts_audit_status()
 
     @_debug.perf.timed
     def _unlink_next_draft_auto_post_moves(self) -> None:

@@ -37,36 +37,6 @@ class AccountMoveLine(models.Model):
                     self.env._("You cannot add taxes on a tax closing move line.")
                 )
 
-    @api.depends("product_id", "product_uom_id", "move_id.closing_return_id")
-    def _compute_tax_ids(self) -> None:
-        lines_to_compute = self.filtered(
-            lambda line: not line.move_id.closing_return_id
-        )
-        (self - lines_to_compute).tax_ids = False
-        super(AccountMoveLine, lines_to_compute)._compute_tax_ids()
-
-    def _get_attachment_domains(self):
-        attachment_domains = super()._get_attachment_domains()
-        if self.move_id.closing_return_id:
-            attachment_domains.append(
-                [
-                    ("res_model", "=", "account.return"),
-                    ("res_id", "in", self.move_id.closing_return_id.ids),
-                ]
-            )
-        return attachment_domains
-
-    @api.model
-    def _get_attachment_by_record(self, id_model2attachments, move_line):
-        attachment_id = super()._get_attachment_by_record(
-            id_model2attachments, move_line
-        )
-        if not attachment_id and move_line.move_id.closing_return_id:
-            attachment_id = id_model2attachments.get(
-                ("account.return", move_line.move_id.closing_return_id.id)
-            )
-        return attachment_id
-
     @api.model
     @_debug.perf.timed
     def _prepare_aml_shadowing_for_report(
@@ -128,9 +98,6 @@ class AccountMoveLine(models.Model):
             ),
             SQL(", ").join(fields_to_insert),
         )
-
-    def _affect_tax_report(self):
-        return super()._affect_tax_report() or self.move_id.closing_return_id
 
     def _analytic_coverage_sql(
         self, field: fields.Field, alias: str, query: (Query | None) = None
