@@ -542,6 +542,66 @@ class AccountTax(models.Model):
         return base_line
 
     @api.model
+    def _add_tax_details_in_base_lines(self, base_lines, company) -> None:
+        super()._add_tax_details_in_base_lines(base_lines, company)
+        self._pin_early_payment_base_lines_in_company_currency(base_lines, company)
+
+    @api.model
+    def _pin_early_payment_base_lines_in_company_currency(
+        self, base_lines, company
+    ) -> None:
+        company_currency = company.currency_id
+        epd_base_lines_per_account = defaultdict(list)
+        for base_line in base_lines:
+            if (
+                base_line["special_type"] == "early_payment"
+                and base_line["currency_id"] != company_currency
+            ):
+                epd_base_lines_per_account[base_line["account_id"]].append(base_line)
+        for account, epd_base_lines in epd_base_lines_per_account.items():
+            if any(
+                base_line["manual_total_excluded"] is not None
+                for base_line in epd_base_lines
+            ):
+                continue
+            amounts = [
+                company_currency.round(base_line["tax_details"]["raw_total_excluded"])
+                for base_line in epd_base_lines
+            ]
+            residue = company_currency.round(sum(amounts))
+            counterparts = [
+                index
+                for index, base_line in enumerate(epd_base_lines)
+                if not base_line["tax_ids"]
+            ]
+            if counterparts and not company_currency.is_zero(residue):
+                index = max(
+                    counterparts,
+                    key=lambda index: abs(
+                        epd_base_lines[index]["tax_details"]["raw_total_excluded"]
+                    ),
+                )
+                amounts[index] -= residue
+                _debug.logic(
+                    "epd_company_residue_moved_to_counterpart",
+                    account=account,
+                    residue=residue,
+                )
+            for base_line, amount in zip(epd_base_lines, amounts, strict=True):
+                tax_details = base_line["tax_details"]
+                delta = amount - tax_details["raw_total_excluded"]
+                tax_details["raw_total_excluded"] = amount
+                tax_details["raw_total_included"] += delta
+                for tax_data in tax_details["taxes_data"]:
+                    tax_data["raw_base_amount"] += delta
+            _debug.logic(
+                "epd_company_amounts_pinned",
+                account=account,
+                lines=len(epd_base_lines),
+                amounts=amounts,
+            )
+
+    @api.model
     @_debug.perf.timed
     def _prepare_tax_line_for_taxes_computation(self, record, **kwargs):
         def load(field, fallback):

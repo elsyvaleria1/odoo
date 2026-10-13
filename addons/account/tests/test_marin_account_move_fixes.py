@@ -1730,6 +1730,74 @@ class TestMarinEarlyPaymentDiscountForeignCurrency(AccountTestInvoicingCommon):
         invoice.action_post()
         self.assertEqual(invoice.state, "posted")
 
+    def _assert_tax_bases_match_base_lines(self, invoice):
+        tax_lines = invoice.line_ids.filtered("tax_line_id")
+        self.assertTrue(tax_lines)
+        for tax_line in tax_lines:
+            base_lines = invoice.line_ids.filtered(
+                lambda line, tax=tax_line.tax_line_id: tax in line.tax_ids
+            )
+            self.assertEqual(
+                tax_line.tax_base_amount,
+                invoice.company_currency_id.round(sum(base_lines.mapped("balance"))),
+                tax_line.tax_line_id.name,
+            )
+
+    def test_epd_tax_base_matches_base_lines_in_company_currency(self):
+        tax_21, tax_10_incl = self.env["account.tax"].create(
+            [
+                {"name": "FX 21", "amount": 21},
+                {
+                    "name": "FX 10 incl",
+                    "amount": 10,
+                    "price_include_override": "tax_included",
+                },
+            ]
+        )
+        company = self.company_data["company"]
+        for rounding_method, currency, base_21 in (
+            ("round_globally", self.eur, -604.93),
+            ("round_per_line", self.eur, -604.93),
+            ("round_globally", company.currency_id, -1209.87),
+        ):
+            with self.subTest(rounding_method=rounding_method, currency=currency.name):
+                company.tax_config_id.tax_calculation_rounding_method = rounding_method
+                invoice = self.env["account.move"].create(
+                    {
+                        "move_type": "out_invoice",
+                        "partner_id": self.partner_a.id,
+                        "invoice_date": "2017-01-01",
+                        "currency_id": currency.id,
+                        "invoice_payment_term_id": self.epd_term.id,
+                        "invoice_line_ids": [
+                            Command.create(
+                                {
+                                    "name": "21",
+                                    "price_unit": 1234.56,
+                                    "tax_ids": [Command.set(tax_21.ids)],
+                                }
+                            ),
+                            Command.create(
+                                {
+                                    "name": "10 incl",
+                                    "price_unit": 99.99,
+                                    "tax_ids": [Command.set(tax_10_incl.ids)],
+                                }
+                            ),
+                        ],
+                    }
+                )
+                self._assert_tax_bases_match_base_lines(invoice)
+                invoice.action_post()
+                self._assert_tax_bases_match_base_lines(invoice)
+                self.assertEqual(
+                    invoice.line_ids.filtered(
+                        lambda line: line.tax_line_id == tax_21
+                    ).tax_base_amount,
+                    base_21,
+                )
+                self.assertAlmostEqual(sum(invoice.line_ids.mapped("balance")), 0.0)
+
 
 @tagged("post_install", "-at_install")
 class TestMarinSequenceFollowsTheJournal(AccountTestInvoicingCommon):
