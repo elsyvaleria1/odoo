@@ -1629,6 +1629,51 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         self.assertEqual(left.right_id, right)
         self.assertEqual(left.sudo().right_id, right)
 
+    def _assert_stored_right_ids(self, lefts, rights):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "SELECT right_id FROM test_orm_trigger_left WHERE id = ANY(%s) ORDER BY id",
+            [lefts.ids],
+        )
+        self.assertEqual([row[0] for row in self.env.cr.fetchall()], rights.ids)
+
+    @users("admin")
+    def test_25_stored_related_through_x2many_read_before_write(self):
+        Right = self.env["test_orm.trigger.right"]
+        right, right2 = Right.create({}), Right.create({})
+        left = self.env["test_orm.trigger.left"].create({})
+        self.assertFalse(left.right_id)
+        left.write({"middle_ids": [Command.create({"right_id": right.id})]})
+        self.assertEqual(left.right_id, right)
+        self._assert_stored_right_ids(left, right)
+        left.middle_ids.right_id = right2
+        self.assertEqual(left.right_id, right2)
+        self.assertEqual(left.sudo().right_id, right2)
+        self._assert_stored_right_ids(left, right2)
+
+    @users("admin")
+    def test_25_stored_related_through_x2many_across_companies_and_batches(self):
+        other = self.env["res.company"].sudo().create({"name": "Other related company"})
+        Right = self.env["test_orm.trigger.right"].with_company(other)
+        Left = self.env["test_orm.trigger.left"].with_company(other)
+        rights = Right.create([{} for _ in range(3)])
+        lefts = Left.create(
+            [{"middle_ids": [Command.create({"right_id": r.id})]} for r in rights]
+        )
+        self.assertEqual(
+            lefts.with_company(self.env.company).mapped("right_id"), rights
+        )
+        self._assert_stored_right_ids(lefts, rights)
+
+    @users("admin")
+    def test_25_stored_related_through_x2many_on_a_new_record(self):
+        right = self.env["test_orm.trigger.right"].create({})
+        left = self.env["test_orm.trigger.left"].new(
+            {"middle_ids": [Command.create({"right_id": right.id})]}
+        )
+        self.assertEqual(left.right_id, right)
+        self.assertEqual(left.sudo().right_id, right)
+
     def test_26_inherited(self):
         for user in self.env["res.users"].search([]):
             partner = user.partner_id
