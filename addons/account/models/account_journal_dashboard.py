@@ -1125,7 +1125,11 @@ class AccountJournal(models.Model):
                 total_amount += result.get("amount_total_company") or 0
             else:
                 total_amount += document_currency._convert(
-                    result.get("amount_total"), target_currency, document_company, date
+                    result.get("amount_total"),
+                    target_currency,
+                    document_company,
+                    date,
+                    round=False,
                 )
         _debug.logic(
             "dashboard_amounts_summed",
