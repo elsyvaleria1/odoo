@@ -99,6 +99,20 @@ class Registry(
             except KeyError:
                 return cls.new(db_name)
 
+    @classmethod
+    def get_without_waiting(cls, db_name: str) -> Registry | None:
+        reg = cls.registries.get(db_name)
+        if reg is not None and reg.ready:
+            reg.last_used = time.monotonic()
+            return reg
+        if not cls._lock.acquire(blocking=False):
+            _debug.logic("registry.lookup_deferred", db=db_name, reason="lock_held")
+            return None
+        try:
+            return cls(db_name)
+        finally:
+            cls._lock.release()
+
     ready: bool
     loaded: bool
     metaschema: MetaSchema = META_SCHEMA
@@ -269,23 +283,32 @@ class Registry(
         return True
 
     @classmethod
-    @locked
     def _evict_idle_registries(cls) -> None:
         if cls.idle_timeout <= 0:
             return
-        now = time.monotonic()
-        for db_name, registry in cls.registries.items():
-            if not registry.ready:
-                continue
-            idle_for = now - registry.last_used
-            if idle_for > cls.idle_timeout:
-                _logger.info(
-                    "Evicting idle registry for %s, idle for %.0fs", db_name, idle_for
-                )
-                _debug.lifecycle(
-                    "registry.evicted_idle", db=db_name, idle_seconds=idle_for
-                )
-                cls.remove(db_name)
+        # Called from the server watchdogs: waiting here would stop every limit
+        # check for as long as another thread builds a registry.
+        if not cls._lock.acquire(blocking=False):
+            _debug.logic("registry.eviction_deferred", reason="lock_held")
+            return
+        try:
+            now = time.monotonic()
+            for db_name, registry in cls.registries.items():
+                if not registry.ready:
+                    continue
+                idle_for = now - registry.last_used
+                if idle_for > cls.idle_timeout:
+                    _logger.info(
+                        "Evicting idle registry for %s, idle for %.0fs",
+                        db_name,
+                        idle_for,
+                    )
+                    _debug.lifecycle(
+                        "registry.evicted_idle", db=db_name, idle_seconds=idle_for
+                    )
+                    cls.remove(db_name)
+        finally:
+            cls._lock.release()
 
     @classmethod
     @locked
@@ -758,8 +781,8 @@ class Registry(
 
 
 class DummyRLock:
-    def acquire(self) -> None:
-        pass
+    def acquire(self, blocking: bool = True, timeout: float = -1) -> bool:
+        return True
 
     def release(self) -> None:
         pass

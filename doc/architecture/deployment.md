@@ -185,9 +185,14 @@ flavours act in two steps, one budget apart:
 1. **Cancel the queries.** The supervisor (the worker's own monitor thread in
    prefork, `_worker.py`; the server's `check_limits` pass in threaded,
    `_threaded.py`) calls `odoo.db.cancel_queries_of(<thread>)`, a client-side
-   `pg_cancel` on every connection that thread has checked out, and logs
-   `cancelled N running quer(y|ies)` together with what the thread was doing
-   (`serving GET /path (model.method)` or `sweeping <db>`). A request stuck in
+   `pg_cancel` on every connection that thread has checked out *and* has a
+   query in flight on (an idle one -- a listener's `LISTEN`, a stream lease --
+   is neither cancelled nor counted), and logs `cancelled N running
+   quer(y|ies)` together with what the thread was doing
+   (`serving GET /path (model.method)` or `sweeping <db>`). The pass never
+   waits on the registry lock: a thread building a registry (a module install)
+   holds it for the whole load, and a pass that queued behind it would check
+   no limit, and beat no systemd watchdog, until the load ended. A request stuck in
    PostgreSQL fails with `QueryCanceled`, answers `500`, and the process that
    served it survives: no registry rebuild, no back-off, no lost in-flight
    neighbours.

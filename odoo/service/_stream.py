@@ -118,11 +118,13 @@ RUNTIME = StreamRuntime()
 def process_streams(db_name: str) -> None:
     with working_on_database(db_name):
         try:
-            registry = Registry(db_name)
+            registry = Registry.get_without_waiting(db_name)
         except Exception:
             _logger.warning(
                 "Streams of %s: the registry did not load", db_name, exc_info=True
             )
+            return
+        if registry is None:
             return
         if STREAM_MODEL not in registry:
             if RUNTIME.leads(db_name):

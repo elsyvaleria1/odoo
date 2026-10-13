@@ -10,6 +10,7 @@ from time import monotonic
 from typing import TYPE_CHECKING, Any, override
 
 import psycopg
+from psycopg.pq import TransactionStatus
 from psycopg_pool import ConnectionPool as _PsycopgPool
 from psycopg_pool import PoolClosed, PoolTimeout
 
@@ -834,6 +835,9 @@ class ConnectionPool:
             pid = get_backend_pid(conn)
             if not self._checkouts.is_held_by(conn, thread_name):
                 _debug.logic("pool.cancel_skipped", backend_pid=pid, reason="rehomed")
+                continue
+            if conn.info.transaction_status != TransactionStatus.ACTIVE:
+                _debug.logic("pool.cancel_skipped", backend_pid=pid, reason="idle")
                 continue
             try:
                 conn.cancel_safe(timeout=self._CANCEL_TIMEOUT)
