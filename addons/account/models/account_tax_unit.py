@@ -122,6 +122,7 @@ class AccountTaxUnit(models.Model):
         taken = {name for name, count in names.items() if count > 1}
         taken.update(
             self.env["account.report.horizontal.group"]
+            .with_context(lang="en_US")
             .search_fetch(
                 [
                     ("name", "in", list(names)),
@@ -144,6 +145,16 @@ class AccountTaxUnit(models.Model):
                 )
             )
 
+    def _rename_horizontal_group(self) -> None:
+        self.check_singleton()
+        langs = ["en_US"] + [
+            code
+            for code, _name in self.env["res.lang"].get_installed()
+            if code != "en_US"
+        ]
+        for lang in langs:
+            self.horizontal_group_id.with_context(lang=lang).name = self.name
+
     def _get_country_tax_report_variants(self):
         self.check_singleton()
         return self.env.ref("account.generic_tax_report").variant_report_ids.filtered(
@@ -160,10 +171,11 @@ class AccountTaxUnit(models.Model):
             else {}
         )
         result = super().write(vals)
-        if "name" in vals:
-            self._check_horizontal_group_names_free()
         if "name" in vals or variants_before:
-            for unit in self.filtered("horizontal_group_id"):
+            grouped_units = self.filtered("horizontal_group_id")
+            if "name" in vals and grouped_units:
+                grouped_units._check_horizontal_group_names_free()
+            for unit in grouped_units:
                 group = unit.horizontal_group_id
                 _debug.logic(
                     "tax_unit_horizontal_group_synced",
@@ -173,7 +185,7 @@ class AccountTaxUnit(models.Model):
                     country_changed=bool(variants_before),
                 )
                 if "name" in vals:
-                    group.name = unit.name
+                    unit._rename_horizontal_group()
                 if variants_before:
                     variants_before[unit].write(
                         {"horizontal_group_ids": [Command.unlink(group.id)]}

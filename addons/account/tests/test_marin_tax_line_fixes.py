@@ -617,26 +617,113 @@ class TestMarinTaxUnitHorizontalGroup(AccountTestInvoicingCommon):
         with self.assertRaisesRegex(ValidationError, "Unit taken at create"):
             self._unit("Unit taken at create")
 
-    def test_migration_links_a_unit_to_its_group_by_rule_domain(self):
-        linked = self._unit("Unit migrated")
-        unlinked = self._unit("Unit not linked", "base.nl", "NL000099998B57")
-        linked_group = linked.horizontal_group_id
+    def _unlink_groups_and_migrate(self, units):
         self.env.flush_all()
         self.env.cr.execute(
             "UPDATE account_tax_unit SET horizontal_group_id = NULL WHERE id = ANY(%s)",
-            [[linked.id, unlinked.id]],
+            [units.ids],
         )
-        unlinked.horizontal_group_id.rule_ids.domain = "[]"
         self.env.invalidate_all()
-        self.assertFalse(linked.horizontal_group_id)
+        self.assertFalse(units.horizontal_group_id)
         script = load_script(
             f"{get_module_path('account')}/migrations/1.46/post-10-tax_unit_horizontal_group.py",
             "odoo.addons.account.migrations.post_10_tax_unit_horizontal_group_1_46",
         )
         script.migrate(self.env.cr, "1.45")
         self.env.invalidate_all()
+
+    def test_migration_links_a_unit_to_its_group_by_rule_domain(self):
+        linked = self._unit("Unit migrated")
+        linked_group = linked.horizontal_group_id
+        self._unlink_groups_and_migrate(linked)
         self.assertEqual(linked.horizontal_group_id, linked_group)
-        self.assertFalse(unlinked.horizontal_group_id)
+
+    def test_migration_links_a_unit_with_an_edited_domain_by_group_name(self):
+        edited = self._unit("Unit edited before upgrade")
+        renamed = self._unit("Unit renamed before upgrade", "base.nl", "NL000099998B57")
+        edited_group = edited.horizontal_group_id
+        edited_group.rule_ids.domain = (
+            f"[('account_config_id.account_tax_unit_ids', 'in', [{edited.id}])]"
+        )
+        renamed.horizontal_group_id.rule_ids.domain = "[]"
+        renamed.horizontal_group_id.name = "Group renamed by hand"
+        self._unlink_groups_and_migrate(edited | renamed)
+        self.assertEqual(edited.horizontal_group_id, edited_group)
+        self.assertFalse(renamed.horizontal_group_id)
+
+    def test_migration_leaves_a_group_named_like_two_units_unlinked(self):
+        first = self._unit("Unit twin")
+        second = self._unit("Unit twin second", "base.nl", "NL000099998B57")
+        (first | second).horizontal_group_id.rule_ids.domain = "[]"
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_tax_unit SET name = 'Unit twin' WHERE id = %s",
+            [second.id],
+        )
+        self._unlink_groups_and_migrate(first | second)
+        self.assertFalse((first | second).horizontal_group_id)
+
+    def _orphan(self, unit):
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE account_tax_unit SET horizontal_group_id = NULL WHERE id = %s",
+            [unit.id],
+        )
+        self.env.invalidate_all()
+
+    def test_unit_without_a_group_renames_freely(self):
+        unit = self._unit("Unit orphaned")
+        self._orphan(unit)
+        unit.name = "Unit orphaned renamed"
+        unit.name = "Unit orphaned"
+        self._foreign_group("Unit orphaned foreign")
+        unit.name = "Unit orphaned foreign"
+        self.assertEqual(unit.name, "Unit orphaned foreign")
+
+    def test_group_names_are_checked_against_their_source_value(self):
+        self.env["res.lang"]._activate_lang("fr_FR")
+        foreign = self._foreign_group("Unit english source")
+        foreign.update_field_translations("name", {"fr_FR": "Unite traduite"})
+        french = self.env(context=dict(self.env.context, lang="fr_FR"))
+        units = self.env["account.tax.unit"].with_env(french)
+        with self.assertRaisesRegex(ValidationError, "Unit english source"):
+            units.create(
+                {
+                    "name": "Unit english source",
+                    "country_id": self.env.ref("base.be").id,
+                    "vat": "BE0999999922",
+                    "company_ids": [Command.set(self.members.ids)],
+                    "main_company_id": self.members[0].id,
+                }
+            )
+        unit = units.create(
+            {
+                "name": "Unite traduite",
+                "country_id": self.env.ref("base.nl").id,
+                "vat": "NL000099998B57",
+                "company_ids": [Command.set(self.members.ids)],
+                "main_company_id": self.members[0].id,
+            }
+        )
+        self.assertEqual(
+            unit.horizontal_group_id.with_context(lang="en_US").name,
+            "Unite traduite",
+        )
+
+    def test_renaming_a_unit_in_another_language_renames_every_group_value(self):
+        unit = self._unit("Unit before french rename")
+        self.env["res.lang"]._activate_lang("fr_FR")
+        unit.with_context(lang="fr_FR").name = "Unit after french rename"
+        group = unit.horizontal_group_id
+        self.assertEqual(
+            group.with_context(lang="en_US").name, "Unit after french rename"
+        )
+        self.assertEqual(
+            group.with_context(lang="fr_FR").name, "Unit after french rename"
+        )
+        self.assertTrue(
+            self._unit("Unit before french rename", "base.nl", "NL000099998B57")
+        )
 
 
 @tagged("post_install", "-at_install")
