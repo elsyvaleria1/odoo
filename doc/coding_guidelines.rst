@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.94
+:Version: 7.95
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -856,8 +856,7 @@ and about its dependencies, and nothing checks either claim.
   model gateway, ``integration_machine_learning``, without installing ``ai``
   (``speech_ml``, ``extract_ml``, ``approval_telegram_ml``); ``ai_gateway_ml``
   connects the two. Why: ``ai`` brings agents, sources and pgvector, and a name
-  that suggests it reads as installing it. ``ai_auto_install`` installs ``ai``
-  without depending on it, and is the one name left open.
+  that suggests it reads as installing it.
 * **A vendor's adapter is ``{domain}_{vendor}``**, domain first: the domain
   module holds what every provider shares and the setting that chooses one,
   the adapter one vendor's protocol (``captcha_recaptcha``,
@@ -6393,6 +6392,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.95
+     - 2026-10-13
+     - §1.5: ``ai_auto_install`` is retired (base 1.159), so the ``ai`` / ``ml``
+       rule has no open name: a database gets ``ai`` by installing it.
+       ``speech_ml``'s engines are ``ml_transcription`` and ``ml_speech_*``,
+       and ``mixin.media.live`` is ``mixin.speech.live``.
    * - 7.94
      - 2026-10-13
      - §2.5: vendored code keeps its comments -- a third-party file under
