@@ -1190,10 +1190,10 @@ class HrEmployee(models.Model):
             keys=sorted(address_vals),
             sudo=True,
         )
-        self._write_check_field_access(address_vals)
+        self._check_write_field_access(address_vals)
         super(HrEmployee, self.sudo()).write(address_vals)
 
-    def _create_parent_records(self, data_list) -> None:
+    def _create_or_update_parent_records(self, data_list) -> None:
         Party = self.env["res.partner"].sudo()
         party_vals_list = [
             data["inherited"].pop("res.partner", {}) for data in data_list
@@ -1216,7 +1216,7 @@ class HrEmployee(models.Model):
             new_parties=len(to_create),
             given=len(data_list) - len(to_create),
         )
-        super()._create_parent_records(data_list)
+        super()._create_or_update_parent_records(data_list)
         for data, party_vals in zip(data_list, party_vals_list, strict=True):
             if party_vals:
                 data["inherited"]["res.partner"] = party_vals

@@ -10,18 +10,15 @@ from ..._typing import IdType, ValuesType
 from ...fields import Field
 from ...profiling import _OrmProfile
 from ._crud_common import (
+    InverseHook,
     _orm_crud,
     get_forbidden_field_names,
 )
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from collections.abc import Callable
-
     from ..._typing import BaseModel
     from ...fields.relational._base import _RelationalMulti
-
-type InverseHook = str | Callable[[BaseModel], None]
 
 _debug = DebugLog(__name__)
 
@@ -59,11 +56,11 @@ class WriteMixin(_ModelStubs):
         )
         return bool(updated)
 
-    def _write_check_field_access(self, vals: ValuesType) -> None:
+    def _check_write_field_access(self, vals: ValuesType) -> None:
         self.check_access("write")
         self._check_fields_write_access(vals)
 
-    def _write_classify_fields(self, vals: ValuesType) -> _WriteFieldPlan:
+    def _get_write_field_plan(self, vals: ValuesType) -> _WriteFieldPlan:
         plan = _WriteFieldPlan([], defaultdict(list), [], set(), [])
         for fname, value in vals.items():
             field = self._fields[fname]
@@ -83,7 +80,9 @@ class WriteMixin(_ModelStubs):
                     plan.protected.update(self.pool.field_computed.get(field, [field]))
         return plan
 
-    def _write_settle_protected(self, plan: _WriteFieldPlan, vals: ValuesType) -> None:
+    def _recompute_and_cache_write_fields(
+        self, plan: _WriteFieldPlan, vals: ValuesType
+    ) -> None:
         if plan.x2m_inverse_fnames:
             self._recompute_recordset(plan.x2m_inverse_fnames)
             self.fetch(plan.x2m_inverse_fnames)
@@ -119,7 +118,7 @@ class WriteMixin(_ModelStubs):
                     for fname in to_compute:
                         new_recs.mapped(fname)
 
-    def _write_apply_inverses(
+    def _apply_write_inverse_hooks(
         self,
         inverses_by_hook: dict[InverseHook, list[Field[typing.Any]]],
         real_recs: Self,
@@ -169,6 +168,31 @@ class WriteMixin(_ModelStubs):
                     ) from e
                 raise
 
+    def _filtered_persisted_records(self) -> Self:
+        if len(self._ids) == 1 and self._ids[0]:
+            return self
+        records = self.filtered("id")
+        if _debug.logic.enabled and len(records) < len(self):
+            _debug.logic(
+                "write.new_records_skipped",
+                model=self._name,
+                records=len(self),
+                real=len(records),
+            )
+        return records
+
+    def _mark_write_fields_dirty_and_notify_access(
+        self,
+        field_values: list[tuple[Field[typing.Any], typing.Any]],
+        real_recs: Self,
+    ) -> None:
+        if len(field_values) > 1:
+            field_values.sort(key=lambda item: item[0].write_sequence)
+        for field, value in field_values:
+            field.mark_dirty(typing.cast("BaseModel", self), value)
+        if real_recs:
+            real_recs._access_inputs_written([field.name for field, _ in field_values])
+
     @override
     def write(self, vals: ValuesType) -> typing.Literal[True]:
         if not self:
@@ -182,7 +206,7 @@ class WriteMixin(_ModelStubs):
                 "write", self._name, len(self), frozenset(vals)
             )
 
-        self._write_check_field_access(vals)
+        self._check_write_field_access(vals)
         anchors_before = self._get_anchor_values_before_write(vals)
         moves = None
         if transitions := self.env.registry.verb_transitions.get(self._name):
@@ -204,7 +228,7 @@ class WriteMixin(_ModelStubs):
             vals.setdefault("write_uid", self.env.uid)
             vals.setdefault("write_date", self.env.cr.now())
 
-        plan = self._write_classify_fields(vals)
+        plan = self._get_write_field_plan(vals)
         field_values = plan.field_values
         inverses_by_hook = plan.inverses_by_hook
         protected = plan.protected
@@ -218,7 +242,7 @@ class WriteMixin(_ModelStubs):
             protected=len(protected),
             x2many_inverses=len(plan.x2m_inverse_fnames),
         )
-        self._write_settle_protected(plan, vals)
+        self._recompute_and_cache_write_fields(plan, vals)
         prof.mark("classify")
 
         with env.protecting(protected, self):
@@ -226,26 +250,8 @@ class WriteMixin(_ModelStubs):
                 self._modified_before(plan.fnames_modifying_relations)
             prof.mark("before")
 
-            _ids = self._ids
-            if len(_ids) == 1 and _ids[0]:
-                real_recs = self
-            else:
-                real_recs = self.filtered("id")
-                if _debug.logic.enabled and len(real_recs) < len(self):
-                    _debug.logic(
-                        "write.new_records_skipped",
-                        model=self._name,
-                        records=len(self),
-                        real=len(real_recs),
-                    )
-
-            if len(field_values) > 1:
-                field_values.sort(key=lambda item: item[0].write_sequence)
-            for field, value in field_values:
-                field.mark_dirty(typing.cast("BaseModel", self), value)
-            if real_recs:
-                written_names = [field.name for field, _value in field_values]
-                real_recs._access_inputs_written(written_names)
+            real_recs = self._filtered_persisted_records()
+            self._mark_write_fields_dirty_and_notify_access(field_values, real_recs)
             prof.mark("dirty")
 
             self.modified(vals)
@@ -264,7 +270,7 @@ class WriteMixin(_ModelStubs):
             real_recs._check_fields(vals, inverse_fields)
             prof.mark("validate")
 
-            self._write_apply_inverses(inverses_by_hook, real_recs, vals)
+            self._apply_write_inverse_hooks(inverses_by_hook, real_recs, vals)
 
             real_recs._check_fields(inverse_fields)
 
@@ -394,7 +400,7 @@ class WriteMixin(_ModelStubs):
             raise ValueError(f"{caller}: {field} is not a plain stored {kind} field")
         names = {fname: None}
         TransactionMemo.discard_for_model(self.env, self._name, names)
-        self._write_check_field_access(names)
+        self._check_write_field_access(names)
         anchors_before = self._get_anchor_values_before_write(names)
         log_vals: ValuesType = (
             {"write_uid": self.env.uid, "write_date": self.env.cr.now()}

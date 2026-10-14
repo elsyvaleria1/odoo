@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.100
+:Version: 7.101
 :Date: 2026-10-14
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2852,6 +2852,14 @@ native adapter failed; its green result alone does not prove that adapter.
 record company anchor can skip regular relational checks, but not checks of
 company-dependent fields against ``env.company``. An error names the scope
 that was checked: the environment company can differ from the record company.
+
+**Name CRUD phases for their effects and results** ``[review]``. A field
+access check returning names says both; a delegated-parent phase that updates
+existing parents as well as creating missing ones names both operations.
+Group several results in a typed product while preserving the runtime shape
+that overrides consume. Create and write inverse hooks have distinct protection
+scopes: keep their ordering around cache updates, constraints and access
+notifications, and test persisted records together with drafts.
 
 **A protocol namespace belongs only to names its dispatcher calls**
 ``[review]``. A model's private helper does not wear ``_load_pos_data_*``
@@ -6426,6 +6434,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.101
+     - 2026-10-14
+     - §2.4.21 names CRUD phase effects and results explicitly; typed products
+       preserve override shapes and inverse phases retain their protection and
+       validation order, including mixed persisted and draft writes.
    * - 7.100
      - 2026-10-14
      - §2.4.21 carries renames through embedded native callers and verifies

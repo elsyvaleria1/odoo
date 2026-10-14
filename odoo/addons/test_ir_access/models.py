@@ -69,10 +69,10 @@ class TestIrAccessDelegatedComputed(models.Model):
     def _search_item_id(self, operator, value):
         return Domain("held_id", operator, value)
 
-    def _create_parent_records(self, data_list):
+    def _create_or_update_parent_records(self, data_list):
         for data in data_list:
             data["stored"]["item_id"] = data["stored"].get("held_id")
-        super()._create_parent_records(data_list)
+        super()._create_or_update_parent_records(data_list)
         for data in data_list:
             data["stored"]["held_id"] = data["stored"].pop("item_id")
 

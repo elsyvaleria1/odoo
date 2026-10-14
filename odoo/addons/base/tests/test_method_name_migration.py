@@ -749,7 +749,15 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
     def test_shared_anchor_methods_upgrade_every_stored_code_owner_and_column(self):
         self._check_shared_stored_method_upgrade("1.164")
 
+    def test_shared_crud_methods_upgrade_every_stored_code_owner_and_column(self):
+        self._check_shared_stored_method_upgrade("1.165")
+
     def _check_shared_stored_method_upgrade(self, version):
+        def get_partner_code(source: str) -> str:
+            return source.replace("records.", 'env["res.partner"].').replace(
+                "getattr(records,", 'getattr(env["res.partner"],'
+            )
+
         migration = _load_method_name_migration(version)
         renames = migration.SHARED_MODEL_METHOD_RENAMES
         old_names = list(renames)
@@ -775,7 +783,7 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
                     )
                 ],
             )
-            payroll_code = code.replace("records", 'env["res.partner"]')
+            payroll_code = get_partner_code(code)
             cr.execute(
                 "INSERT INTO hr_salary_rule VALUES (1, %s, %s, %s, %s)",
                 [payroll_code] * 4,
@@ -805,12 +813,10 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
                 )
                 self.assertEqual(
                     cr.fetchone(),
-                    (expected.replace("records", 'env["res.partner"]'),) * 4,
+                    (get_partner_code(expected),) * 4,
                 )
                 cr.execute("SELECT evaluation_code FROM hr_payroll_dashboard_warning")
-                self.assertEqual(
-                    cr.fetchone()[0], expected.replace("records", 'env["res.partner"]')
-                )
+                self.assertEqual(cr.fetchone()[0], get_partner_code(expected))
 
     def test_unresolved_shared_verb_owner_rolls_back_the_upgrade(self):
         migration = _load_method_name_migration("1.163")
@@ -845,6 +851,25 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
                 migration.migrate(cr, "1.163")
             cr.execute("SELECT code FROM ir_act_server")
             self.assertEqual(cr.fetchone()[0], "records._access_company_anchor()")
+
+    def test_unresolved_shared_crud_owner_rolls_back_the_upgrade(self):
+        migration = _load_method_name_migration("1.165")
+        with self._use_migration_schema() as cr:
+            cr.execute(
+                "INSERT INTO ir_act_server VALUES (1, 2, 'records._write_check_field_access(vals={})')"
+            )
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 1, 'unknown._create_parent_records(data_list=[])')"
+            )
+            with (
+                self.assertRaisesRegex(ValueError, "Cannot resolve method owners"),
+                cr.savepoint(flush=False),
+            ):
+                migration.migrate(cr, "1.164")
+            cr.execute("SELECT code FROM ir_act_server")
+            self.assertEqual(
+                cr.fetchone()[0], "records._write_check_field_access(vals={})"
+            )
 
     def test_unresolved_egress_owner_rolls_back_the_upgrade(self):
         migration = _load_method_name_migration("1.162")

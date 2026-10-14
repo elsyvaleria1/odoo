@@ -23,6 +23,8 @@ from ...primitives import (
 from ...profiling import _OrmProfile
 from ._crud_common import (
     _BAD_NAMES_LOG,
+    CreateRecordData,
+    InverseHook,
     _orm_crud,
     get_forbidden_field_names,
 )
@@ -34,6 +36,16 @@ else:
     BaseModel = typing.Any
 
 _debug = DebugLog(__name__)
+
+
+class _CreatePlan(typing.NamedTuple):
+    data_list: list[CreateRecordData]
+    inverses_by_hook: dict[InverseHook, OrderedSet[Field[typing.Any]]]
+
+
+class _CreateCacheResult[Records](typing.NamedTuple):
+    records: Records
+    inverses_update: dict[Field[typing.Any], defaultdict[typing.Any, list[int]]]
 
 
 class CreateMixin(_ModelStubs):
@@ -193,9 +205,7 @@ class CreateMixin(_ModelStubs):
 
         return defaults
 
-    def _create_check_field_access(
-        self, vals_list: list[ValuesType]
-    ) -> OrderedSet[str]:
+    def _get_create_field_names(self, vals_list: list[ValuesType]) -> OrderedSet[str]:
         field_names = OrderedSet(fname for vals in vals_list for fname in vals)
         field_names.update(
             field_name
@@ -204,6 +214,12 @@ class CreateMixin(_ModelStubs):
             and (field_name := context_key.removeprefix("default_"))
             and field_name in self._fields
         )
+        return field_names
+
+    def _check_create_field_access_and_get_names(
+        self, vals_list: list[ValuesType]
+    ) -> OrderedSet[str]:
+        field_names = self._get_create_field_names(vals_list)
         self._check_fields_write_access(field_names)
         _debug.pipeline(
             "create.field_access_checked",
@@ -213,14 +229,11 @@ class CreateMixin(_ModelStubs):
         )
         return field_names
 
-    def _create_partition_values(
+    def _partition_create_values_and_check_related_read_access(
         self, new_vals_list: list[ValuesType]
-    ) -> tuple[
-        list[dict[str, typing.Any]],
-        dict[typing.Any, OrderedSet[Field[typing.Any]]],
-    ]:
-        data_list = []
-        inverses_by_hook: defaultdict[typing.Any, OrderedSet[Field[typing.Any]]] = (
+    ) -> _CreatePlan:
+        data_list: list[CreateRecordData] = []
+        inverses_by_hook: defaultdict[InverseHook, OrderedSet[Field[typing.Any]]] = (
             defaultdict(OrderedSet)
         )
         bypass_access_ids: defaultdict[Field[typing.Any], OrderedSet[IdType]] = (
@@ -231,13 +244,19 @@ class CreateMixin(_ModelStubs):
             precomputed = vals.pop("__precomputed__", ())
             recompute = vals.pop("__recompute_after_create__", ())
 
-            data: dict[str, typing.Any] = {}
-            data["stored"] = stored = {}
-            data["inversed"] = inversed = {}
-            data["cached_only"] = cached_only = {}
+            stored: ValuesType = {}
+            inversed: ValuesType = {}
+            cached_only: ValuesType = {}
             inherited: defaultdict[str, ValuesType] = defaultdict(dict)
-            data["inherited"] = inherited
-            data["protected"] = protected = set()
+            protected: set[Field[typing.Any]] = set()
+            data: CreateRecordData = {
+                "stored": stored,
+                "inversed": inversed,
+                "cached_only": cached_only,
+                "inherited": inherited,
+                "protected": protected,
+                "recompute_after_create": recompute,
+            }
             for key, val in vals.items():
                 field = self._fields.get(key)
                 if not field:
@@ -262,7 +281,6 @@ class CreateMixin(_ModelStubs):
                     if co_id := field.convert_to_cache(val, self):
                         bypass_access_ids[field].add(co_id)
 
-            data["recompute_after_create"] = recompute
             data_list.append(data)
 
         _debug.pipeline(
@@ -274,9 +292,11 @@ class CreateMixin(_ModelStubs):
         )
         for field, co_ids in bypass_access_ids.items():
             self.env[field._get_comodel_name()].browse(co_ids).check_access("read")
-        return data_list, inverses_by_hook
+        return _CreatePlan(data_list, inverses_by_hook)
 
-    def _create_parent_records(self, data_list: list[dict[str, typing.Any]]) -> None:
+    def _create_or_update_parent_records(
+        self, data_list: list[CreateRecordData]
+    ) -> None:
         for model_name, parent_name in self._inherits.items():
             parent_data_list = []
             for data in data_list:
@@ -303,8 +323,10 @@ class CreateMixin(_ModelStubs):
             for data in data_list:
                 data["stored"]["id"] = data["stored"][shared]
 
-    def _create_apply_inverses(
-        self, data_list: list[dict[str, typing.Any]], inverses_by_hook: typing.Any
+    def _apply_create_inverse_hooks(
+        self,
+        data_list: list[CreateRecordData],
+        inverses_by_hook: dict[InverseHook, OrderedSet[Field[typing.Any]]],
     ) -> None:
         protected_fields = [(data["protected"], data["record"]) for data in data_list]
         with self.env.protecting(protected_fields):
@@ -365,24 +387,26 @@ class CreateMixin(_ModelStubs):
         self = self.browse()
         self.check_access("create")
 
-        field_names = self._create_check_field_access(vals_list)
+        field_names = self._check_create_field_access_and_get_names(vals_list)
         prof.mark("acl")
 
         new_vals_list = self._prepare_create_values(vals_list)
-        data_list, inverses_by_hook = self._create_partition_values(new_vals_list)
+        data_list, inverses_by_hook = (
+            self._partition_create_values_and_check_related_read_access(new_vals_list)
+        )
         prof.mark("prep")
 
-        self._create_parent_records(data_list)
+        self._create_or_update_parent_records(data_list)
         prof.mark("parent")
 
         with self.env.transaction.create_frame():
             records = self._create(data_list)
             prof.mark("sql")
 
-            self._create_apply_inverses(data_list, inverses_by_hook)
+            self._apply_create_inverse_hooks(data_list, inverses_by_hook)
             prof.mark("trigger")
 
-            self._check_created(data_list)
+            self._check_created_inverse_fields(data_list)
 
         for data in data_list:
             for field in data["recompute_after_create"]:
@@ -420,7 +444,7 @@ class CreateMixin(_ModelStubs):
         self._create_update_xmlids(records, vals_list)
         return records
 
-    def _check_created(self, data_list: list[dict[str, typing.Any]]) -> None:
+    def _check_created_inverse_fields(self, data_list: list[CreateRecordData]) -> None:
         inversed_names = {name for data in data_list for name in data["inversed"]}
         if inversed_names:
             self.browse([data["record"].id for data in data_list])._check_fields(
@@ -728,7 +752,7 @@ class CreateMixin(_ModelStubs):
                     )
 
     @api.model
-    def _create(self, data_list: list[ValuesType]) -> Self:
+    def _create(self, data_list: list[CreateRecordData]) -> Self:
         if not data_list:
             raise ValueError("_create() called with empty data_list")
         prof = _OrmProfile(_orm_crud)
@@ -750,7 +774,7 @@ class CreateMixin(_ModelStubs):
             if field.is_properties:
                 other_fields.add(field)
 
-        self._convert_column_values(stored_list, col_fields)
+        self._update_create_column_values(stored_list, col_fields)
         ids = self.env.backend.create_rows(self, stored_list, columns, col_fields)
         if self._inherits_shared_id:
             for stored in stored_list:
@@ -764,7 +788,9 @@ class CreateMixin(_ModelStubs):
         )
         prof.mark("sql")
 
-        records, inverses_update = self._update_create_cache(ids, data_list)
+        records, inverses_update = self._update_create_cache_and_get_inverse_plan(
+            ids, data_list
+        )
         self.env.transaction.note_created(self._name, records._ids)
         prof.mark("cache")
 
@@ -821,7 +847,7 @@ class CreateMixin(_ModelStubs):
         prof.report(_orm_crud, "_create %s: %d records", self._name, len(records))
         return records
 
-    def _convert_column_values(
+    def _update_create_column_values(
         self, stored_list: list[ValuesType], col_fields: list[Field[typing.Any]]
     ) -> None:
         converted = [field for field in col_fields if field.column_value_is_cache]
@@ -832,9 +858,9 @@ class CreateMixin(_ModelStubs):
                         stored[field.name], self, stored
                     )
 
-    def _update_create_cache(
-        self, ids: list[int], data_list: list[dict[str, typing.Any]]
-    ) -> tuple[Self, dict[Field[typing.Any], defaultdict[typing.Any, list[int]]]]:
+    def _update_create_cache_and_get_inverse_plan(
+        self, ids: list[int], data_list: list[CreateRecordData]
+    ) -> _CreateCacheResult[Self]:
         records = self.browse(ids)
         inverses_update: defaultdict[
             Field[typing.Any], defaultdict[typing.Any, list[int]]
@@ -905,7 +931,7 @@ class CreateMixin(_ModelStubs):
             supplied=len(supplied),
             inverse_updates=sum(len(updates) for updates in inverses_update.values()),
         )
-        return records, inverses_update
+        return _CreateCacheResult(records, inverses_update)
 
     def _get_stored_x2many_fields(self) -> tuple[_RelationalMulti, ...]:
         cls = type(self)

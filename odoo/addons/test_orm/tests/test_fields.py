@@ -983,6 +983,32 @@ class TestFields(TransactionCaseWithUserDemo, TransactionExpressionCase):
         self.assertEqual(log.count("constraint"), 1, "once for the batch, after it")
         self.assertEqual(log[-1], "constraint")
 
+    def test_a_write_runs_constraints_after_the_inverse_on_a_batch(self):
+        log = []
+        model = self.env["test_orm.compute.inverse"].with_context(
+            log=log, log_constraint=True
+        )
+        records = model.create([{"foo": "first"}, {"foo": "second"}])
+        log.clear()
+        records.write({"bar": "updated", "baz": "checked"})
+        self.assertEqual(log, ["inverse", "constraint"])
+        self.assertEqual(records.mapped("foo"), ["updated", "updated"])
+
+    def test_a_write_marks_drafts_dirty_but_inverses_only_persisted_records(self):
+        log = []
+        model = self.env["test_orm.compute.inverse"].with_context(
+            log=log, log_constraint=True
+        )
+        persisted = model.create({"foo": "persisted"})
+        draft = model.new({"foo": "draft"})
+        log.clear()
+        (persisted + draft).write({"bar": "updated", "baz": "checked"})
+        self.assertEqual(log, ["inverse", "constraint"])
+        self.assertEqual(persisted.foo, "updated")
+        self.assertEqual(draft.foo, "draft")
+        self.assertEqual(draft.bar, "updated")
+        self.assertEqual(draft.baz, "checked")
+
     def test_16_compute_unassigned(self):
         model = self.env["test_orm.compute.unassigned"]
 
