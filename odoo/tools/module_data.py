@@ -1339,17 +1339,7 @@ def _moved_identifier(cr: BaseCursor, table: str, suffix: str) -> str:
             if room > 0
             else (table + tag + suffix)[:MAX_PG_NAME_LENGTH]
         )
-        cr.execute(
-            SQL(
-                "SELECT 1 FROM pg_constraint WHERE conrelid = %s::regclass "
-                "AND conname = %s UNION ALL SELECT 1 FROM pg_class "
-                "WHERE relname = %s AND relnamespace = current_schema()::regnamespace",
-                table,
-                name,
-                name,
-            )
-        )
-        if not cr.fetchone():
+        if not _relation_name_taken(cr, table, name):
             return name
         counter += 1
 
@@ -1420,6 +1410,74 @@ def _rename_table_with_dependents(cr: BaseCursor, old: str, new: str) -> bool:
     return True
 
 
+def _restore_default_names(cr: BaseCursor, table: str) -> None:
+    cr.execute(
+        SQL(
+            """
+            SELECT con.conname, con.contype, a.attname
+              FROM pg_constraint con
+              JOIN pg_attribute a
+                ON a.attrelid = con.conrelid AND a.attnum = con.conkey[1]
+             WHERE con.conrelid = %s::regclass AND con.contype IN ('n', 'f')
+               AND cardinality(con.conkey) = 1
+            """,
+            table,
+        )
+    )
+    for name, kind, column in cr.fetchall():
+        default = get_default_constraint_name(
+            table, column, "not_null" if kind == "n" else "fkey"
+        )
+        if name != default and not _relation_name_taken(cr, table, default):
+            cr.execute(
+                SQL(
+                    "ALTER TABLE %s RENAME CONSTRAINT %s TO %s",
+                    SQL.identifier(table),
+                    SQL.identifier(name),
+                    SQL.identifier(default),
+                )
+            )
+    cr.execute(
+        SQL(
+            """
+            SELECT i.relname, array_agg(a.attname ORDER BY k.ord)
+              FROM pg_index x
+              JOIN pg_class i ON i.oid = x.indexrelid
+             CROSS JOIN LATERAL unnest(x.indkey) WITH ORDINALITY k(attnum, ord)
+              JOIN pg_attribute a ON a.attrelid = x.indrelid AND a.attnum = k.attnum
+             WHERE x.indrelid = %s::regclass AND NOT x.indisprimary
+               AND NOT x.indisunique
+             GROUP BY i.relname
+            """,
+            table,
+        )
+    )
+    for name, columns in cr.fetchall():
+        default = get_default_constraint_name(table, "_".join(columns), "idx")
+        if name != default and not _relation_name_taken(cr, table, default):
+            cr.execute(
+                SQL(
+                    "ALTER INDEX %s RENAME TO %s",
+                    SQL.identifier(name),
+                    SQL.identifier(default),
+                )
+            )
+
+
+def _relation_name_taken(cr: BaseCursor, table: str, name: str) -> bool:
+    cr.execute(
+        SQL(
+            "SELECT 1 FROM pg_constraint WHERE conrelid = %s::regclass "
+            "AND conname = %s UNION ALL SELECT 1 FROM pg_class "
+            "WHERE relname = %s AND relnamespace = current_schema()::regnamespace",
+            table,
+            name,
+            name,
+        )
+    )
+    return cr.fetchone() is not None
+
+
 def _rename_model_relations(
     cr: BaseCursor, old: str, old_table: str, new_table: str
 ) -> dict[str, str]:
@@ -1454,6 +1512,7 @@ def _rename_model_relations(
             for column in (column1, column2):
                 if column == old_column and not column_exists(cr, target, new_column):
                     rename_column(cr, target, old_column, new_column)
+            _restore_default_names(cr, target)
         cr.execute(
             SQL(
                 "UPDATE ir_model_fields SET relation_table = %s, "
@@ -2177,6 +2236,43 @@ def move_xmlids(cr: BaseCursor, names: Iterable[str], module: str, into: str) ->
         into=into,
         names=names,
         rows=rewritten,
+    )
+
+
+def rename_xmlids(cr: BaseCursor, module: str, names: Mapping[str, str]) -> None:
+    requested = sorted(names)
+    cr.execute(
+        SQL(
+            "UPDATE ir_model_data d SET name = n.new "
+            "FROM unnest(%s::varchar[], %s::varchar[]) n(old, new) "
+            "WHERE d.module = %s AND d.name = n.old AND NOT EXISTS "
+            "(SELECT 1 FROM ir_model_data e WHERE e.module = %s AND e.name = n.new) "
+            "RETURNING n.old",
+            requested,
+            [names[old] for old in requested],
+            module,
+            module,
+        )
+    )
+    olds = sorted(old for (old,) in cr.fetchall())
+    if not olds:
+        return
+    named = re.compile(
+        rf"(?<![\w.]){re.escape(module)}\.(?P<name>{'|'.join(map(re.escape, olds))})(?!\w)"
+    )
+
+    def rewrite(value: str) -> str:
+        return named.sub(lambda match: f"{module}.{names[match['name']]}", value)
+
+    needle = f"{module}."
+    rewritten = _rewrite_view_arches(
+        cr,
+        SQL("position(%s in arch_db::text) > 0", needle),
+        lambda value, _view_model: rewrite(value) if value else value,
+    )
+    rewritten += _rewrite_expressions(cr, needle, rewrite)
+    _debug.lifecycle(
+        "module_data.xmlids_renamed", module=module, names=olds, rows=rewritten
     )
 
 

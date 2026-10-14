@@ -569,3 +569,72 @@ class TestRenameModelJoinTableWithAnActionComodel(TransactionCase):
                 self.env.cr, "ir_act_server_probe_gadget2_rel", "probe_gadget2_id"
             )
         )
+
+
+@tagged("post_install", "-at_install")
+class TestRenameModelJoinTableDefaultNames(TransactionCase):
+    JOIN_DDL = """
+        CREATE TABLE {rel} ({id1} INTEGER NOT NULL REFERENCES {table1} (id),
+                            {id2} INTEGER NOT NULL REFERENCES {table2} (id),
+                            PRIMARY KEY ({id1}, {id2}));
+        CREATE INDEX ON {rel} ({id2}, {id1});
+    """
+
+    @classmethod
+    def _create(cls, capability, machine):
+        cls.env.cr.execute(
+            f"CREATE TABLE {capability} (id serial PRIMARY KEY);"
+            f"CREATE TABLE {machine} (id serial PRIMARY KEY);"
+            + cls.JOIN_DDL.format(
+                rel=f"{capability}_{machine}_rel",
+                table1=capability,
+                table2=machine,
+                id1=f"{capability}_id",
+                id2=f"{machine}_id",
+            )
+        )
+        return f"{capability}_{machine}_rel"
+
+    @classmethod
+    def _names(cls, table):
+        cls.env.cr.execute(
+            "SELECT conname FROM pg_constraint WHERE conrelid = %s::regclass "
+            "UNION ALL SELECT indexrelid::regclass::text FROM pg_index "
+            "WHERE indrelid = %s::regclass",
+            (table, table),
+        )
+        return sorted({row[0] for row in cls.env.cr.fetchall()})
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cr = cls.env.cr
+        with cr.savepoint(flush=False) as savepoint:
+            cls.expected = cls._names(
+                cls._create("probe_runnerish_capability", "probe_runnerish_machine")
+            )
+            savepoint.rollback()
+        old_join = cls._create("probe_agentish_capability", "probe_agentish_runner")
+        model_ids = {}
+        for model in ("probe.agentish.capability", "probe.agentish.runner"):
+            model_ids[model] = TestRenameModel._insert_model.__func__(cls, model)
+        TestRenameModel._insert_field.__func__(
+            cls,
+            model_ids["probe.agentish.runner"],
+            "probe.agentish.runner",
+            "capability_ids",
+            "many2many",
+            relation="probe.agentish.capability",
+            relation_table=old_join,
+            column1="probe_agentish_runner_id",
+            column2="probe_agentish_capability_id",
+        )
+        rename_model(cr, "probe.agentish.capability", "probe.runnerish.capability")
+        rename_model(cr, "probe.agentish.runner", "probe.runnerish.machine")
+
+    def test_the_moved_join_table_carries_the_names_postgres_gives_a_new_one(self):
+        self.assertTrue(any(len(name) == 63 for name in self.expected), self.expected)
+        self.assertEqual(
+            self._names("probe_runnerish_capability_probe_runnerish_machine_rel"),
+            self.expected,
+        )

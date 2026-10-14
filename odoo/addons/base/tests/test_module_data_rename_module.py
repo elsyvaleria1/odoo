@@ -1,5 +1,11 @@
 from odoo.tests.common import TransactionCase, tagged
-from odoo.tools.module_data import drop_views, fold_module, move_xmlids, rename_module
+from odoo.tools.module_data import (
+    drop_views,
+    fold_module,
+    move_xmlids,
+    rename_module,
+    rename_xmlids,
+)
 
 
 @tagged("post_install", "-at_install")
@@ -374,6 +380,49 @@ class TestRenameModule(TransactionCase):
                     (
                         "moved = env.ref('probe_into.probe_record')\n"
                         "kept = env.ref('probe_old.probe_record_kept')"
+                    ),
+                )
+            ],
+        )
+
+    def test_renamed_xmlids_keep_their_record_and_references(self):
+        self._insert_xmlid("probe_old", "probe_record_kept")
+        self._insert_xmlid("probe_old", "probe_taken")
+        self._insert_xmlid("probe_old", "probe_taken_new")
+        self.action.code = (
+            "renamed = env.ref('probe_old.probe_record')\n"
+            "kept = env.ref('probe_old.probe_record_kept')\n"
+            "taken = env.ref('probe_old.probe_taken')"
+        )
+        self.env.flush_all()
+        rename_xmlids(
+            self.env.cr,
+            "probe_old",
+            {"probe_record": "probe_entry", "probe_taken": "probe_taken_new"},
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT name FROM ir_model_data WHERE module = 'probe_old' "
+                "AND name LIKE 'probe\\_%%' ORDER BY name",
+                [],
+            ),
+            [
+                ("probe_entry",),
+                ("probe_record_kept",),
+                ("probe_taken",),
+                ("probe_taken_new",),
+            ],
+        )
+        self.assertEqual(
+            self._read(
+                "SELECT code FROM ir_act_server WHERE id = %s", [self.action.id]
+            ),
+            [
+                (
+                    (
+                        "renamed = env.ref('probe_old.probe_entry')\n"
+                        "kept = env.ref('probe_old.probe_record_kept')\n"
+                        "taken = env.ref('probe_old.probe_taken')"
                     ),
                 )
             ],
