@@ -46,6 +46,7 @@ from odoo.db.pool import (
     _reset_connection,
     _SuppressKnownPoolWarnings,
 )
+from odoo.db.probe import ConnectionProbeOutcome
 from odoo.db.reaper import get_checked_out_count as reaper_checked_out
 from odoo.db.utils import get_connection_info_for_database
 from odoo.exceptions import ConcurrencyError
@@ -3658,16 +3659,14 @@ class TestPoolFailsFastOnMissingDatabase(BaseCase):
             msg=f"missing-db connect took {elapsed:.1f}s — fast-fail probe regressed",
         )
 
-    def test_probe_is_wired_into_pool_creation(self):
-        src = inspect.getsource(ConnectionPool._get_or_create_pool)
-        self.assertIn("_check_connectable_or_fail_fast", src)
-        src = inspect.getsource(ConnectionPool._check_connectable_or_fail_fast)
-        self.assertIn(
-            "self._probe.check_connectable",
-            src,
-            "the pre-flight probe moved to db/probe.py; pool creation must "
-            "still go through it or a missing database costs a PoolTimeout",
-        )
+    def test_permanent_probe_failure_prevents_pool_creation(self):
+        pool = ConnectionPool(maxconn=4)
+        self.addCleanup(pool.close_all)
+        info = get_connection_info_for_database("zzz_missing_db_for_probe_test")[1]
+        with patch.object(pool_module, "_PsycopgPool") as factory:
+            with self.assertRaises(psycopg.errors.InvalidCatalogName):
+                pool._get_or_create_pool(_get_dsn_key(info), info)
+        factory.assert_not_called()
 
 
 class TestBorrowReturnsConnectionOnPostGetconnFailure(BaseCase):
@@ -3894,6 +3893,7 @@ class TestProbeDoesNotBlockOtherDatabases(BaseCase):
         def slow_probe(conninfo, kwargs, deadline=None):
             probe_started.set()
             time.sleep(probe_sleep)
+            return ConnectionProbeOutcome.CONNECTED
 
         errors = []
         elapsed = {}
@@ -3908,7 +3908,7 @@ class TestProbeDoesNotBlockOtherDatabases(BaseCase):
 
         with (
             patch("odoo.db.pool._PsycopgPool", _StubPool),
-            patch.object(pool._probe, "probe_connectable", side_effect=slow_probe),
+            patch.object(pool._probe, "probe_connection", side_effect=slow_probe),
         ):
             t_a = threading.Thread(target=create, args=("a", {"database": "a"}))
             t_b = threading.Thread(target=create, args=("b", {"database": "b"}))
@@ -3941,7 +3941,7 @@ class TestProbeDoesNotBlockOtherDatabases(BaseCase):
             raise psycopg.OperationalError("connection refused")
 
         with patch("psycopg.connect", side_effect=fake_connect):
-            pool._probe.probe_connectable(
+            pool._probe.probe_connection(
                 "", {"dbname": "x", "connect_timeout": "10", "options": "-c jit=off"}
             )
         self.assertEqual(captured.get("connect_timeout"), PROBE_CONNECT_TIMEOUT)
@@ -4051,7 +4051,11 @@ class TestPoolSessionGucOptions(BaseCase):
         key = _get_dsn_key(connection_info)
         with (
             patch.object(pool_module, "_PsycopgPool", _FakePool),
-            patch.object(pool._probe, "probe_connectable"),
+            patch.object(
+                pool._probe,
+                "probe_connection",
+                return_value=ConnectionProbeOutcome.CONNECTED,
+            ),
         ):
             try:
                 pool._get_or_create_pool(key, dict(connection_info))
@@ -4400,7 +4404,7 @@ class TestPasswordRotationEvictsStalePool(BaseCase):
 
     def test_rotation_evicts_and_closes_old_pool(self):
         pool = ConnectionPool(maxconn=4)
-        pool._probe.probe_connectable = lambda *a, **k: None
+        pool._probe.probe_connection = lambda *a, **k: ConnectionProbeOutcome.CONNECTED
         base = {"dbname": "rotdb", "host": "h", "user": "u"}
         info_old = {**base, "password": "old"}
         info_new = {**base, "password": "new"}
@@ -4417,7 +4421,7 @@ class TestPasswordRotationEvictsStalePool(BaseCase):
 
     def test_different_user_pool_is_preserved(self):
         pool = ConnectionPool(maxconn=4)
-        pool._probe.probe_connectable = lambda *a, **k: None
+        pool._probe.probe_connection = lambda *a, **k: ConnectionProbeOutcome.CONNECTED
         base = {"dbname": "rotdb", "host": "h", "password": "p"}
         info_u1 = {**base, "user": "u1"}
         info_u2 = {**base, "user": "u2"}

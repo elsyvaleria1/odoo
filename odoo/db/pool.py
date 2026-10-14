@@ -26,7 +26,12 @@ from .lifecycle import (
     _reset_connection,
     get_backend_pid,
 )
-from .probe import PROBE_CONNECT_TIMEOUT, ReachabilityProbe, get_libpq_connect_timeout
+from .probe import (
+    PROBE_CONNECT_TIMEOUT,
+    ConnectionProbeOutcome,
+    ReachabilityProbe,
+    get_libpq_connect_timeout,
+)
 from .reaper import IdlePoolReaper, mark_active, trim_idle_to_ceiling
 from .settings import PoolSettings, resolve
 from .stats import PoolStats
@@ -249,16 +254,14 @@ class ConnectionPool:
         if pool is not None and not pool.closed:
             if fail_fast and self._is_pool_unproven_and_empty(key, pool):
                 conninfo, kwargs = self._prepare_connect_args(key, connection_info)
-                self._check_connectable_or_fail_fast(
+                self._check_borrow_probe(
                     key, conninfo, kwargs, deadline, fail_fast=True
                 )
             mark_active(pool)
             return pool
 
         conninfo, kwargs = self._prepare_connect_args(key, connection_info)
-        self._check_connectable_or_fail_fast(
-            key, conninfo, kwargs, deadline, fail_fast=fail_fast
-        )
+        self._check_borrow_probe(key, conninfo, kwargs, deadline, fail_fast=fail_fast)
 
         with self._lock:
             pool = self._pools.get(key)
@@ -360,7 +363,7 @@ class ConnectionPool:
         )
         return conninfo, kwargs
 
-    def _check_connectable_or_fail_fast(
+    def _check_borrow_probe(
         self,
         key: DsnKey,
         conninfo: str,
@@ -369,9 +372,10 @@ class ConnectionPool:
         *,
         fail_fast: bool,
     ) -> None:
-        if self._probe.check_connectable(key, conninfo, kwargs, deadline):
-            return
-        if fail_fast:
+        outcome = self._probe.probe_connection_if_unproven(
+            key, conninfo, kwargs, deadline
+        )
+        if fail_fast and outcome is ConnectionProbeOutcome.TRANSIENT_FAILURE:
             dbname = _get_key_dbname(key)
             _debug.logic("pool.borrow_refused", db=dbname, reason="fail_fast")
             raise PoolError(

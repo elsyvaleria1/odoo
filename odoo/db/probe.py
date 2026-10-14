@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import contextlib
 import copy
+import enum
 import logging
 import math
 import threading
@@ -31,6 +32,19 @@ _debug = DebugLog(__name__)
 PROBE_CONNECT_TIMEOUT = 5
 
 
+class ConnectionProbeOutcome(enum.Enum):
+    CONNECTED = "connected"
+    TRANSIENT_FAILURE = "transient_failure"
+    UNKNOWN = "unknown"
+
+
+class DatabaseProbeOutcome(enum.Enum):
+    PRESENT = "present"
+    ABSENT = "absent"
+    AUTH_FAILED = "auth_failed"
+    UNKNOWN = "unknown"
+
+
 def get_libpq_connect_timeout(deadline: float | None, cap: int) -> int:
     if deadline is None:
         return cap
@@ -41,12 +55,12 @@ def get_libpq_connect_timeout(deadline: float | None, cap: int) -> int:
 
 
 class _InFlightProbe:
-    __slots__ = ("connected", "done", "exc")
+    __slots__ = ("done", "exc", "outcome")
 
     def __init__(self) -> None:
         self.done = threading.Event()
         self.exc: BaseException | None = None
-        self.connected = True
+        self.outcome = ConnectionProbeOutcome.UNKNOWN
 
 
 class ReachabilityProbe:
@@ -96,13 +110,13 @@ class ReachabilityProbe:
             )
             self._proven.difference_update(revoked)
 
-    def check_connectable(
+    def probe_connection_if_unproven(
         self,
         key: DsnKey,
         conninfo: str,
         kwargs: dict[str, Any],
         deadline: float | None = None,
-    ) -> bool:
+    ) -> ConnectionProbeOutcome:
         with self._lock:
             if key in self._proven:
                 proven = True
@@ -117,7 +131,7 @@ class ReachabilityProbe:
         if proven:
             self._stats.record_probe_outcome("skipped_proven")
             _debug.logic("pool.probe.skipped_proven", db=_get_key_dbname(key))
-            return True
+            return ConnectionProbeOutcome.CONNECTED
         assert probe is not None
         _debug.logic(
             "pool.probe",
@@ -137,10 +151,10 @@ class ReachabilityProbe:
         conninfo: str,
         kwargs: dict[str, Any],
         deadline: float | None = None,
-    ) -> bool:
+    ) -> ConnectionProbeOutcome:
         if leader:
             try:
-                probe.connected = self.probe_connectable(conninfo, kwargs, deadline)
+                probe.outcome = self.probe_connection(conninfo, kwargs, deadline)
             except BaseException as e:
                 probe.exc = e
                 raise
@@ -152,9 +166,10 @@ class ReachabilityProbe:
                     "pool.probe.leader_done",
                     db=_get_key_dbname(key),
                     failed=probe.exc is not None,
-                    connected=probe.connected,
+                    connected=probe.outcome is ConnectionProbeOutcome.CONNECTED,
+                    outcome=probe.outcome.value,
                 )
-            return probe.connected
+            return probe.outcome
         else:
             wait_timeout = (
                 None if deadline is None else max(0.0, deadline - monotonic())
@@ -168,15 +183,15 @@ class ReachabilityProbe:
             )
             if done and probe.exc is not None:
                 raise copy.copy(probe.exc) from probe.exc
-            return probe.connected if done else True
+            return probe.outcome if done else ConnectionProbeOutcome.UNKNOWN
 
-    def probe_connectable(
+    def probe_connection(
         self, conninfo: str, kwargs: dict[str, Any], deadline: float | None = None
-    ) -> bool:
+    ) -> ConnectionProbeOutcome:
         probe_timeout = get_libpq_connect_timeout(deadline, PROBE_CONNECT_TIMEOUT)
         if not probe_timeout:
             _debug.logic("pool.probe.skipped_deadline", db=kwargs.get("dbname"))
-            return True
+            return ConnectionProbeOutcome.UNKNOWN
         self._stats.record_probe_started()
         probe_kwargs = {**kwargs, "autocommit": True}
         probe_kwargs["connect_timeout"] = probe_timeout
@@ -190,39 +205,9 @@ class ReachabilityProbe:
             )
             raise
         except psycopg.OperationalError as e:
-            translated = _resolve_connect_error(e)
-            if translated is not None:
-                self._stats.record_probe_outcome("permanent")
-                _debug.logic(
-                    "pool.probe.permanent",
-                    reason="message",
-                    error=type(translated).__name__,
-                )
-                raise translated from e
-            maintenance = self.ask_maintenance_db(conninfo, kwargs, deadline)
-            if maintenance == "absent":
-                self._stats.record_probe_outcome("permanent")
-                _debug.logic("pool.probe.permanent", reason="database_absent")
-                raise psycopg.errors.InvalidCatalogName(str(e)) from e
-            if _is_authentication_failure(e, maintenance):
-                self._stats.record_probe_outcome("permanent")
-                _debug.logic("pool.probe.permanent", reason="auth_phase")
-                raise psycopg.errors.InvalidAuthorizationSpecification(str(e)) from e
-            self._stats.record_probe_outcome("transient")
-            _debug.logic("pool.probe.transient", error=type(e).__name__)
-            _logger.debug(
-                "Pool pre-flight probe failed (treating as transient)",
-                exc_info=True,
-            )
-            return False
-        except Exception as e:
-            self._stats.record_probe_outcome("transient")
-            _debug.logic("pool.probe.transient", error=type(e).__name__)
-            _logger.debug(
-                "Pool pre-flight probe failed (treating as transient)",
-                exc_info=True,
-            )
-            return False
+            self._check_for_permanent_connect_error(e, conninfo, kwargs, deadline)
+            self._record_transient_connect_error(e)
+            return ConnectionProbeOutcome.TRANSIENT_FAILURE
         _debug.lifecycle(
             "pool.probe.ok",
             db=kwargs.get("dbname"),
@@ -230,11 +215,47 @@ class ReachabilityProbe:
         )
         with contextlib.suppress(Exception):
             conn.close()
-        return True
+        return ConnectionProbeOutcome.CONNECTED
 
-    def ask_maintenance_db(
+    def _check_for_permanent_connect_error(
+        self,
+        error: psycopg.OperationalError,
+        conninfo: str,
+        kwargs: dict[str, Any],
+        deadline: float | None,
+    ) -> None:
+        translated = _resolve_connect_error(error)
+        if translated is not None:
+            self._stats.record_probe_outcome("permanent")
+            _debug.logic(
+                "pool.probe.permanent",
+                reason="message",
+                error=type(translated).__name__,
+            )
+            raise translated from error
+        maintenance = self.probe_database_presence(conninfo, kwargs, deadline)
+        if maintenance is DatabaseProbeOutcome.ABSENT:
+            self._stats.record_probe_outcome("permanent")
+            _debug.logic("pool.probe.permanent", reason="database_absent")
+            raise psycopg.errors.InvalidCatalogName(str(error)) from error
+        if _is_authentication_failure(error, maintenance):
+            self._stats.record_probe_outcome("permanent")
+            _debug.logic("pool.probe.permanent", reason="auth_phase")
+            raise psycopg.errors.InvalidAuthorizationSpecification(
+                str(error)
+            ) from error
+
+    def _record_transient_connect_error(self, error: Exception) -> None:
+        self._stats.record_probe_outcome("transient")
+        _debug.logic("pool.probe.transient", error=type(error).__name__)
+        _logger.debug(
+            "Pool pre-flight probe failed (treating as transient)",
+            exc_info=error,
+        )
+
+    def probe_database_presence(
         self, conninfo: str, kwargs: dict[str, Any], deadline: float | None = None
-    ) -> str:
+    ) -> DatabaseProbeOutcome:
         maint = _expand_conninfo({"dsn": conninfo, **kwargs})
         db_name = maint.get("dbname")
         if not db_name or db_name == "postgres":
@@ -243,7 +264,7 @@ class ReachabilityProbe:
                 db=db_name,
                 reason="maintenance_db" if db_name else "no_db_name",
             )
-            return "unknown"
+            return DatabaseProbeOutcome.UNKNOWN
         maint.pop("options", None)
         maint["dbname"] = "postgres"
         maint["autocommit"] = True
@@ -252,7 +273,7 @@ class ReachabilityProbe:
             _debug.logic(
                 "pool.probe.absence_check_skipped", db=db_name, reason="deadline"
             )
-            return "unknown"
+            return DatabaseProbeOutcome.UNKNOWN
         maint["connect_timeout"] = probe_timeout
         try:
             with psycopg.connect("", **maint) as mc:
@@ -260,9 +281,13 @@ class ReachabilityProbe:
                     "SELECT 1 FROM pg_database WHERE datname = %s", (db_name,)
                 ).fetchone()
             _debug.logic("pool.probe.database_absent", db=db_name, absent=row is None)
-            return "absent" if row is None else "present"
+            return (
+                DatabaseProbeOutcome.ABSENT
+                if row is None
+                else DatabaseProbeOutcome.PRESENT
+            )
         except psycopg.OperationalError as e:
-            at_auth = _failed_at_password_stage(e)
+            at_auth = _is_password_stage_failure(e)
             _debug.logic(
                 "pool.probe.absence_check_unavailable",
                 db=db_name,
@@ -274,8 +299,12 @@ class ReachabilityProbe:
                 db_name,
                 exc_info=True,
             )
-            return "auth_failed" if at_auth else "unknown"
-        except Exception as e:
+            return (
+                DatabaseProbeOutcome.AUTH_FAILED
+                if at_auth
+                else DatabaseProbeOutcome.UNKNOWN
+            )
+        except psycopg.Error as e:
             _debug.logic(
                 "pool.probe.absence_check_unavailable",
                 db=db_name,
@@ -286,10 +315,10 @@ class ReachabilityProbe:
                 db_name,
                 exc_info=True,
             )
-            return "unknown"
+            return DatabaseProbeOutcome.UNKNOWN
 
 
-def _failed_at_password_stage(exc: psycopg.OperationalError) -> bool:
+def _is_password_stage_failure(exc: psycopg.OperationalError) -> bool:
     pgconn = getattr(exc, "pgconn", None)
     if pgconn is None:
         return False
@@ -299,13 +328,18 @@ def _failed_at_password_stage(exc: psycopg.OperationalError) -> bool:
         return False
 
 
-def _is_authentication_failure(exc: psycopg.OperationalError, maintenance: str) -> bool:
+def _is_authentication_failure(
+    exc: psycopg.OperationalError, maintenance: DatabaseProbeOutcome
+) -> bool:
     pgconn = getattr(exc, "pgconn", None)
     if pgconn is None:
         return False
     try:
         if pgconn.needs_password:
             return True
-        return bool(pgconn.used_password) and maintenance == "auth_failed"
+        return (
+            bool(pgconn.used_password)
+            and maintenance is DatabaseProbeOutcome.AUTH_FAILED
+        )
     except Exception:
         return False

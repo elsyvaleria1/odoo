@@ -349,7 +349,7 @@ library; a `TYPE_CHECKING` import is the one exception.
   to cost a warm pooled connection on top of the error.
 - **One borrow, one deadline**: `db_borrow_timeout` is taken at the top of
   `ConnectionPool.borrow` and every step that can block derives its own timeout
-  from it — the cold path's pre-flight probe (and its `ask_maintenance_db`
+  from it — the cold path's pre-flight probe (and its `probe_database_presence`
   fallback), the semaphore wait, `getconn`, and the direct maintenance connect.
   `get_libpq_connect_timeout` clamps each libpq connect and returns `0` to mean
   *skip this connect*, never a value to pass on: libpq reads `connect_timeout=0`
@@ -1058,16 +1058,27 @@ library; a `TYPE_CHECKING` import is the one exception.
   race that cannot fire here. A free-threaded build is what makes it wrong;
   the note beside the counter says so, and says the fix there need not be a
   lock.
-- **A probe that connected has answered its question.** `probe_connectable`
+- **A probe that connected has answered its question.** `probe_connection`
   spelled it `psycopg.connect(...).close()`, which put the teardown inside the
   `try` that classifies the outcome — so a DSN that opened a connection, which
   is the entire thing being asked, was filed as a *transient* probe failure
   whenever the close raised, and the pool then paid the full borrow budget
   behind it. Only the connect is guarded now; the close is in the `else`.
-  `check_connectable` also took the lock twice (`is_proven`, then the
+  `probe_connection_if_unproven` also took the lock twice (`is_proven`, then the
   in-flight registration), leaving a window where a key proven between them
   started a second probe — a full extra connect on the path whose whole
   purpose is to avoid one. One acquisition answers both.
+- **A skipped probe has no connectivity evidence.** `probe_connection` and
+  `probe_connection_if_unproven` return `ConnectionProbeOutcome`: `CONNECTED`,
+  `TRANSIENT_FAILURE` or `UNKNOWN`. An expired deadline and a follower whose
+  wait expires return `UNKNOWN`; neither proves the DSN reachable. The pool
+  refuses a transient failure when `fail_fast` is requested, continues normal
+  borrowing for an unknown result within the original deadline, and propagates
+  permanent errors. `probe_database_presence` returns `DatabaseProbeOutcome`
+  separately, including absent, present, authentication failure and unknown.
+  Unexpected setup and programming exceptions propagate; they do not become
+  transient connectivity failures or consume the borrower's retry budget. An
+  unavailable maintenance query is advisory only for database-driver errors.
 - **`acquire_attempt()` must not read through `closed`.** `CircuitBreaker._lock`
   is a plain `threading.Lock`, and `acquire_attempt` read `closed` from inside
   it, so a `closed` property that took the lock would deadlock every caller —
@@ -1127,7 +1138,7 @@ library; a `TYPE_CHECKING` import is the one exception.
   `_LOCALE_INDEPENDENT_AUTH_MARKERS` keys on `pg_hba.conf`, a filename no
   catalogue translates, and it classifies correctly in English, Spanish, French
   and German. The missing-database case does not depend on text at all — the
-  probe falls back to `ask_maintenance_db`, which asks `pg_database`. What remains
+  probe falls back to `probe_database_presence`, which asks `pg_database`. What remains
   is an **authentication** failure on a server with translations installed: it
   used to be unrecognised and cost the full `db_borrow_timeout` (measured,
   0.02 s against 30.00 s), and `options='-c lc_messages=C'` cannot help
@@ -1137,7 +1148,7 @@ library; a `TYPE_CHECKING` import is the one exception.
   (`e.pgconn`), and `needs_password` / `used_password` say whether the server
   reached the password stage. `needs_password` alone is conclusive. A refused
   port or a dead host never gets there; a *missing database* is refused
-  **after** the password, which is why `ask_maintenance_db` is consulted first
+  **after** the password, which is why `probe_database_presence` is consulted first
   — `absent` wins, and only a maintenance connect that is itself turned away
   at the password stage (`auth_failed`) makes `used_password` an
   authentication failure. Measured with every English marker disabled: a

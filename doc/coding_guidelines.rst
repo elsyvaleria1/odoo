@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.97
+:Version: 7.98
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -1557,9 +1557,11 @@ Template/variant, order/line, move/move line implement one operation under one
 verb; the shared caller is where the split shows
 (``_set_qty_available`` / ``_apply_qty_available`` → ``_update_qty_available``).
 
-**Two verbs for one operation are a duplicate only when neither is a noun the
-scope already owns** ``[review]``. ``check_connectable`` (decision) and
-``probe_connectable`` (act) both stand where *probe* is a noun of the file.
+**A domain noun is not an alternative verb, and distinct effects are not a
+duplicate** ``[review]``. Compare contracts (§2.4.21): in ``db.probe``,
+``probe_connection_if_unproven`` coalesces callers and uses cached evidence;
+``probe_connection`` opens a connection. The former ``check_connectable`` ran
+probes and returned their outcomes; its spelling did not make it a validator.
 
 **An exported wire name does not license the Python verb** ``[review]``. Rename
 the Python half, keep the exported key, and name the half left in the commit
@@ -2943,6 +2945,12 @@ the document, and a ``can_`` method that returned the endpoint's dict.
   unknown is an ``Enum``, never ``True``/``False``/``None``; a truthy non-bool
   (a recordset, a string, a node) is returned as itself under a ``_get_`` name,
   or wrapped in ``bool()`` under a predicate name (§2.4.8).
+* **Skipped work is not success** ``[review]``. A probe whose deadline expires
+  before it connects or before its leader answers returns an unknown outcome.
+  The caller chooses whether to retry or proceed; it never infers success from
+  the truthiness of the result. Carry that policy through every caller and fake.
+  A recovery branch catches the failures it can recover from; unexpected setup
+  and programming errors propagate instead of becoming negative evidence.
 * **Several outcomes get a type, not a union** ``[review]``: a
   ``NamedTuple`` or ``@dataclass(frozen=True, slots=True)`` for fields that
   travel together, a ``TypedDict`` for a wire payload, an ``Enum`` for a
@@ -6398,6 +6406,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.98
+     - 2026-10-13
+     - §2.4.3 compares the cached/coalesced connection probe with its network
+       operation by effect. §2.4.23 distinguishes skipped or timed-out work from
+       success, carries the explicit outcome through callers and fakes, and
+       keeps unexpected programming failures out of the retry path.
    * - 7.97
      - 2026-10-13
      - §2.5: pristine vendor files remain byte-identical; locally built and
