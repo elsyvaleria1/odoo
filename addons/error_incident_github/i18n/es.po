@@ -18,6 +18,7 @@ msgstr ""
 #. module: error_incident_github
 #: model:ir.model.fields,field_description:error_incident_github.field_error_incident__display_name
 #: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:error_incident_github.field_runner_job__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
 
@@ -34,6 +35,7 @@ msgstr "Pull request de GitHub"
 #. module: error_incident_github
 #: model:ir.model.fields,field_description:error_incident_github.field_error_incident__id
 #: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:error_incident_github.field_runner_job__id
 msgid "ID"
 msgstr "ID"
 
@@ -46,6 +48,13 @@ msgstr "Incidente"
 #: model:ir.model.fields,field_description:error_incident_github.field_integration_github_pull__incident_notice
 msgid "Incident Notice"
 msgstr "Aviso al incidente"
+
+#. module: error_incident_github
+#: model:res.groups,name:error_incident_github.privilege_follow_pulls
+msgid ""
+"Privilege: an incident hears how the runs working for it end and the pull "
+"requests they open"
+msgstr ""
 
 #. module: error_incident_github
 #: model:ir.model.fields,field_description:error_incident_github.field_error_incident__pull_ids
@@ -70,6 +79,21 @@ msgstr "El pull request %(pull)s se cerró sin fusionarse."
 #: code:addons/error_incident_github/models/integration_github_pull.py:0
 msgid "Pull request %(pull)s was merged."
 msgstr "El pull request %(pull)s se fusionó."
+
+#. module: error_incident_github
+#: model:ir.model,name:error_incident_github.model_runner_job
+msgid "Runner Job"
+msgstr "Trabajo de runner"
+
+#. module: error_incident_github
+#: model:res.groups,comment:error_incident_github.privilege_follow_pulls
+msgid ""
+"Taken whenever a run working for an incident ends or its pull request is "
+"linked, by whoever ends it (the runner's service user, the lease reaper, an "
+"administrator): the incident's chatter hears how a run working for it ended,"
+" and the pull request of the branch the run pushed learns its incident and "
+"is followed there. Every write is logged."
+msgstr ""
 
 #. module: error_incident_github
 #. odoo-python

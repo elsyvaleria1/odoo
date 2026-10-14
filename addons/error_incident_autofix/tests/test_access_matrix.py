@@ -34,14 +34,14 @@ class TestAutofixAccessMatrix(AccessMatrixCase):
             "error.occurrence",
             "occurrence",
             note="a fix run is told of it through "
-            "error_incident_autofix.privilege_report_agent_run, which no user holds",
+            "error_incident_autofix.privilege_report_runner_job, which no user holds",
             admin_a="rwcd",
         ),
         Cell(
-            "agent.run",
+            "runner.job",
             "run",
             note="a diagnosis hands a defect to a fix run through "
-            "error_incident_autofix.privilege_report_agent_run, which no user holds",
+            "error_incident_autofix.privilege_report_runner_job, which no user holds",
             admin_a="rwcd",
         ),
         Cell(
@@ -65,11 +65,11 @@ class TestAutofixAccessMatrix(AccessMatrixCase):
         return {
             "incident": incident,
             "occurrence": incident.occurrence_ids[:1],
-            "run": cls.env["agent.run"].create(
+            "run": cls.env["runner.job"].create(
                 {
                     "name": "matrix",
                     "kind": "error_incident.diagnose",
-                    "capability_id": cls.env.ref("agent_runner.capability_sandbox").id,
+                    "capability_id": cls.env.ref("runner.capability_sandbox").id,
                     "res_model": "error.incident",
                     "res_id": incident.id,
                 }

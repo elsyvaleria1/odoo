@@ -1,0 +1,60 @@
+# A sandbox runner: claims runner jobs from Odoo and runs each agent in a clone
+# that dies with the run. It holds nothing between runs: the repository token
+# and the model key come with each lease.
+#
+#   install -D -m 0644 odoo-runner-sandbox.service /etc/systemd/system/
+#   install -D -m 0600 sandbox.env.example /etc/odoo-runner/sandbox.env   # then edit
+#   systemctl enable --now odoo-runner-sandbox.service
+[Unit]
+Description=Runner (sandbox): runs agents for Odoo in throwaway clones
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=exec
+EnvironmentFile=/etc/odoo-runner/sandbox.env
+ExecStart=/usr/bin/python3 /opt/odoo-runner/runner.py --url ${ODOO_URL} --role sandbox
+Restart=on-failure
+RestartSec=10
+# SIGTERM to the runner alone: it stops its agent within a second and hands
+# the run back to Odoo for another runner
+KillMode=mixed
+TimeoutStopSec=60
+
+# A user of its own, created for the service; its state -- the runner's own
+# model login, when the company hands no key -- lives in /var/lib/odoo-runner.
+DynamicUser=yes
+StateDirectory=odoo-runner
+Environment=HOME=/var/lib/odoo-runner
+UMask=0077
+
+# The agent edits files in a clone under the private /tmp and reaches the
+# network; nothing else of the machine is its to read or write.
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateDevices=yes
+ProtectProc=invisible
+ProcSubset=pid
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+NoNewPrivileges=yes
+CapabilityBoundingSet=
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
+SystemCallErrorNumber=EPERM
+MemoryMax=4G
+TasksMax=512
+
+[Install]
+WantedBy=multi-user.target

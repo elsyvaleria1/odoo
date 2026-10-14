@@ -1,0 +1,130 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* runner_github
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-14 00:21+0000\n"
+"PO-Revision-Date: 2026-10-14 00:21+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_branch
+msgid "Branch"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields.selection,name:runner_github.selection__runner_job__kind__github_change
+msgid "Change a Repository"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__display_name
+#: model:ir.model.fields,field_description:runner_github.field_runner_machine__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: runner_github
+#: model_terms:ir.ui.view,arch_db:runner_github.view_runner_job_form_github
+msgid "GitHub"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_integration_github_pull
+msgid "GitHub Pull Request"
+msgstr ""
+
+#. module: runner_github
+#: model:res.groups,comment:runner_github.privilege_link_runs
+msgid ""
+"Held by a runner's service user while it serves a runner's call: the lease "
+"finds the company's GitHub App to mint the job's token, and the completion "
+"links the pull request of the branch the run pushed. The App's secrets stay "
+"behind the credential's own use."
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__id
+#: model:ir.model.fields,field_description:runner_github.field_runner_machine__id
+msgid "ID"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__runner_job_id
+msgid "Job"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__kind
+msgid "Kind"
+msgstr ""
+
+#. module: runner_github
+#. odoo-python
+#: code:addons/runner_github/models/runner_job.py:0
+msgid "No GitHub App is configured: the job gets no repository token."
+msgstr ""
+
+#. module: runner_github
+#: model:res.groups,name:runner_github.privilege_link_runs
+msgid ""
+"Privilege: a runner's call hands a job its repository token and links the "
+"pull request of the branch it pushed"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_pull_id
+msgid "Pull Request"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_repository
+msgid "Repository"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_runner_job
+msgid "Runner Job"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_runner_machine
+msgid "Runner Machine"
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__github_branch
+msgid "The branch the job pushed, as it reported it on completion."
+msgstr ""
+
+#. module: runner_github
+#. odoo-python
+#: code:addons/runner_github/models/runner_job.py:0
+msgid "The company's GitHub App is not installed on %(repository)s."
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_integration_github_pull__runner_job_id
+msgid "The job that pushed this branch."
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr ""
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__github_repository
+msgid "owner/name: the job is handed a token for this repository alone."
+msgstr ""

@@ -49,21 +49,6 @@ msgid "Agent Cost"
 msgstr "Costo de los agentes"
 
 #. module: error_incident_autofix
-#: model:ir.model,name:error_incident_autofix.model_agent_run
-msgid "Agent Run"
-msgstr "Ejecución de agente"
-
-#. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_run_ids
-msgid "Agent Runs"
-msgstr "Ejecuciones de agentes"
-
-#. module: error_incident_autofix
-#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
-msgid "Agent runs queued per day at most, diagnoses and fixes together."
-msgstr "Ejecuciones de agente encoladas por día como máximo, diagnósticos y correcciones juntos."
-
-#. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
 msgid "Agents"
 msgstr "Agentes"
@@ -74,14 +59,18 @@ msgstr "Agentes"
 msgid ""
 "An agent's fix of %(incident)s passes its checks: %(pull)s, commit "
 "%(commit)s. %(analysis)s"
-msgstr "La corrección de un agente para %(incident)s pasa sus verificaciones: %(pull)s, commit %(commit)s. %(analysis)s"
+msgstr ""
+"La corrección de un agente para %(incident)s pasa sus verificaciones: "
+"%(pull)s, commit %(commit)s. %(analysis)s"
 
 #. module: error_incident_autofix
 #: model:approval.category,description:error_incident_autofix.approval_category_autofix
 msgid ""
 "An agent's fix, its checks passing, goes to the base branch or to production"
 " only once a person approves the very commit."
-msgstr "La corrección de un agente, con sus verificaciones aprobadas, llega a la rama base o a producción solo cuando una persona aprueba ese mismo commit."
+msgstr ""
+"La corrección de un agente, con sus verificaciones aprobadas, llega a la "
+"rama base o a producción solo cuando una persona aprueba ese mismo commit."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__min_occurrences
@@ -200,12 +189,6 @@ msgid "Autofix Review"
 msgstr "Revisión de autocorrección"
 
 #. module: error_incident_autofix
-#. odoo-python
-#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
-msgid "Autofix: %s"
-msgstr "Autocorrección: %s"
-
-#. module: error_incident_autofix
 #: model:ir.actions.server,name:error_incident_autofix.ir_cron_autofix_check_production_ir_actions_server
 msgid "Autofix: Ask Production Which Fixes It Runs"
 msgstr "Autocorrección: preguntar a producción qué correcciones ejecuta"
@@ -241,7 +224,9 @@ msgstr "Cancelada: %s."
 msgid ""
 "Category of approval for filtering and grouping purposes (e.g., 'purchase', "
 "'expense', 'vacation'). Used to organize and filter approval requests."
-msgstr "Categoría de aprobación para filtrar y agrupar (p. ej., 'compra', 'gasto', 'vacaciones'). Sirve para organizar y filtrar las solicitudes de aprobación."
+msgstr ""
+"Categoría de aprobación para filtrar y agrupar (p. ej., 'compra', 'gasto', "
+"'vacaciones'). Sirve para organizar y filtrar las solicitudes de aprobación."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__checkout
@@ -296,7 +281,13 @@ msgid ""
 "        • approved: All required approvals obtained\n"
 "        • refused: Approval was refused (terminal)\n"
 "        • cancelled: Approval was retracted or expired (terminal)"
-msgstr "Estado actual de la aprobación:\n        • nueva: aprobación creada pero no enviada\n        • pendiente: esperando a los aprobadores\n        • aprobada: se obtuvieron todas las aprobaciones requeridas\n        • rechazada: la aprobación fue rechazada (final)\n        • cancelada: la aprobación se retiró o venció (final)"
+msgstr ""
+"Estado actual de la aprobación:\n"
+"        • nueva: aprobación creada pero no enviada\n"
+"        • pendiente: esperando a los aprobadores\n"
+"        • aprobada: se obtuvieron todas las aprobaciones requeridas\n"
+"        • rechazada: la aprobación fue rechazada (final)\n"
+"        • cancelada: la aprobación se retiró o venció (final)"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
@@ -318,14 +309,19 @@ msgstr "Fecha y hora en que se otorgó la aprobación final"
 msgid ""
 "Days production is asked, every ten minutes, whether it runs a merged fix; "
 "after that the incident is marked Not Deployed for a person."
-msgstr "Días durante los que se pregunta a producción, cada diez minutos, si ejecuta una corrección fusionada; después, el incidente se marca como No desplegado para una persona."
+msgstr ""
+"Días durante los que se pregunta a producción, cada diez minutos, si ejecuta"
+" una corrección fusionada; después, el incidente se marca como No desplegado"
+" para una persona."
 
 #. module: error_incident_autofix
 #: model:res.groups,comment:error_incident_autofix.group_autofix_approver
 msgid ""
 "Decides whether an agent's fix is merged, or applied to production before it"
 " is merged. Reads the incident and its pull request to decide."
-msgstr "Decide si la corrección de un agente se fusiona o se aplica a producción antes de fusionarse. Lee el incidente y su pull request para decidir."
+msgstr ""
+"Decide si la corrección de un agente se fusiona o se aplica a producción "
+"antes de fusionarse. Lee el incidente y su pull request para decidir."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__approval_pending_user_ids
@@ -348,7 +344,7 @@ msgid "Diagnose Model"
 msgstr "Modelo de diagnóstico"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_diagnose
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_diagnose
 msgid "Diagnose an Incident"
 msgstr "Diagnosticar un incidente"
 
@@ -359,8 +355,11 @@ msgstr "Diagnosticando"
 
 #. module: error_incident_autofix
 #: model:integration.ml.purpose,name:error_incident_autofix.purpose_error_incident_autofix
-msgid "Diagnosing and fixing error incidents (tracebacks may hold customer data)"
-msgstr "Diagnóstico y corrección de incidentes de error (las trazas pueden contener datos de clientes)"
+msgid ""
+"Diagnosing and fixing error incidents (tracebacks may hold customer data)"
+msgstr ""
+"Diagnóstico y corrección de incidentes de error (las trazas pueden contener "
+"datos de clientes)"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__diagnose_timeout
@@ -368,19 +367,19 @@ msgid "Diagnosis Timeout (s)"
 msgstr "Tiempo límite del diagnóstico (s)"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__display_name
 msgid "Display Name"
 msgstr "Nombre para mostrar"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_state
-msgid "Driven only by what the agent runs report."
+msgid "Driven only by what the runner jobs report."
 msgstr "Lo mueve solo lo que informan las ejecuciones de agente."
 
 #. module: error_incident_autofix
@@ -444,7 +443,7 @@ msgid "Fix Timeout (s)"
 msgstr "Tiempo límite de la corrección (s)"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_fix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_fix
 msgid "Fix an Incident"
 msgstr "Corregir un incidente"
 
@@ -453,7 +452,9 @@ msgstr "Corregir un incidente"
 msgid ""
 "Fix attempts per incident before it waits for a person; a regression starts "
 "the count again."
-msgstr "Intentos de corrección por incidente antes de que espere a una persona; una regresión reinicia la cuenta."
+msgstr ""
+"Intentos de corrección por incidente antes de que espere a una persona; una "
+"regresión reinicia la cuenta."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__fixing
@@ -491,7 +492,7 @@ msgid "Has Message"
 msgstr "Tiene un mensaje"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_hotfix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_hotfix
 msgid "Hotfix Production"
 msgstr "Aplicar en caliente en producción"
 
@@ -506,13 +507,13 @@ msgid "How Much"
 msgstr "Cuánto"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__id
 msgid "ID"
 msgstr "ID"
 
@@ -537,7 +538,9 @@ msgstr "En producción"
 msgid ""
 "In shadow mode, each verdict and proposed change waits here to be compared "
 "with what a person would have done."
-msgstr "En modo sombra, cada veredicto y cambio propuesto espera aquí para compararse con lo que habría hecho una persona."
+msgstr ""
+"En modo sombra, cada veredicto y cambio propuesto espera aquí para "
+"compararse con lo que habría hecho una persona."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_is_follower
@@ -545,7 +548,7 @@ msgid "Is Follower"
 msgstr "Es un seguidor"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__kind
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__kind
 msgid "Kind"
 msgstr "Clase"
 
@@ -568,7 +571,9 @@ msgstr "Última actualización el"
 msgid ""
 "Link to the approval request for this document. Automatically created when "
 "approval is requested."
-msgstr "Enlace a la solicitud de aprobación de este documento. Se crea automáticamente al solicitar la aprobación."
+msgstr ""
+"Enlace a la solicitud de aprobación de este documento. Se crea "
+"automáticamente al solicitar la aprobación."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident_autofix_policy__mode__live
@@ -677,14 +682,19 @@ msgid ""
 "Off: nothing is dispatched. Shadow: incidents are diagnosed and fixes "
 "proposed for review, nothing is pushed and users see nothing. Live: the "
 "runner pushes the fix and opens its pull request."
-msgstr "Apagado: no se despacha nada. Sombra: los incidentes se diagnostican y las correcciones se proponen para revisión; no se sube nada y los usuarios no ven nada. En vivo: el runner sube la corrección y abre su pull request."
+msgstr ""
+"Apagado: no se despacha nada. Sombra: los incidentes se diagnostican y las "
+"correcciones se proponen para revisión; no se sube nada y los usuarios no "
+"ven nada. En vivo: el runner sube la corrección y abre su pull request."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__excluded_exception_types
 msgid ""
 "One exception per line, as a traceback prints it: granting access is a "
 "person's decision."
-msgstr "Una excepción por línea, como la imprime un traceback: otorgar acceso es decisión de una persona."
+msgstr ""
+"Una excepción por línea, como la imprime un traceback: otorgar acceso es "
+"decisión de una persona."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__excluded_modules
@@ -695,14 +705,18 @@ msgstr "Un módulo por línea, nunca entregado a los agentes."
 #. odoo-python
 #: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
 msgid "Only a fix whose pull request passes its checks is merged or hotfixed."
-msgstr "Solo se fusiona o se aplica en caliente una corrección cuyo pull request pasa sus verificaciones."
+msgstr ""
+"Solo se fusiona o se aplica en caliente una corrección cuyo pull request "
+"pasa sus verificaciones."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__require_internal_user
 msgid ""
 "Only an incident an internal user hit; a scheduled action or a job failing "
 "alone waits for a person."
-msgstr "Solo un incidente que sufrió un usuario interno; una acción planificada o un trabajo que falla por sí solo espera a una persona."
+msgstr ""
+"Solo un incidente que sufrió un usuario interno; una acción planificada o un"
+" trabajo que falla por sí solo espera a una persona."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__pass_without_checks
@@ -717,7 +731,8 @@ msgstr "Aprobadores pendientes"
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_progress
 msgid "Percentage of approvals completed (approved / total approvers)"
-msgstr "Porcentaje de aprobaciones completadas (aprobadas / total de aprobadores)"
+msgstr ""
+"Porcentaje de aprobaciones completadas (aprobadas / total de aprobadores)"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__phase
@@ -730,6 +745,23 @@ msgid "Policy"
 msgstr "Política"
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__website_message_ids
+msgid "Portal Messages"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__website_message_ids
+msgid "Portal communication history for this record."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:res.groups,name:error_incident_autofix.privilege_report_runner_job
+msgid "Privilege: a runner job's end moves the incident it works for"
+msgstr ""
+"Privilegio: el fin de un trabajo de runner mueve el incidente para el que "
+"trabaja"
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
 msgid "Production Wait"
 msgstr "Espera de producción"
@@ -740,12 +772,16 @@ msgstr "Espera de producción"
 msgid ""
 "Production has not run this fix in %(days)s days; it is no longer asked "
 "about. Deploy it, or close the incident."
-msgstr "Producción no ha ejecutado esta corrección en %(days)s días; ya no se le pregunta. Despliéguela o cierre el incidente."
+msgstr ""
+"Producción no ha ejecutado esta corrección en %(days)s días; ya no se le "
+"pregunta. Despliéguela o cierre el incidente."
 
 #. module: error_incident_autofix
 #: model:ir.model.constraint,message:error_incident_autofix.constraint_error_incident_autofix_policy_production_wait_positive
 msgid "Production is asked about a merged fix for at least a day."
-msgstr "A producción se le pregunta por una corrección fusionada durante al menos un día."
+msgstr ""
+"A producción se le pregunta por una corrección fusionada durante al menos un"
+" día."
 
 #. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_prompt_form
@@ -769,13 +805,18 @@ msgid "Pull Request Closed"
 msgstr "Pull request cerrado"
 
 #. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__rating_ids
+msgid "Ratings"
+msgstr "Calificaciones"
+
+#. module: error_incident_autofix
 #. odoo-python
 #: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
 msgid "Refused: %s."
 msgstr "Rechazada: %s."
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_revision
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_revision
 msgid "Report the Production Revision"
 msgstr "Informar la revisión de producción"
 
@@ -801,6 +842,23 @@ msgid "Run Failed"
 msgstr "Ejecución fallida"
 
 #. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_runner_job
+msgid "Runner Job"
+msgstr "Trabajo de runner"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_run_ids
+msgid "Runner Jobs"
+msgstr "Ejecuciones de agentes"
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
+msgid "Runner jobs queued per day at most, diagnoses and fixes together."
+msgstr ""
+"Ejecuciones de agente encoladas por día como máximo, diagnósticos y "
+"correcciones juntos."
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_has_sms_error
 msgid "SMS Delivery error"
 msgstr "Error de envío del SMS"
@@ -818,7 +876,18 @@ msgstr "Desde la última regresión."
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_fix_merged
 msgid "Since when production is asked whether it runs the merged fix."
-msgstr "Desde cuándo se pregunta a producción si ejecuta la corrección fusionada."
+msgstr ""
+"Desde cuándo se pregunta a producción si ejecuta la corrección fusionada."
+
+#. module: error_incident_autofix
+#: model:res.groups,comment:error_incident_autofix.privilege_report_runner_job
+msgid ""
+"Taken whenever a run working for an incident ends, by whoever ends it (the "
+"runner's service user, the lease reaper, an administrator): a diagnosis or a"
+" fix that ends records its verdict on the incident, hands a real defect to a"
+" fix run, and a hotfix or a production revision resolves the incidents it "
+"ships. Every write is logged."
+msgstr ""
 
 #. module: error_incident_autofix
 #: model:ir.model.fields.selection,name:error_incident_autofix.selection__error_incident__fix_state__testing
@@ -846,7 +915,10 @@ msgstr "La solicitud de aprobación fue rechazada: %s."
 msgid ""
 "The approvers asking for approval would route this document to now, in the "
 "order they decide. Nothing is written to find them."
-msgstr "Los aprobadores a los que se enviaría ahora este documento al solicitar la aprobación, en el orden en que deciden. No se escribe nada para encontrarlos."
+msgstr ""
+"Los aprobadores a los que se enviaría ahora este documento al solicitar la "
+"aprobación, en el orden en que deciden. No se escribe nada para "
+"encontrarlos."
 
 #. module: error_incident_autofix
 #. odoo-python
@@ -857,14 +929,17 @@ msgstr "La autocorrección está apagada."
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__base_branch
 msgid "The branch a fix starts from and its pull request targets."
-msgstr "La rama de la que parte una corrección y a la que apunta su pull request."
+msgstr ""
+"La rama de la que parte una corrección y a la que apunta su pull request."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_commit
 msgid ""
 "The commit production must contain for the fix to be running: the merge, or "
 "the fix branch's head for a hotfix."
-msgstr "El commit que producción debe contener para que la corrección esté en ejecución: la fusión, o la cabeza de la rama de la corrección en un hotfix."
+msgstr ""
+"El commit que producción debe contener para que la corrección esté en "
+"ejecución: la fusión, o la cabeza de la rama de la corrección en un hotfix."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_analysis
@@ -876,7 +951,9 @@ msgstr "La causa raíz del diagnóstico y luego la nota de la corrección."
 #: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
 msgid ""
 "The fix was merged as %(commit)s; it is resolved once production runs it."
-msgstr "La corrección se fusionó como %(commit)s; se resuelve cuando producción la ejecute."
+msgstr ""
+"La corrección se fusionó como %(commit)s; se resuelve cuando producción la "
+"ejecute."
 
 #. module: error_incident_autofix
 #. odoo-python
@@ -889,7 +966,9 @@ msgstr "El hotfix no se aplicó, o se revirtió: %(error)s"
 msgid ""
 "The name of the git checkout a module lives in on the server: odoo, "
 "agromarin, l10n."
-msgstr "El nombre del checkout de git donde vive un módulo en el servidor: odoo, agromarin, l10n."
+msgstr ""
+"El nombre del checkout de git donde vive un módulo en el servidor: odoo, "
+"agromarin, l10n."
 
 #. module: error_incident_autofix
 #. odoo-python
@@ -909,7 +988,11 @@ msgid ""
 "This repository runs no CI: a fix's pull request that no check runs on "
 "counts as passing, so it can be merged or hotfixed once a person approves "
 "it. Off, such a fix waits in Testing for its checks."
-msgstr "Este repositorio no ejecuta CI: el pull request de una corrección sobre el que no corre ninguna verificación cuenta como aprobado, así que puede fusionarse o aplicarse como hotfix una vez que una persona lo apruebe. Desactivado, esa corrección espera en Prueba a sus verificaciones."
+msgstr ""
+"Este repositorio no ejecuta CI: el pull request de una corrección sobre el "
+"que no corre ninguna verificación cuenta como aprobado, así que puede "
+"fusionarse o aplicarse como hotfix una vez que una persona lo apruebe. "
+"Desactivado, esa corrección espera en Prueba a sus verificaciones."
 
 #. module: error_incident_autofix
 #. odoo-python
@@ -938,11 +1021,12 @@ msgid "Version"
 msgstr "Versión"
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,help:error_incident_autofix.field_agent_run__kind
+#: model:ir.model.fields,help:error_incident_autofix.field_runner_job__kind
 msgid ""
 "What the runner is asked to do; the modules that hand out work add their "
 "own."
-msgstr "Lo que se pide al runner; los módulos que entregan trabajo añaden los suyos."
+msgstr ""
+"Lo que se pide al runner; los módulos que entregan trabajo añaden los suyos."
 
 #. module: error_incident_autofix
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_policy_form
@@ -952,7 +1036,8 @@ msgstr "Cuándo"
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__can_request_approval
 msgid "Whether approval can be requested (all required fields filled)"
-msgstr "Si se puede solicitar la aprobación (todos los campos requeridos completos)"
+msgstr ""
+"Si se puede solicitar la aprobación (todos los campos requeridos completos)"
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_required
@@ -967,12 +1052,15 @@ msgstr "Quién aprobará"
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__approval_pending_user_ids
 msgid "Who is deciding this document's approval request right now."
-msgstr "Quién está decidiendo ahora la solicitud de aprobación de este documento."
+msgstr ""
+"Quién está decidiendo ahora la solicitud de aprobación de este documento."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__company_id
 msgid "Whose machine-learning budget the runs count against."
-msgstr "A cargo de qué presupuesto de aprendizaje automático cuentan las ejecuciones."
+msgstr ""
+"A cargo de qué presupuesto de aprendizaje automático cuentan las "
+"ejecuciones."
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_repository__github_repository
@@ -1002,3 +1090,6 @@ msgstr "el pull request avanzó más allá del commit por el que preguntaba"
 #: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
 msgid "the pull request was merged or closed on GitHub"
 msgstr "el pull request se fusionó o se cerró en GitHub"
+
+#~ msgid "Autofix: %s"
+#~ msgstr "Autocorrección: %s"

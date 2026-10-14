@@ -57,7 +57,7 @@ class ErrorIncident(models.Model):
         default="none",
         required=True,
         tracking=True,
-        help="Driven only by what the agent runs report.",
+        help="Driven only by what the runner jobs report.",
     )
     fix_analysis = fields.Text(
         string="Analysis",
@@ -78,9 +78,9 @@ class ErrorIncident(models.Model):
         help="Since the last regression.",
     )
     fix_run_ids = fields.One2many(
-        comodel_name="agent.run",
+        comodel_name="runner.job",
         inverse_name="res_id",
-        string="Agent Runs",
+        string="Runner Jobs",
         readonly=True,
         domain=[("res_model", "=", "error.incident")],
     )
@@ -257,13 +257,13 @@ class ErrorIncident(models.Model):
         payload: dict[str, Any],
     ) -> models.BaseModel:
         self.check_singleton()
-        run = self.env["agent.run"].create(
+        run = self.env["runner.job"].create(
             {
                 "name": f"{'Diagnose' if kind == DIAGNOSE else 'Fix'}: {self.name}"[
                     :200
                 ],
                 "kind": kind,
-                "capability_id": self.env.ref("agent_runner.capability_sandbox").id,
+                "capability_id": self.env.ref("runner.capability_sandbox").id,
                 "company_id": policy.company_id.id,
                 "res_model": self._name,
                 "res_id": self.id,
@@ -288,7 +288,7 @@ class ErrorIncident(models.Model):
                 "pull_request": run.github_pull_id.url,
             }
             for run in self.fix_run_ids
-            if run.kind == FIX and run.run_state == "succeeded"
+            if run.kind == FIX and run.job_state == "succeeded"
         ]
         return {
             "id": self.id,
@@ -310,16 +310,16 @@ class ErrorIncident(models.Model):
             "previous_fixes": previous,
         }
 
-    def _agent_run_ended(self, run: models.BaseModel) -> None:
-        if hasattr(super(), "_agent_run_ended"):
-            super()._agent_run_ended(run)
+    def _runner_job_ended(self, run: models.BaseModel) -> None:
+        if hasattr(super(), "_runner_job_ended"):
+            super()._runner_job_ended(run)
         if run.kind not in AUTOFIX_KINDS:
             self._autofix_delivery_ended(run)
             return
         if not self._autofix_awaits(run):
             _debug.logic("autofix.stale_run", incident=self.id, run=run.id)
             return
-        if run.run_state != "succeeded":
+        if run.job_state != "succeeded":
             self.write({"fix_state": "failed"})
             return
         result = run.result or {}

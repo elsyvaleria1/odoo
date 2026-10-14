@@ -63,7 +63,7 @@ class ErrorIncidentAutofixPolicy(models.Model):
     )
     daily_run_cap = fields.Integer(
         default=10,
-        help="Agent runs queued per day at most, diagnoses and fixes together.",
+        help="Runner jobs queued per day at most, diagnoses and fixes together.",
     )
     max_attempts = fields.Integer(
         default=3,
@@ -114,7 +114,7 @@ class ErrorIncidentAutofixPolicy(models.Model):
 
     def _runs_today(self) -> int:
         midnight = datetime.combine(fields.Date.context_today(self), time.min)
-        return self.env["agent.run"].search_count(
+        return self.env["runner.job"].search_count(
             [
                 ("kind", "in", AUTOFIX_KINDS),
                 ("company_id", "=", self.company_id.id),

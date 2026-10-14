@@ -5,11 +5,11 @@ from odoo import fields
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
-from odoo.addons.agent_runner.tests.common import RunnerFixtures
 from odoo.addons.error_incident.models.error_incident import capture_payload
 from odoo.addons.error_incident_autofix.models import (
     error_incident_delivery as delivery,
 )
+from odoo.addons.runner.tests.common import RunnerFixtures
 
 DIFF = "--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-broken\n+fixed\n"
 REPOSITORY = "Agro-Marin/odoo"
@@ -331,7 +331,7 @@ class TestDelivery(RunnerFixtures, TransactionCase):
         self.assertEqual(incident.fix_state, "not_deployed")
         self.assertIn("no longer asked", incident.message_ids[0].body)
         self.assertFalse(
-            self.env["agent.run"].search([("kind", "=", "error_incident.revision")])
+            self.env["runner.job"].search([("kind", "=", "error_incident.revision")])
         )
 
     def test_an_approval_of_a_head_that_moved_is_asked_again(self):

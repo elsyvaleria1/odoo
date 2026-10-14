@@ -738,6 +738,89 @@ msgid " until %s"
 msgstr ""
 
 #. module: base
+#: model:ir.module.module,description:base.module_runner_github
+msgid ""
+"A job that names a GitHub repository is handed, with its lease, an "
+"installation token of the company's GitHub App limited to that repository "
+"and to the permissions its kind needs, which expires within the hour. When "
+"it completes it reports the branch it pushed, and the pull request of that "
+"branch is linked to it -- whichever GitHub or the runner reports first. The "
+"modules that hand out work react to the link."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_ai_project
+msgid ""
+"Adds task analysis and code-generation actions, codebase context selection, "
+"workflow states and GitHub pull-request synchronization. Code generation is "
+"a runner job on an isolated runner: it clones the project's repository, "
+"writes the task's change on a branch of its own, pushes it and opens a pull "
+"request, with a GitHub App token for that repository alone and the company's"
+" model key only where its data policy allows. Requires a runner, the "
+"company's GitHub App and AI service access; generated changes require review"
+" and deployment is not automated by the workflow state labels."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_error_incident_autofix
+msgid ""
+"Diagnose an incident and propose its fix through runner jobs, in shadow or "
+"live"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,summary:base.module_runner_github
+msgid ""
+"Hand a runner job a token for its repository alone, and follow the pull "
+"request of the branch it pushed"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_error_incident_github
+msgid ""
+"Links a pull request to the runner job that pushed its branch and to the "
+"incident that run works for, by the branch -- never by matching error "
+"signatures. The incident's chatter hears when the pull request opens, its "
+"checks pass or fail, and it is merged or closed."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_runner
+msgid ""
+"Queues jobs and leases each to exactly one runner machine with the "
+"capability it needs. A runner authenticates with its own token, claims a "
+"job, keeps its lease alive, reports events and finishes it; an expired lease"
+" is handed out again within a bounded number of attempts. Reported spend "
+"counts against the company's machine-learning budget, and a company over "
+"budget is handed no work."
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_runner
+msgid "Runners"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,shortdesc:base.module_runner_github
+msgid "Runners on GitHub"
+msgstr ""
+
+#. module: base
+#: model:ir.module.module,description:base.module_error_incident_autofix
+msgid ""
+"When an incident meets the policy -- a server error hit by an internal user,"
+" often enough, in a module whose repository is mapped, under the daily cap "
+"and the company's machine-learning budget -- queues a diagnosis job for a "
+"runner. A real defect is handed to a fix run, which works in a clone of the "
+"module's repository on a branch named after the incident. In shadow mode the"
+" fix stays a proposal -- its diff, analysis and cost reviewed in Odoo, "
+"nothing pushed; in live mode the runner pushes the branch and opens the pull"
+" request, which error_incident_github follows. A regression is diagnosed "
+"again with the history of the fix that did not hold. Read-only runs get a "
+"read-only repository token."
+msgstr ""
+
+#. module: base
 #. odoo-python
 #: code:odoo/addons/base/models/uom_uom.py:0
 msgid "You cannot create recursive units of measure."
@@ -2511,17 +2594,6 @@ msgstr ""
 msgid ""
 "A root company's configuration reaches every branch below it, whether or not"
 " the writer can see those branches."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_agent_runner_github
-msgid ""
-"A run that names a GitHub repository is handed, with its lease, an "
-"installation token of the company's GitHub App limited to that repository "
-"and to the permissions its kind needs, which expires within the hour. When "
-"it completes it reports the branch it pushed, and the pull request of that "
-"branch is linked to it -- whichever GitHub or the runner reports first. The "
-"modules that hand out work react to the link."
 msgstr ""
 
 #. module: base
@@ -8297,19 +8369,6 @@ msgid ""
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_project
-msgid ""
-"Adds task analysis and code-generation actions, codebase context selection, "
-"workflow states and GitHub pull-request synchronization. Code generation is "
-"an agent run on an isolated runner: it clones the project's repository, "
-"writes the task's change on a branch of its own, pushes it and opens a pull "
-"request, with a GitHub App token for that repository alone and the company's"
-" model key only where its data policy allows. Requires a runner, the "
-"company's GitHub App and AI service access; generated changes require review"
-" and deployment is not automated by the workflow state labels."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_project_map
 msgid ""
 "Adds task map views, assignee names and map navigation actions using the "
@@ -9326,16 +9385,6 @@ msgstr ""
 #. module: base
 #: model:ir.model.fields,help:base.field_mixin_access_grant__date_to
 msgid "After this moment the grant grants nothing."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_agent_runner
-msgid "Agent Runners"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,shortdesc:base.module_agent_runner_github
-msgid "Agent Runners on GitHub"
 msgstr ""
 
 #. module: base
@@ -21983,13 +22032,6 @@ msgid "Devices - WebSocket"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_error_incident_autofix
-msgid ""
-"Diagnose an incident and propose its fix through agent runs, in shadow or "
-"live"
-msgstr ""
-
-#. module: base
 #: model_terms:ir.ui.view,arch_db:base.ir_access_drift_view_search
 msgid "Differs From Its File"
 msgstr ""
@@ -29030,14 +29072,7 @@ msgid "Halers"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,summary:base.module_agent_runner_github
-msgid ""
-"Hand an agent run a token for its repository alone, and follow the pull "
-"request of the branch it pushed"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_agent_runner
+#: model:ir.module.module,summary:base.module_runner
 msgid ""
 "Hand work to isolated runner machines over a leased, authenticated protocol"
 msgstr ""
@@ -33321,15 +33356,6 @@ msgid ""
 "Links a device to its own asset and reads serial number, IMEI and plate from"
 " that asset. Validates identity consistency and adds navigation between "
 "devices and assets."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_error_incident_github
-msgid ""
-"Links a pull request to the agent run that pushed its branch and to the "
-"incident that run works for, by the branch -- never by matching error "
-"signatures. The incident's chatter hears when the pull request opens, its "
-"checks pass or fail, and it is merged or closed."
 msgstr ""
 
 #. module: base
@@ -42093,17 +42119,6 @@ msgstr ""
 msgid ""
 "Queued while a run with the same identity key was in progress: it runs once"
 " that run is over, and later callers join it."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_agent_runner
-msgid ""
-"Queues agent runs and leases each to exactly one runner machine with the "
-"capability it needs. A runner authenticates with its own token, claims a "
-"run, keeps its lease alive, reports events and finishes it; an expired lease"
-" is handed out again within a bounded number of attempts. Reported spend "
-"counts against the company's machine-learning budget, and a company over "
-"budget is handed no work."
 msgstr ""
 
 #. module: base
@@ -56689,21 +56704,6 @@ msgid ""
 "completed, files its signed documents in the employee's contract folder. "
 "Folder configuration and the signing workflow are supplied by the "
 "dependencies."
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,description:base.module_error_incident_autofix
-msgid ""
-"When an incident meets the policy -- a server error hit by an internal user,"
-" often enough, in a module whose repository is mapped, under the daily cap "
-"and the company's machine-learning budget -- queues a diagnosis run for an "
-"agent runner. A real defect is handed to a fix run, which works in a clone "
-"of the module's repository on a branch named after the incident. In shadow "
-"mode the fix stays a proposal -- its diff, analysis and cost reviewed in "
-"Odoo, nothing pushed; in live mode the runner pushes the branch and opens "
-"the pull request, which error_incident_github follows. A regression is "
-"diagnosed again with the history of the fix that did not hold. Read-only "
-"runs get a read-only repository token."
 msgstr ""
 
 #. module: base

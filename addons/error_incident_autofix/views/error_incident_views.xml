@@ -34,7 +34,7 @@
                     <field name="fix_run_ids">
                         <list>
                             <field name="name" />
-                            <field name="run_state" />
+                            <field name="job_state" />
                             <field name="date_finished" />
                             <field name="cost" />
                         </list>

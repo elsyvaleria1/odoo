@@ -10,9 +10,9 @@
             eval="[Command.link(ref('approval.group_approval_approver'))]" />
     </record>
 
-    <record id="privilege_report_agent_run" model="res.groups">
+    <record id="privilege_report_runner_job" model="res.groups">
         <field
-            name="name">Privilege: an agent run's end moves the incident it works for</field>
+            name="name">Privilege: a runner job's end moves the incident it works for</field>
         <field
             name="comment">Taken whenever a run working for an incident ends, by whoever ends it (the runner's service user, the lease reaper, an administrator): a diagnosis or a fix that ends records its verdict on the incident, hands a real defect to a fix run, and a hotfix or a production revision resolves the incidents it ships. Every write is logged.</field>
         <field name="audit_privilege" eval="True" />

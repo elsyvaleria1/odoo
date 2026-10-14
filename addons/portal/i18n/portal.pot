@@ -887,8 +887,6 @@ msgstr ""
 
 #. module: portal
 #: model:ir.model.fields,field_description:portal.field_account_analytic_account__website_message_ids
-#: model:ir.model.fields,field_description:portal.field_agent_run__website_message_ids
-#: model:ir.model.fields,field_description:portal.field_agent_runner__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_approval_category__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_base_module_install_request__website_message_ids
@@ -933,6 +931,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:portal.field_res_users__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_res_users_deletion__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_resource_resource__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_runner_job__website_message_ids
+#: model:ir.model.fields,field_description:portal.field_runner_machine__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_team_member__website_message_ids
 #: model:ir.model.fields,field_description:portal.field_team_team__website_message_ids
 msgid "Portal Messages"
@@ -960,8 +960,6 @@ msgstr ""
 
 #. module: portal
 #: model:ir.model.fields,help:portal.field_account_analytic_account__website_message_ids
-#: model:ir.model.fields,help:portal.field_agent_run__website_message_ids
-#: model:ir.model.fields,help:portal.field_agent_runner__website_message_ids
 #: model:ir.model.fields,help:portal.field_approval_category__website_message_ids
 #: model:ir.model.fields,help:portal.field_approval_request__website_message_ids
 #: model:ir.model.fields,help:portal.field_base_module_install_request__website_message_ids
@@ -1006,6 +1004,8 @@ msgstr ""
 #: model:ir.model.fields,help:portal.field_res_users__website_message_ids
 #: model:ir.model.fields,help:portal.field_res_users_deletion__website_message_ids
 #: model:ir.model.fields,help:portal.field_resource_resource__website_message_ids
+#: model:ir.model.fields,help:portal.field_runner_job__website_message_ids
+#: model:ir.model.fields,help:portal.field_runner_machine__website_message_ids
 #: model:ir.model.fields,help:portal.field_team_member__website_message_ids
 #: model:ir.model.fields,help:portal.field_team_team__website_message_ids
 msgid "Portal communication history for this record."

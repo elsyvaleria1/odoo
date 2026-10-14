@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-08 19:50+0000\n"
-"PO-Revision-Date: 2026-10-08 19:50+0000\n"
+"POT-Creation-Date: 2026-10-14 00:21+0000\n"
+"PO-Revision-Date: 2026-10-14 00:21+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -46,21 +46,6 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_cost
 msgid "Agent Cost"
-msgstr ""
-
-#. module: error_incident_autofix
-#: model:ir.model,name:error_incident_autofix.model_agent_run
-msgid "Agent Run"
-msgstr ""
-
-#. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_run_ids
-msgid "Agent Runs"
-msgstr ""
-
-#. module: error_incident_autofix
-#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
-msgid "Agent runs queued per day at most, diagnoses and fixes together."
 msgstr ""
 
 #. module: error_incident_autofix
@@ -197,12 +182,6 @@ msgstr ""
 #: model:ir.actions.act_window,name:error_incident_autofix.action_error_incident_autofix_review
 #: model_terms:ir.ui.view,arch_db:error_incident_autofix.view_error_incident_autofix_review_list
 msgid "Autofix Review"
-msgstr ""
-
-#. module: error_incident_autofix
-#. odoo-python
-#: code:addons/error_incident_autofix/models/error_incident_delivery.py:0
-msgid "Autofix: %s"
 msgstr ""
 
 #. module: error_incident_autofix
@@ -348,7 +327,7 @@ msgid "Diagnose Model"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_diagnose
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_diagnose
 msgid "Diagnose an Incident"
 msgstr ""
 
@@ -369,19 +348,19 @@ msgid "Diagnosis Timeout (s)"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__display_name
 #: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__display_name
 msgid "Display Name"
 msgstr ""
 
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__fix_state
-msgid "Driven only by what the agent runs report."
+msgid "Driven only by what the runner jobs report."
 msgstr ""
 
 #. module: error_incident_autofix
@@ -445,7 +424,7 @@ msgid "Fix Timeout (s)"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_fix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_fix
 msgid "Fix an Incident"
 msgstr ""
 
@@ -492,7 +471,7 @@ msgid "Has Message"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_hotfix
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_hotfix
 msgid "Hotfix Production"
 msgstr ""
 
@@ -507,13 +486,13 @@ msgid "How Much"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_approval_category__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_prompt__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_repository__id
 #: model:ir.model.fields,field_description:error_incident_autofix.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__id
 msgid "ID"
 msgstr ""
 
@@ -546,7 +525,7 @@ msgid "Is Follower"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,field_description:error_incident_autofix.field_agent_run__kind
+#: model:ir.model.fields,field_description:error_incident_autofix.field_runner_job__kind
 msgid "Kind"
 msgstr ""
 
@@ -741,6 +720,11 @@ msgid "Portal communication history for this record."
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:res.groups,name:error_incident_autofix.privilege_report_runner_job
+msgid "Privilege: a runner job's end moves the incident it works for"
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__production_wait_days
 msgid "Production Wait"
 msgstr ""
@@ -791,7 +775,7 @@ msgid "Refused: %s."
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields.selection,name:error_incident_autofix.selection__agent_run__kind__error_incident_revision
+#: model:ir.model.fields.selection,name:error_incident_autofix.selection__runner_job__kind__error_incident_revision
 msgid "Report the Production Revision"
 msgstr ""
 
@@ -817,6 +801,21 @@ msgid "Run Failed"
 msgstr ""
 
 #. module: error_incident_autofix
+#: model:ir.model,name:error_incident_autofix.model_runner_job
+msgid "Runner Job"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident__fix_run_ids
+msgid "Runner Jobs"
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:ir.model.fields,help:error_incident_autofix.field_error_incident_autofix_policy__daily_run_cap
+msgid "Runner jobs queued per day at most, diagnoses and fixes together."
+msgstr ""
+
+#. module: error_incident_autofix
 #: model:ir.model.fields,field_description:error_incident_autofix.field_error_incident_autofix_policy__message_has_sms_error
 msgid "SMS Delivery error"
 msgstr ""
@@ -834,6 +833,16 @@ msgstr ""
 #. module: error_incident_autofix
 #: model:ir.model.fields,help:error_incident_autofix.field_error_incident__date_fix_merged
 msgid "Since when production is asked whether it runs the merged fix."
+msgstr ""
+
+#. module: error_incident_autofix
+#: model:res.groups,comment:error_incident_autofix.privilege_report_runner_job
+msgid ""
+"Taken whenever a run working for an incident ends, by whoever ends it (the "
+"runner's service user, the lease reaper, an administrator): a diagnosis or a"
+" fix that ends records its verdict on the incident, hands a real defect to a"
+" fix run, and a hotfix or a production revision resolves the incidents it "
+"ships. Every write is logged."
 msgstr ""
 
 #. module: error_incident_autofix
@@ -954,7 +963,7 @@ msgid "Version"
 msgstr ""
 
 #. module: error_incident_autofix
-#: model:ir.model.fields,help:error_incident_autofix.field_agent_run__kind
+#: model:ir.model.fields,help:error_incident_autofix.field_runner_job__kind
 msgid ""
 "What the runner is asked to do; the modules that hand out work add their "
 "own."

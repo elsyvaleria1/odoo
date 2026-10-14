@@ -1,8 +1,8 @@
 # Error Incident Autofix (`error_incident_autofix`)
 
-Hands an incident to agent runners: one run diagnoses it, and a second fixes a real defect,
+Hands an incident to runners: one run diagnoses it, and a second fixes a real defect,
 in a clone of the module's repository. The code never runs on the Odoo server: the runner is
-`tooling/agent_runner/runner.py` with the executors of `tooling/agent_runner/incident.py`.
+`tooling/runner/runner.py` with the executors of `tooling/runner/incident.py`.
 
 ## Policy
 
@@ -25,7 +25,7 @@ in a clone of the module's repository. The code never runs on the Odoo server: t
 - **How much**:
   - **Daily Run Cap** (diagnoses and fixes together);
   - **Max Attempts** per incident, counted again from each regression;
-  - the paying company's monthly machine-learning budget, which `agent_runner` enforces.
+  - the paying company's monthly machine-learning budget, which `runner` enforces.
 
 ## The runs
 
@@ -115,7 +115,7 @@ pushed ─► testing ─► test_failed
   - **Resolved.** A contained fix puts the incident **In Production** and resolves it, and its
     users are told it is fixed.
   - **What the runner may do.** The deploy runner's checkouts and its upgrade, restart and
-    health commands are the host's own configuration (`tooling/agent_runner/deploy.py`). A
+    health commands are the host's own configuration (`tooling/runner/deploy.py`). A
     lease names a checkout and a commit, nothing to execute.
 - **Regression.** A recurrence after production reopens the incident as regressed, and it is
   diagnosed again with the fix that did not hold. A recurrence before the fix ran in

@@ -1,0 +1,1065 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* runner
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-06 19:17+0000\n"
+"PO-Revision-Date: 2026-10-06 19:17+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "%(job)s: %(state)s."
+msgstr "%(run)s: %(state)s."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "%(owner)s was not told how this job ended: %(error)s"
+msgstr "No se informó a %(owner)s de cómo terminó este trabajo: %(error)s"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_machine.py:0
+msgid ""
+"%(token)s\n"
+"\n"
+"It is shown once: hand it to the runner now. Any token issued before no longer works."
+msgstr ""
+"%(token)s\n"
+"\n"
+"Se muestra una sola vez: entrégalo ahora al runner. Cualquier token emitido antes deja de funcionar."
+
+#. module: runner
+#: model:ir.model.constraint,message:runner.constraint_runner_capability_code_uniq
+msgid "A capability with this code already exists."
+msgstr "Ya existe una capacidad con este código."
+
+#. module: runner
+#: model:ir.model.constraint,message:runner.constraint_runner_job_max_attempts_positive
+msgid "A job is handed out at least once."
+msgstr "Una ejecución se entrega al menos una vez."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_machine.py:0
+msgid "A new token was issued."
+msgstr "Se emitió un token nuevo."
+
+#. module: runner
+#: model:ir.model.constraint,message:runner.constraint_runner_machine_concurrency_positive
+msgid "A runner holds at least one job at a time."
+msgstr "Un runner tiene al menos una ejecución a la vez."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_machine.py:0
+msgid ""
+"A runner token is stored encrypted, and this server has no "
+"ODOO_API_ENCRYPTION_KEY."
+msgstr ""
+"El token de un runner se guarda cifrado, y este servidor no tiene "
+"ODOO_API_ENCRYPTION_KEY."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_needaction
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_needaction
+msgid "Action Needed"
+msgstr "Acción requerida"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__active
+msgid "Active"
+msgstr "Activo"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__credential_id
+msgid "Active Credential"
+msgstr "Credencial activa"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Any token issued before stops working. Continue?"
+msgstr "Cualquier token emitido antes deja de funcionar. ¿Continuar?"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Archived"
+msgstr "Archivado"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_attachment_count
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_attachment_count
+msgid "Attachment Count"
+msgstr "Número de archivos adjuntos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__count_attempt
+msgid "Attempts"
+msgstr "Intentos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__auth_type
+msgid "Authentication Type"
+msgstr "Tipo de autenticación"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__contract_routes
+msgid "Called At"
+msgstr "Llamado en"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Cancel"
+msgstr "Cancelar"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__cancelled
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "Cancelled."
+msgstr "Cancelada."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__capability_ids
+msgid "Capabilities"
+msgstr "Capacidades"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__capability_id
+msgid "Capability"
+msgstr "Capacidad"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__count_credential_failure
+msgid "Claims in a row its credentials could not be prepared for."
+msgstr ""
+"Reclamaciones seguidas en las que no se pudieron preparar sus credenciales."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__code
+msgid "Code"
+msgstr "Código"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__ip_whitelist
+msgid ""
+"Comma-separated list of allowed IPs or CIDRs (e.g., '192.168.1.0/24, "
+"10.0.0.5'). Leave empty to allow all IPs."
+msgstr ""
+"Lista separada por comas de IP o CIDR permitidos (p. ej., '192.168.1.0/24, "
+"10.0.0.5'). Déjala vacía para permitir todas las IP."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__company_id
+#: model:ir.model.fields,field_description:runner.field_runner_machine__company_id
+msgid "Company"
+msgstr "Compañía"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__concurrency
+msgid "Concurrency"
+msgstr "Concurrencia"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Connection"
+msgstr "Conexión"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__cost
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_list
+msgid "Cost"
+msgstr "Coste"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__create_uid
+#: model:ir.model.fields,field_description:runner.field_runner_job__create_uid
+#: model:ir.model.fields,field_description:runner.field_runner_machine__create_uid
+msgid "Created by"
+msgstr "Creado por"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__create_date
+#: model:ir.model.fields,field_description:runner.field_runner_job__create_date
+#: model:ir.model.fields,field_description:runner.field_runner_machine__create_date
+msgid "Created on"
+msgstr "Creado el"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__count_credential_failure
+msgid "Credential Failures"
+msgstr "Fallos de credenciales"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__credential_fingerprint
+msgid "Credential Fingerprint"
+msgstr "Huella de la credencial"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__data
+msgid "Data"
+msgstr "Datos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__ml_purpose
+msgid "Data Purpose"
+msgstr "Propósito de los datos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__date_event
+msgid "Date"
+msgstr "Fecha"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__log_retention_days
+msgid ""
+"Delete this gate's exchange rows older than this many days. 0 uses the "
+"retention set in API Transport settings."
+msgstr ""
+"Elimina las filas de intercambio de esta puerta con más de estos días. 0 usa"
+" la retención definida en los ajustes de transporte de API."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__rate_limit_strict
+msgid ""
+"Deny the request when the rate-limit bucket cannot be read (lock contention,"
+" timeout, internal error) instead of allowing it. Enable wherever the limit "
+"is a security control rather than a best-effort cap."
+msgstr ""
+"Rechaza la solicitud cuando no se puede leer el contador del límite de "
+"frecuencia (bloqueo, tiempo de espera, error interno) en lugar de "
+"permitirla. Actívalo donde el límite sea un control de seguridad y no un "
+"tope de mejor esfuerzo."
+
+#. module: runner
+#: model:runner.capability,name:runner.capability_deploy
+msgid "Deploy"
+msgstr "Desplegar"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__display_name
+#: model:ir.model.fields,field_description:runner.field_runner_job__display_name
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__display_name
+#: model:ir.model.fields,field_description:runner.field_runner_machine__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: runner
+#: model_terms:ir.actions.act_window,help:runner.action_runner_machine
+msgid ""
+"Each runner claims work of the capabilities it is given, with a token of its"
+" own."
+msgstr ""
+"Cada runner reclama trabajo de las capacidades que se le dan, con un token "
+"propio."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__rate_limit_enabled
+msgid "Enable Rate Limiting"
+msgstr "Activar límite de frecuencia"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__rate_limit_enabled
+msgid "Enable rate limiting using token bucket algorithm"
+msgstr "Activa el límite de frecuencia con el algoritmo de cubeta de tokens"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__timestamp_verification_enabled
+msgid "Enable timestamp verification to prevent replay attacks"
+msgstr ""
+"Activa la verificación de marca de tiempo para evitar ataques de repetición"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__credential_id
+msgid "Encrypted credential for authentication. Managed by credential."
+msgstr "Credencial cifrada para autenticación. Gestionada por credential."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__error
+#: model:ir.model.fields.selection,name:runner.selection__runner_job_event__event_type__error
+msgid "Error"
+msgstr "Error"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__event_ids
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Events"
+msgstr "Eventos"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__failed
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_search
+msgid "Failed"
+msgstr "Fallido"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__date_finished
+msgid "Finished"
+msgstr "Terminado"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_follower_ids
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_follower_ids
+msgid "Followers"
+msgstr "Seguidores"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_partner_ids
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_partner_ids
+msgid "Followers (Partners)"
+msgstr "Seguidores (Contactos)"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__signature_header
+msgid "HTTP header containing the HMAC signature"
+msgstr "Encabezado HTTP que contiene la firma HMAC"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__timestamp_header
+msgid "HTTP header containing the request timestamp"
+msgstr "Encabezado HTTP que contiene la marca de tiempo de la solicitud"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__has_message
+#: model:ir.model.fields,field_description:runner.field_runner_machine__has_message
+msgid "Has Message"
+msgstr "Tiene un mensaje"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__contract_limits
+msgid "Held To"
+msgstr "Sujeto a"
+
+#. module: runner
+#: model:res.groups,comment:runner.privilege_runner
+msgid ""
+"Held by a runner's service user while it serves a runner's call: it reads "
+"the runner and its company's jobs, leases one, appends its events and "
+"finishes it. Creating, cancelling and retrying jobs stays with the "
+"administrators."
+msgstr ""
+"La tiene el usuario de servicio de un runner mientras atiende una llamada "
+"del runner: lee el runner y los trabajos de su empresa, arrienda uno, añade "
+"sus eventos y lo termina. Crear, cancelar y reintentar trabajos sigue siendo"
+" de los administradores."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__priority
+msgid "Higher first."
+msgstr "Mayor primero."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__concurrency
+msgid "How many jobs it may hold at once."
+msgstr "Cuántas ejecuciones puede tener a la vez."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__max_attempts
+msgid ""
+"How many leases it may be handed before an expiry or a retryable failure "
+"fails it for good."
+msgstr ""
+"Cuántos arrendamientos puede recibir antes de que un vencimiento o un fallo "
+"reintentable la haga fallar definitivamente."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__id
+#: model:ir.model.fields,field_description:runner.field_runner_job__id
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__id
+#: model:ir.model.fields,field_description:runner.field_runner_machine__id
+msgid "ID"
+msgstr "ID"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__message_needaction
+#: model:ir.model.fields,help:runner.field_runner_machine__message_needaction
+msgid "If checked, new messages require your attention."
+msgstr "Si está marcada, hay nuevos mensajes que requieren su atención."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__message_has_error
+#: model:ir.model.fields,help:runner.field_runner_machine__message_has_error
+msgid "If checked, some messages have a delivery error."
+msgstr "Si está marcada, algunos mensajes tienen error de envío."
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job_event__event_type__info
+msgid "Info"
+msgstr "Información"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__count_input_token
+msgid "Input Tokens"
+msgstr "Tokens de entrada"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__ip_whitelist
+msgid "Ip Whitelist"
+msgstr "Lista de IP permitidas"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_is_follower
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_is_follower
+msgid "Is Follower"
+msgstr "Es un seguidor"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Issue Token"
+msgstr "Emitir token"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "Its credentials could not be prepared: %(reason)s"
+msgstr "No se pudieron preparar sus credenciales: %(reason)s"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__date_not_before
+msgid ""
+"Its credentials could not be prepared: no runner claims it before this."
+msgstr ""
+"No se pudieron preparar sus credenciales: ningún ejecutor la reclama antes "
+"de esto."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__job_id
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Job"
+msgstr "Trabajo"
+
+#. module: runner
+#: model:ir.actions.act_window,name:runner.action_runner_job
+#: model:ir.model.fields,field_description:runner.field_runner_machine__job_ids
+#: model:ir.ui.menu,name:runner.menu_runner_job
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_list
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Jobs"
+msgstr "Trabajos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__kind
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_search
+msgid "Kind"
+msgstr "Clase"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__contract_last_call
+msgid "Last Call"
+msgstr "Última llamada"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__date_last_seen
+msgid "Last Seen"
+msgstr "Visto por última vez"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__write_uid
+#: model:ir.model.fields,field_description:runner.field_runner_job__write_uid
+#: model:ir.model.fields,field_description:runner.field_runner_machine__write_uid
+msgid "Last Updated by"
+msgstr "Última actualización por"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__write_date
+#: model:ir.model.fields,field_description:runner.field_runner_job__write_date
+#: model:ir.model.fields,field_description:runner.field_runner_machine__write_date
+msgid "Last Updated on"
+msgstr "Última actualización el"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Lease"
+msgstr "Arrendamiento"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__lease_digest
+msgid "Lease Digest"
+msgstr "Resumen del arrendamiento"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__date_lease_until
+msgid "Lease Until"
+msgstr "Arrendada hasta"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__leased
+msgid "Leased"
+msgstr "Arrendada"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "Leased to %(runner)s, attempt %(attempt)s."
+msgstr "Arrendada a %(runner)s, intento %(attempt)s."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__rate_limit_window_seconds
+msgid "Length of the rate-limit window in seconds."
+msgstr "Duración de la ventana del límite de frecuencia, en segundos."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__log_request_payload_max_bytes
+msgid "Log Request Payload Max Bytes"
+msgstr "Bytes máximos del cuerpo registrado"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__log_retention_days
+msgid "Log Retention Days"
+msgstr "Días de retención del registro"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__max_attempts
+msgid "Max Attempts"
+msgstr "Intentos máximos"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__max_payload_size
+msgid "Max Payload Size"
+msgstr "Tamaño máximo del cuerpo"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__rate_limit_requests
+msgid "Max Requests"
+msgstr "Solicitudes máximas"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__timestamp_max_age_seconds
+msgid "Maximum age of request timestamp. Default: 5 minutes"
+msgstr ""
+"Antigüedad máxima de la marca de tiempo de la solicitud. Predeterminado: 5 "
+"minutos"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__max_payload_size
+msgid "Maximum allowed payload size for DoS prevention. Default: 1MB"
+msgstr ""
+"Tamaño máximo permitido del cuerpo, para prevenir denegación de servicio. "
+"Predeterminado: 1 MB"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__rate_limit_requests
+msgid "Maximum number of requests allowed per time period"
+msgstr "Número máximo de solicitudes permitidas por periodo"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__message
+msgid "Message"
+msgstr "Mensaje"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_has_error
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_has_error
+msgid "Message Delivery error"
+msgstr "Error de envío de mensaje"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_ids
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_ids
+msgid "Messages"
+msgstr "Mensajes"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__auth_type
+msgid "Method used for authentication"
+msgstr "Método de autenticación"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__contract_scheme
+msgid "Must Send"
+msgstr "Debe enviar"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_capability__name
+#: model:ir.model.fields,field_description:runner.field_runner_job__name
+#: model:ir.model.fields,field_description:runner.field_runner_machine__name
+msgid "Name"
+msgstr "Nombre"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "No Anthropic credential: the runner's own model login is used."
+msgstr ""
+"No hay credencial de Anthropic: se usa la sesión del modelo del propio "
+"runner."
+
+#. module: runner
+#: model_terms:ir.actions.act_window,help:runner.action_runner_job
+msgid "No job is waiting"
+msgstr "No hay ejecuciones en espera"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__date_not_before
+msgid "Not Before"
+msgstr "No antes de"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_needaction_counter
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_needaction_counter
+msgid "Number of Actions"
+msgstr "Número de acciones"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__message_has_error_counter
+#: model:ir.model.fields,field_description:runner.field_runner_machine__message_has_error_counter
+msgid "Number of errors"
+msgstr "Número de errores"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__message_needaction_counter
+#: model:ir.model.fields,help:runner.field_runner_machine__message_needaction_counter
+msgid "Number of messages requiring action"
+msgstr "Número de mensajes que requieren una acción"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__message_has_error_counter
+#: model:ir.model.fields,help:runner.field_runner_machine__message_has_error_counter
+msgid "Number of messages with delivery error"
+msgstr "Número de mensajes con error de envío"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__is_online
+msgid "Online"
+msgstr "En línea"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "Only a failed or cancelled job is retried."
+msgstr "Solo se reintenta un trabajo fallido o cancelado."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__capability_id
+msgid "Only a runner with this capability claims the job."
+msgstr "Solo un runner con esta capacidad reclama la ejecución."
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_search
+msgid "Open"
+msgstr "Abierto"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__count_output_token
+msgid "Output Tokens"
+msgstr "Tokens de salida"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__res_id
+msgid "Owner"
+msgstr "Propietario"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__res_model
+msgid "Owner Model"
+msgstr "Modelo propietario"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__payload
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Payload"
+msgstr "Carga efectiva"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__signature_prefix
+msgid "Prefix before signature value (e.g., 'sha256=')"
+msgstr "Prefijo antes del valor de la firma (p. ej., 'sha256=')"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__priority
+msgid "Priority"
+msgstr "Prioridad"
+
+#. module: runner
+#: model:res.groups,name:runner.privilege_runner
+msgid ""
+"Privilege: a runner claims its company's jobs, keeps its lease and reports "
+"how they end"
+msgstr ""
+"Privilegio: un runner reclama los trabajos de su empresa, mantiene su "
+"arrendamiento e informa cómo terminan"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__kind__probe
+msgid "Probe"
+msgstr "Sonda"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job_event__event_type__progress
+msgid "Progress"
+msgstr "Progreso"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__verification_method
+msgid ""
+"Python method path for custom verification (format: 'model.method_name'). "
+"Method signature: method(headers: dict, body: str) -> bool"
+msgstr ""
+"Ruta del método Python para verificación personalizada (formato: "
+"'model.method_name'). Firma del método: method(headers: dict, body: str) -> "
+"bool"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__queued
+msgid "Queued"
+msgstr "En cola"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__rate_limit_window_seconds
+msgid "Rate Window (s)"
+msgstr "Ventana de frecuencia (s)"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__rating_ids
+#: model:ir.model.fields,field_description:runner.field_runner_machine__rating_ids
+msgid "Ratings"
+msgstr "Calificaciones"
+
+#. module: runner
+#: model_terms:ir.actions.act_window,help:runner.action_runner_machine
+msgid "Register a runner machine"
+msgstr "Registra una máquina runner"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__result
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Result"
+msgstr "Resultado"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Retry"
+msgstr "Volver a intentar"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__machine_id
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_search
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Runner"
+msgstr "Runner"
+
+#. module: runner
+#: model:ir.model,name:runner.model_runner_capability
+msgid "Runner Capability"
+msgstr "Capacidad de agente"
+
+#. module: runner
+#: model:ir.model,name:runner.model_runner_job
+msgid "Runner Job"
+msgstr "Trabajo de runner"
+
+#. module: runner
+#: model:ir.model,name:runner.model_runner_job_event
+msgid "Runner Job Event"
+msgstr "Evento de ejecución de agente"
+
+#. module: runner
+#: model:ir.model,name:runner.model_runner_machine
+msgid "Runner Machine"
+msgstr "Máquina runner"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_machine.py:0
+msgid "Runner token: %(runner)s [#%(id)s]"
+msgstr "Token de runner: %(runner)s [#%(id)s]"
+
+#. module: runner
+#: model:ir.actions.act_window,name:runner.action_runner_machine
+#: model:ir.ui.menu,name:runner.menu_runner_machine
+#: model:ir.ui.menu,name:runner.menu_runner_root
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_list
+msgid "Runners"
+msgstr "Runners"
+
+#. module: runner
+#: model:ir.actions.server,name:runner.ir_cron_reap_expired_leases_ir_actions_server
+msgid "Runners: Re-queue Expired Leases"
+msgstr "Runners de agentes: reencolar arrendamientos vencidos"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__running
+msgid "Running"
+msgstr "En curso"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__service_user_id
+msgid "Runs As"
+msgstr "Se ejecuta como"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__credential_fingerprint
+msgid ""
+"SHA-256 of the credential's secret. Lets a presented token be verified, and "
+"its channel found, without decrypting anything."
+msgstr ""
+"SHA-256 del secreto de la credencial. Permite verificar un token presentado,"
+" y encontrar su canal, sin descifrar nada."
+
+#. module: runner
+#: model:runner.capability,name:runner.capability_sandbox
+msgid "Sandbox"
+msgstr "Entorno de pruebas"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__signature_header
+msgid "Signature Header"
+msgstr "Encabezado de firma"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__signature_prefix
+msgid "Signature Prefix"
+msgstr "Prefijo de firma"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__date_started
+msgid "Started"
+msgstr "Iniciado"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job__job_state
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_search
+msgid "State"
+msgstr "Provincia"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__log_request_payload_max_bytes
+msgid ""
+"Store at most this many bytes of each request body on the integration.exchange row; 0 keeps the whole body.\n"
+"\n"
+"For an endpoint that accepts a file the body is the file: a phone posting a call recording as base64 wrote roughly 48 MB of text into a log column, beside the same audio already stored as an attachment. Duplicate detection is unaffected -- the hash of the body as received is kept either way. Ignored for an asynchronous endpoint, where the stored body is the work queue and not merely a record of it."
+msgstr ""
+"Guarda como máximo estos bytes del cuerpo de cada solicitud en la fila de integration.exchange; 0 guarda el cuerpo completo.\n"
+"\n"
+"En un endpoint que acepta un archivo, el cuerpo es el archivo: un teléfono que enviaba una grabación de llamada en base64 escribía unos 48 MB de texto en una columna de registro, junto al mismo audio ya guardado como adjunto. La detección de duplicados no cambia: el hash del cuerpo recibido se guarda en cualquier caso. Se ignora en un endpoint asíncrono, donde el cuerpo guardado es la cola de trabajo y no solo su registro."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__rate_limit_strict
+msgid "Strict Rate Limiting"
+msgstr "Límite de frecuencia estricto"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job__job_state__succeeded
+msgid "Succeeded"
+msgstr "Exitosa"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "Succeeded."
+msgstr "Exitosa."
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job_event__event_type__system
+msgid "System"
+msgstr "Sistema"
+
+#. module: runner
+#: model:runner.capability,name:runner.capability_test
+msgid "Test"
+msgstr "Prueba"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__contract_last_call
+msgid ""
+"The body of the last call this gate admitted, as it was logged (masked, and "
+"capped at the gate's own payload limit)."
+msgstr ""
+"El cuerpo de la última llamada que admitió esta puerta, tal como se registró"
+" (enmascarado y limitado al tope de cuerpo de la propia puerta)."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__contract_limits
+msgid "The caps a call is refused for crossing."
+msgstr "Los topes cuyo cruce hace rechazar una llamada."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__company_id
+msgid ""
+"The company it works for: it claims that company's jobs only, and is handed "
+"that company's keys. A machine serving several companies runs one runner per"
+" company."
+msgstr ""
+"La empresa para la que trabaja: solo toma las ejecuciones de esa empresa y "
+"solo recibe sus claves. Una máquina que sirve a varias empresas usa un "
+"runner por empresa."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__capability_ids
+msgid "The kinds of work this runner may claim."
+msgstr "Los tipos de trabajo que este runner puede reclamar."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "The lease held by %(runner)s expired."
+msgstr "Venció el arrendamiento que tenía %(runner)s."
+
+#. module: runner
+#: model_terms:ir.actions.act_window,help:runner.action_runner_job
+msgid "The modules that hand work to runners queue it here."
+msgstr "Los módulos que entregan trabajo a los runners lo encolan aquí."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__contract_routes
+msgid "The routes that reach this gate, as the server serves them."
+msgstr "Las rutas que llegan a esta puerta, tal como las sirve el servidor."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "The runner gave no reason."
+msgstr "El runner no dio ningún motivo."
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_job.py:0
+msgid "The runner stopped answering."
+msgstr "El runner dejó de responder."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__service_user_id
+msgid ""
+"The service principal an admitted call runs as, instead of the public user: "
+"what it writes is its own, and its grants are what it may do."
+msgstr ""
+"El principal de servicio con el que se ejecuta una llamada admitida, en "
+"lugar del usuario público: lo que escribe es suyo, y sus permisos son lo que"
+" puede hacer."
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__timestamp_header
+msgid "Timestamp Header"
+msgstr "Encabezado de marca de tiempo"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__timestamp_max_age_seconds
+msgid "Timestamp Max Age Seconds"
+msgstr "Antigüedad máxima de la marca de tiempo (s)"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__timestamp_verification_enabled
+msgid "Timestamp Verification Enabled"
+msgstr "Verificación de marca de tiempo activada"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Token Fingerprint"
+msgstr "Huella del token"
+
+#. module: runner
+#. odoo-python
+#: code:addons/runner/models/runner_machine.py:0
+msgid "Token for %(runner)s"
+msgstr "Token de %(runner)s"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_job_event__event_type
+msgid "Type"
+msgstr "Tipo"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+msgid "Usage"
+msgstr "Uso"
+
+#. module: runner
+#: model:ir.model.fields,field_description:runner.field_runner_machine__verification_method
+msgid "Verification Method"
+msgstr "Método de verificación"
+
+#. module: runner
+#: model:ir.model.fields.selection,name:runner.selection__runner_job_event__event_type__warning
+msgid "Warning"
+msgstr "Advertencia"
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_capability__code
+msgid "What a runner names to claim work of this kind."
+msgstr "Lo que un runner nombra para reclamar trabajo de este tipo."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_machine__contract_scheme
+msgid "What the caller proves itself with."
+msgstr "Con qué se identifica quien llama."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__ml_purpose
+msgid ""
+"What the job's agent sends its model, as the company's machine-learning data"
+" policy names it: the model key is handed only when that policy lets this "
+"purpose reach the vendor. Empty: the job calls no model."
+msgstr ""
+"Lo que el agente de la ejecución envía a su modelo, con el nombre que le da "
+"la política de datos de aprendizaje automático de la empresa: la clave del "
+"modelo solo se entrega cuando esa política deja que este propósito llegue al"
+" proveedor. Vacío: la ejecución no llama a ningún modelo."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__result
+msgid "What the runner handed back."
+msgstr "Lo que devolvió el runner."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr ""
+"Lo que se pide al runner; los módulos que entregan trabajo añaden los suyos."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__payload
+msgid "What the runner is handed."
+msgstr "Lo que se entrega al runner."
+
+#. module: runner
+#: model:ir.model.fields,help:runner.field_runner_job__company_id
+msgid "Whose budget the job's spend counts against."
+msgstr "A cargo de qué presupuesto cuenta el gasto de la ejecución."
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_job_form
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "Work"
+msgstr "Trabajo"
+
+#. module: runner
+#: model_terms:ir.ui.view,arch_db:runner.view_runner_machine_form
+msgid "e.g. runner-1"
+msgstr "p. ej. runner-1"
+
+#~ msgid "Agent Run"
+#~ msgstr "Ejecución de agente"
+
+#~ msgid "Agent Runner"
+#~ msgstr "Runner de agentes"
+
+#~ msgid "Agent Runners"
+#~ msgstr "Runners de agentes"
+
+#~ msgid "Agent Runs"
+#~ msgstr "Ejecuciones de agentes"
+
+#~ msgid "Agent runner token: %(runner)s [#%(id)s]"
+#~ msgstr "Token de runner de agentes: %(runner)s [#%(id)s]"
+
+#~ msgid "Run"
+#~ msgstr "Ejecutar"
+
+#~ msgid "Runs"
+#~ msgstr "Ejecuciones"

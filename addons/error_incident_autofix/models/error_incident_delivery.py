@@ -170,11 +170,11 @@ class ErrorIncident(models.Model):
         for incident in self:
             pull = incident._autofix_pull()
             repository = incident._autofix_repository()
-            self.env["agent.run"].create(
+            self.env["runner.job"].create(
                 {
                     "name": f"Hotfix: {incident.name}"[:200],
                     "kind": HOTFIX,
-                    "capability_id": self.env.ref("agent_runner.capability_deploy").id,
+                    "capability_id": self.env.ref("runner.capability_deploy").id,
                     "company_id": policy.company_id.id,
                     "res_model": incident._name,
                     "res_id": incident.id,
@@ -236,7 +236,7 @@ class ErrorIncident(models.Model):
         self.check_singleton()
         if run.kind != HOTFIX or self.fix_state != "hotfixing":
             return
-        if run.run_state != "succeeded":
+        if run.job_state != "succeeded":
             self.write({"fix_state": "test_passed"})
             self._autofix_pull_changed(self._autofix_pull())
             self.message_post(
@@ -288,11 +288,11 @@ class ErrorIncident(models.Model):
         waiting = merged - overdue
         if not waiting:
             return
-        Run = self.env["agent.run"]
+        Run = self.env["runner.job"]
         if Run.search_count(
             [
                 ("kind", "=", REVISION),
-                ("run_state", "in", ("queued", "leased", "running")),
+                ("job_state", "in", ("queued", "leased", "running")),
             ]
         ):
             return
@@ -307,7 +307,7 @@ class ErrorIncident(models.Model):
             {
                 "name": "Production revision",
                 "kind": REVISION,
-                "capability_id": self.env.ref("agent_runner.capability_deploy").id,
+                "capability_id": self.env.ref("runner.capability_deploy").id,
                 "company_id": policy.company_id.id,
                 "max_attempts": 1,
                 "payload": {"checkouts": checkouts},
@@ -315,8 +315,8 @@ class ErrorIncident(models.Model):
         )
 
 
-class AgentRun(models.Model):
-    _inherit = "agent.run"
+class RunnerJob(models.Model):
+    _inherit = "runner.job"
 
     def _github_permissions(self) -> dict[str, str]:
         if self.kind in DELIVERY_KINDS:
@@ -327,7 +327,7 @@ class AgentRun(models.Model):
         first = super()._complete(token, result, usage)
         if first and self.kind == REVISION and isinstance(result, dict):
             self.env["error.incident"].with_privilege(
-                "error_incident_autofix.privilege_report_agent_run",
+                "error_incident_autofix.privilege_report_runner_job",
                 reason="a production revision resolves the incidents it ships",
             )._autofix_contained(
                 [

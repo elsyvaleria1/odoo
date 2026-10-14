@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="user_runner" model="res.users">
+        <field name="name">Runner</field>
+        <field name="login">__runner__</field>
+        <field name="active" eval="True" />
+        <field name="principal_type">service</field>
+    </record>
+
+</odoo>

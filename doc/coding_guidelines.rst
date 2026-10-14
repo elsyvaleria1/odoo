@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.95
+:Version: 7.96
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -6392,6 +6392,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.96
+     - 2026-10-13
+     - §1.5: ``agent_runner`` and ``agent_runner_github`` are ``runner`` and
+       ``runner_github`` (base 1.160): the module leases jobs to runner
+       machines, and neither ``agent`` nor ``ai`` says that.
    * - 7.95
      - 2026-10-13
      - §1.5: ``ai_auto_install`` is retired (base 1.159), so the ``ai`` / ``ml``

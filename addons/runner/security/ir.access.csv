@@ -1,0 +1,10 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+access_runner_capability_system,runner.capability system,model_runner_capability,base.group_system,permission,crud,,,
+access_runner_machine_system,runner.machine system,model_runner_machine,base.group_system,permission,crud,,,
+access_runner_job_system,runner.job system,model_runner_job,base.group_system,permission,crud,,,
+access_runner_job_event_system,runner.job.event: events are appended by runs and read by administrators,model_runner_job_event,base.group_system,permission,r,,,
+privilege_runner_machine,runner.machine: a runner's call reads its runner and stamps when it was last seen,model_runner_machine,privilege_runner,permission,ru,company,,
+privilege_runner_capability,runner.capability: a runner's call reads the capabilities it claims by,model_runner_capability,privilege_runner,permission,r,,,
+privilege_runner_job_read,runner.job: a runner's call reads its company's jobs to lease one,model_runner_job,privilege_runner,permission,r,company,,
+privilege_runner_job_write,runner.job: a runner's call keeps the lease of a job handed out and finishes it,model_runner_job,privilege_runner,permission,u,company,,"[('machine_id', '!=', False)]"
+privilege_runner_job_event,runner.job.event: a runner's call appends the events of the job it holds,model_runner_job_event,privilege_runner,permission,c,company,,

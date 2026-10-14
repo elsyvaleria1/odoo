@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_runner_root"
+        name="Runners"
+        parent="base.menu_custom"
+        sequence="111"
+        groups="base.group_system" />
+
+    <menuitem
+        id="menu_runner_job"
+        name="Jobs"
+        parent="menu_runner_root"
+        action="action_runner_job"
+        sequence="10" />
+
+    <menuitem
+        id="menu_runner_machine"
+        name="Runners"
+        parent="menu_runner_root"
+        action="action_runner_machine"
+        sequence="20" />
+
+</odoo>

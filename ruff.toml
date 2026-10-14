@@ -846,14 +846,14 @@ ignore = [
 # program to where `odoo` is not importable: the wrapper itself, operator scripts
 # shipped to a host without Odoo (test_cloud_storage_cleanup asserts no `odoo`
 # import), the mail gateway, and dev CLIs run as plain `python <file>`
-# (compare.py carries TID251 on its T201 line above), and the agent runner, which
+# (compare.py carries TID251 on its T201 line above), and the runner, which
 # runs in a bare container.
 "odoo/libs/json/**" = ["TID251"]
 "addons/cloud_storage_google/utils/cleanup_cloud_storage_google.py" = ["TID251"]
 "addons/mail/static/scripts/odoo-mailgate.py" = ["TID251"]
 "odoo/addons/test_lint/tests/_ir_access_reach_apply.py" = ["TID251"]
 "setup/requirements-check.py" = ["TID251"]
-"tooling/agent_runner/*.py" = ["TID251"]
+"tooling/runner/*.py" = ["TID251"]
 "tooling/assets/*.py" = ["TID251"]
 
 [lint.isort]

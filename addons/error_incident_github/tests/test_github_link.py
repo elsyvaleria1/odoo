@@ -1,8 +1,8 @@
 from odoo.tests import HttpCase, tagged
 
-from odoo.addons.agent_runner.tests.common import RunnerFixtures
 from odoo.addons.error_incident.models.error_incident import capture_payload
 from odoo.addons.integration_github.tests.common import WebhookDelivery, fixture
+from odoo.addons.runner.tests.common import RunnerFixtures
 
 REPOSITORY = "Agro-Marin/agromarin"
 BRANCH = "19.0-marin-fix-incident"
@@ -60,7 +60,7 @@ class TestPullLinking(RunnerFixtures, WebhookDelivery, HttpCase):
         self._deliver("pull_request", self._pull_request("opened"))
         pull = run.github_pull_id
         self.assertTrue(pull)
-        self.assertEqual((pull.agent_run_id, pull.incident_id), (run, self.incident))
+        self.assertEqual((pull.runner_job_id, pull.incident_id), (run, self.incident))
         self.assertEqual(self.incident.pull_ids, pull)
         self.assertTrue(any("is open" in note for note in self._notes()))
 

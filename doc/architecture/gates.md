@@ -387,7 +387,7 @@ database each: `device`, `device_transport`, `device_gps`, `device_mobile`,
 `conversation_phone_call`, `device_phone_call` with `voip_device` and
 `conversation_phone_call` (the only database where a phone's recordings reach
 a conversation), `conversation`, `conversation_meeting`, `test_speech`,
-`agent_runner`, `agent_runner_github`, `error_incident_autofix`,
+`runner`, `runner_github`, `error_incident_autofix`,
 `error_incident_github` and `telegram`.
 `rpc`, `mail`, `test_mail`, `mail_group`, `mail_speech`, `bus`, `test_orm`, `crm`,
 `data_recycle`, `test_access_rights`, `stock`, `mrp`, `test_trade`,

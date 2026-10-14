@@ -3,11 +3,11 @@ from unittest.mock import patch
 from odoo.exceptions import UserError
 from odoo.tests import TransactionCase, new_test_user, tagged
 
-from odoo.addons.agent_runner.tests.common import RunnerFixtures
 from odoo.addons.error_incident.models.error_incident import capture_payload
 from odoo.addons.error_incident_autofix.models import (
     error_incident_autofix_repository as repository,
 )
+from odoo.addons.runner.tests.common import RunnerFixtures
 
 DIFF = "--- a/x.py\n+++ b/x.py\n@@ -1 +1 @@\n-broken\n+fixed\n"
 
@@ -114,7 +114,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
         self.assertAlmostEqual(incident.fix_cost, 0.2)
 
     def test_a_run_s_end_is_recorded_by_the_runner_s_principal(self):
-        principal = self.env.ref("agent_runner.user_agent_runner")
+        principal = self.env.ref("runner.user_runner")
         incident = self._occur(2)
         diagnosis = self._finish(
             incident,
@@ -140,7 +140,7 @@ class TestAutofix(RunnerFixtures, TransactionCase):
             ]
         )
         self.assertIn(
-            self.env.ref("error_incident_autofix.privilege_report_agent_run"),
+            self.env.ref("error_incident_autofix.privilege_report_runner_job"),
             audited.group_id,
         )
 

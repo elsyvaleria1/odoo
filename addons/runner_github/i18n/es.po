@@ -1,0 +1,141 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* runner_github
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-07 15:24+0000\n"
+"PO-Revision-Date: 2026-10-07 15:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_branch
+msgid "Branch"
+msgstr "Rama"
+
+#. module: runner_github
+#: model:ir.model.fields.selection,name:runner_github.selection__runner_job__kind__github_change
+msgid "Change a Repository"
+msgstr "Modificar un repositorio"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__display_name
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__display_name
+#: model:ir.model.fields,field_description:runner_github.field_runner_machine__display_name
+msgid "Display Name"
+msgstr "Nombre para mostrar"
+
+#. module: runner_github
+#: model_terms:ir.ui.view,arch_db:runner_github.view_runner_job_form_github
+msgid "GitHub"
+msgstr "GitHub"
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_integration_github_pull
+msgid "GitHub Pull Request"
+msgstr "Pull request de GitHub"
+
+#. module: runner_github
+#: model:res.groups,comment:runner_github.privilege_link_runs
+msgid ""
+"Held by a runner's service user while it serves a runner's call: the lease "
+"finds the company's GitHub App to mint the job's token, and the completion "
+"links the pull request of the branch the run pushed. The App's secrets stay "
+"behind the credential's own use."
+msgstr ""
+"La tiene el usuario de servicio de un runner mientras atiende una llamada "
+"del runner: el arrendamiento busca la GitHub App de la empresa para emitir "
+"el token del trabajo, y la finalización vincula el pull request de la rama "
+"que subió. Los secretos de la App quedan tras el propio uso de la "
+"credencial."
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__id
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__id
+#: model:ir.model.fields,field_description:runner_github.field_runner_machine__id
+msgid "ID"
+msgstr "ID"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_integration_github_pull__runner_job_id
+msgid "Job"
+msgstr "Ejecutar"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__kind
+msgid "Kind"
+msgstr "Tipo"
+
+#. module: runner_github
+#. odoo-python
+#: code:addons/runner_github/models/runner_job.py:0
+msgid "No GitHub App is configured: the job gets no repository token."
+msgstr ""
+"No hay ninguna GitHub App configurada: el trabajo no recibe token de "
+"repositorio."
+
+#. module: runner_github
+#: model:res.groups,name:runner_github.privilege_link_runs
+msgid ""
+"Privilege: a runner's call hands a job its repository token and links the "
+"pull request of the branch it pushed"
+msgstr ""
+"Privilegio: la llamada de un runner entrega a un trabajo su token de "
+"repositorio y vincula el pull request de la rama que subió"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_pull_id
+msgid "Pull Request"
+msgstr "Pull request"
+
+#. module: runner_github
+#: model:ir.model.fields,field_description:runner_github.field_runner_job__github_repository
+msgid "Repository"
+msgstr "Repositorio"
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_runner_job
+msgid "Runner Job"
+msgstr "Trabajo de runner"
+
+#. module: runner_github
+#: model:ir.model,name:runner_github.model_runner_machine
+msgid "Runner Machine"
+msgstr "Máquina runner"
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__github_branch
+msgid "The branch the job pushed, as it reported it on completion."
+msgstr "La rama que subió la ejecución, tal como la informó al terminar."
+
+#. module: runner_github
+#. odoo-python
+#: code:addons/runner_github/models/runner_job.py:0
+msgid "The company's GitHub App is not installed on %(repository)s."
+msgstr "La GitHub App de la empresa no está instalada en %(repository)s."
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_integration_github_pull__runner_job_id
+msgid "The job that pushed this branch."
+msgstr "La ejecución que subió esta rama."
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__kind
+msgid ""
+"What the runner is asked to do; the modules that hand out work add their "
+"own."
+msgstr ""
+"Lo que se pide al runner; los módulos que reparten trabajo añaden los suyos."
+
+#. module: runner_github
+#: model:ir.model.fields,help:runner_github.field_runner_job__github_repository
+msgid "owner/name: the job is handed a token for this repository alone."
+msgstr ""
+"propietario/nombre: la ejecución recibe un token solo para este repositorio."
