@@ -7,6 +7,7 @@ from odoo.tests import Form, new_test_user, tagged
 from odoo.tools import mute_logger
 
 from odoo.addons.account.tests.common import AccountTestInvoicingCommon
+from odoo.addons.account.tests.common_report_engine import TestAccountReportsCommon
 
 
 @tagged("post_install", "-at_install")
@@ -972,6 +973,17 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         self.assertEqual(tax_line.name, "Renamed tax")
         self.assertFalse(tax_line.is_name_manual)
 
+    def test_tax_label_in_another_installed_language_is_not_manual(self):
+        self.env["res.lang"]._activate_lang("es_ES")
+        tax = self.company_data["default_tax_sale"]
+        tax.with_context(lang="es_ES").name = "Impuesto de venta"
+        invoice = self._invoice(tax)
+        tax_line = self._tax_line(invoice)
+        tax_line.name = "Impuesto de venta"
+        self.assertFalse(tax_line.is_name_manual)
+        invoice.invoice_line_ids.price_unit = 200.0
+        self.assertEqual(tax_line.name, tax.with_context(lang="en_US").name)
+
     def _journal_entry(self, tax):
         tax_rep = tax.invoice_repartition_line_ids.filtered(
             lambda rep: rep.repartition_type == "tax"
@@ -1302,3 +1314,257 @@ class TestMarinTaxLineLabelOnResync(AccountTestInvoicingCommon):
         copy_tax_line = self._tax_line(invoice.copy())
         self.assertEqual(copy_tax_line.name, "Edited label")
         self.assertTrue(copy_tax_line.is_name_manual)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinHandEncodedTaxEntry(TestAccountReportsCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        country = cls.env.company.account_fiscal_country_id
+        cls.report = cls.env["report.formula"].create(
+            {
+                "name": "Hand-encoded grids",
+                "country_id": country.id,
+                "filter_date_range": True,
+                "column_ids": [
+                    Command.create({"name": "balance", "expression_label": "balance"})
+                ],
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": grid,
+                            "sequence": sequence,
+                            "expression_ids": [
+                                Command.create(
+                                    {
+                                        "label": "balance",
+                                        "engine": "tax_tags",
+                                        "formula": grid,
+                                        "date_scope": "strict_range",
+                                    }
+                                )
+                            ],
+                        }
+                    )
+                    for sequence, grid in enumerate(("HB", "HT"))
+                ],
+            }
+        )
+        tags = cls.env["account.account.tag"].search(
+            [
+                ("applicability", "=", "taxes"),
+                ("country_id", "=", country.id),
+                ("name", "in", ["HB", "HT"]),
+            ]
+        )
+        cls.base_tag = tags.filtered(lambda tag: tag.name == "HB")
+        cls.tax_tag = tags.filtered(lambda tag: tag.name == "HT")
+        cls.tax = cls.env["account.tax"].create(
+            {
+                "name": "Grid tax 10%",
+                "amount": 10.0,
+                "type_tax_use": "sale",
+                "country_id": country.id,
+                "invoice_repartition_line_ids": [
+                    Command.create(
+                        {
+                            "repartition_type": "base",
+                            "tag_ids": [Command.set(cls.base_tag.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "repartition_type": "tax",
+                            "tag_ids": [Command.set(cls.tax_tag.ids)],
+                        }
+                    ),
+                ],
+                "refund_repartition_line_ids": [
+                    Command.create({"repartition_type": "base"}),
+                    Command.create({"repartition_type": "tax"}),
+                ],
+            }
+        )
+        cls.tax_rep = cls.tax.invoice_repartition_line_ids.filtered(
+            lambda rep: rep.repartition_type == "tax"
+        )
+        cls.revenue = cls.company_data["default_account_revenue"]
+        cls.receivable = cls.company_data["default_account_receivable"]
+
+    def _entry_lines(self, tax_balance=-10.0, base_balance=-100.0):
+        return [
+            {
+                "name": "base",
+                "account_id": self.revenue.id,
+                "partner_id": self.partner_a.id,
+                "balance": base_balance,
+                "tax_ids": [Command.set(self.tax.ids)],
+            },
+            {
+                "name": self.tax.name,
+                "account_id": self.revenue.id,
+                "partner_id": self.partner_a.id,
+                "balance": tax_balance,
+                "tax_repartition_line_id": self.tax_rep.id,
+            },
+            {
+                "name": "counterpart",
+                "account_id": self.receivable.id,
+                "partner_id": self.partner_a.id,
+                "balance": -base_balance - tax_balance,
+            },
+        ]
+
+    def _hand_encoded_entry(self, date="2026-01-15", **kwargs):
+        return self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": date,
+                "line_ids": [
+                    Command.create(vals) for vals in self._entry_lines(**kwargs)
+                ],
+            }
+        )
+
+    def _synced_entry(self, date):
+        base, _tax, counterpart = self._entry_lines()
+        return self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": date,
+                "line_ids": [Command.create(base), Command.create(counterpart)],
+            }
+        )
+
+    def _grids(self, date_from, date_to):
+        options = self._generate_options(self.report, date_from, date_to)
+        return {
+            line["name"]: line["columns"][0]["no_format"]
+            for line in self.report._get_lines(options)
+        }
+
+    @staticmethod
+    def _base_and_tax_line(move):
+        return (
+            move.line_ids.filtered("tax_ids"),
+            move.line_ids.filtered("tax_repartition_line_id"),
+        )
+
+    def test_hand_encoded_entry_lines_carry_the_tax_grids(self):
+        entry = self._hand_encoded_entry()
+        base_line, tax_line = self._base_and_tax_line(entry)
+        self.assertEqual(base_line.tax_tag_ids, self.base_tag)
+        self.assertEqual(tax_line.tax_tag_ids, self.tax_tag)
+        synced = self._synced_entry("2026-02-15")
+        synced_base_line, synced_tax_line = self._base_and_tax_line(synced)
+        self.assertEqual(synced_base_line.tax_tag_ids, self.base_tag)
+        self.assertEqual(synced_tax_line.tax_tag_ids, self.tax_tag)
+        self.assertAlmostEqual(
+            tax_line.tax_base_amount, synced_tax_line.tax_base_amount
+        )
+        (entry + synced).action_post()
+        january = self._grids("2026-01-01", "2026-01-31")
+        self.assertTrue(all(january.values()), january)
+        self.assertEqual(january, self._grids("2026-02-01", "2026-02-28"))
+
+    def test_hand_encoded_entry_keeps_its_typed_amounts(self):
+        entry = self._hand_encoded_entry(tax_balance=-10.01)
+        base_line, tax_line = self._base_and_tax_line(entry)
+        self.assertAlmostEqual(base_line.balance, -100.0)
+        self.assertAlmostEqual(tax_line.balance, -10.01)
+        self.assertEqual(tax_line.tax_tag_ids, self.tax_tag)
+        entry.action_post()
+        self.assertAlmostEqual(
+            abs(self._grids("2026-01-01", "2026-01-31")["HT"]), 10.01
+        )
+
+    def test_hand_encoded_tax_line_survives_a_rebase_with_its_edited_label(self):
+        entry = self._hand_encoded_entry()
+        base_line, tax_line = self._base_and_tax_line(entry)
+        counterpart = entry.line_ids - base_line - tax_line
+        tax_line.name = "Edited label"
+        self.assertTrue(tax_line.is_name_manual)
+        entry.write(
+            {
+                "line_ids": [
+                    Command.update(base_line.id, {"balance": -200.0}),
+                    Command.update(counterpart.id, {"balance": 220.0}),
+                ]
+            }
+        )
+        self.assertEqual(entry.line_ids.filtered("tax_repartition_line_id"), tax_line)
+        self.assertEqual(tax_line.name, "Edited label")
+        self.assertTrue(tax_line.is_name_manual)
+        self.assertAlmostEqual(tax_line.balance, -20.0)
+        self.assertEqual(tax_line.tax_tag_ids, self.tax_tag)
+
+    def test_imported_journal_entry_carries_the_tax_grids(self):
+        lines = self._entry_lines()
+        result = self.env["account.move"].load(
+            [
+                "ref",
+                "date",
+                "journal_id/.id",
+                "line_ids/name",
+                "line_ids/account_id/.id",
+                "line_ids/partner_id/.id",
+                "line_ids/debit",
+                "line_ids/credit",
+                "line_ids/tax_ids/.id",
+                "line_ids/tax_repartition_line_id/.id",
+            ],
+            [
+                [
+                    "imported" if index == 0 else "",
+                    "2026-01-15" if index == 0 else "",
+                    str(self.company_data["default_journal_misc"].id)
+                    if index == 0
+                    else "",
+                    vals["name"],
+                    str(vals["account_id"]),
+                    str(vals["partner_id"]),
+                    str(max(vals["balance"], 0.0)),
+                    str(max(-vals["balance"], 0.0)),
+                    str(self.tax.id) if "tax_ids" in vals else "",
+                    str(vals.get("tax_repartition_line_id", "")),
+                ]
+                for index, vals in enumerate(lines)
+            ],
+        )
+        self.assertFalse(result["messages"])
+        entry = self.env["account.move"].browse(result["ids"])
+        base_line, tax_line = self._base_and_tax_line(entry)
+        self.assertEqual(base_line.tax_tag_ids, self.base_tag)
+        self.assertEqual(tax_line.tax_tag_ids, self.tax_tag)
+        self.assertAlmostEqual(tax_line.balance, -10.0)
+
+    def _load_journal_items(self, move, fields, row):
+        lines = move.line_ids.sorted("id")
+        return lines, self.env["account.move.line"].load(
+            [".id", *fields], [[str(line.id), *row] for line in lines]
+        )
+
+    def test_import_updating_journal_items_partner_and_label_applies_every_row(self):
+        for entry in (self._synced_entry("2026-01-15"), self._hand_encoded_entry()):
+            _base_line, tax_line = self._base_and_tax_line(entry)
+            lines, result = self._load_journal_items(
+                entry,
+                ["name", "partner_id/.id"],
+                ["Reimported", str(self.partner_b.id)],
+            )
+            self.assertFalse(result["messages"])
+            self.assertEqual(entry.line_ids, lines)
+            self.assertEqual(entry.line_ids.mapped("name"), ["Reimported"] * 3)
+            self.assertEqual(entry.line_ids.partner_id, self.partner_b)
+            self.assertTrue(tax_line.is_name_manual)
+            self.assertAlmostEqual(tax_line.balance, -10.0)
+
+    def test_import_updating_journal_items_partner_applies_every_row(self):
+        entry = self._synced_entry("2026-01-15")
+        lines, result = self._load_journal_items(
+            entry, ["partner_id/.id"], [str(self.partner_b.id)]
+        )
+        self.assertFalse(result["messages"])
+        self.assertEqual(entry.line_ids, lines)
+        self.assertEqual(entry.line_ids.partner_id, self.partner_b)

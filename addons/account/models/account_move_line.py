@@ -4752,11 +4752,47 @@ class AccountMoveLine(models.Model):
         self.check_singleton()
         if not name:
             return False
-        tax = self.tax_line_id
-        automatic_names = {tax.name}
-        if st_line := self.move_id.statement_line_id:
-            automatic_names.add(st_line._get_tax_line_name(tax))
+        st_line = self.move_id.statement_line_id
+        automatic_names = set()
+        for lang, _lang_name in self.env["res.lang"].get_installed():
+            tax = self.tax_line_id.with_context(lang=lang)
+            automatic_names.add(tax.name)
+            if st_line:
+                automatic_names.add(st_line._get_tax_line_name(tax))
         return name not in automatic_names
+
+    @api.model
+    def _get_moves_loaded_into(self, data_list):
+        line_ids = {
+            data["values"]["id"]
+            for data in data_list
+            if not data.get("xml_id") and data["values"].get("id")
+        }
+        if xml_ids := [data["xml_id"] for data in data_list if data.get("xml_id")]:
+            line_ids.update(
+                row[4]
+                for row in self.env.registry.xmlids.resolve(self.env, xml_ids, self)
+                if row[6]
+            )
+        move_ids = {
+            data["values"]["move_id"]
+            for data in data_list
+            if data["values"].get("move_id")
+        }
+        return (
+            self.browse(line_ids).exists().move_id
+            | self.env["account.move"].browse(move_ids).exists()
+        )
+
+    @api.model
+    def _load_records(self, data_list, update=False):
+        moves = self._get_moves_loaded_into(data_list)
+        _debug.pipeline("journal_items_load", rows=len(data_list), moves=moves)
+        if not moves:
+            return super()._load_records(data_list, update)
+        container = {"records": moves}
+        with moves._check_balanced(container), moves._sync_dynamic_lines(container):
+            return super()._load_records(data_list, update)
 
     def _prepare_aml_values(self, **kwargs):
         self.check_singleton()

@@ -39,9 +39,10 @@ INVOICE_BASE_LINE_TRACKED_FIELDS = (
 ENTRY_BASE_LINE_TRACKED_FIELDS = ("amount_currency",)
 
 SKIP = None
-FROM_BASE = (False, False)
-FROM_TAX = (True, False)
-FROM_TAX_REAPPLY_RATE = (True, True)
+FROM_BASE = (False, False, False)
+FROM_TAX = (True, False, False)
+FROM_TAX_REAPPLY_RATE = (True, True, False)
+KEEP_AMOUNTS = (True, False, True)
 EMPTY_TAX_SYNC_SNAPSHOT = frozendict(move={}, base_lines={}, tax_lines={})
 
 
@@ -526,11 +527,11 @@ class AccountMove(models.Model):
                 for field in ("amount_currency", "balance")
             ):
                 _debug.logic(
-                    "tax_rounding_amounts_edited_skipped",
+                    "tax_rounding_amounts_edited_kept",
                     move=move,
                     changed=len(changed_lines),
                 )
-                return SKIP
+                return KEEP_AMOUNTS
             _debug.logic(
                 "tax_rounding_base_lines_changed",
                 move=move,
@@ -941,9 +942,52 @@ class AccountMove(models.Model):
 
         return sync_boundary(prepare, commit)
 
+    def _align_tax_lines_to_computed_keys(
+        self, base_lines_values, tax_lines_values, derived_fields
+    ) -> None:
+        AccountTax = self.env["account.tax"]
+
+        def without_derived(key):
+            return frozendict(
+                {
+                    fname: value
+                    for fname, value in key.items()
+                    if fname not in derived_fields
+                }
+            )
+
+        computed_keys = defaultdict(set)
+        for base_line in base_lines_values:
+            for tax_data in base_line["tax_details"]["taxes_data"]:
+                for tax_rep_data in tax_data["tax_reps_data"]:
+                    key, _flags = AccountTax._split_tax_line_grouping_key(
+                        tax_rep_data["grouping_key"]
+                    )
+                    computed_keys[without_derived(key)].add(key)
+        for tax_line in tax_lines_values:
+            key = frozendict(
+                AccountTax._prepare_tax_line_repartition_grouping_key(tax_line)
+            )
+            matches = computed_keys.get(without_derived(key), ())
+            if key in matches or len(matches) != 1:
+                continue
+            [computed_key] = matches
+            _debug.logic(
+                "tax_line_aligned_to_computed_key",
+                line=tax_line["record"],
+                fields=derived_fields,
+            )
+            tax_line["tax_tag_ids"] = self.env["account.account.tag"].browse(
+                computed_key["tax_tag_ids"][0][2]
+            )
+            if "account_id" in derived_fields:
+                tax_line["account_id"] = self.env["account.account"].browse(
+                    computed_key["account_id"]
+                )
+
     @_debug.perf.timed
     def _get_tax_line_changes(
-        self, move, round_from_tax_lines, reapply_currency_rate
+        self, move, round_from_tax_lines, reapply_currency_rate, keep_amounts
     ) -> tuple:
         AccountTax = self.env["account.tax"]
         to_delete = []
@@ -959,6 +1003,11 @@ class AccountMove(models.Model):
             move.company_id,
             include_caba_tags=move.always_tax_exigible,
         )
+        self._align_tax_lines_to_computed_keys(
+            base_lines_values,
+            tax_lines_values,
+            ("tax_tag_ids", "account_id") if keep_amounts else ("tax_tag_ids",),
+        )
         tax_results = AccountTax._prepare_tax_lines(
             base_lines_values, move.company_id, tax_lines=tax_lines_values
         )
@@ -967,6 +1016,7 @@ class AccountMove(models.Model):
             move=move,
             from_tax=round_from_tax_lines,
             reapply_rate=reapply_currency_rate,
+            keep_amounts=keep_amounts,
             base_lines=len(base_lines_values),
             tax_lines=len(tax_lines_values),
             base_updates=len(tax_results["base_lines_to_update"]),
@@ -974,6 +1024,27 @@ class AccountMove(models.Model):
             tax_deletes=len(tax_results["tax_lines_to_delete"]),
             tax_updates=len(tax_results["tax_lines_to_update"]),
         )
+
+        def stage_update(line, values):
+            if values_differ(line, values):
+                to_update.append(((line.currency_id.id, frozendict(values)), line.id))
+
+        if keep_amounts:
+            for base_line, values in tax_results["base_lines_to_update"]:
+                stage_update(
+                    base_line["record"], {"tax_tag_ids": values["tax_tag_ids"]}
+                )
+            for tax_line_vals, grouping_key, values in tax_results[
+                "tax_lines_to_update"
+            ]:
+                stage_update(
+                    tax_line_vals["record"],
+                    {
+                        "tax_tag_ids": grouping_key["tax_tag_ids"],
+                        "tax_base_amount": values["tax_base_amount"],
+                    },
+                )
+            return to_delete, to_create, to_update
 
         non_deductible_tax_line = move.line_ids.filtered(
             lambda line: line.display_type == "non_deductible_tax"
@@ -995,23 +1066,16 @@ class AccountMove(models.Model):
         if non_deductible_vals is None:
             to_delete.extend(non_deductible_tax_line.ids)
         elif non_deductible_tax_line:
-            tax_results["tax_lines_to_update"].append(
-                (
-                    {"record": non_deductible_tax_line},
-                    "unused_grouping_key",
-                    {
-                        "amount_currency": non_deductible_vals["amount_currency"],
-                        "balance": non_deductible_vals["balance"],
-                        "account_id": non_deductible_vals["account_id"],
-                    },
-                )
+            stage_update(
+                non_deductible_tax_line,
+                {
+                    "amount_currency": non_deductible_vals["amount_currency"],
+                    "balance": non_deductible_vals["balance"],
+                    "account_id": non_deductible_vals["account_id"],
+                },
             )
         else:
             to_create.append(non_deductible_vals)
-
-        def stage_update(line, values):
-            if values_differ(line, values):
-                to_update.append(((line.currency_id.id, frozendict(values)), line.id))
 
         for base_line, values in tax_results["base_lines_to_update"]:
             stage_update(base_line["record"], values)
@@ -1024,8 +1088,9 @@ class AccountMove(models.Model):
             {**tax_line_vals, "display_type": "tax", "move_id": move.id}
             for tax_line_vals in tax_results["tax_lines_to_add"]
         )
-        for tax_line_vals, _grouping_key, values in tax_results["tax_lines_to_update"]:
+        for tax_line_vals, grouping_key, values in tax_results["tax_lines_to_update"]:
             tax_line = tax_line_vals["record"]
+            values = {**values, "tax_tag_ids": grouping_key["tax_tag_ids"]}
             if tax_line.is_name_manual:
                 values = {key: value for key, value in values.items() if key != "name"}
             elif "name" in values:
