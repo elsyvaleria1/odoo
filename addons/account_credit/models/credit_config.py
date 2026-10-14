@@ -96,7 +96,25 @@ class CreditConfig(models.Model):
         configs = super().create(vals_list)
         if any(vals.get("credit_folder_id") for vals in vals_list):
             self._sync_credit_folder_grants()
+        configs._provision_credit_folder()
         return configs
+
+    def _provision_credit_folder(self) -> None:
+        unfiled = self.filtered(lambda config: not config.credit_folder_id)
+        if not unfiled:
+            return
+        folders = self.env["document.document"].create(
+            [
+                {
+                    "name": self.env._("Credit"),
+                    "type": "folder",
+                    "company_id": config.company_id.id,
+                }
+                for config in unfiled
+            ]
+        )
+        for config, folder in zip(unfiled, folders, strict=True):
+            config.credit_folder_id = folder
 
     def write(self, vals):
         result = super().write(vals)

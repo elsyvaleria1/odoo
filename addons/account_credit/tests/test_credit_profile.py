@@ -785,6 +785,13 @@ class TestConfig(CreditProfileCase):
         self.assertEqual(self.config.credit_folder_id, folder)
         self.assertEqual(self.env.company.credit_config_id, self.config)
 
+    def test_a_new_company_files_credit_documents_from_its_first_day(self):
+        company = self.env["res.company"].create({"name": "Credit Folder Co"})
+        folder = company.credit_folder_id
+        self.assertEqual(folder.type, "folder")
+        self.assertEqual(folder.company_id, company)
+        self.assertFalse(folder.folder_id)
+
     def test_thresholds_are_ordered(self):
         with self.assertRaises(ValidationError):
             self.config.write({"watch_days": 100, "default_days": 90})

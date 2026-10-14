@@ -1,6 +1,6 @@
 {
     "name": "Customer Credit Management",
-    "version": "19.0.2.5.1",
+    "version": "19.0.2.5.2",
     "oldest_upgradable_version": "19.0.2.5.1",
     "category": "Accounting/Accounting",
     "summary": "Manage customer credit profiles, facilities, policy decisions and provision runs",
