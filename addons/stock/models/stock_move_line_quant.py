@@ -10,6 +10,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import OrderedSet
 
 from ..const import INVENTORY_REFERENCE_REVERTED, LOCKED_QUANTS_CACHE_KEY
+from ..tools.quantity import get_faithful_quantity
 from .stock_move_line import (
     _KEEP,
     DEST_QUANT_FIELDS,
@@ -273,9 +274,22 @@ class StockMoveLineQuant(models.Model):
                 if product_uom._is_zero_aggregate(quantity):
                     break
             else:
-                candidate.quantity -= candidate.product_id.uom_id._get_quantity_in_unit(
-                    quantity, candidate.product_uom_id, rounding_method="HALF-UP"
+                kept = candidate.quantity_product_uom - quantity
+                kept_in_line_uom = get_faithful_quantity(
+                    product_uom, kept, candidate.product_uom_id
                 )
+                if kept_in_line_uom is None:
+                    _debug.logic(
+                        "free_reservation_line_to_product_uom",
+                        line=candidate.id,
+                        kept=kept,
+                        line_uom=candidate.product_uom_id.name,
+                    )
+                    candidate.write(
+                        {"product_uom_id": product_uom.id, "quantity": kept}
+                    )
+                else:
+                    candidate.quantity = kept_in_line_uom
                 break
 
         move_line_to_unlink = self.env["stock.move.line"].browse(

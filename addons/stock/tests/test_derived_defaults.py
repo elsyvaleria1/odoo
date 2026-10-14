@@ -1070,7 +1070,7 @@ class TestApplyingACountLandsOnIt(TransactionCase):
 
 
 @tagged("post_install", "-at_install")
-class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
+class TestSplittingAMoveConservesDemand(TransactionCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
@@ -1113,26 +1113,33 @@ class TestSplittingAMoveCannotAlwaysConserve(TransactionCase):
         new.invalidate_recordset()
         self.assertEqual(move.product_qty + sum(new.mapped("product_qty")), before)
 
-    def test_an_unrepresentable_remainder_is_reported(self):
+    def test_an_unrepresentable_remainder_keeps_the_product_unit(self):
         move = self._confirmed_dozen_move()
         before = move.product_qty
-        with self.assertLogs(
-            "odoo.debug.logic.stock.stock_move_merge", "DEBUG"
-        ) as captured:
-            new = self.env["stock.move"].create(move._split(4.0))
-            self.env.flush_all()
+        new = self.env["stock.move"].create(move._split(5.0))
+        self.env.flush_all()
         move.invalidate_recordset()
         new.invalidate_recordset()
-        self.assertNotEqual(
-            move.product_qty + sum(new.mapped("product_qty")),
-            before,
-            "if this conserves, the open decision above has been taken and this "
-            "test should be replaced rather than relaxed",
+        self.assertEqual(move.product_qty + sum(new.mapped("product_qty")), before)
+        self.assertRecordValues(
+            move | new,
+            [
+                {"product_uom_id": self.unit.id, "product_uom_qty": 7.0},
+                {"product_uom_id": self.unit.id, "product_uom_qty": 5.0},
+            ],
         )
-        self.assertTrue(
-            any("event=split_not_conserved" in line for line in captured.output),
-            "a split that changes the total demanded must say so",
+
+    def test_a_partial_validation_conserves_the_demand(self):
+        move = self._confirmed_dozen_move()
+        move._action_assign()
+        move.move_line_ids.quantity = 5.0
+        move.move_line_ids.product_uom_id = self.unit
+        move.picked = True
+        move._action_done()
+        backorder = self.env["stock.move"].search(
+            [("product_id", "=", self.product.id), ("state", "!=", "done")]
         )
+        self.assertEqual(move.product_qty + backorder.product_qty, 12.0)
 
 
 @tagged("post_install", "-at_install")
@@ -1163,6 +1170,33 @@ class TestReservationAgreesWithTheQuant(TransactionCase):
             ]
         )
         return sum(lines.mapped("quantity_product_uom"))
+
+    def test_a_partial_release_never_leaves_more_reserved_than_on_hand(self):
+        product = self.env["product.product"].create(
+            {"name": "Release dozen", "is_storable": True, "uom_id": self.unit.id}
+        )
+        self.env["stock.quant"]._update_available_quantity(product, self.location, 12.0)
+        move = self.env["stock.move"].create(
+            {
+                "product_id": product.id,
+                "product_uom_id": self.uoms["dozen"].id,
+                "product_uom_qty": 1.0,
+                "picking_type_id": self.warehouse.out_type_id.id,
+                "location_id": self.location.id,
+                "location_dest_id": self.customer_location.id,
+            }
+        )
+        move._action_confirm()
+        move._action_assign()
+        quant = self.env["stock.quant"]._gather(product, self.location)
+        quant.with_context(inventory_mode=True).inventory_quantity = 11.0
+        quant.with_context(inventory_mode=True).action_apply_inventory()
+
+        self.assertEqual(quant.quantity, 11.0)
+        self.assertEqual(quant.reserved_quantity, 11.0)
+        self.assertRecordValues(
+            move.move_line_ids, [{"product_uom_id": self.unit.id, "quantity": 11.0}]
+        )
 
     def test_the_quant_and_its_lines_never_drift(self):
         scenarios = [

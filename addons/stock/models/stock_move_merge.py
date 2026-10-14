@@ -1,5 +1,4 @@
 import logging
-import math
 from collections import defaultdict
 
 from odoo import models
@@ -10,6 +9,7 @@ from odoo.libs.numbers import float_round
 from odoo.tools.misc import groupby
 
 from ..const import INTERNAL_CONTEXT_FLAG
+from ..tools.quantity import get_faithful_quantity
 from .stock_move import CONTEXT_SPLIT_DEMAND
 
 _logger = logging.getLogger(__name__)
@@ -305,7 +305,9 @@ class StockMoveMerge(models.Model):
             _debug.logic("split_zero", move=self.id, qty=qty)
             return []
 
-        uom_qty = self._get_uom_quantity_if_faithful(qty, self.product_uom_id)
+        uom_qty = get_faithful_quantity(
+            self.product_id.uom_id, qty, self.product_uom_id
+        )
         if uom_qty is not None:
             defaults = self._prepare_move_split_vals(uom_qty)
         else:
@@ -318,51 +320,29 @@ class StockMoveMerge(models.Model):
             defaults["restrict_partner_id"] = restrict_partner_id
         new_move_vals = self.copy_data(defaults)
 
-        new_product_qty = self.product_uom_id.round(
-            self.product_id.uom_id._get_quantity_in_unit(
-                max(0, self.product_qty - qty),
-                self.product_uom_id,
-                round=False,
-            ),
+        remaining = max(0, self.product_qty - qty)
+        kept_uom_qty = get_faithful_quantity(
+            self.product_id.uom_id, remaining, self.product_uom_id
         )
-        split_qty = defaults["product_uom_qty"]
-        if uom_qty is None:
-            split_back = split_qty
+        if kept_uom_qty is None:
+            kept_vals = {
+                "product_uom_id": self.product_id.uom_id.id,
+                "product_uom_qty": remaining,
+            }
         else:
-            split_back = self.product_uom_id._get_quantity_in_unit(
-                split_qty, self.product_id.uom_id, round=False
-            )
-        kept_back = self.product_uom_id._get_quantity_in_unit(
-            new_product_qty, self.product_id.uom_id, round=False
-        )
-        if _debug.logic.enabled and not math.isclose(
-            kept_back + split_back, self.product_qty, rel_tol=1e-12
-        ):
-            _debug.logic(
-                "split_not_conserved",
-                move=self.id,
-                qty=qty,
-                product_qty=self.product_qty,
-                kept=kept_back,
-                split=split_back,
-                total=kept_back + split_back,
-                residual=kept_back + split_back - self.product_qty,
-                uom=self.product_uom_id.name,
-            )
+            kept_vals = {"product_uom_qty": kept_uom_qty}
         _debug.logic(
             "split",
             move=self.id,
             qty=qty,
-            kept=new_product_qty,
+            kept=kept_vals["product_uom_qty"],
             split_qty=defaults["product_uom_qty"],
             faithful_uom=uom_qty is not None,
         )
         self.with_context(
             do_not_unreserve=True,
             **{CONTEXT_SPLIT_DEMAND: INTERNAL_CONTEXT_FLAG},
-        ).write(
-            {"product_uom_qty": new_product_qty},
-        )
+        ).write(kept_vals)
         self._recompute_state()
         return new_move_vals
 
@@ -383,25 +363,6 @@ class StockMoveMerge(models.Model):
         if force_uom_id:
             vals["product_uom_id"] = force_uom_id
         return vals
-
-    def _get_uom_quantity_if_faithful(self, quantity, to_uom):
-        self.check_singleton()
-        product_uom = self.product_id.uom_id
-        uom_quantity = product_uom.round(
-            product_uom._get_quantity_in_unit(
-                quantity,
-                to_uom,
-                rounding_method="HALF-UP",
-            ),
-        )
-        back_to_product_uom = to_uom._get_quantity_in_unit(
-            uom_quantity,
-            product_uom,
-            rounding_method="HALF-UP",
-        )
-        if product_uom.compare(quantity, back_to_product_uom) == 0:
-            return uom_quantity
-        return None
 
     def _product_uom_qty_to_move_uom_qty(self, product_uom_qty):
         self.check_singleton()

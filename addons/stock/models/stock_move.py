@@ -14,6 +14,7 @@ from ..const import (
     INVENTORY_REFERENCE_UPDATED,
     is_internal_flag,
 )
+from ..tools.quantity import get_faithful_quantity
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 
 _logger = logging.getLogger(__name__)
@@ -1382,8 +1383,8 @@ class StockMove(models.Model):
             "company_id": self.company_id.id,
         }
         if quantity:
-            uom_quantity = self._get_uom_quantity_if_faithful(
-                quantity, self.product_uom_id
+            uom_quantity = get_faithful_quantity(
+                self.product_id.uom_id, quantity, self.product_uom_id
             )
             if uom_quantity is not None:
                 vals = dict(vals, quantity=uom_quantity)

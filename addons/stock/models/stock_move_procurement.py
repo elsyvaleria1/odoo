@@ -8,6 +8,7 @@ from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import OrderedSet, TransactionMemo
 
+from ..tools.quantity import get_faithful_quantity
 from .stock_orderpoint import ORDERPOINTS_BY_SCOPE
 
 PACKAGE_ROUTE_IDS = TransactionMemo(
@@ -193,7 +194,8 @@ class StockMoveProcurement(models.Model):
                 0,
             )
             quantity = max(move.product_qty - qty_free, 0)
-            product_uom_qty = move._get_uom_quantity_if_faithful(
+            product_uom_qty = get_faithful_quantity(
+                move.product_id.uom_id,
                 quantity,
                 move.product_uom_id,
             )

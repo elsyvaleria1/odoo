@@ -11,6 +11,18 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 
+def get_faithful_quantity(product_uom, quantity, to_uom) -> float | None:
+    uom_quantity = product_uom.round(
+        product_uom._get_quantity_in_unit(quantity, to_uom, rounding_method="HALF-UP"),
+    )
+    back_to_product_uom = to_uom._get_quantity_in_unit(
+        uom_quantity, product_uom, rounding_method="HALF-UP"
+    )
+    if product_uom.compare(quantity, back_to_product_uom) == 0:
+        return uom_quantity
+    return None
+
+
 def get_domain_quantity_in_python(records, field_name, operator, value) -> list:
     matches = records.with_context(prefetch_fields=False).search_fetch(
         [], [field_name], order="id"

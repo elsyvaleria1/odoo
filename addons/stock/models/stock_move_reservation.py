@@ -10,6 +10,7 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.numbers import float_is_zero
 from odoo.tools.misc import OrderedSet, groupby
 
+from odoo.addons.stock.tools.quantity import get_faithful_quantity
 from odoo.addons.stock.tools.reservation import ReservationLedger
 
 _logger = logging.getLogger(__name__)
@@ -854,7 +855,8 @@ class StockMoveReservation(models.Model):
         )
         uom_quantity = None
         if to_update:
-            uom_quantity = self._get_uom_quantity_if_faithful(
+            uom_quantity = get_faithful_quantity(
+                self.product_id.uom_id,
                 quantity,
                 to_update.product_uom_id,
             )

@@ -391,7 +391,16 @@ class TestBatchPicking(TransactionCase):
         wave = self.env["stock.picking.batch"].search([("is_wave", "=", True)])
         self.assertFalse(lines.move_id == dozen_move)
         self.assertEqual(lines.batch_id, wave)
-        self.assertEqual(dozen_move.product_uom_qty, 0.58)
+        self.assertRecordValues(
+            dozen_move,
+            [
+                {
+                    "product_uom_id": self.env.ref("base.product_uom_unit").id,
+                    "product_uom_qty": 7.0,
+                }
+            ],
+        )
+        self.assertEqual(dozen_move.product_qty + lines.move_id.product_qty, 12.0)
 
     def test_wave_mutliple_move_lines(self):
         self.productA = self.env["product.product"].create(
