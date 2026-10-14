@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-13 08:51+0000\n"
-"PO-Revision-Date: 2026-10-13 08:51+0000\n"
+"POT-Creation-Date: 2026-10-14 00:03+0000\n"
+"PO-Revision-Date: 2026-10-14 00:03+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -103,6 +103,14 @@ msgstr ""
 
 #. module: account
 #. odoo-python
+#: code:addons/account/models/account_account.py:0
+msgid ""
+"%(accounts)s do not belong to the companies of %(audit)s, so they have no "
+"review status in it."
+msgstr ""
+
+#. module: account
+#. odoo-python
 #: code:addons/account/models/account_journal_dashboard.py:0
 msgid "%(action)s for journal %(journal)s"
 msgstr ""
@@ -120,6 +128,12 @@ msgstr ""
 msgid ""
 "%(attachment_name)s (detached by %(user)s on "
 "%(date)s)%(attachment_extension)s"
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return_type.py:0
+msgid "%(company)s does not file %(type)s for %(country)s."
 msgstr ""
 
 #. module: account
@@ -454,6 +468,15 @@ msgstr ""
 
 #. module: account
 #. odoo-python
+#: code:addons/account/models/account_return.py:0
+msgid ""
+"%(reason)s This return was kept because it holds work (attachments, "
+"messages, activities or reviewed checks); delete it once that work is no "
+"longer needed."
+msgstr ""
+
+#. module: account
+#. odoo-python
 #: code:addons/account/models/mixin_company_split.py:0
 msgid "%(record)s will be split in %(count)s, one for each company:\n"
 msgstr ""
@@ -503,6 +526,14 @@ msgstr ""
 msgid ""
 "%(transaction)s is already matched with journal items, so its amount can no longer change: rebuilding it would delete posted entries.\n"
 "Undo the reconciliation first, then change the amount."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return_type.py:0
+msgid ""
+"%(type)s is not filed for %(country)s: %(country_types)s, the tax return "
+"type of that country, files it."
 msgstr ""
 
 #. module: account
@@ -4332,7 +4363,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:account.field_account_partial_reconcile__amount
 #: model:ir.model.fields,field_description:account.field_account_payment__amount
 #: model:ir.model.fields,field_description:account.field_account_pending_match__amount
-#: model:ir.model.fields,field_description:account.field_account_reconcile_model__match_amount
 #: model:ir.model.fields,field_description:account.field_account_reconcile_model_line__amount_string
 #: model:ir.model.fields,field_description:account.field_account_report_budget_item__amount
 #: model:ir.model.fields,field_description:account.field_account_return_payment__amount
@@ -4354,6 +4384,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:account.view_account_reconcile_wizard
 #: model_terms:ir.ui.view,arch_db:account.view_move_form
 msgid "Amount"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_reconcile_model__match_amount
+msgid "Amount (absolute)"
 msgstr ""
 
 #. module: account
@@ -4520,6 +4555,11 @@ msgstr ""
 #: model:ir.model.constraint,message:account.constraint_account_fiscal_position_account_account_src_uniq
 msgid ""
 "An account fiscal position could be defined only one time on same accounts."
+msgstr ""
+
+#. module: account
+#: model:ir.model.constraint,message:account.constraint_account_audit_account_status_audit_id_account_id_uniq
+msgid "An account holds one review status per audit."
 msgstr ""
 
 #. module: account
@@ -4780,7 +4820,7 @@ msgstr ""
 
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.view_account_reconcile_model_form
-msgid "Any amount"
+msgid "Any absolute amount"
 msgstr ""
 
 #. module: account
@@ -5339,6 +5379,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:account.field_account_payment__available_bank_account_ids
 #: model:ir.model.fields,field_description:account.field_wizard_account_move_line_pay__available_bank_account_ids
 msgid "Available Bank Account"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_wizard_account_return_create__available_country_ids
+msgid "Available Country"
 msgstr ""
 
 #. module: account
@@ -7745,6 +7790,12 @@ msgid "Control"
 msgstr ""
 
 #. module: account
+#. odoo-python
+#: code:addons/account/models/bank_reconciliation_report.py:0
+msgid "Conversion rounding"
+msgstr ""
+
+#. module: account
 #: model:ir.actions.server,name:account.action_account_payment_convert_to_entry
 msgid "Convert to Journal Entry"
 msgstr ""
@@ -9576,6 +9627,11 @@ msgid "Digitization"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,field_description:account.field_account_reconcile_model__match_direction
+msgid "Direction"
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields,field_description:account.field_account_bank_statement_line__direction_sign
 #: model:ir.model.fields,field_description:account.field_account_move__direction_sign
 msgid "Direction Sign"
@@ -11368,6 +11424,12 @@ msgstr ""
 #. module: account
 #: model:ir.model.fields,field_description:account.field_account_return_type__filing_channel
 msgid "Filing Channel"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_return__country_id
+#: model:ir.model.fields,field_description:account.field_wizard_account_return_create__country_id
+msgid "Filing Country"
 msgstr ""
 
 #. module: account
@@ -13327,6 +13389,7 @@ msgid "Income taxes owed to the U.S. federal government"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields.selection,name:account.selection__account_reconcile_model__match_direction__incoming
 #: model_terms:ir.ui.view,arch_db:account.view_account_move_line_search_bank_rec_widget
 msgid "Incoming"
 msgstr ""
@@ -13334,6 +13397,11 @@ msgstr ""
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.view_account_journal_form
 msgid "Incoming Payments"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields.selection,name:account.selection__account_reconcile_model__match_direction__both
+msgid "Incoming and outgoing"
 msgstr ""
 
 #. module: account
@@ -14809,6 +14877,11 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:account.report_journal_entry_document
 #: model_terms:ir.ui.view,arch_db:account.view_account_payment_register_form
 msgid "Label"
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,field_description:account.field_account_move_line__is_name_manual
+msgid "Label Edited"
 msgstr ""
 
 #. module: account
@@ -17806,6 +17879,7 @@ msgid "Outbound Payment Methods"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields.selection,name:account.selection__account_reconcile_model__match_direction__outgoing
 #: model_terms:ir.ui.view,arch_db:account.view_account_move_line_search_bank_rec_widget
 msgid "Outgoing"
 msgstr ""
@@ -19305,6 +19379,13 @@ msgstr ""
 msgid ""
 "Privilege: give a bank transaction the partner of the items it was matched "
 "with"
+msgstr ""
+
+#. module: account
+#: model:res.groups,name:account.privilege_seed_audit_account_statuses
+msgid ""
+"Privilege: give an account its review row in every open audit of its "
+"companies, when it is created, joins a company or is split off"
 msgstr ""
 
 #. module: account
@@ -21916,6 +21997,11 @@ msgid "Show Composition"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,field_description:account.field_wizard_account_return_create__show_country_id
+msgid "Show Country"
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields,field_description:account.field_res_bank__show_credit_limit
 #: model:ir.model.fields,field_description:account.field_res_company__show_credit_limit
 #: model:ir.model.fields,field_description:account.field_res_partner__show_credit_limit
@@ -23684,6 +23770,14 @@ msgid ""
 msgstr ""
 
 #. module: account
+#: model:ir.model.constraint,message:account.constraint_account_reconcile_model_match_amount_min_match_amount_max_check
+msgid ""
+"The amount bounds of a reconciliation model cannot be negative: they are "
+"compared to the absolute amount. Use the direction to tell money received "
+"from money paid."
+msgstr ""
+
+#. module: account
 #. odoo-python
 #: code:addons/account/wizards/wizard_account_move_apply_advance.py:0
 msgid "The amount exceeds what the advances still hold."
@@ -23929,6 +24023,13 @@ msgstr ""
 msgid ""
 "The country in which this tax unit is used to group your companies' tax "
 "reports declaration."
+msgstr ""
+
+#. module: account
+#: model:ir.model.fields,help:account.field_account_return__country_id
+msgid ""
+"The country this return is filed in: its type's country, else the company's "
+"fiscal country, else the foreign-VAT country it was created for."
 msgstr ""
 
 #. module: account
@@ -24269,6 +24370,14 @@ msgid "The journal item is not linked to the correct financial account"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,help:account.field_account_move_line__is_name_manual
+msgid ""
+"The label of this tax line was typed by hand and differs from the tax's: "
+"recomputing the taxes keeps it. Clearing it, or typing the tax's label back,"
+" lets the label follow the tax again."
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields,help:account.field_wizard_account_config_update_fiscal_year__fiscalyear_last_day
 #: model:ir.model.fields,help:account.field_wizard_account_config_update_fiscal_year__fiscalyear_last_month
 msgid ""
@@ -24465,6 +24574,13 @@ msgid ""
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,help:account.field_account_reconcile_model__match_direction
+msgid ""
+"The reconciliation model will only be applied to money received (incoming), "
+"money paid (outgoing) or both."
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields,help:account.field_account_reconcile_model__match_partner_ids
 msgid ""
 "The reconciliation model will only be applied to the selected "
@@ -24483,8 +24599,9 @@ msgstr ""
 #. module: account
 #: model:ir.model.fields,help:account.field_account_reconcile_model__match_amount
 msgid ""
-"The reconciliation model will only be applied when the amount being lower "
-"than, greater than or between specified amount(s)."
+"The reconciliation model will only be applied when the absolute amount, "
+"whatever its direction, is lower than, greater than or between the specified"
+" amount(s)."
 msgstr ""
 
 #. module: account
@@ -25406,6 +25523,15 @@ msgstr ""
 msgid ""
 "This report uses the CTA conversion method to consolidate multiple companies using different currencies,\n"
 "        which can lead the report to be unbalanced."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return.py:0
+msgid ""
+"This return is no longer generated for its company, country and period. It "
+"was kept because it holds work (attachments, messages, activities or "
+"reviewed checks); delete it once that work is no longer needed."
 msgstr ""
 
 #. module: account
@@ -27526,6 +27652,14 @@ msgstr ""
 
 #. module: account
 #. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+msgid ""
+"You cannot add the invoice line %(line)s to the posted entry %(move)s, you "
+"should reset the journal entry to draft to do so."
+msgstr ""
+
+#. module: account
+#. odoo-python
 #: code:addons/account/models/account_move.py:0
 msgid ""
 "You cannot add/modify entries prior to and inclusive of: %(lock_date_info)s."
@@ -27760,6 +27894,14 @@ msgstr ""
 #. odoo-python
 #: code:addons/account/models/account_tax.py:0
 msgid "You cannot merge taxes."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_move_line.py:0
+msgid ""
+"You cannot modify the %(fields)s of the posted journal item %(line)s, you "
+"should reset the journal entry to draft to do so."
 msgstr ""
 
 #. module: account
