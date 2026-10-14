@@ -830,7 +830,7 @@ class TestCompanyAnchors(TransactionCase):
         broken = []
         for model_name in self.env.registry.models:
             model = self.env[model_name]
-            if model._abstract or not (anchor := model._access_company_anchor()):
+            if model._abstract or not (anchor := model._get_company_anchor_path()):
                 continue
             if anchor == "id":
                 if model_name != "res.company":

@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.99
+:Version: 7.100
 :Date: 2026-10-14
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2842,6 +2842,17 @@ admitted batches. A command returning checked ids or enforced moves names both
 effects, such as ``_enforce_verb_transitions_and_get_moves``; it does not claim
 to admit ids when only its caller opens the admission scope.
 
+**Search compiled consumers as well as Python callers** ``[review]``.
+Python embedded in a Rust string is still a caller. Carry renamed methods
+through those bindings, rebuild the extension, and verify that its registry
+export and execution path work. A suite can pass through a fallback after its
+native adapter failed; its green result alone does not prove that adapter.
+
+**Keep independent validation scopes independent** ``[review]``. A missing
+record company anchor can skip regular relational checks, but not checks of
+company-dependent fields against ``env.company``. An error names the scope
+that was checked: the environment company can differ from the record company.
+
 **A protocol namespace belongs only to names its dispatcher calls**
 ``[review]``. A model's private helper does not wear ``_load_pos_data_*``
 unless the loader dispatches it (``_load_pos_data_country_ids`` →
@@ -5412,7 +5423,7 @@ model no permission row names is readable by the superuser only.
   left their reach is admitted only where their create permissions would have
   made it. The guards, which state what writing or making one needs beside
   whose it is, do not judge a move. The kernel does this
-  (``write`` → ``_check_anchor_moves``): a model does not re-check its access
+  (``write`` → ``_check_anchor_move_access``): a model does not re-check its access
   after ``super().write()`` to keep its rows with their owner.
 * **A domain never reads the user's groups** in a way more groups narrow
   ``[test_lint access_domain_no_group_test]``: membership is the row's group. Only
@@ -6415,6 +6426,12 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.100
+     - 2026-10-14
+     - §2.4.21 carries renames through embedded native callers and verifies
+       their actual execution path, rather than accepting fallback as proof.
+       Independent company-check scopes remain independent, and errors name
+       the scope checked.
    * - 7.99
      - 2026-10-14
      - §2.4.21 distinguishes checkpoint enforcement from discovery, preserves

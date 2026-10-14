@@ -1,7 +1,7 @@
 from odoo import Command
 from odoo.exceptions import AccessError, UserError
 from odoo.tests import common, patch
-from odoo.tools import frozendict
+from odoo.tools import frozendict, mute_logger
 
 
 class TestCompanyCheck(common.TransactionCase):
@@ -165,6 +165,39 @@ class TestCompanyCheck(common.TransactionCase):
             }
         )
 
+    def test_unanchored_regular_fields_do_not_disable_company_dependent_checks(self):
+        model = self.env["test_orm.company_check_property"].with_company(self.company_a)
+        with mute_logger("odoo.models"):
+            valid = model.create(
+                {
+                    "name": "Valid property",
+                    "parent_id": self.parent_b.id,
+                    "property_parent_id": self.parent_a.id,
+                }
+            )
+            self.assertEqual(valid.property_parent_id, self.parent_a)
+            with self.assertRaises(UserError):
+                model.create(
+                    {
+                        "name": "Invalid property",
+                        "property_parent_id": self.parent_b.id,
+                    }
+                )
+
+    def test_property_error_names_the_company_that_was_checked(self):
+        model = self.env["test_orm.company_check_property_anchored"].with_company(
+            self.company_a
+        )
+        with self.assertRaises(UserError) as caught:
+            model.create(
+                {
+                    "name": "Company B record in Company A property scope",
+                    "company_id": self.company_b.id,
+                    "property_parent_id": self.parent_b.id,
+                }
+            )
+        self.assertIn("In company “Company A”", str(caught.exception))
+
     def test_check_company_write_performance(self):
         child = self.env["test_orm.model_child"].create(
             {
@@ -188,6 +221,75 @@ class TestCompanyCheck(common.TransactionCase):
             child.parent_id = self.parent_b
 
         spy.assert_called_once_with(child, ["parent_id", "write_uid", "write_date"])
+
+    def test_field_selection_keeps_regular_and_property_scopes_explicit(self):
+        model = self.env["test_orm.company_check_property_anchored"]
+        selected = model._get_company_check_field_names(
+            ["property_parent_id", "parent_id"]
+        )
+        self.assertEqual(selected.regular_fields, ["parent_id"])
+        self.assertEqual(selected.property_fields, ["property_parent_id"])
+        self.assertEqual(model._get_company_check_field_names([]), ([], []))
+        self.assertEqual(
+            model._get_company_check_field_names(["company_id"]),
+            model._get_company_check_field_names(),
+        )
+
+    def test_company_groups_preserve_record_order_and_their_company_scopes(self):
+        model = self.env["test_orm.company_check_property_anchored"].with_company(
+            self.company_a
+        )
+        records = model.create(
+            [
+                {
+                    "name": "B",
+                    "company_id": self.company_b.id,
+                    "parent_id": self.parent_b.id,
+                    "property_parent_id": self.parent_a.id,
+                },
+                {
+                    "name": "A",
+                    "company_id": self.company_a.id,
+                    "parent_id": self.parent_a.id,
+                    "property_parent_id": self.parent_a.id,
+                },
+            ]
+        )
+        groups = records._get_company_check_groups(
+            ["parent_id"], ["property_parent_id"]
+        )
+        self.assertEqual(
+            list(groups),
+            [
+                ("parent_id", tuple(self.company_b.ids)),
+                ("property_parent_id", tuple(self.company_a.ids)),
+                ("parent_id", tuple(self.company_a.ids)),
+            ],
+        )
+        self.assertEqual(
+            [entry[0] for entries in groups.values() for entry in entries], [0, 1, 3, 2]
+        )
+        self.assertEqual(list(records._get_company_violations(groups)), [])
+
+    def test_company_error_builder_does_not_raise_and_caps_ordered_details_at_five(
+        self,
+    ):
+        records = self.env["test_orm.model_child"].create(
+            [
+                {"name": f"Candidate {index}", "company_id": self.company_a.id}
+                for index in range(6)
+            ]
+        )
+        error = records._prepare_company_inconsistency_error(
+            [(record, "parent_id", self.parent_b) for record in records]
+        )
+        self.assertIsInstance(error, UserError)
+        message = str(error)
+        for index in range(5):
+            self.assertIn(f"Candidate {index}", message)
+        self.assertNotIn("Candidate 5", message)
+        self.assertEqual(message.count("(parent_id: 'M2')"), 5)
+        self.assertEqual(records.mapped("parent_id"), self.env["test_orm.model_parent"])
 
     def test_two_checked_fields_on_one_comodel_read_its_companies_once(self):
         self.env.invalidate_all()

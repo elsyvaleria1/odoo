@@ -42,6 +42,11 @@ _logger = logging.getLogger("odoo.models")
 _debug = DebugLog(__name__)
 
 
+class _CompanyCheckFields(typing.NamedTuple):
+    regular_fields: list[str]
+    property_fields: list[str]
+
+
 class AccessMixin(_ModelStubs):
     __slots__ = ()
 
@@ -586,7 +591,7 @@ class AccessMixin(_ModelStubs):
         )
 
     @api.model
-    def _access_company_anchor(self) -> str | None:
+    def _get_company_anchor_path(self) -> str | None:
         anchor = self.env.registry.model_anchors.get(self._name, {}).get("company")
         return anchor.path if anchor else None
 
@@ -640,8 +645,8 @@ class AccessMixin(_ModelStubs):
                     yield VerbMove(name, moved)
 
     @override
-    def _anchors_before_write(
-        self, vals: dict[str, typing.Any]
+    def _get_anchor_values_before_write(
+        self, vals: Collection[str]
     ) -> dict[str, dict[int, typing.Any]] | None:
         env = self.env
         if env.su or not self._ids:
@@ -665,23 +670,31 @@ class AccessMixin(_ModelStubs):
             for fname in fnames
         }
 
-    @override
-    def _check_anchor_moves(self, before: dict[str, dict[int, typing.Any]]) -> None:
-        env = self.env
+    def _get_ids_with_changed_anchors(
+        self, before: dict[str, dict[int, typing.Any]]
+    ) -> tuple[int, ...]:
         records = self.sudo()
-        moved = sorted(
-            {
-                id_
-                for fname, values in before.items()
-                for id_, value in values.items()
-                if self._fields[fname].convert_to_cache(
-                    records.browse(id_)[fname], records.browse(id_), validate=False
-                )
-                != value
-            }
-        )
+        moved: set[int] = set()
+        for fname, values in before.items():
+            for id_, value in values.items():
+                field = self._fields[fname]
+                record = records.browse(id_)
+                if (
+                    field.convert_to_cache(record[fname], record, validate=False)
+                    != value
+                ):
+                    moved.add(id_)
+        return tuple(sorted(moved))
+
+    @override
+    def _check_anchor_move_access(
+        self, before: dict[str, dict[int, typing.Any]]
+    ) -> None:
+        env = self.env
+        moved = self._get_ids_with_changed_anchors(before)
         if not moved:
             return
+        records = self.sudo()
         policy = env.registry.access_policy
         permissions = [
             domain
@@ -783,7 +796,7 @@ class AccessMixin(_ModelStubs):
             return Domain("company_id", "in", unquote(f"{companies} + [False]"))
         return Domain("company_id", "in", to_record_ids(companies) + [False])
 
-    def _get_company_check_candidates(
+    def _get_company_check_groups(
         self, regular_fields: list[str], property_fields: list[str]
     ) -> dict[
         tuple[str, tuple[int, ...]], list[tuple[int, ModelLike, BaseModel, typing.Any]]
@@ -841,14 +854,16 @@ class AccessMixin(_ModelStubs):
     ) -> Iterator[tuple[int, ModelLike, str, BaseModel]]:
         prefetch: defaultdict[str, dict[IdType, None]] = defaultdict(dict)
         for entries in groups.values():
-            for entry in entries:
-                prefetch[entry[2]._get_model_name()].update(
-                    dict.fromkeys(entry[2]._ids)
+            for _rank, _record, corecords, _companies in entries:
+                prefetch[corecords._get_model_name()].update(
+                    dict.fromkeys(corecords._ids)
                 )
         for (name, _companies_ids), entries in groups.items():
-            companies = entries[0][3]
-            comodel = entries[0][2].browse()
-            all_corecords = comodel.union(*(entry[2] for entry in entries))
+            _rank, _record, first_corecords, companies = entries[0]
+            comodel = first_corecords.browse()
+            all_corecords = comodel.union(
+                *(corecords for _rank, _record, corecords, _companies in entries)
+            )
             all_corecords = all_corecords.with_prefetch(
                 tuple(prefetch[comodel._get_model_name()])
             )
@@ -864,8 +879,9 @@ class AccessMixin(_ModelStubs):
                 if not allowed.issuperset(corecords._ids):
                     yield rank, record, name, corecords
 
-    @override
-    def _check_company(self, fnames: Collection[str] | None = None) -> None:
+    def _get_company_check_field_names(
+        self, fnames: Collection[str] | None = None
+    ) -> _CompanyCheckFields:
         if fnames is None or "company_id" in fnames or "company_ids" in fnames:
             fnames = self._fields
 
@@ -878,7 +894,11 @@ class AccessMixin(_ModelStubs):
                     regular_fields.append(name)
                 else:
                     property_fields.append(name)
+        return _CompanyCheckFields(regular_fields, property_fields)
 
+    @override
+    def _check_company(self, fnames: Collection[str] | None = None) -> None:
+        regular_fields, property_fields = self._get_company_check_field_names(fnames)
         if not (regular_fields or property_fields):
             return
 
@@ -886,11 +906,10 @@ class AccessMixin(_ModelStubs):
             self._name == "res.company" or "company_id" in self or "company_ids" in self
         ):
             _logger.warning(
-                "Skipping a company check for model %s. Its fields %s "
-                "are set as company-dependent, but the model doesn't "
-                "have a `company_id` or `company_ids` field!",
-                self._name,
+                "Skipping company checks for regular fields %s on model %s: "
+                "the model has no `company_id` or `company_ids` field.",
                 regular_fields,
+                self._name,
             )
             _debug.logic(
                 "access.company_check_skipped",
@@ -898,9 +917,11 @@ class AccessMixin(_ModelStubs):
                 fields=regular_fields,
                 reason="no_company_field",
             )
-            return
+            regular_fields = []
+            if not property_fields:
+                return
 
-        candidates = self._get_company_check_candidates(regular_fields, property_fields)
+        candidates = self._get_company_check_groups(regular_fields, property_fields)
         inconsistencies = [
             (record, name, corecords)
             for _rank, record, name, corecords in sorted(
@@ -916,46 +937,53 @@ class AccessMixin(_ModelStubs):
                 violations=len(inconsistencies),
                 fields=sorted({name for _record, name, _co in inconsistencies}),
             )
-            lines = [self.env._("Uh-oh! You've got some company inconsistencies here:")]
-            company_msg = _lt(
-                "- Record is company \u201c%(company)s\u201d while \u201c%(field)s\u201d (%(fname)s: %(values)s) belongs to another company."
-            )
-            record_msg = _lt(
-                "- \u201c%(record)s\u201d belongs to company \u201c%(company)s\u201d while \u201c%(field)s\u201d (%(fname)s: %(values)s) belongs to another company."
-            )
-            root_company_msg = _lt(
-                "- Only a root company can be set on \u201c%(record)s\u201d. Currently set to \u201c%(company)s\u201d"
-            )
-            for record, name, corecords in inconsistencies[:5]:
-                if record._name == "res.company":
-                    msg, companies = company_msg, record
-                elif record == corecords and name == "company_id":
-                    msg, companies = root_company_msg, record["company_id"]
-                else:
-                    msg = record_msg
-                    companies = (
-                        record["company_id"]
-                        if "company_id" in record
-                        else record["company_ids"]
-                    )
-                field_string = self.env.registry.metaschema.field_strings(
-                    self.env, self._name
-                ).get(name, self._fields[name].string)
-                lines.append(
-                    str(msg)
-                    % {
-                        "record": record.display_name,
-                        "company": ", ".join(
-                            company.display_name or "" for company in companies
-                        ),
-                        "field": field_string,
-                        "fname": name,
-                        "values": ", ".join(
-                            repr(rec.display_name) for rec in corecords
-                        ),
-                    }
+            raise self._prepare_company_inconsistency_error(inconsistencies)
+
+    def _prepare_company_inconsistency_error(
+        self, inconsistencies: list[tuple[ModelLike, str, BaseModel]]
+    ) -> UserError:
+        lines = [self.env._("Uh-oh! You've got some company inconsistencies here:")]
+        company_msg = _lt(
+            "- Record is company \u201c%(company)s\u201d while \u201c%(field)s\u201d (%(fname)s: %(values)s) belongs to another company."
+        )
+        record_msg = _lt(
+            "- \u201c%(record)s\u201d belongs to company \u201c%(company)s\u201d while \u201c%(field)s\u201d (%(fname)s: %(values)s) belongs to another company."
+        )
+        root_company_msg = _lt(
+            "- Only a root company can be set on \u201c%(record)s\u201d. Currently set to \u201c%(company)s\u201d"
+        )
+        property_msg = _lt(
+            "- In company \u201c%(company)s\u201d, company-dependent field \u201c%(field)s\u201d (%(fname)s: %(values)s) on \u201c%(record)s\u201d points to another company."
+        )
+        companies: ModelLike
+        for record, name, corecords in inconsistencies[:5]:
+            if self._fields[name].company_dependent:
+                msg, companies = property_msg, self.env.company
+            elif record._name == "res.company":
+                msg, companies = company_msg, record
+            elif record == corecords and name == "company_id":
+                msg, companies = root_company_msg, record["company_id"]
+            else:
+                msg = record_msg
+                companies = (
+                    record["company_id"]
+                    if "company_id" in record
+                    else record["company_ids"]
                 )
+            field_string = self.env.registry.metaschema.field_strings(
+                self.env, self._name
+            ).get(name, self._fields[name].string)
             lines.append(
-                self.env._("To avoid a mess, no company crossover is allowed!")
+                str(msg)
+                % {
+                    "record": record.display_name,
+                    "company": ", ".join(
+                        company.display_name or "" for company in companies
+                    ),
+                    "field": field_string,
+                    "fname": name,
+                    "values": ", ".join(repr(rec.display_name) for rec in corecords),
+                }
             )
-            raise UserError("\n".join(lines))
+        lines.append(self.env._("To avoid a mess, no company crossover is allowed!"))
+        return UserError("\n".join(lines))

@@ -608,7 +608,7 @@ write naming a field an anchor path starts from
 (`Registry.moving_anchor_fields`, every anchor kind but the creator), `write`
 snapshots those values first and, once written, filters the records that
 actually moved through the OR of the principal's write and create permissions
-(`AccessMixin._check_anchor_moves`): a record still within the writer's write
+(`AccessMixin._check_anchor_move_access`): a record still within the writer's write
 reach has not left them (an approver naming a delegate keeps the row), and one
 that left is admitted only where making it would be. The guards stay out, since
 they state what writing or making a record needs beside whose it is (an

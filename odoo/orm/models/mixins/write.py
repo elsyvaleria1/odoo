@@ -183,7 +183,7 @@ class WriteMixin(_ModelStubs):
             )
 
         self._write_check_field_access(vals)
-        anchors_before = self._anchors_before_write(vals)
+        anchors_before = self._get_anchor_values_before_write(vals)
         moves = None
         if transitions := self.env.registry.verb_transitions.get(self._name):
             moves = self._enforce_verb_transitions_and_get_moves(vals, transitions)
@@ -278,7 +278,7 @@ class WriteMixin(_ModelStubs):
             self._check_company(list(vals))
 
         if anchors_before:
-            real_recs._check_anchor_moves(anchors_before)
+            real_recs._check_anchor_move_access(anchors_before)
 
         if moves:
             self._notify_verb_transitions_landed(moves)
@@ -395,7 +395,7 @@ class WriteMixin(_ModelStubs):
         names = {fname: None}
         TransactionMemo.discard_for_model(self.env, self._name, names)
         self._write_check_field_access(names)
-        anchors_before = self._anchors_before_write(names)
+        anchors_before = self._get_anchor_values_before_write(names)
         log_vals: ValuesType = (
             {"write_uid": self.env.uid, "write_date": self.env.cr.now()}
             if self._log_access
@@ -423,7 +423,7 @@ class WriteMixin(_ModelStubs):
         if self._check_company_auto:
             self._check_company([fname])
         if anchors_before:
-            self._check_anchor_moves(anchors_before)
+            self._check_anchor_move_access(anchors_before)
 
     def _sync_log_access_cache(
         self, log_vals: ValuesType, log_only_ids: dict[str, list[IdType]]

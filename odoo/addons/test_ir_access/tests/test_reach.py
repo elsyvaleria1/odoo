@@ -104,6 +104,71 @@ class TestReach(TransactionCase):
         self.row("own", "creator")
         self.assertEqual(self.env[MODEL].with_user(self.user).search([]), mine)
 
+    def test_anchor_snapshots_only_read_triggered_fields_and_skip_elevated_records(
+        self,
+    ):
+        self.row("all", operation="r")
+        records = self.mine.with_user(self.user)
+        before = records._get_anchor_values_before_write({"user_id": self.stranger.id})
+        self.assertEqual(before, {"user_id": {self.mine.id: self.user.id}})
+        self.assertEqual(self.mine.user_id, self.user)
+        with self.assertQueryCount(0):
+            self.assertIsNone(records._get_anchor_values_before_write({"name"}))
+            self.assertIsNone(
+                records.browse()._get_anchor_values_before_write({"user_id"})
+            )
+            self.assertIsNone(
+                records.sudo()._get_anchor_values_before_write({"user_id"})
+            )
+        virtual = self.env[MODEL].new({"user_id": self.user.id}).with_user(self.user)
+        self.assertEqual(
+            virtual._get_anchor_values_before_write({"user_id"}), {"user_id": {}}
+        )
+
+    def test_changed_anchor_ids_are_sorted_deduplicated_and_do_not_enforce_access(self):
+        records = self.mine | self.theirs
+        before = {
+            "user_id": {self.theirs.id: self.user.id, self.mine.id: self.stranger.id},
+            "company_id": {self.mine.id: self.child.id},
+        }
+        self.assertEqual(
+            records.with_user(self.user)._get_ids_with_changed_anchors(before),
+            tuple(sorted(records.ids)),
+        )
+        self.assertEqual(records.mapped("user_id"), self.user | self.stranger)
+        with self.assertQueryCount(0):
+            self.assertEqual(records._get_ids_with_changed_anchors({}), ())
+            self.assertEqual(
+                records._get_ids_with_changed_anchors({"not_a_field": {}}), ()
+            )
+
+    def test_a_write_cannot_move_an_owned_record_outside_its_destination_permissions(
+        self,
+    ):
+        self.row("all", operation="r")
+        self.row("own", operation="u")
+        record = self.mine.with_user(self.user)
+        with self.assertRaises(AccessError):
+            record.write({"user_id": self.stranger.id})
+        self.assertEqual(self.mine.user_id, self.user)
+        self.row("all", operation="c")
+        record.write({"user_id": self.stranger.id})
+        self.assertEqual(self.mine.user_id, self.stranger)
+
+    def test_anchor_access_ignores_unchanged_records_in_a_batch(self):
+        self.row("all", operation="r")
+        self.row("own", operation="u")
+        records = (self.mine | self.theirs).with_user(self.user)
+        before = {
+            "user_id": {self.mine.id: self.user.id, self.theirs.id: self.stranger.id}
+        }
+        records._check_anchor_move_access(before)
+        before["user_id"][self.mine.id] = self.stranger.id
+        records._check_anchor_move_access(before)
+        before["user_id"][self.theirs.id] = self.user.id
+        with self.assertRaises(AccessError):
+            records._check_anchor_move_access(before)
+
     def test_own_through_the_partner_is_the_principal_s_own_contact(self):
         self.row("own", "partner")
         self.assertEqual(self.reached(), self.my_partner)
@@ -262,7 +327,7 @@ class TestReach(TransactionCase):
         anchors = self.env.registry.model_anchors[MODEL]
         self.assertEqual(anchors["approver"].kind, "owner")
         self.assertEqual(anchors["creator"].path, "create_uid")
-        self.assertEqual(self.env[MODEL]._access_company_anchor(), "company_id")
+        self.assertEqual(self.env[MODEL]._get_company_anchor_path(), "company_id")
 
     def test_a_filter_on_a_field_that_reads_the_user_is_no_fixed_filter(self):
         registry = self.env.registry

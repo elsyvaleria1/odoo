@@ -1650,6 +1650,27 @@ class TestOrmModel_Child(models.Model):
     )
 
 
+class TestOrmCompanyCheckProperty(models.Model):
+    _name = "test_orm.company_check_property"
+    _description = "Company-dependent checks without a record company anchor"
+    _check_company_auto = True
+
+    name = fields.Char()
+    parent_id = fields.Many2one("test_orm.model_parent", check_company=True)
+    property_parent_id = fields.Many2one(
+        "test_orm.model_parent", company_dependent=True, check_company=True
+    )
+
+
+class TestOrmCompanyCheckPropertyAnchored(models.Model):
+    _name = "test_orm.company_check_property_anchored"
+    _inherit = "test_orm.company_check_property"
+    _description = "Company-dependent checks beside a different record company"
+    _check_company_auto = True
+
+    company_id = fields.Many2one("res.company")
+
+
 class TestOrmModel_Child_Nocheck(models.Model):
     _name = "test_orm.model_child_nocheck"
     _description = "Model Multicompany child"

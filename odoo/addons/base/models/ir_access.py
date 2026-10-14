@@ -1407,7 +1407,7 @@ class IrAccess(models.Model):
         scopes = self.env.user._get_group_scopes()
         groups = self.env["res.groups"].sudo()
         companies = self.env["res.company"].sudo()
-        anchor = self.env[model_name]._access_company_anchor()
+        anchor = self.env[model_name]._get_company_anchor_path()
         lines = []
         for row in self._get_all_access().get(model_name, ()):
             if not covers(row, operation):
@@ -1461,7 +1461,7 @@ class IrAccess(models.Model):
     def _company_scope_domain(
         self, model_name: str, companies: frozenset[int]
     ) -> Domain | None:
-        anchor = self.env[model_name]._access_company_anchor()
+        anchor = self.env[model_name]._get_company_anchor_path()
         if not anchor:
             return None
         company_ids = sorted(companies)

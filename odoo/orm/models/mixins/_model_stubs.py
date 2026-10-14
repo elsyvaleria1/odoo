@@ -175,10 +175,10 @@ class _ModelStubs:
         def _notify_verb_transitions_landed(
             self, moves: Iterable[tuple[str, tuple[int, ...]]]
         ) -> None: ...
-        def _anchors_before_write(
-            self, vals: dict[str, typing.Any]
+        def _get_anchor_values_before_write(
+            self, vals: Collection[str]
         ) -> dict[str, dict[int, typing.Any]] | None: ...
-        def _check_anchor_moves(
+        def _check_anchor_move_access(
             self, before: dict[str, dict[int, typing.Any]]
         ) -> None: ...
         def _enforce_verb_creations(self, transitions: VerbTransitions) -> None: ...

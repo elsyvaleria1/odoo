@@ -458,7 +458,7 @@ class WhatsAppTemplateCompanyAnchor(WhatsAppCommon):
     def test_a_template_belongs_to_the_companies_of_its_account(self):
         self.assertEqual(
             {
-                model: self.env[model]._access_company_anchor()
+                model: self.env[model]._get_company_anchor_path()
                 for model in (
                     "whatsapp.template",
                     "whatsapp.template.button",

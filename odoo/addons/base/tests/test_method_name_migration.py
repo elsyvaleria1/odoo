@@ -744,9 +744,16 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
             self.assertEqual(cr.fetchone()[0], expected)
 
     def test_shared_verb_methods_upgrade_every_stored_code_owner_and_column(self):
-        migration = _load_method_name_migration("1.163")
+        self._check_shared_stored_method_upgrade("1.163")
+
+    def test_shared_anchor_methods_upgrade_every_stored_code_owner_and_column(self):
+        self._check_shared_stored_method_upgrade("1.164")
+
+    def _check_shared_stored_method_upgrade(self, version):
+        migration = _load_method_name_migration(version)
         renames = migration.SHARED_MODEL_METHOD_RENAMES
-        code = "# café: keep _verb_checkpoint\ntext = '_check_verb_creations'\n"
+        old_names = list(renames)
+        code = f"# café: keep {old_names[0]}\ntext = {old_names[1]!r}\n"
         expected = code
         for old, new in renames.items():
             code += f"records.{old}\ngetattr(records, {old!r})\n"
@@ -821,6 +828,23 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
                 migration.migrate(cr, "1.162")
             cr.execute("SELECT code FROM ir_act_server")
             self.assertEqual(cr.fetchone()[0], "records._verb_checkpoint()")
+
+    def test_unresolved_shared_anchor_owner_rolls_back_the_upgrade(self):
+        migration = _load_method_name_migration("1.164")
+        with self._use_migration_schema() as cr:
+            cr.execute(
+                "INSERT INTO ir_act_server VALUES (1, 2, 'records._access_company_anchor()')"
+            )
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 1, 'unknown._anchors_before_write()')"
+            )
+            with (
+                self.assertRaisesRegex(ValueError, "Cannot resolve method owners"),
+                cr.savepoint(flush=False),
+            ):
+                migration.migrate(cr, "1.163")
+            cr.execute("SELECT code FROM ir_act_server")
+            self.assertEqual(cr.fetchone()[0], "records._access_company_anchor()")
 
     def test_unresolved_egress_owner_rolls_back_the_upgrade(self):
         migration = _load_method_name_migration("1.162")

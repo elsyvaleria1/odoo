@@ -233,7 +233,7 @@ class MixinAccessGraph(models.AbstractModel):
         )
 
     def _access_reach_company_column(self) -> str | None:
-        anchor = self._access_company_anchor()
+        anchor = self._get_company_anchor_path()
         if anchor and "." in anchor:
             raise ValueError(
                 f"{self._name}: the access graph needs its company anchor on the "

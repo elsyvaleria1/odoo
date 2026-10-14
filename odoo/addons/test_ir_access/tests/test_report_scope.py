@@ -49,6 +49,6 @@ class TestScopedGrantOnAReport(TransactionCase):
             user=self.user,
             context={"allowed_company_ids": (self.company_a | self.company_b).ids},
         )
-        self.assertEqual(env[REPORT]._access_company_anchor(), "company_id")
+        self.assertEqual(env[REPORT]._get_company_anchor_path(), "company_id")
         rows = env[REPORT].search([("name", "in", list(self.names))])
         self.assertEqual(set(rows.mapped("name")), {"in A", "in none"})
