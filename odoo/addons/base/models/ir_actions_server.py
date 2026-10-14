@@ -395,6 +395,22 @@ class IrActionsServer(models.Model):
                 _debug.logic("python_code_refused", action=action.id, reason="syntax")
                 raise ValidationError(msg)
 
+    @api.constrains("value", "evaluation_type", "state")
+    def _check_value_expression(self) -> None:
+        for action in self:
+            expr = (action.value or "").strip()
+            if not (action._is_value_computed() and expr):
+                continue
+            if msg := test_python_expr(expr=expr, mode="eval"):
+                _debug.logic(
+                    "value_expression_refused", action=action.id, reason="syntax"
+                )
+                raise ValidationError(msg)
+
+    def _is_value_computed(self) -> bool:
+        self.check_singleton()
+        return self.state == "object_write" and self.evaluation_type == "equation"
+
     @api.constrains("update_path", "model_id", "state")
     def _check_update_path(self) -> None:
         for action in self:
@@ -625,18 +641,22 @@ class IrActionsServer(models.Model):
         )
         samples = {}
         for model_name in set(webhooks.model_id.mapped("model")):
+            Model = self.env[model_name].with_context(active_test=False)
             samples[model_name] = (
-                self.env[model_name].with_context(active_test=False).search([], limit=1)  # noqa: E8507 -- loop variable is the model -- a different table each time
+                Model.search([], limit=1) if Model.has_access("read") else Model  # noqa: E8507 -- loop variable is the model -- a different table each time
             )
         _debug.perf.count("webhook_samples", actions=len(webhooks), models=len(samples))
         for model_name, actions in webhooks.grouped("model_name").items():
             sample = samples.get(model_name)
-            if sample:
+            sampled = actions.filtered(
+                lambda action: not action._has_restricted_webhook_fields()
+            )
+            if sample and sampled:
                 sample.read(
-                    list(set(actions.webhook_field_ids.mapped("name"))), load=None
+                    list(set(sampled.webhook_field_ids.mapped("name"))), load=None
                 )
             for action in actions:
-                if sample:
+                if sample and action in sampled:
                     payload = action._prepare_server_action_webhook_payload(sample)
                 else:
                     _debug.logic(
@@ -1385,6 +1405,19 @@ class IrActionsServer(models.Model):
         if config.link_field_id:
             records.check_access("write")
 
+    def _get_restricted_webhook_fields(self) -> Any:
+        self.check_singleton()
+        Model = self.env[self.model_id.model]
+        return self.webhook_field_ids.filtered(
+            lambda model_field: (
+                (field := Model._fields.get(model_field.name)) is not None
+                and field.access_classes is not None
+            )
+        )
+
+    def _has_restricted_webhook_fields(self) -> bool:
+        return bool(self._get_restricted_webhook_fields())
+
     def _prepare_server_action_webhook_payload(
         self, record: models.Model
     ) -> dict[str, Any]:
@@ -1472,6 +1505,7 @@ class IrActionsServer(models.Model):
             "update_path",
             "update_field_type",
             "evaluation_type",
+            "value",
             "sequence_id",
             "webhook_field_ids",
             "usage",
@@ -1570,13 +1604,17 @@ class IrActionsServer(models.Model):
                     self.env._("Choose the sequence the value is drawn from.")
                 )
 
+        if self._is_value_computed() and not (self.value or "").strip():
+            _debug.logic("value_expression_missing", action=self.id)
+            warnings.append(
+                self.env._("Write the expression the value is computed from.")
+            )
+
         if self.state == "webhook" and self.model_id:
-            restricted_fields = []
-            Model = self.env[self.model_id.model]
-            for model_field in self.webhook_field_ids:
-                field = Model._fields.get(model_field.name)
-                if field and field.access_classes is not None:
-                    restricted_fields.append(f"- {model_field.field_description}")
+            restricted_fields = [
+                f"- {model_field.field_description}"
+                for model_field in self._get_restricted_webhook_fields()
+            ]
             if restricted_fields:
                 _debug.logic(
                     "webhook_fields_restricted",

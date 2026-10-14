@@ -38,6 +38,26 @@ class TestModuleCategory(TransactionCase):
         self.env.flush_all()
         self.assertEqual(hierarchy_entry()["name"], "Renamed Application")
 
+    def test_a_reordered_category_reorders_the_group_hierarchy(self):
+        Groups = self.env["res.groups"]
+
+        def category_ids():
+            return [
+                entry["id"]
+                for entry in Groups._get_view_group_hierarchy()["categories"]
+            ]
+
+        ordered = category_ids()
+        self.assertGreater(len(ordered), 1, "precondition: two categories to order")
+        last = self.env["ir.module.category"].browse(ordered[-1])
+        last.write({"sequence": min(last.search([]).mapped("sequence")) - 1})
+        self.env.flush_all()
+        self.assertEqual(
+            category_ids()[0],
+            last.id,
+            "the access-rights panel kept the order it cached before the move",
+        )
+
 
 class TestUpdateCategoryIdentity(TransactionCase):
     def _module(self, suffix=""):

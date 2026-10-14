@@ -1028,8 +1028,8 @@ class IrModuleCategoryCacheCase(TransactionCase):
     def test_a_name_change_clears_the_group_hierarchy(self):
         self.assertTrue(self._cleared_by({"name": "irmod cache renamed"}))
 
-    def test_a_sequence_change_does_not(self):
-        self.assertFalse(self._cleared_by({"sequence": 42}))
+    def test_a_sequence_change_clears_the_group_hierarchy(self):
+        self.assertTrue(self._cleared_by({"sequence": 42}))
 
     def test_a_visibility_change_does_not(self):
         self.assertFalse(self._cleared_by({"visible": False}))
@@ -1039,12 +1039,20 @@ class IrModuleCategoryCacheCase(TransactionCase):
             type(self.env["res.groups"])._get_view_group_hierarchy
         )
         categories = source.split('"categories"')[1]
+        ordering = {
+            term.split()[0] for term in self.env["ir.module.category"]._order.split(",")
+        } - {"id"}
         for field in GROUP_HIERARCHY_FIELDS:
-            self.assertIn(
-                f"category.{field}",
-                categories,
+            self.assertTrue(
+                f"category.{field}" in categories or field in ordering,
                 f"{field} is guarded but the hierarchy no longer reads it",
             )
+        self.assertLessEqual(
+            ordering,
+            GROUP_HIERARCHY_FIELDS,
+            "the hierarchy lists categories in this order, so a write to any "
+            "of these fields reorders it",
+        )
 
 
 class IrModuleStableCacheCase(TransactionCase):

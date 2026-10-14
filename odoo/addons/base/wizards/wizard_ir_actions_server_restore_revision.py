@@ -1,6 +1,7 @@
 from typing import Self
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.tools.misc import get_diff
@@ -41,7 +42,26 @@ class WizardIrActionsServerRestoreRevision(models.TransientModel):
         domain="[('action_id', '=', action_id), ('code', '!=', current_code)]",
     )
 
-    @api.depends("revision")
+    @api.constrains("action_id", "revision")
+    def _check_revision_action(self) -> None:
+        for wizard in self:
+            if wizard.revision.action_id != wizard.action_id:
+                _debug.logic(
+                    "revision_refused",
+                    action=wizard.action_id.id,
+                    revision=wizard.revision.id,
+                    revision_action=wizard.revision.action_id.id,
+                )
+                raise ValidationError(
+                    self.env._(
+                        "The revision belongs to the server action "
+                        "'%(revision_action)s', not to '%(action)s'.",
+                        revision_action=wizard.revision.action_id.display_name,
+                        action=wizard.action_id.display_name,
+                    )
+                )
+
+    @api.depends("action_id.code", "revision.code")
     def _compute_code_diff(self) -> None:
         for wizard in self:
             rev_code = wizard.revision.code

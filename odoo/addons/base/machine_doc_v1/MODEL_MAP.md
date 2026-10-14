@@ -228,7 +228,7 @@ side effects or make a receiver honor the key.
 - `child_ids` (One2many → self) — Sub-actions for `multi` state
 - `update_path` (Char) — Field path for write operations
 - `update_m2m_operation` (Selection) — `add`, `remove`, `set`, `clear`
-- `value` (Text) — Expression or literal value
+- `value` (Text) — Expression or literal value; an `equation` on an update is parsed on save (`_check_value_expression`) and an empty one is a warning
 - `evaluation_type` (Selection) — `value`, `sequence`, `equation`
 - `webhook_url` (Char), `webhook_field_ids` (Many2many → ir.model.fields)
 - `webhook_delivery` (Selection: `once` default, `queued`), `webhook_timeout` (Integer)
@@ -251,7 +251,7 @@ side effects or make a receiver honor the key.
 Code revision history for server actions.
 
 **Fields:**
-- `action_id` (Many2one → ir.actions.server, cascade), `code` (Text)
+- `action_id` (Many2one → ir.actions.server, indexed, cascade), `code` (Text)
 
 **Key Methods:**
 - `_gc_histories()` — Autovacuum, keeps last 100 entries
@@ -260,7 +260,8 @@ Code revision history for server actions.
 
 #### WizardIrActionsServerRestoreRevision — `wizard.ir.actions.server.restore.revision` (TransientModel)
 
-Wizard to view diffs and restore previous code revisions.
+Wizard to view diffs and restore previous code revisions. A revision of another
+action is refused (`_check_revision_action`).
 
 ---
 
@@ -1153,7 +1154,7 @@ Scheduled jobs — executes server actions on a recurring schedule.
 - `_trigger(at)`, `_add_triggers(at_list)` — Schedule immediate execution
 - `_notify_after_commit(cr)` — Wake cron workers via pg_notify once the transaction commits
 - `method_direct_trigger()` — Run cron immediately (UI button)
-- `toggle(model, domain)` — Toggle active state conditionally
+- `toggle(model, domain)` — Toggle active state conditionally (`@api.private`: called on a cron record from Python, never over RPC)
 
 #### IrCronTrigger — `ir.cron.trigger` (`_name`)
 
@@ -1187,7 +1188,8 @@ channel `job_queue`), each in its own
 transaction. States: wait_deps → pending → started → done / failed /
 cancelled. Dependency graphs via `delayed(after=jobs)`: chains and fan-in;
 dependents are released atomically with the dependency's completion and
-cascade-cancelled (transitively) when a dependency fails or is cancelled.
+cascade-cancelled (transitively) when a dependency fails or is cancelled, or is
+deleted before it is done (`unlink`).
 
 **Fields:**
 - `uuid` (Char), `channel` (Char, default='root'), `state` (Selection), `priority` (Integer, default=10)
@@ -1396,9 +1398,13 @@ Auto-incrementing sequences — manages PostgreSQL sequences.
 **Key Methods:**
 - `next_by_id(sequence_id)` — Get next value by ID
 - `next_by_code(sequence_code)` — Get next value by code
+- `next_by_code_batch(sequence_code, count)` — `count` values in one draw (`@api.private`: Python callers only, the count is unbounded)
+- `copy_data(default)` — a copy starts at the source's actual next number (`number_next_actual`), whatever the implementation
 - `_get_current_sequence(sequence_date)` — Get sequence or date-range subsequence
 - `create(vals_list)` — Create PostgreSQL sequence if standard implementation
 - `write(vals)` — Alter PostgreSQL sequence
+
+`ir.sequence.date_range.write` moving a range to another sequence carries its counter over: the old PostgreSQL sequence is read and dropped, and the range gets one under its new name when the new main sequence is standard.
 
 ---
 
@@ -1464,7 +1470,7 @@ Saved search filters.
 HTTP routing, authentication, and request dispatch.
 
 **Key Methods:**
-- `routing_map(key)` — Generate and cache routing map for installed modules (ormcache)
+- `routing_map(key)` — Generate and cache routing map for installed modules (ormcache; `@api.private`, so no RPC caller fills the routing cache with maps under keys of its choosing)
 - `_match(path_info)` — Match HTTP path to routing rule
 - `_authenticate(endpoint)` — Authenticate request based on endpoint auth type
 - `_auth_method_none()`, `_auth_method_user()`, `_auth_method_public()`, `_auth_method_bearer()` — Auth handlers
@@ -1764,7 +1770,7 @@ One row per saved version of a server action's `code`, written by
 recent versions.
 
 **Fields:**
-- `action_id` (Many2one → ir.actions.server, required, cascade)
+- `action_id` (Many2one → ir.actions.server, required, indexed, cascade)
 - `code` (Text)
 
 ### models/ir_actions_embedded.py
@@ -2528,7 +2534,7 @@ by digits is read under the one country its linked records agree on (their
 
 #### ReportPaperformat — `report.paperformat` (`_name`)
 
-**Fields:** `name` (Char, required), `format` (Selection, default=A4), `orientation` (Selection), margins (top/bottom/left/right Float), `header_spacing` (Integer, mm — used by DIN5008 templates), `css_margins` (Boolean — WeasyPrint body-padding mode), `dpi` (Integer — Web Studio preview zoom), `disable_shrinking` (Boolean — Web Studio preview)
+**Fields:** `name` (Char, required), `format` (Selection, default=A4), `page_width` / `page_height` (Integer, mm — only with `format` `custom`, which needs both above zero), `orientation` (Selection), margins (top/bottom/left/right Float), `header_spacing` (Integer, mm — used by DIN5008 templates), `css_margins` (Boolean — WeasyPrint body-padding mode), `print_page_width` / `print_page_height` (computed — the page the PDF prints: the format's size, else the custom size, else A4, swapped for landscape; Studio's preview reads them), `dpi` (Integer) and `disable_shrinking` (Boolean) — read by no renderer and no preview; still set by data files, so kept off the form only
 
 ### models/mixin_catalog.py
 

@@ -8,6 +8,7 @@ from requests.adapters import HTTPAdapter
 
 from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import Command
+from odoo.libs.json import loads as json_loads
 from odoo.libs.netguard import DestinationRefused
 from odoo.tests import counting_statements
 from odoo.tests.common import TransactionCase, tagged
@@ -1079,3 +1080,126 @@ class TestTheDebugGroupHidesAnActionWithoutForbiddingIt(ServerActionCase):
             self.assertTrue(self._offered())
             self.action.with_user(self.user)._check_access_to_load()
             self.assertEqual(self._run(), {"type": "ir.actions.act_window_close"})
+
+
+@tagged("post_install", "-at_install")
+class TestWebhookSampleNeverLocksTheForm(ServerActionCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.admin = cls.env["res.users"].create(
+            {
+                "name": "webhook sample admin",
+                "login": "webhook_sample_admin",
+                "group_ids": [Command.set(cls.env.ref("base.group_system").ids)],
+            }
+        )
+
+    def _webhook(self, model_name, fields=()):
+        return self.Action.create(
+            {
+                "name": "sample",
+                "model_id": self.env["ir.model"]._get(model_name).id,
+                "state": "webhook",
+                "webhook_url": "https://example.com/hook",
+                "webhook_field_ids": [Command.set([field.id for field in fields])],
+            }
+        )
+
+    def test_a_field_the_reader_cannot_read_does_not_break_the_sample(self):
+        Users = self.env["res.users"].with_user(self.admin)
+        name = next(
+            name
+            for name, field in Users._fields.items()
+            if field.store
+            and field.access_classes is not None
+            and not Users._has_field_access(field, "read")
+        )
+        field = self.env["ir.model.fields"]._get("res.users", name)
+        action = self._webhook("res.users", field)
+        action.invalidate_recordset()
+        action = action.with_user(self.admin)
+        payload = json_loads(action.webhook_sample_payload)
+        self.assertIn(name, payload)
+        self.assertTrue(action.warning, "the form still says to remove the field")
+
+    def test_a_model_the_reader_cannot_read_gets_a_synthetic_sample(self):
+        model_name = "ir.model.inherit"
+        self.assertFalse(
+            self.env[model_name].with_user(self.admin).has_access("read"),
+            "precondition: a system administrator cannot read the model",
+        )
+        action = self._webhook(model_name)
+        action.invalidate_recordset()
+        action = action.with_user(self.admin)
+        payload = json_loads(action.webhook_sample_payload)
+        self.assertEqual(payload["_model"], model_name)
+
+
+@tagged("post_install", "-at_install")
+class TestComputedValueIsAnExpression(ServerActionCase):
+    def _computed(self, value):
+        return self._action(
+            state="object_write",
+            update_path="name",
+            evaluation_type="equation",
+            value=value,
+        )
+
+    def test_an_expression_that_does_not_parse_is_refused_on_save(self):
+        with self.assertRaises(ValidationError):
+            self._computed("record.name +")
+        action = self._computed("record.name")
+        with self.assertRaises(ValidationError):
+            action.value = "1 if"
+
+    def test_a_static_value_is_not_parsed(self):
+        action = self._action(
+            state="object_write", update_path="name", value="record.name +"
+        )
+        self.assertEqual(action.value, "record.name +")
+
+    def test_surrounding_whitespace_is_not_an_indent(self):
+        partner = self._partners(1)
+        action = self._computed("  record.name + '!'\n")
+        action.with_context(**self._ctx(partner)).run()
+        self.assertEqual(partner.name, "p0!")
+
+    def test_an_empty_expression_is_a_warning_not_a_crash(self):
+        partner = self._partners(1)
+        action = self._computed(False)
+        self.assertIn("expression", action.warning)
+        with self.assertRaises(UserError):
+            action.with_context(**self._ctx(partner)).run()
+
+
+@tagged("post_install", "-at_install")
+class TestCodeRevisionsBelongToTheirAction(ServerActionCase):
+    def test_a_revision_of_another_action_is_refused(self):
+        first = self._action(state="code", code="x = 1")
+        other = self._action(state="code", code="y = 2")
+        foreign = self.env["ir.actions.server.history"].search(
+            [("action_id", "=", other.id)]
+        )
+        with self.assertRaises(ValidationError):
+            self.env["wizard.ir.actions.server.restore.revision"].create(
+                {"action_id": first.id, "revision": foreign.id}
+            )
+        self.assertEqual(first.code, "x = 1")
+
+    def test_its_own_revision_is_restored(self):
+        action = self._action(state="code", code="x = 1")
+        action.code = "x = 2"
+        wizard = (
+            self.env["wizard.ir.actions.server.restore.revision"]
+            .with_context(default_action_id=action.id)
+            .create({})
+        )
+        self.assertEqual(wizard.revision.code, "x = 1")
+        wizard.restore_revision()
+        self.assertEqual(action.code, "x = 1")
+
+    def test_the_history_is_looked_up_by_an_index(self):
+        self.assertTrue(
+            self.env["ir.actions.server.history"]._fields["action_id"].index
+        )

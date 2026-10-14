@@ -121,7 +121,7 @@ def wrap_with_admin_access_check[T](method: T, /) -> T:
     return _call_method_with_admin_access_check
 
 
-GROUP_HIERARCHY_FIELDS = frozenset(("name", "privilege_ids"))
+GROUP_HIERARCHY_FIELDS = frozenset(("name", "sequence", "privilege_ids"))
 
 
 class IrModuleCategory(models.Model):

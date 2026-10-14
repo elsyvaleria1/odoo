@@ -255,15 +255,15 @@ class ReportPaperformat(models.Model):
     )
     disable_shrinking = fields.Boolean(
         string="Disable auto-shrinking",
-        help="When enabled, the Web Studio report preview skips viewport-shrink "
-        "correction. Has no effect on WeasyPrint PDF generation.",
+        help="Read by neither the PDF renderer nor the report preview: setting it "
+        "changes nothing.",
     )
     dpi = fields.Integer(
         string="Preview DPI",
         default=90,
         required=True,
-        help="DPI used to scale the HTML preview in Web Studio (96 / dpi = zoom factor). "
-        "Does not affect WeasyPrint PDF output, which is resolution-independent.",
+        help="Read by neither the PDF renderer nor the report preview: setting it "
+        "changes nothing.",
     )
     report_ids = fields.One2many(
         comodel_name="ir.actions.report",
@@ -304,37 +304,38 @@ class ReportPaperformat(models.Model):
                     "You can select either a format or a specific page width/height, but not both."
                 )
             )
+        if incomplete := self.filtered(
+            lambda x: (
+                x.format == "custom" and not (x.page_width > 0 and x.page_height > 0)
+            )
+        ):
+            _debug.logic(
+                "format_rejected",
+                paperformats=incomplete.ids,
+                reason="custom_without_size",
+            )
+            raise ValidationError(
+                self.env._(
+                    "A custom paper size needs a page width and a page height "
+                    "greater than zero."
+                )
+            )
 
     @api.depends("format", "orientation", "page_width", "page_height")
     def _compute_print_page_size(self) -> None:
         _debug.perf.count("print_page_size_computed", paperformats=len(self))
+        default_size = PAPER_SIZE_BY_KEY["A4"]
         for record in self:
-            width = height = 0.0
-            if _debug.logic.enabled and not record.format:
-                _debug.logic("page_size_missing_format", paperformat=record.id)
-            if record.format:
-                if record.format == "custom":
-                    width = record.page_width
-                    height = record.page_height
-                    _debug.logic(
-                        "page_size_custom",
-                        paperformat=record.id,
-                        width=width,
-                        height=height,
-                    )
-                else:
-                    paper_size = PAPER_SIZE_BY_KEY.get(record.format)
-                    if paper_size is None:
-                        _debug.logic(
-                            "page_size_unknown",
-                            paperformat=record.id,
-                            format=record.format,
-                        )
-                        record.print_page_width = 0.0
-                        record.print_page_height = 0.0
-                        continue
-                    width = paper_size["width"]
-                    height = paper_size["height"]
+            paper_size = PAPER_SIZE_BY_KEY.get(record.format) if record.format else None
+            if paper_size and "width" in paper_size:
+                width, height = paper_size["width"], paper_size["height"]
+                source = "format"
+            elif record.page_width and record.page_height:
+                width, height = float(record.page_width), float(record.page_height)
+                source = "page"
+            else:
+                width, height = default_size["width"], default_size["height"]
+                source = "default"
 
             if record.orientation == "Landscape":
                 width, height = height, width
@@ -344,6 +345,7 @@ class ReportPaperformat(models.Model):
                 paperformat=record.id,
                 format=record.format,
                 orientation=record.orientation,
+                source=source,
                 width=width,
                 height=height,
             )

@@ -96,3 +96,25 @@ class TestReportPaperformatAudit(TransactionCase):
         )
         self.assertAlmostEqual(pf.print_page_width, 297.0)
         self.assertAlmostEqual(pf.print_page_height, 420.0)
+
+    def test_custom_format_without_size_rejected(self):
+        for dims in (
+            {},
+            {"page_width": 150},
+            {"page_height": 250},
+            {"page_width": -5, "page_height": 250},
+        ):
+            with self.subTest(dims=dims), self.assertRaises(ValidationError):
+                self.env["report.paperformat"].create(
+                    {"name": "audit custom unsized", "format": "custom", **dims}
+                )
+
+    def test_a_format_left_empty_measures_the_a4_page_that_prints(self):
+        pf = self.env["report.paperformat"].create(
+            {"name": "audit no format", "format": False, "orientation": "Portrait"}
+        )
+        self.assertAlmostEqual(pf.print_page_width, A4_WIDTH)
+        self.assertAlmostEqual(pf.print_page_height, A4_HEIGHT)
+        pf.orientation = "Landscape"
+        self.assertAlmostEqual(pf.print_page_width, A4_HEIGHT)
+        self.assertAlmostEqual(pf.print_page_height, A4_WIDTH)

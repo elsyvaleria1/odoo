@@ -16,6 +16,7 @@ class IrActionsServerHistory(models.Model):
 
     action_id = fields.Many2one(
         comodel_name="ir.actions.server",
+        index=True,
         required=True,
         ondelete="cascade",
     )
