@@ -5,6 +5,8 @@ credit_config_rule_erp_manager_group_system,credit.config: every company for an 
 privilege_read_credit_file_scope_config,credit.config: a credit file reads every company's credit folder,model_credit_config,privilege_read_credit_file_scope,permission,r,,,
 privilege_read_credit_file_scope_rule,credit.grade.rule: a credit file reads the document types the grade rules require,model_credit_grade_rule,privilege_read_credit_file_scope,permission,r,,,
 privilege_credit_delivery_order,sale.order: a delivery reads the terms of the order it ships,sale.model_sale_order,privilege_credit_delivery,permission,r,,,"[('line_ids.move_ids', '!=', False)]"
+privilege_credit_invoice_order_line,sale.order.line: an invoice reads the order lines it invoices,sale.model_sale_order_line,privilege_credit_invoice,permission,r,,,"[('invoice_line_ids', '!=', False)]"
+privilege_credit_invoice_order,sale.order: an invoice reads the approval of the orders it invoices,sale.model_sale_order,privilege_credit_invoice,permission,r,,,"[('line_ids.invoice_line_ids', '!=', False)]"
 access_credit_grade_readonly,credit.grade.readonly,model_credit_grade,group_credit_readonly,permission,r,,,
 access_credit_grade_manager,credit.grade.manager,model_credit_grade,group_credit_manager,permission,cud,,,
 access_credit_grade_rule_readonly,credit.grade.rule.readonly,model_credit_grade_rule,group_credit_readonly,permission,r,,,

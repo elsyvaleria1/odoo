@@ -409,6 +409,7 @@ class AccountPayment(models.Model):
                     "account_id": self.counterpart_account_id.id,
                     "partner_id": self.partner_id.id,
                     "balance": amount,
+                    "date_maturity": date,
                 }
             ),
             Command.create(
@@ -431,6 +432,7 @@ class AccountPayment(models.Model):
                         "account_id": self.counterpart_account_id.id,
                         "partner_id": self.partner_id.id,
                         "balance": fee,
+                        "date_maturity": date,
                     }
                 ),
                 Command.create(

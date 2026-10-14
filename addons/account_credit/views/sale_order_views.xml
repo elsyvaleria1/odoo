@@ -19,9 +19,17 @@
                 <div
                     class="alert alert-warning"
                     role="alert"
-                    invisible="credit_verdict_outcome not in ('approve', 'warn')"
+                    invisible="credit_verdict_outcome != 'approve'"
                     groups="account_credit.group_credit_readonly">
                     <strong>Credit needs a manager's authorization.</strong>
+                    <field name="credit_verdict_message" nolabel="1" />
+                </div>
+                <div
+                    class="alert alert-info"
+                    role="alert"
+                    invisible="credit_verdict_outcome != 'warn'"
+                    groups="account_credit.group_credit_readonly">
+                    <strong>Credit warning.</strong>
                     <field name="credit_verdict_message" nolabel="1" />
                 </div>
             </xpath>

@@ -497,6 +497,7 @@ class CreditProfile(models.Model):
         "facility_ids.date_start",
         "facility_ids.date_end",
         "facility_ids.order_ids.state",
+        "facility_ids.order_ids.invoice_state",
         "exposure_total",
     )
     def _compute_limit(self) -> None:
@@ -733,6 +734,7 @@ class CreditProfile(models.Model):
                     self.env._("Only a credit manager can grant or end an exception.")
                 )
         old_grades = {profile: profile.grade_id for profile in self}
+        old_exceptions = {profile: profile.exception_until for profile in self}
         if vals.get("exception_until"):
             vals = dict(vals, exception_user_id=self.env.user.id)
         result = super().write(vals)
@@ -753,10 +755,16 @@ class CreditProfile(models.Model):
                     )
         if "exception_until" in vals:
             for profile in self:
+                if vals["exception_until"]:
+                    code = "exception_granted"
+                elif old_exceptions[profile] and not self.env.context.get(
+                    "credit_exception_expired"
+                ):
+                    code = "exception_ended"
+                else:
+                    continue
                 profile._record_event(
-                    "exception_granted"
-                    if vals["exception_until"]
-                    else "exception_ended",
+                    code,
                     note=vals.get("exception_reason") or profile.exception_reason,
                 )
         self._sync_partner_credit_limit()
@@ -1257,10 +1265,10 @@ class CreditProfile(models.Model):
             lambda p: p.exception_until and p.exception_until < today
         )
         for profile in expired:
-            if profile._open_events("exception_expired"):
-                continue
             profile._record_event("exception_expired", note=profile.exception_reason)
-            profile.sudo().write({"exception_until": False})
+            profile.sudo().with_context(credit_exception_expired=True).write(
+                {"exception_until": False}
+            )
 
     def _schedule_reviews(self) -> None:
         today = fields.Date.today()

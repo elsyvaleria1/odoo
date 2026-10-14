@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
+from odoo.tools import SQL
 
 from .credit_aging import AGING_SELECTION, aging_bucket
 
@@ -125,38 +126,61 @@ class CreditProvisionRun(models.Model):
 
     def _read_open_receivables(self):
         self.check_singleton()
-        Profile = self.env["credit.profile"].sudo()
-        profiles = Profile.search([("company_id", "=", self.company_id.id)])
-        partner_ids = profiles._partner_ids_by_profile()
-        profile_by_partner = {
-            pid: profile for profile, ids in partner_ids.items() for pid in ids
-        }
-        if not profile_by_partner:
-            return {}
-        groups = (
-            self.env["account.move.line"]
-            .sudo()
-            ._read_group(
-                [
-                    ("account_id.account_type", "=", "asset_receivable"),
-                    ("parent_state", "=", "posted"),
-                    ("reconciled", "=", False),
-                    ("date", "<=", self.date),
-                    ("company_id", "child_of", self.company_id.id),
-                    ("partner_id", "in", list(profile_by_partner)),
-                ],
-                ["partner_id", "date_maturity:day"],
-                ["amount_residual:sum"],
+        self.env.flush_all()
+        self.env.cr.execute(
+            SQL(
+                """
+                WITH settled AS (
+                    SELECT line_id, SUM(amount) AS amount
+                      FROM (
+                            SELECT debit_move_id AS line_id, amount
+                              FROM account_partial_reconcile
+                             WHERE max_date <= %(date)s
+                            UNION ALL
+                            SELECT credit_move_id, -amount
+                              FROM account_partial_reconcile
+                             WHERE max_date <= %(date)s
+                           ) sides
+                     GROUP BY line_id
+                )
+                SELECT partner.commercial_partner_id,
+                       COALESCE(line.date_maturity, line.date),
+                       SUM(line.balance - COALESCE(settled.amount, 0))
+                  FROM account_move_line line
+                  JOIN account_account account ON account.id = line.account_id
+                  JOIN res_partner partner ON partner.id = line.partner_id
+                  LEFT JOIN settled ON settled.line_id = line.id
+                 WHERE account.account_type = 'asset_receivable'
+                   AND line.parent_state = 'posted'
+                   AND line.date <= %(date)s
+                   AND line.company_id = ANY(%(company_ids)s)
+                 GROUP BY 1, 2
+                """,
+                date=self.date,
+                company_ids=self.env["res.company"]
+                .sudo()
+                .search([("id", "child_of", self.company_id.id)])
+                .ids,
             )
         )
+        rows = self.env.cr.fetchall()
+        Partner = self.env["res.partner"]
+        profiles = (
+            self.env["credit.profile"]
+            .sudo()
+            ._for_partners(Partner.browse({row[0] for row in rows}), self.company_id)
+        )
         amounts = defaultdict(lambda: defaultdict(float))
-        for partner, due, residual in groups:
-            profile = profile_by_partner.get(partner.id)
-            if not profile or not residual or residual <= 0:
+        currency = self.company_id.currency_id
+        for partner_id, due, residual in rows:
+            if currency.compare_amounts(residual, 0.0) <= 0:
                 continue
-            days = (self.date - due).days if due else 0
-            amounts[profile][aging_bucket(days)] += residual
-        return amounts
+            days = (self.date - due).days
+            amounts[partner_id][aging_bucket(days)] += residual
+        return {
+            (Partner.browse(partner_id), profiles.get(partner_id)): buckets
+            for partner_id, buckets in amounts.items()
+        }
 
     def action_compute(self) -> None:
         for run in self:
@@ -171,14 +195,16 @@ class CreditProvisionRun(models.Model):
                     )
                 )
             commands = [Command.clear()]
-            for profile, buckets in run._read_open_receivables().items():
-                grade = profile.grade_effective_id or profile.grade_id
+            no_grade = self.env["credit.grade"]
+            for (partner, profile), buckets in run._read_open_receivables().items():
+                grade = profile.grade_effective_id if profile else no_grade
                 for bucket, amount in buckets.items():
                     rate = matrix._rate_for(grade, bucket)
                     commands.append(
                         Command.create(
                             {
-                                "profile_id": profile.id,
+                                "partner_id": partner.id,
+                                "profile_id": profile.id if profile else False,
                                 "grade_id": grade.id,
                                 "bucket": bucket,
                                 "amount": amount,
@@ -310,11 +336,13 @@ class CreditProvisionRunLine(models.Model):
     currency_id = fields.Many2one(related="run_id.currency_id")
     profile_id = fields.Many2one(
         comodel_name="credit.profile",
-        required=True,
+        help="Empty for a customer that owes without a credit profile: its "
+        "receivable is provisioned at the matrix's generic rates.",
     )
     partner_id = fields.Many2one(
-        related="profile_id.partner_id",
-        store=True,
+        comodel_name="res.partner",
+        index=True,
+        required=True,
     )
     grade_id = fields.Many2one(comodel_name="credit.grade")
     bucket = fields.Selection(

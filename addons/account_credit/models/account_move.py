@@ -2,6 +2,8 @@ from collections import defaultdict
 
 from odoo import fields, models
 
+from .sale_order import APPROVAL_ROUTE_CONDITIONS
+
 
 class AccountMove(models.Model):
     _inherit = "account.move"
@@ -104,8 +106,19 @@ class AccountMove(models.Model):
                 amount=abs(move.amount_total_signed),
                 immediate=move._is_immediate_payment(),
                 term_days=move._credit_term_days(),
+                approval_exempt=move._credit_approved_conditions(),
                 refresh=False,
             )
+
+    def _credit_approved_conditions(self) -> tuple:
+        self.check_singleton()
+        orders = self.with_privilege(
+            "account_credit.privilege_credit_invoice",
+            reason="an invoice weighs the approval of the orders it invoices",
+        ).invoice_line_ids.sale_line_ids.order_id
+        if orders and all(order.approval_state == "approved" for order in orders):
+            return tuple(APPROVAL_ROUTE_CONDITIONS)
+        return ()
 
     def _counts_as_draft_exposure(self) -> bool:
         return self.state == "draft" and self.move_type in ("out_invoice", "out_refund")

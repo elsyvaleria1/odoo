@@ -23,6 +23,14 @@
         <field name="is_privilege" eval="True" />
     </record>
 
+    <record id="privilege_credit_invoice" model="res.groups">
+        <field
+            name="name">Privilege: an invoice weighs the approval of the orders it invoices, whoever posts it</field>
+        <field
+            name="comment">An order approved for credit carries that approval to its invoices: the conditions an approval accepted are not asked again when the invoice is posted. Whoever posts an invoice reads the order lines it invoices and their orders' approval state, and nothing else of sales.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
     <record id="privilege_credit_limit" model="res.groups.privilege">
         <field name="name">Credit Limit</field>
         <field name="category_id" ref="base.module_category_accounting" />

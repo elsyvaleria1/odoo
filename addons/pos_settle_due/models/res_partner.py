@@ -80,9 +80,7 @@ class ResPartner(models.Model):
         if group_pos_user in self.env.user.all_group_ids:
             self_sudo = self.sudo()
 
-        total_due = (
-            self_sudo.parent_id.total_due if self.parent_id else self_sudo.total_due
-        )
+        total_due = self_sudo.commercial_partner_id.total_due
         total_due += total_settled
         if self.env.company.currency_id.id != config.currency_id.id:
             pos_currency = config.currency_id

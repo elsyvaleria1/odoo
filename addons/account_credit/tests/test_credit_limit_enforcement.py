@@ -240,6 +240,34 @@ class TestCreditLimitEnforcement(CreditAuthorizationCase, TransactionCase):
             partner.credit_exception = True
             partner.flush_recordset()
 
+    def test_invoiced_order_authorization_stops_granting_limit(self):
+        self.product.invoice_policy = "ordered"
+        baseline = self.partner.credit_limit
+        order = self._create_order(price=baseline * 1.5)
+        record = self._wizard_from(order).action_authorize()
+        order.with_context(credit_override=True).action_confirm()
+        self.partner.invalidate_recordset(["credit_limit"])
+        self.assertGreater(self.partner.credit_limit, baseline)
+
+        invoice = order.sudo()._create_invoices()
+        self.partner.invalidate_recordset(["credit_limit"])
+        self.assertGreater(
+            self.partner.credit_limit,
+            baseline,
+            "a draft invoice still leaves the order open",
+        )
+
+        invoice.with_context(credit_override=True).action_post()
+        self.assertEqual(order.invoice_state, "done")
+        self.partner.invalidate_recordset(["credit_limit"])
+        self.assertEqual(
+            self.partner.credit_limit,
+            baseline,
+            "once posted, the excess is receivable and the authorization covers "
+            "no open order",
+        )
+        self.assertFalse(record._is_granting())
+
     def test_cancelled_order_authorization_stops_granting_limit(self):
         baseline = self.partner.credit_limit
         order = self._create_order(price=baseline * 1.5)

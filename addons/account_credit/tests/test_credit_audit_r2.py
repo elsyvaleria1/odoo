@@ -306,6 +306,17 @@ class TestCreditAuditR2(CreditAuthorizationCase, TransactionCase):
                 {"credit_grade_id": self.rule_type.id}
             )
 
+    def test_a_partner_manager_cannot_regrade_through_the_credit_status(self):
+        partner = self.env["res.partner"].create({"name": "Audit R2 Status"})
+        partner.with_user(self.credit_manager).write({"credit_status": "cash"})
+        grade = partner.credit_grade_id
+        for status in ("authorized", "review", "legal"):
+            with self.subTest(status=status), self.assertRaises(AccessError):
+                partner.with_user(self.partner_manager).write({"credit_status": status})
+        partner.invalidate_recordset()
+        self.assertEqual(partner.credit_grade_id, grade)
+        self.assertFalse(partner.credit_legal_hold)
+
     def test_the_gate_also_covers_create(self):
         with self.assertRaises(AccessError):
             self.env["res.partner"].with_user(self.partner_manager).create(

@@ -85,6 +85,13 @@ class SaleOrder(models.Model):
         self.check_singleton()
         return not self.payment_term_id or self.payment_term_id.is_immediate
 
+    def _is_credit_authorization_open(self) -> bool:
+        self.check_singleton()
+        return self.state != "cancel" and self.invoice_state not in (
+            "done",
+            "over done",
+        )
+
     def _credit_profile(self):
         self.check_singleton()
         return (
@@ -343,20 +350,6 @@ class SaleOrder(models.Model):
         if profile.hold_active or not profile.document_compliant:
             return self.env["res.partner"]
         return profile.partner_id.with_company(self.company_id)
-
-    def _get_committed_credit_exposure(self, partner):
-        if not self:
-            return 0.0
-        company = self.company_id
-        company.check_singleton()
-        profile = (
-            self.env["credit.profile"]
-            .sudo()
-            .with_company(company)
-            .with_context(credit_exclude_order_ids=tuple(self.ids))
-            ._for_partner(partner, company=company)
-        )
-        return profile._invalidate_exposure().exposure_uninvoiced
 
     def _is_credit_limit_exceeded(self) -> bool:
         self.check_singleton()

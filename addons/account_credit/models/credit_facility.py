@@ -82,11 +82,6 @@ class CreditFacility(models.Model):
         help="Granting or waiting to grant. Clearing it revokes the line; the "
         "record stays so the decision remains auditable.",
     )
-    payment_term_ids = fields.Many2many(
-        comodel_name="account.payment.term",
-        relation="credit_facility_payment_term_rel",
-        help="Payment terms this line allows. Empty means the grade decides.",
-    )
     order_ids = fields.Many2many(
         comodel_name="sale.order",
         relation="credit_facility_sale_order_rel",
@@ -94,7 +89,8 @@ class CreditFacility(models.Model):
         column2="order_id",
         check_company=True,
         help="Orders whose excess over the limit this authorization covered. It "
-        "grants while any of them is still open.",
+        "grants while any of them is still open: neither cancelled nor fully "
+        "invoiced, since a posted invoice moves the excess into the receivable.",
     )
     user_id = fields.Many2one(
         comodel_name="res.users",
@@ -156,7 +152,9 @@ class CreditFacility(models.Model):
         if self.date_end and self.date_end < today:
             return False
         if self.source == "authorization" and self.order_ids:
-            return any(order.state != "cancel" for order in self.order_ids)
+            return any(
+                order._is_credit_authorization_open() for order in self.order_ids
+            )
         return True
 
     def action_revoke(self):

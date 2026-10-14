@@ -50,11 +50,11 @@ class TestCreditProvision(TransactionCase):
             {"name": "Provisioned", "is_company": True, "credit_grade_id": cls.grade.id}
         )
 
-    def _invoice(self, amount, due_days_ago):
+    def _invoice(self, amount, due_days_ago, partner=None):
         invoice = self.env["account.move"].create(
             {
                 "move_type": "out_invoice",
-                "partner_id": self.partner.id,
+                "partner_id": (partner or self.partner).id,
                 "journal_id": self.sale_journal.id,
                 "invoice_date": Date.today() - timedelta(days=due_days_ago + 30),
                 "invoice_date_due": Date.today() - timedelta(days=due_days_ago),
@@ -161,3 +161,33 @@ class TestCreditProvision(TransactionCase):
         run.action_cancel()
         self.assertEqual(run.state, "cancel")
         self.assertEqual(run.move_id.state, "cancel")
+
+    def test_a_customer_without_a_profile_is_provisioned_at_generic_rates(self):
+        stranger = self.env["res.partner"].create(
+            {"name": "Unprofiled debtor", "is_company": True}
+        )
+        self.assertFalse(stranger.sudo().credit_profile_id)
+        self._invoice(1000.0, due_days_ago=45, partner=stranger)
+        run = self._run()
+        line = run.line_ids.filtered(lambda l: l.partner_id == stranger)
+        self.assertFalse(line.profile_id)
+        self.assertEqual(line.bucket, "b31_60")
+        self.assertEqual(line.amount, 1000.0)
+        self.assertEqual(line.expected_loss, 100.0)
+
+    def test_a_back_dated_run_reads_the_receivable_as_it_stood_then(self):
+        invoice = self._invoice(2000.0, due_days_ago=45)
+        self.env["wizard.account.move.line.pay"].with_context(
+            active_model="account.move", active_ids=invoice.ids
+        ).create({"payment_date": Date.today()})._create_payments()
+        self.assertEqual(invoice.payment_state, "paid")
+
+        yesterday = self._run(Date.today() - timedelta(days=1))
+        line = yesterday.line_ids.filtered(lambda l: l.partner_id == self.partner)
+        self.assertEqual(line.amount, 2000.0, "the payment came after the run's date")
+        self.assertEqual(line.bucket, "b31_60")
+
+        today = self._run()
+        self.assertFalse(
+            today.line_ids.filtered(lambda l: l.partner_id == self.partner)
+        )

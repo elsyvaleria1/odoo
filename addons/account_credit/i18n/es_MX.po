@@ -2373,9 +2373,12 @@ msgstr ""
 
 #. module: account_credit
 #: model:ir.model.fields,help:account_credit.field_credit_grade__max_payment_term_days
-msgid "Longest payment term the grade allows. 0 means cash only."
+msgid ""
+"Longest payment term the grade allows, in days. 0 sets no maximum: cash-only "
+"credit is the entry grade's, not this field's."
 msgstr ""
-"Plazo de pago más largo que permite el grado. 0 significa solo contado."
+"Plazo de pago más largo que permite el grado, en días. 0 no fija máximo: el "
+"crédito solo de contado corresponde al grado de entrada, no a este campo."
 
 #. module: account_credit
 #: model:ir.model.fields,help:account_credit.field_credit_config__auto_downgrade

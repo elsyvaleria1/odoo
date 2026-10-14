@@ -96,20 +96,22 @@ class CreditPortfolioReport(models.Model):
     )
 
     def _with_cte(self) -> SQL:
-        bucket = aging_case_sql("((now() AT TIME ZONE 'UTC')::date - l.date_maturity)")
+        bucket = aging_case_sql(
+            "((now() AT TIME ZONE 'UTC')::date - COALESCE(l.date_maturity, l.date))"
+        )
         return SQL(
             f"""
             receivable AS (
                 SELECT p.id AS profile_id,
                        SUM(l.amount_residual) AS amount_open,
-                       SUM(l.amount_residual) FILTER (WHERE l.date_maturity < (now() AT TIME ZONE 'UTC')::date) AS amount_overdue,
+                       SUM(l.amount_residual) FILTER (WHERE l.amount_residual > 0 AND COALESCE(l.date_maturity, l.date) < (now() AT TIME ZONE 'UTC')::date) AS amount_overdue,
                        {
                 " ".join(
-                    f"SUM(l.amount_residual) FILTER (WHERE {bucket} = '{code}') AS amount_{code},"
+                    f"SUM(l.amount_residual) FILTER (WHERE l.amount_residual > 0 AND {bucket} = '{code}') AS amount_{code},"
                     for code in AGING_CODES
                 )
             }
-                       MAX((now() AT TIME ZONE 'UTC')::date - l.date_maturity) FILTER (WHERE l.date_maturity < (now() AT TIME ZONE 'UTC')::date) AS oldest_due_days
+                       MAX((now() AT TIME ZONE 'UTC')::date - COALESCE(l.date_maturity, l.date)) FILTER (WHERE l.amount_residual > 0 AND COALESCE(l.date_maturity, l.date) < (now() AT TIME ZONE 'UTC')::date) AS oldest_due_days
                   FROM credit_profile p
                   JOIN res_partner rp ON rp.commercial_partner_id = p.partner_id
                   JOIN account_move_line l ON l.partner_id = rp.id AND l.company_id = p.company_id

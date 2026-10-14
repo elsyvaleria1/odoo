@@ -34,4 +34,13 @@ describe("pos_store.js", () => {
             useLimit: true,
         });
     });
+
+    test("getPartnerCredit reads the contact's commercial partner, not a namesake", async () => {
+        const store = await setupPosEnv();
+        store.addNewOrder();
+        const contact = store.models["res.partner"].get(7);
+
+        expect(store.getCreditHolder(contact).id).toBe(5);
+        expect(store.getPartnerCredit(contact)).toMatchObject({ creditLimit: 10 });
+    });
 });

@@ -199,6 +199,27 @@ class TestExceptionsAreDated(CreditProfileCase):
             profile.review_ids.filtered(lambda r: r.state in ("draft", "in_progress"))
         )
 
+    def test_every_expired_exception_is_recorded_once(self):
+        partner = self._partner("Expiring twice", credit_exception=True)
+        profile = partner.sudo().credit_profile_id
+        for _ in range(2):
+            profile.write({"exception_until": Date.today() - timedelta(days=1)})
+            profile._expire_exceptions()
+            self.assertFalse(profile.exception_until)
+            profile.write(
+                {
+                    "exception_until": Date.today() + timedelta(days=1),
+                    "exception_reason": "renewed",
+                }
+            )
+        codes = profile.event_ids.mapped("code")
+        self.assertEqual(codes.count("exception_expired"), 2)
+        self.assertNotIn(
+            "exception_ended",
+            codes,
+            "an expiry is recorded as an expiry, not also as an ending",
+        )
+
     def test_the_wizard_opens_a_reclassification_review(self):
         profile = self._profile(self._partner("Wizard"))
         wizard = self.env["wizard.credit.profile.grant.exception"].create(
@@ -460,6 +481,14 @@ class TestReviews(CreditProfileCase):
         self.assertEqual(partner.credit_limit, 25000.0)
         self.assertTrue(profile.next_review_date)
         self.assertFalse(profile.exception_until)
+
+    def test_approving_a_review_ends_no_exception_that_was_not_running(self):
+        partner = self._partner("No exception", credit_grade_id=self.unconditional.id)
+        profile = partner.sudo().credit_profile_id
+        review = profile._open_review("manual")
+        review.write({"grade_decided_id": self.reliable.id, "limit_decided": 1000.0})
+        review.action_approve()
+        self.assertNotIn("exception_ended", profile.event_ids.mapped("code"))
 
     def test_a_review_replaces_the_previous_manual_line(self):
         partner = self._partner(

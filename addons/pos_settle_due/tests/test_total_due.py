@@ -132,3 +132,34 @@ class TestPointOfSaleFlow(CommonPosTest):
 
         partner_b.unlink()
         self.assertEqual(len(partners.get_all_total_due(self.pos_config_usd.id)), 2)
+
+    def test_a_contact_reads_its_commercial_partners_due(self):
+        company = self.partner_adgu
+        company.is_company = True
+        team = self.env["res.partner"].create(
+            {"name": "Purchasing", "parent_id": company.id}
+        )
+        buyer = self.env["res.partner"].create({"name": "Buyer", "parent_id": team.id})
+        self.assertEqual(buyer.commercial_partner_id, company)
+        invoice = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": company.id,
+                "invoice_line_ids": [
+                    odoo.Command.create(
+                        {
+                            "name": "Due",
+                            "quantity": 1,
+                            "price_unit": 100.0,
+                            "tax_ids": [],
+                        }
+                    )
+                ],
+            }
+        )
+        invoice.with_context(credit_override=True).action_post()
+        self.env.flush_all()
+        company.invalidate_recordset(["total_due"])
+        due = buyer.get_total_due(self.pos_config_usd.id)["res.partner"][0]["total_due"]
+        self.assertEqual(due, company.total_due)
+        self.assertTrue(due)

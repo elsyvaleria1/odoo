@@ -77,7 +77,6 @@
                             <field name="reason" />
                         </group>
                     </group>
-                    <field name="payment_term_ids" widget="many2many_tags" />
                     <field name="order_ids" invisible="source != 'authorization'">
                         <list>
                             <field name="name" />

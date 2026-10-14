@@ -9,6 +9,10 @@ patch(PosStore.prototype, {
         await super.setup(...arguments);
         this.setAllTotalDueOfPartners(this.models["res.partner"].getAll());
     },
+    getCreditHolder(partner) {
+        const commercial = partner.commercial_partner_id;
+        return commercial?.id && commercial.id !== partner.id ? commercial : partner;
+    },
     getPartnerCredit(partner) {
         const order = this.getOrder();
         const partnerInfos = {
@@ -24,14 +28,7 @@ patch(PosStore.prototype, {
         if (!partner) {
             return partnerInfos;
         }
-        if (partner.parent_name) {
-            const parent = this.models["res.partner"].find(
-                (p) => p.name === partner.parent_name,
-            );
-            if (parent) {
-                partner = parent;
-            }
-        }
+        partner = this.getCreditHolder(partner);
 
         partnerInfos.totalDue = this.currency.round(partner.total_due);
         partnerInfos.posOrdersAmountDue = this.currency.round(
@@ -62,14 +59,7 @@ patch(PosStore.prototype, {
         ]);
         this.deviceSync.dispatch({ "res.partner": [partner] });
         const updatePartner = res["res.partner"][0];
-        if (partner.parent_name) {
-            const parent = this.models["res.partner"].find(
-                (p) => p.name === partner.parent_name,
-            );
-            if (parent) {
-                partner = parent;
-            }
-        }
+        partner = this.getCreditHolder(partner);
         partner.total_due = updatePartner.total_due;
         partner.pos_orders_amount_due = updatePartner.pos_orders_amount_due;
         partner.invoices_amount_due = updatePartner.invoices_amount_due;

@@ -2220,7 +2220,9 @@ msgstr ""
 
 #. module: account_credit
 #: model:ir.model.fields,help:account_credit.field_credit_grade__max_payment_term_days
-msgid "Longest payment term the grade allows. 0 means cash only."
+msgid ""
+"Longest payment term the grade allows, in days. 0 sets no maximum: cash-only "
+"credit is the entry grade's, not this field's."
 msgstr ""
 
 #. module: account_credit

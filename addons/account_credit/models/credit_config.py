@@ -55,13 +55,6 @@ class CreditConfig(models.Model):
         ),
         help="Grade every new profile starts in.",
     )
-    default_grade_id = fields.Many2one(
-        comodel_name="credit.grade",
-        default=lambda self: self.env.ref(
-            "account_credit.credit_grade_default", raise_if_not_found=False
-        ),
-        help="Grade a profile is capped at while in default.",
-    )
     auto_downgrade = fields.Boolean(
         default=True,
         help="Lower a profile's grade automatically when the scorecard proposes "

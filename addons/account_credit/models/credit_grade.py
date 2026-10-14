@@ -60,7 +60,8 @@ class CreditGrade(models.Model):
         "purchases.",
     )
     max_payment_term_days = fields.Integer(
-        help="Longest payment term the grade allows. 0 means cash only.",
+        help="Longest payment term the grade allows, in days. 0 sets no maximum: "
+        "cash-only credit is the entry grade's, not this field's.",
     )
     review_interval_months = fields.Integer(
         default=12,

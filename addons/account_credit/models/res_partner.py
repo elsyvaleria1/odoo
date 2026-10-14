@@ -316,9 +316,6 @@ class Partner(models.Model):
                 if grade:
                     profile.write({"grade_id": grade.id})
 
-    def _get_default_credit_type(self):
-        return self.env["credit.config"].sudo()._for(self.env.company).entry_grade_id
-
     def _get_overdue_receivable_summary(self) -> str | None:
         self.check_singleton()
         overdue = self._get_live_overdue_amount()
@@ -351,9 +348,14 @@ class Partner(models.Model):
     def _check_credit_write_access(self, vals) -> None:
         if self.env.su:
             return
-        if {"credit_exception", "credit_legal_hold", "credit_trusted_amount"} & set(
-            vals
-        ) and not self.env.user.has_group("account_credit.group_credit_manager"):
+        if {
+            "credit_status",
+            "credit_exception",
+            "credit_legal_hold",
+            "credit_trusted_amount",
+        } & set(vals) and not self.env.user.has_group(
+            "account_credit.group_credit_manager"
+        ):
             raise AccessError(
                 self.env._(
                     "Only a credit manager can change a partner's credit standing."
@@ -507,6 +509,7 @@ class Partner(models.Model):
         "credit_profile_ids.facility_ids.state",
         "credit_profile_ids.facility_ids.date_end",
         "credit_profile_ids.facility_ids.order_ids.state",
+        "credit_profile_ids.facility_ids.order_ids.invoice_state",
         "credit_document_ids.collateral_amount",
         "credit_document_ids.expiration_state",
         "credit_document_ids.document_type_id",
@@ -559,11 +562,6 @@ class Partner(models.Model):
             "context": {"active_test": False},
         }
 
-    def _get_credit_document_issues(self):
-        self.check_singleton()
-        profile = self.sudo().credit_profile_id
-        return profile._get_document_issues() if profile else []
-
     def _get_live_overdue_amount(self):
         self.check_singleton()
         profile = self.sudo().credit_profile_id
@@ -571,12 +569,6 @@ class Partner(models.Model):
             return 0.0
         profile.invalidate_recordset(["exposure_overdue"])
         return profile.exposure_overdue
-
-    def _check_credit_legal_hold(self) -> None:
-        self.check_singleton()
-        profile = self.sudo().credit_profile_id
-        if profile and profile.hold_active:
-            profile.with_env(self.env)._check_credit("invoice", immediate=True)
 
     def _check_credit_status(
         self, immediate, kind="order", amount=0.0, term_days=None

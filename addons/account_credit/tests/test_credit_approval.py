@@ -219,6 +219,42 @@ class TestCreditApproval(CreditAuthorizationCase, TransactionCase):
         order = self._make_order(partner)
         self.assertTrue(order.approval_required)
 
+    def test_an_approved_order_carries_its_approval_to_its_invoice(self) -> None:
+        self._activate_category()
+        self.product.invoice_policy = "ordered"
+        partner = self._make_partner("Carried", status="review", limit=50000.0)
+        order = self._make_order(partner)
+        self.assertTrue(order.approval_required)
+        order.action_confirm()
+        request = order.approval_request_id
+        self.assertTrue(request)
+        request.with_user(self.env.ref("base.user_admin")).action_approve()
+        self.assertEqual(order.approval_state, "approved")
+        if order.state == "draft":
+            order.action_confirm()
+        self.assertEqual(order.state, "done")
+
+        invoice = order.sudo()._create_invoices()
+        invoice.action_post()
+        self.assertEqual(
+            invoice.state,
+            "posted",
+            "the conditions approved on the order are not asked again on its invoice",
+        )
+
+        stand_alone = self.env["account.move"].create(
+            {
+                "move_type": "out_invoice",
+                "partner_id": partner.id,
+                "invoice_payment_term_id": self.credit_term.id,
+                "invoice_line_ids": [
+                    Command.create({"product_id": self.product.id, "price_unit": 100.0})
+                ],
+            }
+        )
+        with self.assertRaises(ValidationError):
+            stand_alone.action_post()
+
     def test_d12_review_non_immediate_no_tier(self) -> None:
         partner = self._make_partner("D12", status="review")
         order = self._make_order(partner, price=100.0)

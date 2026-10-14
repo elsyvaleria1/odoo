@@ -131,6 +131,12 @@ class TestCollectedCheck(CollectionCommon):
             ]
         )
         self.assertEqual(sum(open_on_customer.mapped("amount_residual")), 1150.0)
+        charged_fee = open_on_customer.filtered(lambda line: line.move_id == bounce)
+        self.assertEqual(
+            charged_fee.date_maturity,
+            bounce.date,
+            "the fee charged back is due on the bounce, so it can fall overdue",
+        )
         self.assertEqual(payment.activity_ids.user_id, self.collector)
         with self.assertRaisesRegex(UserError, "bounced"):
             remittance.action_revert()
