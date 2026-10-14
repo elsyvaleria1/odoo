@@ -1,0 +1,82 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_exit_gps
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-14 19:55+0000\n"
+"PO-Revision-Date: 2026-10-14 19:55+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_exit_gps
+#. odoo-python
+#: code:addons/stock_fleet_exit_gps/models/stock_picking_batch.py:0
+msgid ""
+"%(route)s, asked by %(driver)s for %(activities)s, is still waiting for "
+"authorisation."
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model.fields,field_description:stock_fleet_exit_gps.field_stock_trip_alert__alert_type
+msgid "Alert"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model,name:stock_fleet_exit_gps.model_stock_picking_batch
+msgid "Batch Transfer"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model.fields,field_description:stock_fleet_exit_gps.field_stock_picking_batch__display_name
+#: model:ir.model.fields,field_description:stock_fleet_exit_gps.field_stock_trip_alert__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model.fields,field_description:stock_fleet_exit_gps.field_stock_picking_batch__id
+#: model:ir.model.fields,field_description:stock_fleet_exit_gps.field_stock_trip_alert__id
+msgid "ID"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#. odoo-python
+#: code:addons/stock_fleet_exit_gps/models/stock_picking_batch.py:0
+msgid "Its operator: %(operator)s."
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model.fields.selection,name:stock_fleet_exit_gps.selection__stock_trip_alert__alert_type__departure_without_route
+msgid "Left without an authorised route"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:res.groups,name:stock_fleet_exit_gps.privilege_exit_gps_read
+msgid ""
+"Privilege: a vehicle route reads where its vehicle is and the geofence it "
+"stands in"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#. odoo-python
+#: code:addons/stock_fleet_exit_gps/models/stock_picking_batch.py:0
+msgid "See it on the map"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#: model:ir.model,name:stock_fleet_exit_gps.model_stock_trip_alert
+msgid "Trip Alert"
+msgstr ""
+
+#. module: stock_fleet_exit_gps
+#. odoo-python
+#: code:addons/stock_fleet_exit_gps/models/stock_picking_batch.py:0
+msgid ""
+"⚠️ %(vehicle)s left %(warehouse)s at %(time)s without an authorised route."
+msgstr ""

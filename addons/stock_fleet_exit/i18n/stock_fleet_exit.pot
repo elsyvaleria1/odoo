@@ -1,0 +1,523 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_exit
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-14 19:55+0000\n"
+"PO-Revision-Date: 2026-10-14 19:55+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "%(trip)s is already waiting to be authorised."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "%(trip)s is not a route waiting to leave."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid ""
+"%(trip)s is not waiting for your authorisation, or it was already decided."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "%(vehicle)s changed hands while it was out: it stays with %(holder)s."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid ""
+"%(vehicle)s is already on %(trip)s: close it before it asks to leave again."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model,name:stock_fleet_exit.model_mail_activity_type
+msgid "Activity Type"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_form_fleet_exit
+msgid "Ask to Leave"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_form_fleet_exit
+msgid "Authorise"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Authorise %(trip)s"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_authorise
+msgid "Authorise the Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:res.groups,comment:stock_fleet_exit.group_fleet_exit_authoriser
+msgid ""
+"Authorise the vehicle routes, from Telegram or the route's activities, and "
+"hear of every vehicle that leaves without one."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Authorised"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_authorised_uid
+msgid "Authorised By"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_route_balderas
+msgid "Balderas Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model,name:stock_fleet_exit.model_stock_picking_batch
+msgid "Batch Transfer"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_form_fleet_exit
+msgid "Close Where It Stays"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Closed with the route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_dealership_mitsubishi
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_dealership_nissan
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_dealership_toyota
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_dealership_volkswagen
+msgid "Dealership"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_mail_activity_type__display_name
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__display_name
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_type__display_name
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_warehouse__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__trip_distance
+msgid "Distance"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Driver"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.actions.act_window,help:stock_fleet_exit.action_fleet_exits
+msgid ""
+"Drivers ask for a route from Telegram with /rutas: the vehicle,\n"
+"                what it goes to do and its odometer. It leaves once an authoriser\n"
+"                authorises it."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_emission_check
+msgid "Emissions Check Centre"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_errand_garbage
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_errand_general
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_errand_hardware
+#: model:mail.activity.type,fleet_exit_group:stock_fleet_exit.activity_type_exit_errand_water
+msgid "Errand"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_warehouse__fleet_exit_log
+msgid ""
+"Every vehicle leaving this warehouse goes out on a departed trip: a delivery"
+" trip, or a route its authorisers authorised."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_can_decide
+msgid "Exit Can Decide"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_kept_location
+msgid "Exit Kept Location"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.actions.act_window,name:stock_fleet_exit.action_fleet_exit_log
+#: model:ir.ui.menu,name:stock_fleet_exit.menu_fleet_exit_log
+msgid "Exit Log"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_mail_activity_type__fleet_exit_role
+msgid "Fleet Exit Role"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_errand_garbage
+msgid "Garbage"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_errand_general
+msgid "General"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_errand_hardware
+msgid "Hardware Store"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:res.groups,comment:stock_fleet_exit.privilege_exit_hand_over
+msgid ""
+"Held by a route while it departs and closes: the vehicle's operator becomes "
+"the driver, and on close whoever held it before; a route that closes away "
+"from the warehouse writes where the vehicle stays as its location."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__trip_hours
+msgid "Hours Out"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_mail_activity_type__id
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__id
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_type__id
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_warehouse__id
+msgid "ID"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__is_fleet_exit
+msgid "Is a Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__is_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_type__fleet_exit
+msgid ""
+"Its trips carry route activities instead of transfers and leave once a "
+"vehicle exit authoriser authorises them."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_dealership_mitsubishi
+msgid "Mitsubishi"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_dealership_nissan
+msgid "Nissan"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.actions.act_window,help:stock_fleet_exit.action_fleet_exits
+msgid "No route yet"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid ""
+"Nobody can authorise %(trip)s: add the vehicle exit authorisers in Settings,"
+" Users."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Odometer at departure"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__trip_distance
+msgid "Odometer at return less odometer at departure."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__passenger_ids
+msgid "Passengers"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_people_pickup
+msgid "People Pickup"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model,name:stock_fleet_exit.model_stock_picking_type
+msgid "Picking Type"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:res.groups,name:stock_fleet_exit.privilege_exit_hand_over
+msgid ""
+"Privilege: a vehicle route hands its vehicle to its driver and back, and "
+"says where it stays"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_route_puebla
+msgid "Puebla Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_form_fleet_exit
+msgid "Refuse"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Refused"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_requested_uid
+msgid "Requested By"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_return_cdg
+msgid "Return to CDG"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.mail_activity_view_list_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_view_list_exit_log
+msgid "Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Route %(route)s is closed."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Route %(trip)s cannot ask to leave, it is missing: %(fields)s."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid ""
+"Route %(trip)s leaves once a vehicle exit authoriser authorises it: ask for "
+"the authorisation."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.actions.act_window,name:stock_fleet_exit.action_fleet_exit_activities
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_activity_summary
+#: model:ir.ui.menu,name:stock_fleet_exit.menu_fleet_exit_activities
+msgid "Route Activities"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields.selection,name:stock_fleet_exit.selection__mail_activity_type__fleet_exit_role__destination
+msgid "Route Activity"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.actions.act_window,name:stock_fleet_exit.action_fleet_exit_activity_type
+#: model:ir.ui.menu,name:stock_fleet_exit.menu_fleet_exit_activity_type
+msgid "Route Activity Types"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_mail_activity_type__fleet_exit_role
+msgid ""
+"Route Activity: what a vehicle route goes to do, offered to the driver by "
+"/rutas. Route Authorisation: what an authoriser decides before the vehicle "
+"leaves."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields.selection,name:stock_fleet_exit.selection__mail_activity_type__fleet_exit_role__authorisation
+msgid "Route Authorisation"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_mail_activity_type__fleet_exit_group
+msgid "Route Group"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Route activities"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_mail_activity_type__fleet_exit_group
+msgid ""
+"Route activities sharing a group are offered together under it: Errand for "
+"Water and Garbage, Dealership for Toyota."
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_warehouse.py:0
+#: model:ir.actions.act_window,name:stock_fleet_exit.action_fleet_exits
+#: model:ir.ui.menu,name:stock_fleet_exit.menu_fleet_exits
+msgid "Routes"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_warehouse__fleet_exit_type_id
+msgid "Routes Operation Type"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Say where %(vehicle)s stays before closing %(trip)s there."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_stay_location
+msgid "Stays At"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Supervisor"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__exit_kept_location
+msgid ""
+"The vehicle's location before it stayed away, given back when a later route "
+"brings it back to the warehouse."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_picking_batch_view_list_exit_log
+msgid "Total"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_dealership_toyota
+msgid "Toyota"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_tres_guerras
+msgid "Tres Guerras"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_batch__exit_holder_id
+msgid "Usual Operator"
+msgstr ""
+
+#. module: stock_fleet_exit
+#. odoo-python
+#: code:addons/stock_fleet_exit/models/stock_picking_batch.py:0
+msgid "Vehicle"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_warehouse__fleet_exit_log
+msgid "Vehicle Exit Log"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,field_description:stock_fleet_exit.field_stock_picking_type__fleet_exit
+msgid "Vehicle Routes"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:res.groups,name:stock_fleet_exit.group_fleet_exit_authoriser
+msgid "Vehicle exit authorisers"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model_terms:ir.ui.view,arch_db:stock_fleet_exit.stock_warehouse_view_form_fleet_exit
+msgid "Vehicles"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_route_villa_victoria
+msgid "Villa Victoria Route"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_dealership_volkswagen
+msgid "Volkswagen"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model,name:stock_fleet_exit.model_stock_warehouse
+msgid "Warehouse"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_errand_water
+msgid "Water"
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__exit_stay_location
+msgid ""
+"Where the vehicle stayed when the route closed away from the warehouse: the "
+"workshop, the dealership. It is the vehicle's location until a later route "
+"brings it back."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__exit_holder_id
+msgid ""
+"Who held the vehicle when the route departed; it goes back to them when the "
+"route closes."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:ir.model.fields,help:stock_fleet_exit.field_stock_picking_batch__passenger_ids
+msgid "Who rides along besides the driver, picked up when they joined."
+msgstr ""
+
+#. module: stock_fleet_exit
+#: model:mail.activity.type,name:stock_fleet_exit.activity_type_exit_workshop
+msgid "Workshop"
+msgstr ""

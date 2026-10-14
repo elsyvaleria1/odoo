@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="sequence_stock_fleet_exit" model="ir.sequence">
+        <field name="name">Vehicle Route</field>
+        <field name="code">stock.fleet.exit</field>
+        <field name="prefix">RUTA/%(y)s/%(month)s/</field>
+        <field name="padding">4</field>
+        <field name="use_date_range" eval="True" />
+        <field name="company_id" eval="False" />
+    </record>
+
+</odoo>

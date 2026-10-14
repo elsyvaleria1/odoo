@@ -1,0 +1,3 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_exit_gps_read_log,device.data.log.gps: a vehicle route reads where its vehicle is,device_gps.model_device_data_log_gps,privilege_exit_gps_read,permission,r,,,
+privilege_exit_gps_read_geofence,device.geo.fence: a vehicle route names the geofence its vehicle stands in,device_gps_geoengine.model_device_geo_fence,privilege_exit_gps_read,permission,r,,,

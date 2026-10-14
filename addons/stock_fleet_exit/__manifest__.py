@@ -1,0 +1,26 @@
+{
+    "name": "Vehicle Exit Log",
+    "version": "19.0.1.0.0",
+    "category": "Supply Chain/Inventory",
+    "summary": "A vehicle leaves its warehouse on an authorised trip carrying chatter activities instead of transfers: errands, the workshop, a dealership, the emissions check",
+    "description": "Extends the delivery trip to the trips that carry no transfers. A warehouse that keeps a vehicle exit log gets a Routes operation type, whose trips are numbered RUTA/YY/MM/0001 and carry chatter activities of the route activity types (Villa Victoria, Balderas and Puebla routes, Tres Guerras, the emissions check centre, errands, workshop, dealerships, return to CDG, people pickup), its driver and optional passengers, both of which may be added while it is out. Asking for the route schedules an Authorise the route activity for each vehicle exit authoriser; the first to authorise departs the trip as its supervisor, stamped at that moment, and the others' activities are withdrawn, while a refusal cancels it. While out the vehicle is held by the driver; it goes back to whoever held it before when the trip returns, or when it closes where the vehicle stays (a workshop, a dealership), whose name becomes the vehicle's location until a later route brings it back. Inventory lists the routes and the exit log of every departed trip, delivery trips included, and the route activities done by type, driver and week.",
+    "author": "AgroMarin",
+    "license": "Other OSI approved licence",
+    "depends": [
+        "asset_ledger",
+        "resource_asset_hr",
+        "stock_fleet_trace",
+    ],
+    "data": [
+        "security/res_groups.xml",
+        "security/ir.access.csv",
+        "data/ir_sequence_data.xml",
+        "data/mail_activity_type_data.xml",
+        "views/mail_activity_type_views.xml",
+        "views/stock_picking_batch_views.xml",
+        "views/stock_picking_type_views.xml",
+        "views/stock_warehouse_views.xml",
+        "views/mail_activity_views.xml",
+        "views/stock_fleet_exit_menus.xml",
+    ],
+}

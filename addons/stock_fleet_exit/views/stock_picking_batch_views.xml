@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_picking_batch_form_fleet_exit" model="ir.ui.view">
+        <field name="name">stock.picking.batch.form.fleet.route</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="inherit_id" ref="stock_fleet.stock_picking_batch_form_trip" />
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_depart']" position="before">
+                <field name="is_fleet_exit" invisible="1" />
+                <field name="exit_can_decide" invisible="1" />
+                <button
+                    name="action_exit_request"
+                    type="object"
+                    string="Ask to Leave"
+                    invisible="not is_fleet_exit or date_departure or exit_requested_uid or state == 'cancel'"
+                    class="oe_highlight" />
+                <button
+                    name="action_exit_authorise"
+                    type="object"
+                    string="Authorise"
+                    invisible="not exit_can_decide"
+                    class="oe_highlight" />
+                <button
+                    name="action_exit_refuse"
+                    type="object"
+                    string="Refuse"
+                    invisible="not exit_can_decide" />
+                <button
+                    name="action_exit_close_here"
+                    type="object"
+                    string="Close Where It Stays"
+                    invisible="not is_fleet_exit or not date_departure or date_return" />
+            </xpath>
+            <xpath expr="//button[@name='action_depart']" position="attributes">
+                <attribute name="invisible" add="is_fleet_exit" separator=" or " />
+            </xpath>
+            <field name="supervisor_id" position="after">
+                <field
+                    name="passenger_ids"
+                    widget="many2many_tags"
+                    invisible="not is_fleet_exit"
+                    readonly="date_return" />
+                <field name="exit_activity_summary" invisible="not is_fleet_exit" />
+                <field
+                    name="exit_stay_location"
+                    invisible="not is_fleet_exit or not date_departure"
+                    readonly="date_return" />
+                <field name="exit_holder_id" invisible="not exit_holder_id" />
+                <field
+                    name="exit_authorised_uid"
+                    widget="many2one_avatar_user"
+                    invisible="not exit_authorised_uid" />
+            </field>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_view_list_exit_log" model="ir.ui.view">
+        <field name="name">stock.picking.batch.list.exit.log</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0">
+                <field name="name" />
+                <field name="is_fleet_exit" string="Route" />
+                <field name="vehicle_id" />
+                <field name="operator_id" widget="many2one_avatar_employee" />
+                <field name="passenger_ids" widget="many2many_tags" optional="show" />
+                <field name="exit_activity_summary" optional="show" />
+                <field name="date_departure" />
+                <field name="date_return" />
+                <field name="exit_stay_location" optional="show" />
+                <field name="trip_distance" sum="Total" />
+                <field name="trip_hours" widget="float_time" />
+                <field name="trip_state" widget="badge" />
+            </list>
+        </field>
+    </record>
+
+    <record id="stock_picking_batch_view_pivot_exit_log" model="ir.ui.view">
+        <field name="name">stock.picking.batch.pivot.exit.log</field>
+        <field name="model">stock.picking.batch</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <pivot sample="1">
+                <field name="vehicle_id" type="row" />
+                <field name="date_departure" type="col" interval="week" />
+                <field name="trip_distance" type="measure" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_fleet_exits" model="ir.actions.act_window">
+        <field name="name">Routes</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('is_fleet_exit', '=', True)]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No route yet</p>
+            <p>
+                Drivers ask for a route from Telegram with /rutas: the vehicle,
+                what it goes to do and its odometer. It leaves once an authoriser
+                authorises it.
+            </p>
+        </field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('stock_picking_batch_view_list_exit_log')})]" />
+    </record>
+
+    <record id="action_fleet_exit_log" model="ir.actions.act_window">
+        <field name="name">Exit Log</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="view_mode">list,pivot,form</field>
+        <field name="domain">[('date_departure', '!=', False)]</field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'list', 'view_id': ref('stock_picking_batch_view_list_exit_log')}), Command.create({'view_mode': 'pivot', 'view_id': ref('stock_picking_batch_view_pivot_exit_log')})]" />
+    </record>
+
+</odoo>

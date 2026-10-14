@@ -1,0 +1,2 @@
+id,name,model_id/id,group_id/id,kind,operation,reach,anchor,domain
+privilege_exit_hand_over_resource,resource.resource: a vehicle route hands its vehicle to its driver and back,base.model_resource_resource,privilege_exit_hand_over,permission,ru,,,

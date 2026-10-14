@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="stock_warehouse_view_form_fleet_exit" model="ir.ui.view">
+        <field name="name">stock.warehouse.form.fleet.route</field>
+        <field name="model">stock.warehouse</field>
+        <field name="inherit_id" ref="stock.view_stock_warehouse_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='warehouse_config']/group" position="inside">
+                <group name="group_fleet_exit" string="Vehicles">
+                    <field name="fleet_exit_log" />
+                    <field
+                        name="fleet_exit_type_id"
+                        invisible="not fleet_exit_type_id" />
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

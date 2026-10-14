@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Without a privilege: it is granted user by user, and the inventory
+        administrators do not get it with their level.
+    -->
+    <record id="group_fleet_exit_authoriser" model="res.groups">
+        <field name="name">Vehicle exit authorisers</field>
+        <field
+            name="comment">Authorise the vehicle routes, from Telegram or the route's activities, and hear of every vehicle that leaves without one.</field>
+        <field
+            name="implied_ids"
+            eval="[Command.link(ref('stock.group_stock_user'))]" />
+    </record>
+
+    <record id="privilege_exit_hand_over" model="res.groups">
+        <field
+            name="name">Privilege: a vehicle route hands its vehicle to its driver and back, and says where it stays</field>
+        <field
+            name="comment">Held by a route while it departs and closes: the vehicle's operator becomes the driver, and on close whoever held it before; a route that closes away from the warehouse writes where the vehicle stays as its location.</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

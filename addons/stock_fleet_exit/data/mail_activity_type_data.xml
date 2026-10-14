@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="activity_type_exit_authorise" model="mail.activity.type">
+        <field name="name">Authorise the Route</field>
+        <field name="icon">fa-check-circle</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">authorisation</field>
+        <field name="sequence">100</field>
+    </record>
+
+    <record id="activity_type_exit_route_villa_victoria" model="mail.activity.type">
+        <field name="name">Villa Victoria Route</field>
+        <field name="icon">fa-road</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">110</field>
+    </record>
+
+    <record id="activity_type_exit_route_balderas" model="mail.activity.type">
+        <field name="name">Balderas Route</field>
+        <field name="icon">fa-road</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">111</field>
+    </record>
+
+    <record id="activity_type_exit_route_puebla" model="mail.activity.type">
+        <field name="name">Puebla Route</field>
+        <field name="icon">fa-road</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">112</field>
+    </record>
+
+    <record id="activity_type_exit_tres_guerras" model="mail.activity.type">
+        <field name="name">Tres Guerras</field>
+        <field name="icon">fa-truck</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">113</field>
+    </record>
+
+    <record id="activity_type_exit_emission_check" model="mail.activity.type">
+        <field name="name">Emissions Check Centre</field>
+        <field name="icon">fa-leaf</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">114</field>
+    </record>
+
+    <record id="activity_type_exit_errand_general" model="mail.activity.type">
+        <field name="name">General</field>
+        <field name="icon">fa-shopping-basket</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Errand</field>
+        <field name="sequence">115</field>
+    </record>
+
+    <record id="activity_type_exit_errand_water" model="mail.activity.type">
+        <field name="name">Water</field>
+        <field name="icon">fa-tint</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Errand</field>
+        <field name="sequence">116</field>
+    </record>
+
+    <record id="activity_type_exit_errand_hardware" model="mail.activity.type">
+        <field name="name">Hardware Store</field>
+        <field name="icon">fa-wrench</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Errand</field>
+        <field name="sequence">117</field>
+    </record>
+
+    <record id="activity_type_exit_errand_garbage" model="mail.activity.type">
+        <field name="name">Garbage</field>
+        <field name="icon">fa-trash</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Errand</field>
+        <field name="sequence">118</field>
+    </record>
+
+    <record id="activity_type_exit_workshop" model="mail.activity.type">
+        <field name="name">Workshop</field>
+        <field name="icon">fa-cogs</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">119</field>
+    </record>
+
+    <record id="activity_type_exit_dealership_mitsubishi" model="mail.activity.type">
+        <field name="name">Mitsubishi</field>
+        <field name="icon">fa-car</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Dealership</field>
+        <field name="sequence">120</field>
+    </record>
+
+    <record id="activity_type_exit_dealership_toyota" model="mail.activity.type">
+        <field name="name">Toyota</field>
+        <field name="icon">fa-car</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Dealership</field>
+        <field name="sequence">121</field>
+    </record>
+
+    <record id="activity_type_exit_dealership_nissan" model="mail.activity.type">
+        <field name="name">Nissan</field>
+        <field name="icon">fa-car</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Dealership</field>
+        <field name="sequence">122</field>
+    </record>
+
+    <record id="activity_type_exit_dealership_volkswagen" model="mail.activity.type">
+        <field name="name">Volkswagen</field>
+        <field name="icon">fa-car</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="fleet_exit_group">Dealership</field>
+        <field name="sequence">123</field>
+    </record>
+
+    <record id="activity_type_exit_people_pickup" model="mail.activity.type">
+        <field name="name">People Pickup</field>
+        <field name="icon">fa-users</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">124</field>
+    </record>
+
+    <record id="activity_type_exit_return_cdg" model="mail.activity.type">
+        <field name="name">Return to CDG</field>
+        <field name="icon">fa-home</field>
+        <field name="res_model">stock.picking.batch</field>
+        <field name="fleet_exit_role">destination</field>
+        <field name="sequence">125</field>
+    </record>
+
+</odoo>

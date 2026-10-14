@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="mail_activity_view_list_fleet_exit" model="ir.ui.view">
+        <field name="name">mail.activity.list.fleet.route</field>
+        <field name="model">mail.activity</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0">
+                <field name="res_name" string="Route" />
+                <field name="activity_type_id" />
+                <field name="user_id" widget="many2one_avatar_user" />
+                <field name="date_done" />
+                <field name="feedback" optional="show" />
+                <field name="state" widget="badge" />
+            </list>
+        </field>
+    </record>
+
+    <record id="mail_activity_view_pivot_fleet_exit" model="ir.ui.view">
+        <field name="name">mail.activity.pivot.fleet.route</field>
+        <field name="model">mail.activity</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <pivot sample="1">
+                <field name="activity_type_id" type="row" />
+                <field name="date_done" type="col" interval="week" />
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_fleet_exit_activities" model="ir.actions.act_window">
+        <field name="name">Route Activities</field>
+        <field name="res_model">mail.activity</field>
+        <field name="view_mode">pivot,list</field>
+        <field
+            name="domain">[('res_model', '=', 'stock.picking.batch'), ('activity_type_id.fleet_exit_role', '=', 'destination')]</field>
+        <field name="context">{'active_test': False}</field>
+        <field
+            name="view_ids"
+            eval="[Command.clear(), Command.create({'view_mode': 'pivot', 'view_id': ref('mail_activity_view_pivot_fleet_exit')}), Command.create({'view_mode': 'list', 'view_id': ref('mail_activity_view_list_fleet_exit')})]" />
+    </record>
+
+</odoo>

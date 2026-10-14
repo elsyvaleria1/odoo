@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem
+        id="menu_fleet_exits"
+        parent="stock.menu_stock_transfers"
+        action="action_fleet_exits"
+        sequence="30"
+        groups="stock.group_stock_user" />
+
+    <menuitem
+        id="menu_fleet_exit_log"
+        parent="stock.menu_warehouse_report"
+        action="action_fleet_exit_log"
+        sequence="60" />
+
+    <menuitem
+        id="menu_fleet_exit_activities"
+        parent="stock.menu_warehouse_report"
+        action="action_fleet_exit_activities"
+        sequence="61" />
+
+    <menuitem
+        id="menu_fleet_exit_activity_type"
+        parent="stock.menu_delivery"
+        action="action_fleet_exit_activity_type"
+        sequence="70"
+        groups="stock.group_stock_manager" />
+
+</odoo>

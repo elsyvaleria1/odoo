@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="privilege_exit_gps_read" model="res.groups">
+        <field
+            name="name">Privilege: a vehicle route reads where its vehicle is and the geofence it stands in</field>
+        <field name="is_privilege" eval="True" />
+    </record>
+
+</odoo>

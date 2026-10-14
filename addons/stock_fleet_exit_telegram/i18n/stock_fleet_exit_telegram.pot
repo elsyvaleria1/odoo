@@ -1,0 +1,435 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* stock_fleet_exit_telegram
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-14 19:55+0000\n"
+"PO-Revision-Date: 2026-10-14 19:55+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(activity)s added to %(route)s."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"%(command)s - Ask for a route: the vehicle, what it goes to do, who rides "
+"along and its odometer; it leaves once it is authorised. Out, the same "
+"command adds an activity or a passenger, and registers the return or where "
+"the vehicle stays."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"%(error)s\n"
+"\n"
+"Type the odometer again."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(passenger)s rides along. Anybody else?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(passenger)s rides on %(route)s."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"%(route)s asked: %(vehicle)s for %(activities)s. I tell you here when it is "
+"authorised; do not leave before."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(route)s authorised: %(vehicle)s leaves now."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"%(route)s closed: %(vehicle)s stays at %(place)s and goes back to "
+"%(holder)s. Thank you."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(route)s refused."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "%(route)s withdrawn."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"%(route)s, %(vehicle)s for %(activities)s, is waiting to be authorised. I "
+"tell you here as soon as it is."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Add a passenger"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Add an activity"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Add another"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Ask for a vehicle route, or tell what happens on yours"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Ask for it"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/stock_picking_batch.py:0
+msgid "Authorise"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Back at the warehouse"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#: model:ir.model,name:stock_fleet_exit_telegram.model_stock_picking_batch
+msgid "Batch Transfer"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Cancel"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Choose at least one activity."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Dashboard photo sent from Telegram."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#: model:ir.model.fields,field_description:stock_fleet_exit_telegram.field_stock_picking_batch__display_name
+#: model:ir.model.fields,field_description:stock_fleet_exit_telegram.field_telegram_handler_stock_fleet_exit__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Does anybody ride along besides you?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Done"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#: model:ir.model.fields,field_description:stock_fleet_exit_telegram.field_stock_picking_batch__id
+#: model:ir.model.fields,field_description:stock_fleet_exit_telegram.field_telegram_handler_stock_fleet_exit__id
+msgid "ID"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "No passengers"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "No vehicle matches %(text)s. Type another part of its plate."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"No warehouse of yours keeps a vehicle exit log; ask administration to tick "
+"it on the warehouse."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Nobody is called %(text)s. Type another part of the name."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Nothing"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Nothing registered."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"Only whoever drives the vehicles registers their routes here; ask an "
+"administrator for inventory rights."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Photo kept. Now type the odometer, the number alone."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/stock_picking_batch.py:0
+msgid "Refuse"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Return of %(route)s registered: %(distance)s travelled. Thank you."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Something went wrong; send /rutas again to start over."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#: model:ir.model,name:stock_fleet_exit_telegram.model_telegram_handler_stock_fleet_exit
+msgid "Telegram: Vehicle Routes"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "That button is no longer valid."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "That is all"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "That request is no longer waiting."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "That route no longer exists."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"The GPS reads %(odometer)s on the odometer. Use it, or type the one on the "
+"dashboard."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "The vehicle stays here"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Type part of the passenger's name."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"Type the odometer of the vehicle now, the number alone. You may send a photo"
+" of the dashboard with it."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Type the odometer, the number alone, for example 45210."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Use %(odometer)s"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"Vehicle: %(vehicle)s\n"
+"Driver: %(driver)s\n"
+"Passengers: %(passengers)s\n"
+"Activities: %(activities)s\n"
+"Odometer: %(odometer)s\n"
+"\n"
+"Do I ask for the authorisation?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Vehicles"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "What does it go to do: %(group)s?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "What does it go to do? Choose one or more, then Done."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Where does %(vehicle)s stay? Choose it, or type the place."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Which activity do you add?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Which vehicle leaves? Choose it, or type part of its plate or name."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Which vehicle leaves? Type part of its plate or name."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Who is it?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "Withdraw the request"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"You are out on %(route)s with %(vehicle)s: %(activities)s. What happened?"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid ""
+"Your Odoo user is not linked to an employee, so I cannot tell which driver "
+"you are. Ask administration to link it."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/telegram_handler.py:0
+msgid "vehicle routes"
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/stock_picking_batch.py:0
+msgid "✅ %(route)s authorised by %(user)s: %(vehicle)s may leave."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/stock_picking_batch.py:0
+msgid "❌ %(route)s refused by %(user)s."
+msgstr ""
+
+#. module: stock_fleet_exit_telegram
+#. odoo-python
+#: code:addons/stock_fleet_exit_telegram/models/stock_picking_batch.py:0
+msgid ""
+"🚗 %(route)s asks to leave\n"
+"Vehicle: %(vehicle)s\n"
+"Driver: %(driver)s\n"
+"Passengers: %(passengers)s\n"
+"Activities: %(activities)s\n"
+"Odometer: %(odometer)s"
+msgstr ""
