@@ -2,7 +2,6 @@ import functools
 import logging
 import re
 from collections.abc import Callable
-from typing import Literal
 
 import odoo.exceptions
 import odoo.tools
@@ -51,9 +50,9 @@ def check_db_management_enabled[**P, R](func: Callable[P, R], /) -> Callable[P, 
     return if_db_mgt_enabled
 
 
-def check_super(passwd: str) -> Literal[True]:
+def check_admin_password(passwd: str) -> None:
     if passwd and odoo.tools.config.is_valid_admin_password(passwd):
         _debug.pipeline("database.master_password_accepted")
-        return True
+        return
     _debug.logic("database.master_password_rejected", empty=not passwd)
     raise odoo.exceptions.AccessDenied

@@ -92,7 +92,7 @@ class _OdooOption(optparse.Option):
             "addons_path": config._parse_addons_path,
             "upgrade_path": config._parse_upgrade_path,
             "pre_upgrade_scripts": config._parse_scripts,
-            "smtp_ssl": config._check_smtp_ssl,
+            "smtp_ssl": config._parse_smtp_ssl,
         }
         type_checker = {
             **{name: _accept_none(check) for name, check in checkers.items()},
@@ -2278,7 +2278,7 @@ class configmanager:
             ) from None
 
     @classmethod
-    def _check_smtp_ssl(
+    def _parse_smtp_ssl(
         cls, option: optparse.Option | None, opt: str, value: str
     ) -> bool | str:
         if value in SMTP_SSL_MODES:

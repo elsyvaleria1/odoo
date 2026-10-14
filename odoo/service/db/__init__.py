@@ -5,7 +5,7 @@ from ._checks import (
     DBNAME_PATTERN,
     check_db_management_enabled,
     check_db_name,
-    check_super,
+    check_admin_password,
 )
 from ._dump_scanner import copy_portable_sql
 from .dump import BACKUP_FORMATS, dump_db, dump_db_manifest, exp_dump
@@ -42,10 +42,10 @@ __all__ = (
     "DBNAME_PATTERN",
     "SYSTEM_DBS",
     "DatabaseExists",
+    "check_admin_password",
     "check_db_exposed",
     "check_db_management_enabled",
     "check_db_name",
-    "check_super",
     "copy_portable_sql",
     "create_empty_database",
     "dispatch",

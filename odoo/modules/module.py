@@ -604,8 +604,8 @@ def _normalize_version(module: str, manifest: dict[str, typing.Any]) -> None:
             )
             manifest["installable"] = False
         manifest["version"] = str(manifest["version"])
-    if manifest["installable"] and not check_version(
-        str(manifest["version"]), should_raise=False
+    if manifest["installable"] and not is_module_version_supported(
+        str(manifest["version"])
     ):
         _debug.logic(
             "module.manifest.version_incompatible",
@@ -784,31 +784,24 @@ def adapt_version(version: str) -> str:
         )
     try:
         for part in parts:
+            if not part.isascii() or not part.isdecimal():
+                raise ValueError
             int(part)
-    except ValueError as e:
-        raise ValueError(f"Invalid version {version!r}") from e
+    except ValueError as exc:
+        raise ValueError(f"Invalid version {version!r}") from exc
     serie = release.major_version
     if len(parts) <= 3 and version != serie and not version.startswith(serie + "."):
         return f"{serie}.{version}"
     return version
 
 
-def check_version(version: str, should_raise: bool = True) -> bool:
+def is_module_version_supported(version: str) -> bool:
     try:
         version = adapt_version(version)
     except ValueError:
-        if should_raise:
-            raise
         return False
     serie = release.major_version
-    if version == serie or version.startswith(serie + "."):
-        return True
-    if should_raise:
-        raise ValueError(
-            f"Invalid version {version!r}. Modules should have a version in format"
-            f" `x.y`, `x.y.z`, `{serie}.x.y` or `{serie}.x.y.z`."
-        )
-    return False
+    return version == serie or version.startswith(serie + ".")
 
 
 class MissingDependencyError(Exception):

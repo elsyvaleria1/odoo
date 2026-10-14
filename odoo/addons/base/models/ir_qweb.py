@@ -1100,7 +1100,7 @@ class IrQweb(models.AbstractModel):
             template=template if isinstance(template, (int, str)) else "etree",
         ) as span:
             for varying in varying_values:
-                safe_eval.check_values(varying)
+                safe_eval.check_no_modules_in_values(varying)
                 results.append(qweb._render_prepared(template, {**shared, **varying}))
             span.set(count=len(results))
         return results
@@ -1143,7 +1143,7 @@ class IrQweb(models.AbstractModel):
             _qweb_render_depth=render_depth,
         )
 
-        safe_eval.check_values(values)
+        safe_eval.check_no_modules_in_values(values)
         _debug.pipeline(
             "render.prepared",
             cache_shared=cache_shared,

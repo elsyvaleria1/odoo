@@ -226,7 +226,7 @@ class TestDatabaseRestoreLogging(HttpCase):
                 "odoo.tools.config.configmanager.has_default_admin_password",
                 return_value=False,
             ),
-            patch("odoo.service.db.check_super"),
+            patch("odoo.service.db.check_admin_password"),
             patch(
                 "odoo.service.db.restore_db",
                 side_effect=Exception("simulated restore error"),

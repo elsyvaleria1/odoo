@@ -8,7 +8,7 @@ from odoo.libs.debug_log import DebugLog
 
 from .._dispatch import dispatch_through_table
 from .._env import get_env_int
-from ._checks import check_db_management_enabled, check_super
+from ._checks import check_admin_password, check_db_management_enabled
 from .dump import exp_dump
 from .lifecycle import exp_create_database, exp_drop, exp_duplicate_database, exp_rename
 from .listing import (
@@ -82,7 +82,7 @@ def dispatch(method: str, params: list[Any]) -> Any:
         params,
         _DISPATCH,
         credentialed=_REQUIRES_MASTER_PASSWORD,
-        check_credential=check_super,
+        check_credential=check_admin_password,
     )
 
 

@@ -286,7 +286,7 @@ environment handed out (`_EnvironmentSet.matches`) sit beside each other, and
 after a lookup. `uid == SUPERUSER_ID` forces `su=True` before the key is built.
 
 `default_env` is the environment a cursor-driven flush runs through and the user
-`_check_sudo_commands` downgrades to. The code that opens a transaction sets it —
+`_get_comodel_for_commands` downgrades to. The code that opens a transaction sets it —
 `execute_cr`, `request.update_env()`, the module loader, the cron and job
 runners, the CLI and the test harnesses — and the transaction adopts the first
 environment built for a real user only when no opener did. That adoption is a

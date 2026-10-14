@@ -1363,9 +1363,9 @@ class _RelationalMulti(_Relational):
             for command in commands
         ):
             return model, comodel
-        return model, self._check_sudo_commands(comodel)
+        return model, self._get_comodel_for_commands(comodel)
 
-    def _check_sudo_commands(self, comodel: BaseModel) -> BaseModel:
+    def _get_comodel_for_commands(self, comodel: BaseModel) -> BaseModel:
         if comodel._allow_sudo_commands:
             return comodel
         default_env = comodel.env.transaction.default_env

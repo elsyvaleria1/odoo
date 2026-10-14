@@ -11,7 +11,7 @@ from typing import NoReturn
 
 from .worker_thread import describe_thread_work
 
-__all__ = ["MemoryWatch", "read_rss", "start_from_environ"]
+__all__ = ["MemoryWatch", "get_or_start_memory_watch_from_environ", "read_rss"]
 
 _logger = logging.getLogger(__name__)
 
@@ -36,13 +36,13 @@ def read_rss() -> int:
         os.close(fd)
 
 
-def _thread_stacks(skip: int | None) -> str:
+def _get_thread_stacks(skip_thread_ident: int | None) -> str:
     frames = sys._current_frames()
     threads = {thread.ident: thread for thread in threading.enumerate()}
     main = threading.main_thread().ident
     blocks = []
     for ident in sorted(frames, key=lambda ident: ident != main):
-        if ident == skip:
+        if ident == skip_thread_ident:
             continue
         thread = threads.get(ident)
         label = thread.name if thread is not None else f"thread {ident}"
@@ -77,7 +77,7 @@ class MemoryWatch:
         self._stop = threading.Event()
         self._thread: threading.Thread | None = None
 
-    def check(self) -> bool:
+    def enforce_limit_and_report_growth(self) -> None:
         rss = self._rss()
         if self.limit and rss >= self.limit:
             _logger.critical(
@@ -85,27 +85,26 @@ class MemoryWatch:
                 "with every thread's stack:\n%s",
                 rss // _MIB,
                 self.limit // _MIB,
-                _thread_stacks(self._watch_ident()),
+                _get_thread_stacks(self._get_watch_thread_ident()),
             )
             self._abort()
-            return True
+            return
         if rss < self._next:
-            return False
+            return
         self._next = (rss // self.step + 1) * self.step
         _logger.warning(
             "memory watch: rss %d MiB (next report at %d MiB), threads at:\n%s",
             rss // _MIB,
             self._next // _MIB,
-            _thread_stacks(self._watch_ident()),
+            _get_thread_stacks(self._get_watch_thread_ident()),
         )
-        return True
 
-    def _watch_ident(self) -> int | None:
+    def _get_watch_thread_ident(self) -> int | None:
         return self._thread.ident if self._thread is not None else None
 
     def _run(self) -> None:
         while not self._stop.wait(self.interval):
-            self.check()
+            self.enforce_limit_and_report_growth()
 
     def start(self) -> None:
         self._next = 0
@@ -133,7 +132,7 @@ class MemoryWatch:
         os._exit(137)
 
 
-def _mib_from_environ(name: str) -> int:
+def _get_bytes_from_environ(name: str) -> int:
     value = os.environ.get(name, "").strip()
     if not value:
         return 0
@@ -156,11 +155,11 @@ def _restart_in_child() -> None:
         watch.start()
 
 
-def start_from_environ() -> MemoryWatch | None:
+def get_or_start_memory_watch_from_environ() -> MemoryWatch | None:
     if _started:
         return _started[0]
-    step = _mib_from_environ(STEP_VAR)
-    limit = _mib_from_environ(LIMIT_VAR)
+    step = _get_bytes_from_environ(STEP_VAR)
+    limit = _get_bytes_from_environ(LIMIT_VAR)
     if not step and not limit:
         return None
     watch = MemoryWatch(step or limit, limit)

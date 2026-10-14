@@ -667,7 +667,7 @@ def safe_eval(
         msg = f"safe_eval() context must be a dict, not {type(context).__name__}"
         raise TypeError(msg)
 
-    check_values(context)
+    check_no_modules_in_values(context)
     if context and _GUARD_FORMAT_NAME in context:
         msg = f"safe_eval() context must not define {_GUARD_FORMAT_NAME!r}"
         raise ValueError(msg)
@@ -736,7 +736,7 @@ _MAPPINGS = (dict, types.MappingProxyType)
 _CONTAINERS = (*_MAPPINGS, list, tuple, set, frozenset, collections.deque)
 
 
-def _check_module(value: object, seen: set[int] | None = None) -> None:
+def _check_no_modules_in_value(value: object, seen: set[int] | None = None) -> None:
     if isinstance(value, _UNSEARCHABLE):
         return
     if isinstance(value, types.ModuleType):
@@ -762,22 +762,21 @@ Pre-wrapped modules are provided as attributes of `odoo.tools.safe_eval`.
     if isinstance(value, _MAPPINGS):
         for k, v in value.items():
             if type(k) not in _SCALAR_TYPES:
-                _check_module(k, seen)
+                _check_no_modules_in_value(k, seen)
             if type(v) not in _SCALAR_TYPES:
-                _check_module(v, seen)
+                _check_no_modules_in_value(v, seen)
     else:
         for v in value:
             if type(v) not in _SCALAR_TYPES:
-                _check_module(v, seen)
+                _check_no_modules_in_value(v, seen)
 
 
-def check_values(d: dict[str, typing.Any] | None) -> dict[str, typing.Any] | None:
-    if not d:
-        return d
+def check_no_modules_in_values(values: dict[str, typing.Any] | None) -> None:
+    if not values:
+        return
     seen: set[int] = set()
-    for v in d.values():
-        _check_module(v, seen)
-    return d
+    for v in values.values():
+        _check_no_modules_in_value(v, seen)
 
 
 class wrap_module:

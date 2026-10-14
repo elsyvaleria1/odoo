@@ -318,7 +318,7 @@ class Database(http.Controller):
             raise ValueError(
                 f"Invalid backup format {backup_format!r}; expected {expected}"
             )
-        db.check_super(master_pwd)
+        db.check_admin_password(master_pwd)
         if name not in request.app.get_dbs_served():
             _debug.logic("db_backup_not_served", db=name)
             raise ValueError(f"Database {name!r} is not known")
@@ -363,7 +363,7 @@ class Database(http.Controller):
             upload=getattr(backup_file, "filename", None),
         )
         self._handle_insecure_password(master_pwd)
-        db.check_super(master_pwd)
+        db.check_admin_password(master_pwd)
         _check_db_name(name)
         with (
             _debug.perf("db_restore_spool_upload", db=name),
