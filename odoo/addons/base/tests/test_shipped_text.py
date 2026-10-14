@@ -12,7 +12,7 @@ INDENTED = re.compile(r"\n\s")
 
 
 def _load_industry_names_migration():
-    path = BASE / "migrations/1.159/post-industry-names.py"
+    path = BASE / "migrations/1.161/post-industry-names.py"
     spec = importlib.util.spec_from_file_location("industry_names_migration", path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -85,7 +85,7 @@ class TestShippedText(TransactionCase):
             )
         )
 
-        _load_industry_names_migration().migrate(self.env.cr, "1.158")
+        _load_industry_names_migration().migrate(self.env.cr, "1.160")
 
         self.env.cr.execute(
             SQL("SELECT full_name FROM res_partner_industry WHERE id = %s", industry.id)
