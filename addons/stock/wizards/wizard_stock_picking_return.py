@@ -112,11 +112,14 @@ class WizardStockPickingReturn(models.TransientModel):
             picking=self.picking_id.id,
             lines=len(self.product_return_moves),
         )
+        downstream = self.env["stock.move"]
         if self.picking_id:
-            for return_move in self.product_return_moves.move_id:
-                return_move.move_dest_ids.filtered(
-                    lambda m: m.state not in ("done", "cancel")
-                )._unreserve()
+            downstream = self.product_return_moves.filtered(
+                lambda line: not line.uom_id.is_zero(line.quantity)
+            ).move_id.move_dest_ids.filtered(
+                lambda m: m.state not in ("done", "cancel")
+            )
+            downstream._unreserve()
 
             new_picking = self.picking_id.copy(self._prepare_picking_default_values())
             new_picking.user_id = False
@@ -142,6 +145,7 @@ class WizardStockPickingReturn(models.TransientModel):
         _debug.pipeline("return_confirm_assign", picking=new_picking.id)
         new_picking.action_confirm()
         new_picking.action_assign()
+        downstream._action_assign()
         return new_picking
 
     @_debug.perf.timed
@@ -187,31 +191,19 @@ class WizardStockPickingReturn(models.TransientModel):
 
     def action_create_returns_all(self):
         self.check_singleton()
-        for return_move in self.product_return_moves:
-            stock_move = return_move.move_id
-            if (
-                not stock_move
-                or stock_move.state == "cancel"
-                or stock_move.location_dest_usage == "inventory"
-            ):
-                continue
-            quantity = stock_move.quantity
-            for returned in stock_move.returned_move_ids:
-                if returned.state == "cancel":
-                    continue
-                returned_qty = (
-                    returned.quantity
-                    if returned.state == "done"
-                    else returned.product_uom_qty
-                )
-                quantity -= returned.product_uom_id._get_quantity_in_unit(
-                    returned_qty,
-                    stock_move.product_uom_id,
-                    round=False,
-                )
-            quantity = max(stock_move.product_uom_id.round(quantity), 0)
-            _debug.logic("returnable_quantity", move=stock_move.id, quantity=quantity)
-            return_move.quantity = quantity
+        for return_line in self.product_return_moves.filtered("move_id"):
+            return_line.quantity = return_line._get_returnable_quantity()
+            _debug.logic(
+                "returnable_quantity",
+                move=return_line.move_id.id,
+                quantity=return_line.quantity,
+            )
+        if all(
+            line.uom_id.is_zero(line.quantity) for line in self.product_return_moves
+        ):
+            raise UserError(
+                self.env._("Everything this transfer moved has already been returned.")
+            )
         return self.action_create_returns()
 
     def action_create_exchanges(self):

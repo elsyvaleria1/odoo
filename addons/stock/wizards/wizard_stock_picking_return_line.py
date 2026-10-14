@@ -14,8 +14,9 @@ class WizardStockPickingReturnLine(models.TransientModel):
         required=True,
     )
     move_quantity = fields.Float(
-        related="move_id.quantity",
-        string="Move Quantity",
+        string="Returnable Quantity",
+        digits="Product Unit",
+        compute="_compute_move_quantity",
     )
     quantity = fields.Float(
         digits="Product Unit",
@@ -29,6 +30,41 @@ class WizardStockPickingReturnLine(models.TransientModel):
     )
     wizard_id = fields.Many2one(comodel_name="wizard.stock.picking.return")
     move_id = fields.Many2one(comodel_name="stock.move")
+
+    @api.depends(
+        "move_id.quantity",
+        "move_id.returned_move_ids.state",
+        "move_id.returned_move_ids.quantity",
+        "move_id.returned_move_ids.product_uom_qty",
+    )
+    def _compute_move_quantity(self) -> None:
+        for line in self:
+            line.move_quantity = line._get_returnable_quantity()
+
+    def _get_returnable_quantity(self) -> float:
+        self.check_singleton()
+        stock_move = self.move_id
+        if (
+            not stock_move
+            or stock_move.state == "cancel"
+            or stock_move.location_dest_usage == "inventory"
+        ):
+            return 0.0
+        quantity = stock_move.quantity
+        for returned in stock_move.returned_move_ids:
+            if returned.state == "cancel":
+                continue
+            returned_qty = (
+                returned.quantity
+                if returned.state == "done"
+                else returned.product_uom_qty
+            )
+            quantity -= returned.product_uom_id._get_quantity_in_unit(
+                returned_qty,
+                stock_move.product_uom_id,
+                round=False,
+            )
+        return max(stock_move.product_uom_id.round(quantity), 0)
 
     @api.depends("move_id.product_uom_id", "product_id.uom_id")
     def _compute_uom_id(self) -> None:

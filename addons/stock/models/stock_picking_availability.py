@@ -310,8 +310,7 @@ class StockPickingAvailability(models.Model):
                 and picking.date_deadline < picking.date_planned
             )
 
-    @api.depends("move_ids.move_dest_ids")
+    @api.depends("move_ids.move_dest_ids.picking_id", "return_ids")
     def _compute_show_next_pickings(self) -> None:
         for picking in self:
-            next_pickings = picking.move_ids.move_dest_ids.picking_id
-            picking.show_next_pickings = bool(next_pickings - picking.return_ids)
+            picking.show_next_pickings = bool(picking._get_next_transfers())

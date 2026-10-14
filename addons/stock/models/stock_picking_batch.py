@@ -1,5 +1,3 @@
-from markupsafe import Markup
-
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 from odoo.fields import Domain
@@ -498,8 +496,6 @@ class StockPickingBatch(models.Model):
             )
 
         empty_pickings = pickings.filtered(has_no_quantity)
-
-        pickings._check_before_validation()
         if empty_pickings != pickings:
             pickings -= empty_pickings
         if _debug.pipeline.enabled:
@@ -508,26 +504,6 @@ class StockPickingBatch(models.Model):
                 batch=self.id,
                 validate=pickings,
                 detach=self.picking_ids - pickings,
-            )
-
-        for picking in pickings:
-            picking.message_post(
-                body=Markup("<b>%s:</b> %s %s")
-                % (
-                    self.env._("Transferred by"),
-                    self.env._("Batch Transfer"),
-                    self._get_html_link(),
-                )
-            )
-
-        if empty_waiting_pickings:
-            self.message_post(
-                body=self.env._(
-                    "%s was removed from the batch, no quantity processed",
-                    Markup(", ").join(
-                        [picking._get_html_link() for picking in empty_waiting_pickings]
-                    ),
-                )
             )
 
         return pickings.button_validate(

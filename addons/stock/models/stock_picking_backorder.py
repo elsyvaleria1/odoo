@@ -64,7 +64,8 @@ class StockPickingBackorder(models.Model):
 
     @_debug.perf.timed
     def _create_backorder(self, backorder_moves=None):
-        self._detach_from_batch_before_backorder()
+        if backorder_moves is None:
+            self._detach_from_batch_before_backorder()
         moves_by_picking = {}
         backorder_moves_by_picking = (
             backorder_moves.grouped("picking_id") if backorder_moves else {}

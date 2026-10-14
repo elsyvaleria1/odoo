@@ -397,7 +397,6 @@ class TestHelpdeskStock(common.HelpdeskCommon):
         line = self.env["wizard.stock.picking.return.line"].create(
             {
                 "product_id": product.id,
-                "move_quantity": 5,
                 "quantity": 5,
                 "uom_id": product.uom_id.id,
                 "wizard_id": wizard.id,

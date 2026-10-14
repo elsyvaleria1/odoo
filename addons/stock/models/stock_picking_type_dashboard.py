@@ -19,7 +19,6 @@ class StockPickingTypeDashboard(models.Model):
         picking = self.env["stock.picking"]
         table = picking._table
         state = picking._field_to_sql(table, "state", query)
-        is_open = SQL("%s IN %s", state, tuple(OPEN_PICKING_STATES))
         late_cutoff = (
             self._get_date_category_boundaries()["today"]
             .astimezone(UTC)
@@ -29,15 +28,13 @@ class StockPickingTypeDashboard(models.Model):
             "count_picking_ready": SQL("%s = 'assigned'", state),
             "count_picking_waiting": SQL("%s IN ('confirmed', 'waiting')", state),
             "count_picking_late": SQL(
-                "%s AND (%s < %s OR %s)",
-                is_open,
+                "%s < %s OR %s",
                 picking._field_to_sql(table, "date_planned", query),
                 late_cutoff,
                 picking._field_to_sql(table, "has_deadline_issue", query),
             ),
             "count_picking_backorders": SQL(
-                "%s AND %s IS NOT NULL",
-                is_open,
+                "%s IS NOT NULL",
                 picking._field_to_sql(table, "backorder_id", query),
             ),
         }

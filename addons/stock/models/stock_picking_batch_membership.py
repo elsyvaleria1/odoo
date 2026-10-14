@@ -1,3 +1,5 @@
+from markupsafe import Markup
+
 from odoo import models
 from odoo.libs.debug_log import DebugLog
 
@@ -40,7 +42,28 @@ class StockPickingBatchMembership(models.Model):
             _debug.pipeline("detach_unvalidated", pickings=detached, batch=batch)
             detached.batch_id = False
             detached.move_ids.filtered(lambda m: not m.quantity).picked = False
+            batch.message_post(
+                body=self.env._(
+                    "%s was removed from the batch, no quantity processed",
+                    Markup(", ").join(
+                        [picking._get_html_link() for picking in detached]
+                    ),
+                )
+            )
         return detached
+
+    def _post_validated_by_batch(self, batch) -> None:
+        if not batch:
+            return
+        for picking in self.filtered(lambda p: p.state == "done"):
+            picking.message_post(
+                body=Markup("<b>%s:</b> %s %s")
+                % (
+                    self.env._("Transferred by"),
+                    self.env._("Batch Transfer"),
+                    batch._get_html_link(),
+                )
+            )
 
     def _detach_from_batches_after_validation(self):
         to_rebatch = self.browse()

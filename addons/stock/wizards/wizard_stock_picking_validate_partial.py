@@ -34,6 +34,8 @@ class WizardStockPickingValidatePartial(models.TransientModel):
         for pick_id in pickings:
             moves_to_log = {}
             for move in pick_id.move_ids:
+                if move.state == "cancel":
+                    continue
                 picked_qty = move._get_picked_quantity()
                 if move.product_uom_id.compare(move.product_uom_qty, picked_qty) > 0:
                     moves_to_log[move] = (picked_qty, move.product_uom_qty)
@@ -75,12 +77,16 @@ class WizardStockPickingValidatePartial(models.TransientModel):
             no_backorder=self.pick_ids,
             validate=pickings_to_validate,
         )
+        cancel_backorder_ids = self._get_cancel_backorder_ids(self.pick_ids)
         if pickings_to_validate:
-            self._check_less_quantities_than_expected(pickings_to_validate)
+            __, cancelled = pickings_to_validate._split_backorder_pickings(
+                pickings_to_validate.browse(cancel_backorder_ids)
+            )
+            self._check_less_quantities_than_expected(cancelled)
         return self._resume_validation(
             pickings_to_validate,
             skip_backorder=True,
-            cancel_backorder_ids=self._get_cancel_backorder_ids(self.pick_ids),
+            cancel_backorder_ids=cancel_backorder_ids,
         )
 
     def _get_cancel_backorder_ids(self, pickings) -> list:

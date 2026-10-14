@@ -365,7 +365,11 @@ class TestPickShip(TestStockCommon):
         return_pick.move_ids[0].move_line_ids[0].quantity = 2.0
         return_pick.move_ids[0].picked = True
         return_pick._action_done()
-        self.assertEqual(picking_client.state, "confirmed")
+        self.assertEqual(
+            picking_client.move_ids.quantity,
+            8.0,
+            "what the return left in Output stays reserved for the delivery",
+        )
 
     def test_mto_moves_extra_qty(self):
         picking_pick, picking_client = self.create_pick_ship()

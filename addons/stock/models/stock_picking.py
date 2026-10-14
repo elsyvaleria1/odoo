@@ -408,21 +408,22 @@ class StockPicking(models.Model):
         }
         type_ids.discard(False)
         self.env["stock.picking.type"].browse(type_ids).fetch(["sequence_id"])
+        unnamed_by_sequence = defaultdict(list)
         for vals in vals_list:
             picking_type_id = vals.get("picking_type_id", default_picking_type_id)
             if not picking_type_id or vals.get("name", "/") != "/":
                 continue
             if len(vals_list) == 1 and default_name != "/":
                 continue
-            picking_type = self.env["stock.picking.type"].browse(picking_type_id)
-            if picking_type.sequence_id:
-                vals["name"] = picking_type.sequence_id.next_by_id()
-                _debug.logic(
-                    "create_name_from_sequence",
-                    sequence=picking_type.sequence_id.id,
-                    picking_type=picking_type_id,
-                    name=vals["name"],
-                )
+            sequence = (
+                self.env["stock.picking.type"].browse(picking_type_id).sequence_id
+            )
+            if sequence:
+                unnamed_by_sequence[sequence].append(vals)
+        for sequence, unnamed in unnamed_by_sequence.items():
+            names = self._draw_names(sequence, len(unnamed))
+            for vals, name in zip(unnamed, names, strict=True):
+                vals["name"] = name
 
         date_planneds = [vals.pop("date_planned", False) for vals in vals_list]
 
@@ -440,6 +441,13 @@ class StockPicking(models.Model):
         pickings._autoconfirm_picking()
 
         return pickings
+
+    @api.model
+    def _draw_names(self, sequence, count) -> list[str]:
+        sequence.browse().check_access("read")
+        names = sequence._next_batch(count)
+        _debug.logic("names_from_sequence", sequence=sequence.id, names=names)
+        return names
 
     @_debug.perf.timed
     def write(self, vals):
@@ -468,8 +476,11 @@ class StockPicking(models.Model):
                     pickings=pickings_changing_type,
                     picking_type=picking_type.id,
                 )
-                for picking in pickings_changing_type:
-                    picking.name = picking_type.sequence_id.next_by_id()
+                names = self._draw_names(
+                    picking_type.sequence_id, len(pickings_changing_type)
+                )
+                for picking, name in zip(pickings_changing_type, names, strict=True):
+                    picking.name = name
             if pickings_changing_type and "move_type" not in vals:
                 _debug.logic(
                     "write_type_move_type",
@@ -485,7 +496,8 @@ class StockPicking(models.Model):
                 for picking in self
             }
 
-        res = super().write(vals)
+        with self.env.protecting(self._get_locations_kept_on_partner_change(vals)):
+            res = super().write(vals)
 
         self._propagate_locations_to_moves(locations_before)
 
@@ -503,6 +515,25 @@ class StockPicking(models.Model):
             self._autoconfirm_picking()
 
         return res
+
+    def _get_locations_kept_on_partner_change(self, vals) -> list:
+        if "partner_id" not in vals or vals.get("picking_type_id"):
+            return []
+        kept = []
+        for field_name, default_name, partner_usage in (
+            ("location_id", "default_location_src_id", "supplier"),
+            ("location_dest_id", "default_location_dest_id", "customer"),
+        ):
+            if field_name in vals:
+                continue
+            pickings = self.filtered(
+                lambda p, f=field_name, d=default_name, u=partner_usage: (
+                    p[f] and p.picking_type_id[d].usage != u
+                )
+            )
+            if pickings:
+                kept.append(([self._fields[field_name]], pickings))
+        return kept
 
     def _get_location_trigger_fields(self):
         field_depends = self.env.registry.field_depends
@@ -983,6 +1014,7 @@ class StockPicking(models.Model):
             pickings_not_to_backorder._action_done(cancel_backorder=True)
         if pickings_to_backorder:
             pickings_to_backorder._action_done(cancel_backorder=False)
+        self._post_validated_by_batch(batch)
         to_rebatch = detached | self._detach_from_batches_after_validation()
         to_rebatch._rebatch_after_validation(excluded_batches=batch)
         report_actions = self._prepare_actions_autoprint()
