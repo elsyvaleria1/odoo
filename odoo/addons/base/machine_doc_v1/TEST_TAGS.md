@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5775 methods, 1088 classes, 209 files)
+# All base tests (5777 methods, 1089 classes, 209 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -102,7 +102,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 
 ## Test File Reference
 
-### Tagged Files (138 files, 727 classes)
+### Tagged Files (138 files, 728 classes)
 
 | File | Tags | Classes | Tests | Base Class |
 |------|------|---------|-------|------------|
@@ -175,8 +175,8 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_mixin_recurrence_rule.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_module_data_rekey_records.py` | `post_install`, `-at_install` | 6 | 22 | TransactionCase |
 | `test_module_data_rename_field.py` | `post_install`, `-at_install` | 7 | 16 | TransactionCase |
-| `test_module_data_rename_model.py` | `post_install`, `-at_install` | 5 | 19 | TransactionCase |
-| `test_module_data_rename_module.py` | `post_install`, `-at_install` | 1 | 14 | TransactionCase |
+| `test_module_data_rename_model.py` | `post_install`, `-at_install` | 6 | 20 | TransactionCase |
+| `test_module_data_rename_module.py` | `post_install`, `-at_install` | 1 | 15 | TransactionCase |
 | `test_neutralize.py` | `post_install`, `-at_install`, `neutralize` | 2 | 3 | TransactionCase, BaseCase |
 | `test_nplusone.py` | `-standard`, `nplusone` | 3 | 12 | TransactionCase, TestNplusOneDetection |
 | `test_orm.py` | `post_install`, `-at_install` | 6 | 33 | TransactionCase |
@@ -326,11 +326,11 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 209 |
-| Total test classes | 1088 |
-| Total test methods | 5775 |
+| Total test classes | 1089 |
+| Total test methods | 5777 |
 | Files with @tagged | 138 (66%) |
 | Files without @tagged | 71 (34%) |
-| Classes using post_install | 438 |
+| Classes using post_install | 439 |
 | Unique tags | 29 |
 | Largest test file | test_db_cursor.py (125 classes, 406 tests) |
 
