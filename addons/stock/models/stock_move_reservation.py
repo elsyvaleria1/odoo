@@ -756,31 +756,6 @@ class StockMoveReservation(models.Model):
         strict=True,
     ):
         self.check_singleton()
-        move_line_vals, taken_quantity = self._update_reserved_quantity_vals(
-            need,
-            location_id,
-            trace_id,
-            package_id,
-            owner_id,
-            strict,
-        )
-        ledger = self.env.context.get("reservation_ledger")
-        if ledger is not None:
-            ledger.add_move_line_vals(move_line_vals)
-        elif move_line_vals:
-            self.env["stock.move.line"].create(move_line_vals)
-        return taken_quantity
-
-    def _update_reserved_quantity_vals(
-        self,
-        need,
-        location_id,
-        trace_id=None,
-        package_id=None,
-        owner_id=None,
-        strict=True,
-    ) -> tuple:
-        self.check_singleton()
         if not trace_id:
             trace_id = self.env["product.trace"]
         if not package_id:
@@ -814,7 +789,7 @@ class StockMoveReservation(models.Model):
                 candidate_lines,
             )
         _debug.logic(
-            "reserved_quantity_vals",
+            "reserved_quantity",
             move=self.id,
             need=need,
             strict=strict,
@@ -823,7 +798,12 @@ class StockMoveReservation(models.Model):
             taken=taken_quantity,
             line_vals=len(move_line_vals),
         )
-        return move_line_vals, taken_quantity
+        ledger = self.env.context.get("reservation_ledger")
+        if ledger is not None:
+            ledger.add_move_line_vals(move_line_vals)
+        elif move_line_vals:
+            self.env["stock.move.line"].create(move_line_vals)
+        return taken_quantity
 
     def _get_candidate_lines_by_place(self) -> dict:
         self.check_singleton()
