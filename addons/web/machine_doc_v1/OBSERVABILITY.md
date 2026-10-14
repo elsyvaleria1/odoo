@@ -314,7 +314,7 @@ owner doc had already settled.
 The mechanism, for the record: esbuild walks the import graph **from disk**, so a
 bundle inlines dependencies it does not declare. `web.assets_tests` declares four
 test-helper globs, which import `@web/env`, which imports `@web/session`
-(`env.js:17`). `_esbuild_entry_lines` (`odoo/tools/assets/esbuild.py`) then
+(`env.js:17`). `_prepare_esbuild_entry_lines` (`odoo/tools/assets/esbuild.py`) then
 registers only `self.native_modules` — the *declared members* — so the inlined
 copy runs but is never registered, `registerNativeModules` never sees a specifier
 bound to a different object, and no `module_rebind` fires.

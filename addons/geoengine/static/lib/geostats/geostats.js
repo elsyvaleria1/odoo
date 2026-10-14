@@ -6,13 +6,8 @@
 */
 
 
-// AgroMarin: replaced the UMD wrapper with a plain IIFE + `export default`
-// footer (see the end of this file). The <script> branch assigned an implicit
-// global, which is a ReferenceError once the file is a module -- module code is
-// always strict. Keeping the wrapper and merely adding an export would leave
-// that branch as a loaded gun for anyone who bundled this without the export
-// condition. geoengine loads this through the `geostats` import-map specifier
-// (odoo/tools/assets/constants.py), so no other format is reachable.
+// geostats 2.1.0; upstream lib/geostats.js SHA-256 6026fece0a4d3977e23c99f176f9581a565b62b8a270c51b649c50807385c90a
+// AgroMarin: replace the UMD wrapper; its browser branch assigns an undeclared global.
 var geostats = (function () {
 
 var isInt = function(n) {
@@ -568,11 +563,8 @@ var geostats = function(a) {
 	        return;
 
 	    if(array[0] !== this.min() || array[array.length-1] !== this.max()) {
-	    	// AgroMarin: `t(...)` -> `_t(...)`. Upstream names a function that does
-	    	// not exist, so this branch threw ReferenceError instead of logging.
-	    	// Unreachable from geoengine, which never calls setClassManually, but
-	    	// it is a crash either way and the fix is the identifier it meant.
-	    	if(this.silent) this.log("[silent mode] " + _t('Given bounds may not be correct! please check your input.\nMin value : ' + this.min() + ' / Max value : ' + this.max()), true);
+		// AgroMarin: upstream calls the missing t(); its translation helper is _t().
+		if(this.silent) this.log("[silent mode] " + _t('Given bounds may not be correct! please check your input.\nMin value : ' + this.min() + ' / Max value : ' + this.max()), true);
 			else throw new TypeError(_t('Given bounds may not be correct! please check your input.\nMin value : ' + this.min() + ' / Max value : ' + this.max()));
 	    	return; 
 	    }
@@ -1267,11 +1259,7 @@ var geostats = function(a) {
 		var cnt= '';
 		var elements = new Array();
 
-		// AgroMarin: declare ccolors/lg/getcounter/fn. Upstream assigns all four
-		// without `var`, which only works in sloppy mode -- they became window
-		// properties under the old <script> load. Module code is strict, so the
-		// first assignment below threw ReferenceError instead, taking out the
-		// choropleth legend (geoengine_model.js calls getHtmlLegend).
+		// AgroMarin: declare legend temporaries; ESM strict mode rejects implicit globals.
 		var ccolors, lg, getcounter, fn;
 
 		this.doCount(); // we do count, even if not displayed
@@ -1435,6 +1423,5 @@ var geostats = function(a) {
 return geostats;
 })();
 
-// AgroMarin: ESM export footer, replacing the UMD wrapper stripped from the
-// head of this file.
+// AgroMarin: export the constructor for the module-owned geostats import-map entry.
 export default geostats;

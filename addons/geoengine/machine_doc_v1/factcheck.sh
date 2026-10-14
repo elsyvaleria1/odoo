@@ -18,20 +18,23 @@
 #    `esm.external_libs` key, so for ten days the documented way to add a library
 #    here pointed at two symbols that resolved nowhere.
 #
-# 2. `static/lib/versions.json` says in its own `_comment` that its entries are
-#    shaped like `web/static/lib/versions.json` so that odoo's
-#    `tooling/vendored/check_vendored_libs.py` could be pointed at this tree —
-#    "today it only scans web's, so nothing machine-checks these entries yet".
-#    The probe loop below is that missing check, run here instead.
+# 2. Vendored version and source pins must agree with the shipped artifacts.
+#    The shared `tooling/assets/check_vendored_libs.py` checks the probes and
+#    checksums here as well as in web.
 #
 # Roots come from this script's own location, so a run always validates the tree
 # it ships in.
 
-set -u
+set -euo pipefail
 UPDATE=0
 [ "${1:-}" = "--update" ] && UPDATE=1
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_fc_root="$SCRIPT_DIR"
+while [[ "$_fc_root" != "/" && ! -f "$_fc_root/odoo-bin" ]]; do
+    _fc_root="$(dirname -- "$_fc_root")"
+done
+source "$_fc_root/doc/machine_doc/factcheck_env.sh"
 MOD="$(dirname "$SCRIPT_DIR")"                  # <repo>/geoengine
 LIB="$MOD/static/lib"
 VERSIONS="$LIB/versions.json"
@@ -62,7 +65,7 @@ assert_file_omits() {  # <path-relative-to-MOD> <needle> <human description>
 }
 
 libs_json() {  # <python expression over the parsed libs mapping, printed>
-    python3 - "$VERSIONS" "$1" <<'PY'
+    "$PY" - "$VERSIONS" "$1" <<'PY'
 import json, sys
 libs = json.load(open(sys.argv[1]))["libs"]
 print(eval(sys.argv[2], {"libs": libs, "sorted": sorted, "len": len}))
@@ -70,7 +73,7 @@ PY
 }
 
 manifest_key() {  # <dotted key path>
-    python3 - "$MOD/__manifest__.py" "$1" <<'PY'
+    "$PY" - "$MOD/__manifest__.py" "$1" <<'PY'
 import ast, sys
 value = ast.literal_eval(open(sys.argv[1]).read())
 for part in sys.argv[2].split("."):
@@ -94,7 +97,8 @@ done
 [ -f "$LIB/README.md" ] && ok || bad "missing static/lib/README.md"
 
 # ----------------------------------------------------------------- manifest --
-for dep in $(manifest_key depends); do
+dependencies="$(manifest_key depends)"
+for dep in $dependencies; do
     assert_doc_cites "$dep" "dependency $dep"
 done
 
@@ -108,6 +112,7 @@ done
 #   c) the manifest and versions.json agree on the specifier set, so neither
 #      can gain a library the other has never heard of.
 declare -A declared=()
+external_libs="$(manifest_key esm.external_libs | tr ' ' '\n')"
 while IFS= read -r pair; do
     [ -z "$pair" ] && continue
     spec="${pair%%=*}"
@@ -120,7 +125,7 @@ while IFS= read -r pair; do
     rel="${url#/geoengine/}"
     if [ -f "$MOD/$rel" ]; then ok
     else bad "esm.external_libs['$spec'] points at $url, which ships no file"; fi
-done < <(manifest_key esm.external_libs | tr ' ' '\n')
+done <<< "$external_libs"
 
 if [ "${#declared[@]}" -eq 0 ]; then
     bad "manifest declares no esm.external_libs, but the docs describe three"
@@ -150,9 +155,21 @@ assert_file_cites "static/lib/README.md" "esm.external_libs" \
 
 # ------------------------------------------------------------ vendored libs --
 # The probe loop `versions.json` asks for: re-derive each pinned version from
-# the tree rather than trusting the number written beside it. Same contract as
-# odoo's tooling/vendored/check_vendored_libs.py, which does not scan this tree.
-while IFS=$'\x1f' read -r name version probe_file probe_pattern rebuild; do
+# the tree rather than trusting the number written beside it.
+if "$PY" "$_fc_root/tooling/assets/check_vendored_libs.py" "$LIB"; then ok
+else bad "vendored version probes or artifact checksums do not match"; fi
+library_report="$("$PY" - "$VERSIONS" <<'PY'
+import json, sys
+for name, spec in sorted(json.load(open(sys.argv[1]))["libs"].items()):
+    print("\x1f".join([
+        name,
+        str(spec.get("version", "")),
+        (spec.get("probe") or {}).get("file", ""),
+        spec.get("rebuild", ""),
+    ]))
+PY
+)"
+while IFS=$'\x1f' read -r name version probe_file rebuild; do
     [ -z "$name" ] && continue
     dir="$LIB/$name"
 
@@ -177,32 +194,7 @@ while IFS=$'\x1f' read -r name version probe_file probe_pattern rebuild; do
         unverified+=("$name")
         continue
     fi
-    target="$dir/$probe_file"
-    if [ ! -f "$target" ]; then
-        bad "$name: probe file $probe_file does not exist"
-        continue
-    fi
-    if python3 - "$target" "$probe_pattern" "$version" <<'PY'
-import re, sys
-content = open(sys.argv[1], errors="replace").read()
-pattern = sys.argv[2].replace("{version}", re.escape(sys.argv[3]))
-sys.exit(0 if re.search(pattern, content, re.MULTILINE) else 1)
-PY
-    then ok
-    else bad "$name: versions.json says $version but $probe_file does not confirm it"; fi
-done < <(python3 - "$VERSIONS" <<'PY'
-import json, sys
-for name, spec in sorted(json.load(open(sys.argv[1]))["libs"].items()):
-    probe = spec.get("probe") or {}
-    print("\x1f".join([
-        name,
-        str(spec.get("version", "")),
-        probe.get("file", ""),
-        probe.get("pattern", ""),
-        spec.get("rebuild", ""),
-    ]))
-PY
-)
+done <<< "$library_report"
 
 # Reverse: a directory shipping a library that versions.json has never heard of
 # is an unpinned dependency with no licence record and no upgrade procedure.
@@ -233,7 +225,7 @@ done
 # notices, the flag is what fixes.
 #
 #     bash machine_doc_v1/factcheck.sh --update
-figures_report=$(python3 - "$SCRIPT_DIR" "$MOD" "$UPDATE" <<'PY'
+figures_report=$("$PY" - "$SCRIPT_DIR" "$MOD" "$UPDATE" <<'PY'
 import pathlib, re, sys
 
 doc_dir, mod, update = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3] == "1"
@@ -298,7 +290,7 @@ done <<< "$figures_report"
 # the rule odoo/CLAUDE.md states and applies to itself. This repo's CI checks
 # out alone, so sibling-checkout paths cannot be resolved by this gate.
 # Framework paths under odoo/ are local now that geoengine lives in core.
-path_report=$(python3 - "$SCRIPT_DIR" "$MOD" <<'PY'
+path_report=$("$PY" - "$SCRIPT_DIR" "$MOD" <<'PY'
 import pathlib, re, sys
 
 doc_dir, mod = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])

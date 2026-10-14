@@ -4,6 +4,8 @@ import os
 import unittest
 from datetime import date
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
@@ -43,7 +45,6 @@ class TestWebBundleSize(TransactionCase):
         "web.assets_web_dark": 5_012_000,
         "web.assets_web_print": 5_010_000,
         "web.report_assets_common": 11_100,
-        "web.report_assets_pdf": 1_000_000,
     }
 
     @classmethod
@@ -130,9 +131,8 @@ class TestWebBundleSize(TransactionCase):
             js=True,
         )
         if not bundle.native_modules:
-            self.skipTest(
-                f"Bundle {bundle_name!r} has no native modules in "
-                f"this installation; nothing to measure."
+            self.fail(
+                f"Expected JavaScript bundle {bundle_name!r} has no native modules."
             )
         with mute_logger("odoo.addons.base.models.assetsbundle"):
             result = bundle.esbuild_native_bundle()
@@ -304,8 +304,24 @@ class TestWebBundleSize(TransactionCase):
     def test_report_assets_common_under_budget(self):
         self._assert_bundle_under_budget("web.report_assets_common")
 
-    def test_report_assets_pdf_under_budget(self):
-        self._assert_bundle_under_budget("web.report_assets_pdf")
+    def test_report_assets_pdf_contains_styles_only(self):
+        bundle = self.env["ir.qweb"]._get_asset_bundle(
+            "web.report_assets_pdf",
+            css=True,
+            js=True,
+        )
+        self.assertTrue(bundle.stylesheets)
+        self.assertFalse(bundle.javascripts)
+        self.assertFalse(bundle.native_modules)
+
+    def test_an_empty_expected_javascript_bundle_fails(self):
+        with patch.object(
+            type(self.env["ir.qweb"]),
+            "_get_asset_bundle",
+            return_value=SimpleNamespace(native_modules=[]),
+        ):
+            with self.assertRaisesRegex(AssertionError, "has no native modules"):
+                self._measure_esm_bundle_bytes("web.assets_web")
 
 
 @tagged("web_unit", "web_assets", "web_bundle_size")

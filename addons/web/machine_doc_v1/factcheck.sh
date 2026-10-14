@@ -16,7 +16,7 @@
 # framework tree SKIP with a count when it is absent, so a single-repo checkout
 # reports honestly instead of failing or silently passing.
 #
-# Overrides: VENV_PY, ODOO_CONF, FACTCHECK_DB.
+# Overrides: VENV_PY, ODOO_CONF.
 
 set -u
 # All roots derive from this script's location so the run validates the tree it
@@ -543,16 +543,6 @@ assert_eq "orm.retry() default value [1]" \
     "$(grep -c 'retry(options = 1)' "$WEB/static/src/core/network/orm_service.js")" "1"
 assert_eq "orm.retry() does NOT default to 3" \
     "$(grep -c 'retry(options = 3)' "$WEB/static/src/core/network/orm_service.js")" "0"
-
-# ------- Production bundle sizes (NEW — from DB ir_attachment) -------
-FACTCHECK_DB="${FACTCHECK_DB:-hoot_web}"
-if psql -d "$FACTCHECK_DB" -c "SELECT 1" >/dev/null 2>&1; then
-    : # bundle-size assertions removed: they measured a prod-restore DB,
-      # not this source tree, and the ESM split made the figure meaningless.
-else
-    echo "SKIP: bundle size assertions (DB $FACTCHECK_DB unavailable; set FACTCHECK_DB=...)"
-    SKIP=$((SKIP+1))
-fi
 
 # Each pair below locks both directions: the new wording must be present AND
 # the stale wording gone, so a fix that lands in code without moving its cited
@@ -1680,7 +1670,7 @@ for sym in $LIFECYCLE_SYMS; do
 done
 # ------- ESM_BUNDLING: the classic page names only symbols that exist -------
 CLASSIC=$(awk '/^### The web client.s page bundle is a classic script/{f=1;next} /^#/{f=0} f' "$DOC/ESM_BUNDLING.md")
-for sym in classic_script _as_classic_page externals_module_node is_classic_script \
+for sym in compile_classic_script _as_classic_page externals_module_node is_classic_script \
         combine_bundle_with_templates _prepare_esm_script_node; do
     cited=$(printf '%s' "$CLASSIC" | grep -c "\`$sym\`")
     defined=$(grep -rlE "def $sym\(" --include="*.py" \

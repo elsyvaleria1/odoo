@@ -16,9 +16,9 @@ from odoo.tools.assets.esbuild import (
     EsbuildCompiler,
     EsbuildGroupResult,
     EsbuildResult,
-    classic_script,
+    compile_classic_script,
     get_esbuild_version,
-    module_specifiers,
+    get_module_specifiers,
 )
 from odoo.tools.assets.esm_bridges import get_evaluation_time_bridge_uses
 from odoo.tools.assets.esm_graph import (
@@ -55,7 +55,7 @@ def _get_specs_imported_by_consumers(
     ext_lib_names = set(external_libs())
     for consumer in consumers:
         own = [a for a in consumer.native_modules if a.module_path not in members]
-        own_specs = {name for a in own for name in module_specifiers(a)}
+        own_specs = {name for a in own for name in get_module_specifiers(a)}
         imported.update(
             spec
             for asset in own
@@ -488,7 +488,7 @@ class IrQweb(models.AbstractModel):
             _debug.logic("classic_page_declined", bundle=bundle, reason="no_metafile")
             return result
         config = self._get_esbuild_config()
-        classic = classic_script(
+        classic = compile_classic_script(
             result.code,
             self._get_static_external_imports(result.metafile),
             label=bundle,
@@ -670,7 +670,7 @@ class IrQweb(models.AbstractModel):
         members = {
             name
             for asset in asset_bundle.native_modules
-            for name in module_specifiers(asset)
+            for name in get_module_specifiers(asset)
         }
         consumers = self._get_export_consumers(
             bundle, asset_bundle, assets_params, child_bundles
@@ -773,7 +773,9 @@ class IrQweb(models.AbstractModel):
             for asset in asset_bundle.native_modules
             if asset.module_path not in parent_specs and asset.url not in external_urls
         ]
-        own_specs = {name for asset in own_modules for name in module_specifiers(asset)}
+        own_specs = {
+            name for asset in own_modules for name in get_module_specifiers(asset)
+        }
         discovered, _ext = asset_bundle._bridges._discover_reachable_specifiers(
             own_specs, set(external_libs()), provided=parent_specs, modules=own_modules
         )

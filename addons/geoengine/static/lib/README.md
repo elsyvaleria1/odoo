@@ -2,9 +2,9 @@
 
 Third-party libraries shipped inside the `geoengine` module. The conventions here are
 `web/static/lib/README.md`'s — read that one first; this file records only what is
-specific to these three.
+specific to these four.
 
-All three are **ES modules resolved through the browser import map**, not scripts that
+All four are **ES modules resolved through the browser import map**, not scripts that
 install a global. Each answers to a bare specifier declared by **this module's own
 `__manifest__.py`**, under the `esm.external_libs` key — a mapping of bare specifier to
 root-relative URL:
@@ -86,7 +86,7 @@ pulls the base classes in transitively anyway.
 `ol.d.ts` from the npm package is deliberately **not** vendored. It describes the full
 library, not this subset, so it would type-check symbols the bundle does not ship.
 
-**`geostats/`** is unmaintained upstream (2.1.0 is the last release) and its source
+**`geostats/`** ships the reviewed npm 2.1.0 source. Its source
 predates strict mode, which is the whole reason it carries markers: implicit globals
 that were harmless under a `<script>` tag are `ReferenceError`s inside a module. Two of
 the four markers are exactly that, one of them on the live choropleth legend path. If a
@@ -101,7 +101,7 @@ itself, in `static/src/css/style.scss` and `static/src/geoengine/geoengine_rende
 
 1. Confirm the upgrade is needed — an advisory, a required feature, a license change.
 2. For `ol`, `chroma-js` and `proj4`, run the directory's `build.sh`. For `geostats`, replace the
-   file and re-apply every `AgroMarin:` marker (`grep -n "AgroMarin:" geostats/` on the
+   file and re-apply every `AgroMarin:` marker (`rg -n "AgroMarin:" geostats/geostats.js` on the
    outgoing file is the complete list).
 3. Update `versions.json` and the table above in the same commit.
 4. Re-run the JS suites: `odoo-bin … -i geoengine --test-enable --test-tags
@@ -109,3 +109,15 @@ itself, in `static/src/css/style.scss` and `static/src/geoengine/geoengine_rende
 5. Open a map view and confirm the layers, choropleth legend and draw/modify tools still
    work — none of the suites exercise the renderer against a real OpenLayers.
 6. Check the LICENSE. If it changed upstream, surface that in the PR description.
+
+## Provenance checks
+
+The geostats banner names its verified upstream version and source SHA-256. The
+manifest also pins the shipped file's checksum. The module factcheck checks both
+through tooling/assets/check_vendored_libs.py. Changing the version without its
+artifact, or editing the artifact without its checksum, fails the check.
+
+On replacement, unpack the pinned npm package with `npm pack geostats@2.1.0` in
+a temporary directory. Compare lib/geostats.js against the outgoing file, reapply
+the four `AgroMarin:` divergences and verify the executable differences. Record
+the new upstream source hash, version banner and shipped checksum together.

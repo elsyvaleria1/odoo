@@ -85,15 +85,18 @@ class AssetsBundle:
 
     @classmethod
     def _check_external_libs(cls, import_map: Mapping[str, str]) -> None:
-        missing_alias = [
-            spec for spec in import_map if not EsbuildCompiler.resolves_specifier(spec)
+        missing_externals = [
+            spec
+            for spec in import_map
+            if not EsbuildCompiler.is_external_specifier(spec)
         ]
-        if missing_alias:
-            _debug.logic("external_libs_rejected", reason="alias", specs=missing_alias)
+        if missing_externals:
+            _debug.logic(
+                "external_libs_rejected", reason="external", specs=missing_externals
+            )
             raise ValueError(
-                f"esm.external_libs declares {sorted(missing_alias)} "
-                f"but esbuild has no resolution for them (no per-lib alias, "
-                f"no pattern-level external coverage). Production builds "
+                f"esm.external_libs declares {sorted(missing_externals)} "
+                f"but esbuild has no external coverage for them. Production builds "
                 f"will fail to resolve these specifiers.",
             )
         missing_files = []

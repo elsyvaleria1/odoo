@@ -665,7 +665,7 @@ class TestClassicPageBundle(TransactionCase):
         node = shutil.which("node")
         if not node:
             self.skipTest("needs node")
-        classic = ir_qweb_assets_esbuild.classic_script(
+        classic = ir_qweb_assets_esbuild.compile_classic_script(
             'import * as owl from "@odoo/owl";\n'
             'odoo.loader.registerNativeModules({ "@odoo/owl": owl }, "b.page");\n',
             ["@odoo/owl"],
@@ -711,7 +711,7 @@ console.log(JSON.stringify({ registered, rebound }));
         result = EsbuildResult('import "@odoo/owl";\nbuilt();\n', None, None)
         with patch.object(
             ir_qweb_assets_esbuild,
-            "classic_script",
+            "compile_classic_script",
             side_effect=AssertionError("the second pass ran"),
         ):
             kept = self.env["ir.qweb"]._as_classic_page("web.assets_web", result)
@@ -724,7 +724,9 @@ console.log(JSON.stringify({ registered, rebound }));
                 "get_esbuild_version",
                 return_value="second-pass-failed",
             ),
-            patch.object(ir_qweb_assets_esbuild, "classic_script", return_value=None),
+            patch.object(
+                ir_qweb_assets_esbuild, "compile_classic_script", return_value=None
+            ),
         ):
             _post, externals, bundle = self._page_scripts()
         self.assertEqual(bundle.get("type"), "module")
@@ -1115,7 +1117,7 @@ class TestEsbuildHelpers(TransactionCase):
 
     def test_resolve_opts_applies_defaults(self):
         c = self._compiler()
-        timeout_s, target, source_maps = c._esbuild_resolve_opts(None, None, None)
+        timeout_s, target, source_maps = c._get_esbuild_options(None, None, None)
         self.assertEqual(timeout_s, EsbuildCompiler._ESBUILD_TIMEOUT_S)
         self.assertEqual(target, EsbuildCompiler._ESBUILD_TARGET)
         self.assertEqual(source_maps, EsbuildCompiler._ESBUILD_SOURCE_MAPS)
@@ -1123,14 +1125,14 @@ class TestEsbuildHelpers(TransactionCase):
     def test_resolve_opts_passes_through_valid(self):
         c = self._compiler()
         self.assertEqual(
-            c._esbuild_resolve_opts(10, "es2022", "linked"),
+            c._get_esbuild_options(10, "es2022", "linked"),
             (10, "es2022", "linked"),
         )
 
     def test_resolve_opts_unknown_source_map_falls_back(self):
         c = self._compiler()
         with self.assertLogs(f"{ASSET_ROOT}.esbuild", level=logging.WARNING):
-            _, _, source_maps = c._esbuild_resolve_opts(5, "es2023", "bogus")
+            _, _, source_maps = c._get_esbuild_options(5, "es2023", "bogus")
         self.assertEqual(source_maps, "")
 
     def test_entry_lines_register_block(self):
@@ -1141,7 +1143,7 @@ class TestEsbuildHelpers(TransactionCase):
                 ),
             ]
         )
-        lines = c._esbuild_entry_lines(self._odoo_root())
+        lines = c._prepare_esbuild_entry_lines(self._odoo_root())
         self.assertIn('import * as __owl from "@odoo/owl";', lines)
         self.assertIn('import * as __m0 from "./addons/web/static/src/foo.js";', lines)
         self.assertIn("odoo.loader.registerNativeModules({", lines)
@@ -1162,14 +1164,14 @@ class TestEsbuildHelpers(TransactionCase):
             native_modules=[_fake_native_module(url="/web/static/tests/t.js")],
             provider=lambda root: fake,
         )
-        _, external_flags = c._esbuild_flags(self._odoo_root(), None)
+        _, external_flags = c._get_esbuild_flags(self._odoo_root(), None)
         self.assertNotIn("--external:@web/../tests/*", external_flags)
         self.assertNotIn("--external:./web/static/tests/*", external_flags)
         self.assertIn("--external:@other/../tests/*", external_flags)
 
     def test_flags_adds_dynamic_child_externals(self):
         c = self._compiler(provider=lambda root: ([], []))
-        _, external_flags = c._esbuild_flags(
+        _, external_flags = c._get_esbuild_flags(
             self._odoo_root(), frozenset({"@lazy/child"})
         )
         self.assertIn("--external:@lazy/child", external_flags)
@@ -3555,7 +3557,7 @@ class TestDynamicBundleIntegrity(TransactionCase):
             )
 
     def test_a_runtime_bundle_resolves_every_parent_module_through_a_stub(self):
-        from odoo.tools.assets.esbuild import module_specifiers
+        from odoo.tools.assets.esbuild import get_module_specifiers
         from odoo.tools.assets.esm_graph import get_escaping_relative_imports
 
         IrQweb = self.env["ir.qweb"]
@@ -3578,7 +3580,7 @@ class TestDynamicBundleIntegrity(TransactionCase):
                 name, js=True, css=False, debug_assets=True
             )
             own = [a for a in child.native_modules if a.module_path not in parent_specs]
-            own_specs = {n for a in own for n in module_specifiers(a)}
+            own_specs = {n for a in own for n in get_module_specifiers(a)}
             discovered, _ext = child._bridges._discover_bridge_specifiers(
                 own_specs, set(external_libs()), modules=own
             )

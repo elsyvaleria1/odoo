@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tooling.assets.check_vendored_libs import find_vendored_library_errors
+from tooling.assets.check_vendored_libs import get_vendored_library_errors
 
 
 @pytest.fixture
@@ -33,13 +33,13 @@ def lib_dir(tmp_path):
 
 
 def test_pinned_bundle_passes(lib_dir):
-    assert find_vendored_library_errors(lib_dir) == []
+    assert get_vendored_library_errors(lib_dir) == []
 
 
 def test_same_size_code_corruption_fails(lib_dir):
     bundle = lib_dir / "example/bundle.js"
     bundle.write_bytes(bundle.read_bytes().replace(b"42", b"43"))
-    assert find_vendored_library_errors(lib_dir) == [
+    assert get_vendored_library_errors(lib_dir) == [
         "example: bundle.js does not match its SHA-256 pin",
     ]
 
@@ -47,8 +47,8 @@ def test_same_size_code_corruption_fails(lib_dir):
 def test_a_pin_bumped_without_its_bundle_fails(lib_dir):
     manifest = lib_dir / "versions.json"
     manifest.write_text(manifest.read_text().replace("1.2.3", "1.2.4"))
-    assert find_vendored_library_errors(lib_dir) == [
-        "example: bundle.js does not identify version 1.2.4",
+    assert get_vendored_library_errors(lib_dir) == [
+        "example: bundle.js does not match its pinned probe (version 1.2.4)",
     ]
 
 
@@ -56,14 +56,34 @@ def test_version_probes_treat_the_version_as_literal_text(lib_dir):
     bundle = lib_dir / "example/bundle.js"
     bundle.write_text(bundle.read_text().replace("1.2.3", "1x2x3"))
     assert (
-        "example: bundle.js does not identify version 1.2.3"
-        in find_vendored_library_errors(lib_dir)
+        "example: bundle.js does not match its pinned probe (version 1.2.3)"
+        in get_vendored_library_errors(lib_dir)
+    )
+
+
+@pytest.mark.parametrize("bump_source_pin", [False, True])
+def test_upstream_source_probes_match_the_pinned_digest(lib_dir, bump_source_pin):
+    manifest = lib_dir / "versions.json"
+    pins = json.loads(manifest.read_text())
+    source_sha256 = "a" * 64
+    bundle = lib_dir / "example/bundle.js"
+    bundle.write_text(f"/* Example 1.2.3; source SHA-256 {source_sha256} */\n")
+    pin = pins["libs"]["example"]
+    pin["source_sha256"] = "b" * 64 if bump_source_pin else source_sha256
+    pin["probe"]["pattern"] = r"Example {version}; source SHA-256 {source_sha256}"
+    pin["checksums"][bundle.name] = hashlib.sha256(bundle.read_bytes()).hexdigest()
+    manifest.write_text(json.dumps(pins))
+    errors = get_vendored_library_errors(lib_dir)
+    assert errors == (
+        ["example: bundle.js does not match its pinned probe (version 1.2.3)"]
+        if bump_source_pin
+        else []
     )
 
 
 def test_missing_bundle_fails(lib_dir):
     (lib_dir / "example/bundle.js").unlink()
-    assert find_vendored_library_errors(lib_dir) == [
+    assert get_vendored_library_errors(lib_dir) == [
         "example: missing version probe bundle.js",
         "example: missing artifact bundle.js",
     ]
@@ -89,7 +109,7 @@ def owl_dir(tmp_path):
 
 
 def test_all_three_owl_artifacts_match_the_pinned_source(owl_dir):
-    assert find_vendored_library_errors(owl_dir) == []
+    assert get_vendored_library_errors(owl_dir) == []
 
 
 @pytest.mark.parametrize("field", ["commit", "checksums"])
@@ -99,13 +119,13 @@ def test_owl_provenance_cannot_be_omitted(owl_dir, field):
         pins = json.load(stream)
     del pins["libs"]["owl"][field]
     manifest.write_text(json.dumps(pins))
-    assert find_vendored_library_errors(owl_dir)
+    assert get_vendored_library_errors(owl_dir)
 
 
 def test_owl_source_revision_cannot_be_bumped_without_its_build(owl_dir):
     manifest = owl_dir / "versions.json"
     manifest.write_text(manifest.read_text().replace("a11f5097", "b22f5097"))
-    errors = find_vendored_library_errors(owl_dir)
+    errors = get_vendored_library_errors(owl_dir)
     assert len(errors) == 3
     assert all("does not identify source commit" in error for error in errors)
 
@@ -120,7 +140,7 @@ def test_a_compiler_from_another_build_fails_even_with_its_correct_checksum(owl_
         compiler.read_bytes()
     ).hexdigest()
     manifest.write_text(json.dumps(pins))
-    errors = find_vendored_library_errors(owl_dir)
+    errors = get_vendored_library_errors(owl_dir)
     assert len(errors) == 1
     assert errors[0].startswith(
         "owl: owl.compiler.es.js does not identify source commit"

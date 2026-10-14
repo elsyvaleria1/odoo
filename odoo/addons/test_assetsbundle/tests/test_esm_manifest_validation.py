@@ -112,7 +112,7 @@ class TestExternalLibsValidator(BaseCase):
     REAL_URL = "/web/static/lib/owl/owl.es.js"
 
     def test_a_specifier_esbuild_cannot_resolve_is_refused(self):
-        with self.assertRaisesRegex(ValueError, "no resolution for them"):
+        with self.assertRaisesRegex(ValueError, "no external coverage for them"):
             AssetsBundle._check_external_libs({"left-pad": self.REAL_URL})
 
     def test_bare_externals_are_a_subset_of_the_declared_libs(self):

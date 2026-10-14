@@ -3,14 +3,14 @@
     "Single source of truth for the third-party libraries vendored under",
     "geoengine/static/lib. Deliberately the same shape as",
     "web/static/lib/versions.json so that odoo's",
-    "tooling/vendored/check_vendored_libs.py can be pointed at this tree too;",
-    "today it only scans web's, so nothing machine-checks these entries yet.",
+    "tooling/assets/check_vendored_libs.py checks versions and artifact hashes;",
+    "geoengine/machine_doc_v1/factcheck.sh also checks this tree's declarations.",
     "",
     "'probe' locates the version inside the vendored tree: 'file' is relative",
     "to the library directory and 'pattern' is a Python regex in which the",
-    "token {version} is replaced by the escaped 'version' value.",
+    "tokens {version} and {source_sha256} are replaced by their escaped pins.",
     "",
-    "All three are ES modules resolved through the browser import map. The",
+    "All four are ES modules resolved through the browser import map. The",
     "bare specifier each one answers to is declared by geoengine's own",
     "__manifest__.py under the 'esm.external_libs' key, and restated as",
     "'specifier' in each entry below. See README.md in this directory."
@@ -52,8 +52,15 @@
       "license": "MIT",
       "source": "https://github.com/simogeo/geostats",
       "specifier": "geostats",
-      "probe": null,
-      "notes": "NO PROBE IS POSSIBLE, and the 2.1.0 pin is therefore an unverified assertion. Upstream's banner names the project, the author and the MIT licence but no version, and the fork ships the readable source rather than a built artifact, so no version string exists anywhere in the file to re-derive from. The probe that used to sit here -- geostats-{version}|version = '{version}' -- matched nothing and had never been run, because the check this file was shaped for only ever scanned web's tree. Confirm the pin against the npm tarball by hand when upgrading. Upstream lib/geostats.js kept readable rather than bundled, carrying 4 AgroMarin: markers -- grep them for the full list. Two of those exist because the file is now a module and module code is strict: the UMD wrapper's <script> branch assigned an implicit global, and getHtmlLegend() assigned four more (that one is on the live choropleth path). Upstream is effectively unmaintained -- 2.1.0 is the last release -- and geoengine uses only the quantile/interval/unique classifications plus min/max and the HTML legend, so replacing it outright is a live option."
+      "probe": {
+        "file": "geostats.js",
+        "pattern": "geostats {version}; upstream lib/geostats\\.js SHA-256 {source_sha256}"
+      },
+      "notes": "Version verified against the npm 2.1.0 tarball: its lib/geostats.js matches the shipped executable AST after replacing the UMD wrapper with an ESM IIFE and default export, correcting the missing translation helper t() to _t(), and declaring the four legend temporaries required by strict mode. source_sha256 identifies the upstream file; checksums pins the shipped artifact. Keep the source readable and reapply all four AgroMarin: markers when replacing it. The version/source banner and checksum bind that reviewed source to its manifest pin.",
+      "source_sha256": "6026fece0a4d3977e23c99f176f9581a565b62b8a270c51b649c50807385c90a",
+      "checksums": {
+        "geostats.js": "0082eb56a6d6dbece3e12066888746b614f14c4927817ad1e447f7eeb93d0825"
+      }
     }
   }
 }

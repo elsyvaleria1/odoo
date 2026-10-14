@@ -359,7 +359,7 @@ class TestEsbuildEntryLines(BaseCase):
     def test_a_standalone_bundle_publishes_its_modules_behind_a_guard(self):
         lines = self._compiler(
             [_EntryMod("@a/one", url="/a/static/src/one.js")], standalone=True
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
 
         self.assertEqual(
             lines[0], 'import * as __m0 from "./addons/a/static/src/one.js";'
@@ -373,7 +373,7 @@ class TestEsbuildEntryLines(BaseCase):
     def test_a_rendered_bundle_publishes_unguarded(self):
         lines = self._compiler(
             [_EntryMod("@a/one", url="/a/static/src/one.js")]
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
 
         self.assertNotIn("if (globalThis.odoo?.loader?.registerNativeModules) {", lines)
         self.assertIn("odoo.loader.registerNativeModules({", lines)
@@ -381,17 +381,17 @@ class TestEsbuildEntryLines(BaseCase):
     def test_the_registration_names_the_bundle_it_settles(self):
         compiler = self._compiler([_EntryMod("@a/one", url="/a/static/src/one.js")])
         self.assertEqual(
-            compiler._esbuild_entry_lines(self.ROOT)[-1], '}, "test.entry");'
+            compiler._prepare_esbuild_entry_lines(self.ROOT)[-1], '}, "test.entry");'
         )
         self.assertEqual(
-            compiler._esbuild_entry_lines(self.ROOT, bundle="test.child")[-1],
+            compiler._prepare_esbuild_entry_lines(self.ROOT, bundle="test.child")[-1],
             '}, "test.child");',
         )
 
     def test_owl_rides_along_only_when_a_standalone_bundle_uses_it(self):
         without = self._compiler(
             [_EntryMod("@a/one", url="/a/static/src/one.js")], standalone=True
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
         self.assertFalse(any("@odoo/owl" in line for line in without))
 
         with_owl = self._compiler(
@@ -403,7 +403,7 @@ class TestEsbuildEntryLines(BaseCase):
                 )
             ],
             standalone=True,
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
         self.assertIn('import * as __owl from "@odoo/owl";', with_owl)
 
     def test_an_app_bundle_registers_every_member_with_the_loader(self):
@@ -412,7 +412,7 @@ class TestEsbuildEntryLines(BaseCase):
                 _EntryMod("@a/one", url="/a/static/src/one.js"),
                 _EntryMod("@a/two", url="/a/static/src/two.js"),
             ]
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
         entry = "\n".join(lines)
 
         self.assertIn('import * as __owl from "@odoo/owl";', entry)
@@ -430,7 +430,7 @@ class TestEsbuildEntryLines(BaseCase):
                     filename="/odoo/addons/a/static/src/one.js",
                 )
             ]
-        )._esbuild_entry_lines(self.ROOT)
+        )._prepare_esbuild_entry_lines(self.ROOT)
 
         self.assertIn('import * as __m0 from "./addons/a/static/src/one.js";', lines)
 
@@ -440,9 +440,9 @@ class TestEsbuildEntryLines(BaseCase):
             _EntryMod("@a/../tests/spec", url="/a/static/tests/spec.js"),
         ]
         entry = "\n".join(
-            self._compiler(modules, skip_legacy_test_imports=True)._esbuild_entry_lines(
-                self.ROOT
-            )
+            self._compiler(
+                modules, skip_legacy_test_imports=True
+            )._prepare_esbuild_entry_lines(self.ROOT)
         )
 
         self.assertIn('"@a/src"', entry)
@@ -450,21 +450,23 @@ class TestEsbuildEntryLines(BaseCase):
 
     def test_the_same_member_is_kept_when_that_flag_is_off(self):
         modules = [_EntryMod("@a/../tests/spec", url="/a/static/tests/spec.js")]
-        entry = "\n".join(self._compiler(modules)._esbuild_entry_lines(self.ROOT))
+        entry = "\n".join(
+            self._compiler(modules)._prepare_esbuild_entry_lines(self.ROOT)
+        )
         self.assertIn("tests/spec", entry)
 
     def test_hoot_is_aliased_only_when_the_bundle_carries_it(self):
         without = "\n".join(
             self._compiler(
                 [_EntryMod("@a/one", url="/a/static/src/one.js")]
-            )._esbuild_entry_lines(self.ROOT)
+            )._prepare_esbuild_entry_lines(self.ROOT)
         )
         self.assertNotIn("@odoo/hoot", without)
 
         with_hoot = "\n".join(
             self._compiler(
                 [_EntryMod("@web/../lib/hoot/hoot", url="/web/static/lib/hoot/hoot.js")]
-            )._esbuild_entry_lines(self.ROOT)
+            )._prepare_esbuild_entry_lines(self.ROOT)
         )
         self.assertIn(
             'odoo.loader.registerNativeModules({"@odoo/hoot":'
@@ -473,5 +475,5 @@ class TestEsbuildEntryLines(BaseCase):
         )
 
     def test_an_empty_bundle_still_registers_owl(self):
-        entry = "\n".join(self._compiler([])._esbuild_entry_lines(self.ROOT))
+        entry = "\n".join(self._compiler([])._prepare_esbuild_entry_lines(self.ROOT))
         self.assertIn('"@odoo/owl": __owl', entry)

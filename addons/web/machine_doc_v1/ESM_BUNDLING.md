@@ -292,7 +292,7 @@ is the format of that one file:
 
 | Step | What | Where |
 |---|---|---|
-| Second pass | The ESM output of the page compile goes through esbuild again as `--format=iife`. Each library the page imports statically is aliased to a stub, `module.exports = odoo.loader.external("<specifier>")`; a dynamic `import()` of a bare specifier or of a served library is left to the import map | `classic_script` (`odoo/tools/assets/esbuild.py`), `_as_classic_page` |
+| Second pass | The ESM output of the page compile goes through esbuild again as `--format=iife`. Each library the page imports statically is aliased to a stub, `module.exports = odoo.loader.external("<specifier>")`; a dynamic `import()` of a bare specifier or of a served library is left to the import map | `compile_classic_script` (`odoo/tools/assets/esbuild.py`), `_as_classic_page` |
 | Libraries | An inline module script in front of the bundle (`data-externals`) imports those libraries and hands their namespaces to the loader, with `import.meta.resolve`, which a classic script has no access to | `externals_module_node`, `provideExternals` |
 | Script tag | `<script defer fetchpriority="high" src>` in place of `<script type="module" src>`. Deferred scripts and module scripts run from one list, in document order: the libraries are provided before the bundle runs, and the satellites run after it. A deferred script is fetched at low priority, a module script at high (*What a first boot waits for*, below) | `_prepare_esm_script_node` |
 | Templates | The compiled templates appended to the bundle sit in a block of their own: the constants they bind would be globals of a classic script | `combine_bundle_with_templates` |
@@ -442,7 +442,7 @@ differently is an error. That table is the only source of specifier
 resolution: esbuild leaves every `@odoo/*` specifier and every declared bare
 specifier external (`external_bare_specifiers()`) and the page's import map
 resolves them, a standalone bundle aliases each of them to its declared file
-(`_standalone_alias_flags`) -- a bundle declared in `standalone_bundles`, or
+(`_get_standalone_alias_flags`) -- a bundle declared in `standalone_bundles`, or
 one `_get_standalone_bundle` builds on its own for a route (the live chat
 embed's emoji data, a dynamic child of the page bundles everywhere else): the
 build follows the call, so such a bundle carries no bare specifier --, and a bundle whose member is a declared library
@@ -452,7 +452,7 @@ specifier, so `@odoo/hoot` is `@web/../lib/hoot/hoot` without a second table
 saying so. The former `_LIB_CANDIDATES` alias table (bundled copies of
 `@popperjs/core`, `@odoo/hoot-dom`, `@odoo/o-spreadsheet`) is gone: nothing
 bundled imported the first, the second was external anyway, and the third is
-the `@odoo-module alias=` header of `o_spreadsheet.js`, which `_esbuild_flags`
+the `@odoo-module alias=` header of `o_spreadsheet.js`, which `_get_esbuild_flags`
 already turns into an alias.
 Cross-file invariants are checked once per process by
 `AssetsBundle._check_external_libs(external_libs())`, reached through
