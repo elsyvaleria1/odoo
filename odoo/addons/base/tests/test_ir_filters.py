@@ -698,6 +698,30 @@ class TestCrossUserWrite(FiltersCase):
 
         self.assertFalse(own.user_ids)
 
+    def test_a_filter_of_an_archived_user_still_names_its_user(self):
+        owner = new_test_user(self.env, login="irf_archived", groups="base.group_user")
+        private = self.env["ir.filters"].create(
+            {
+                "name": "private of an archived user",
+                "model_id": "ir.filters",
+                "user_ids": [Command.set([owner.id])],
+            }
+        )
+        owner.active = False
+        self.env.invalidate_all()
+
+        self.assertEqual(private.read(["user_ids"])[0]["user_ids"], [owner.id])
+        self.assertEqual(private.user_ids, owner)
+        self.assertNotIn(
+            private.id,
+            [
+                f["id"]
+                for f in self.env["ir.filters"]
+                .with_user(self.USER_ID)
+                .get_filters("ir.filters")
+            ],
+        )
+
 
 class TestSortColumnCheck(TransactionCase):
     def _create(self, sort):

@@ -387,15 +387,18 @@ class IrModelFieldsSelection(models.Model):
     def _rename_defaults(self, old_values: dict[int, str]) -> None:
         IrDefault = self.env["ir.default"]
         for selection in self:
-            if old_values[selection.id] != selection.value:
+            if old_values[selection.id] == selection.value:
+                continue
+            field_record = selection.field_id
+            for model_name in self._models_sharing_field(
+                field_record.model, field_record.name
+            ):
                 _debug.pipeline(
-                    "rename_defaults",
-                    model=selection.field_id.model,
-                    field=selection.field_id.name,
+                    "rename_defaults", model=model_name, field=field_record.name
                 )
                 IrDefault.rename_value(
-                    selection.field_id.model,
-                    selection.field_id.name,
+                    model_name,
+                    field_record.name,
                     old_values[selection.id],
                     selection.value,
                 )
@@ -448,7 +451,7 @@ class IrModelFieldsSelection(models.Model):
 
     def _models_sharing_field(self, model_name: str, field_name: str) -> list[str]:
         if model_name not in self.env:
-            return []
+            return [model_name]
         sharing = []
         pending = [model_name]
         while pending:

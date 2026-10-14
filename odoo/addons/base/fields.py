@@ -80,13 +80,23 @@ class ResourceIdentifier(fields.Char):
                 )
 
     def _search_identifier(self, records: BaseModel, operator: str, value):
-        prefix = f"{self.through}." if self.through else ""
+        identifiers = (
+            f"{self.through}.identifier_ids" if self.through else "identifier_ids"
+        )
         typed = Domain("type_id.code", "=", self.identifier_code)
         positive = NEGATIVE_OPERATORS.get(operator, operator)
-        if operator in ("=", "!=") and not value:
-            domain = Domain(f"{prefix}identifier_ids", "any", typed)
-            return domain if operator == "!=" else ~domain
-        domain = Domain(
-            f"{prefix}identifier_ids", "any", typed & Domain("value", positive, value)
-        )
-        return ~domain if positive != operator else domain
+        if positive in ("=", "in"):
+            wanted = list(value) if positive == "in" else [value]
+            values = [item for item in wanted if item]
+            domain = (
+                Domain(identifiers, "any", typed & Domain("value", "in", values))
+                if values
+                else Domain.FALSE
+            )
+            if len(values) != len(wanted):
+                domain |= ~Domain(identifiers, "any", typed)
+        else:
+            domain = Domain(
+                identifiers, "any", typed & Domain("value", positive, value)
+            )
+        return ~domain if operator in NEGATIVE_OPERATORS else domain

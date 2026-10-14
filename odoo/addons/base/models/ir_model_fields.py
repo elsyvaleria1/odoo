@@ -8,7 +8,7 @@ from typing import Any, Self
 from odoo import api, fields, models, tools
 from odoo.api import ValuesType
 from odoo.db import schema as sql
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.fields import NO_ACCESS, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.models import pop_field
@@ -38,6 +38,18 @@ TRANSLATE_KEY_BY_HANDLER = {handler: key for key, handler in FIELD_TRANSLATE.ite
 
 def _selection_field_types(_model) -> list[tuple[str, str]]:
     return [(key, key) for key in sorted(fields.Field._by_type__)]
+
+
+def _check_compute_author(env: api.Environment, vals: dict[str, Any]) -> None:
+    if not vals.get("compute") or env.is_system():
+        return
+    _debug.logic("compute.rejected", field=vals.get("name"), uid=env.uid)
+    raise AccessError(
+        env._(
+            "Only an administrator writes the code of a computed field: it runs "
+            "with the rights of whoever triggers it, the superuser included."
+        )
+    )
 
 
 def _check_translate_value(env: api.Environment, vals: dict[str, Any]) -> None:
@@ -618,6 +630,7 @@ class IrModelFields(models.Model):
 
     @api.constrains("relation_table")
     def _check_relation_table(self) -> None:
+        model_tables = self._get_model_tables()
         for rec in self:
             if rec.relation_table:
                 try:
@@ -628,6 +641,25 @@ class IrModelFields(models.Model):
                             "Relation table names can only contain characters, digits and underscores (up to 63)."
                         )
                     ) from e
+                if rec.relation_table in model_tables:
+                    _debug.logic(
+                        "constraint.rejected",
+                        field=rec.name,
+                        table=rec.relation_table,
+                        reason="relation_table_is_model_table",
+                    )
+                    raise ValidationError(
+                        self.env._(
+                            "The table \u201c%s\u201d holds the records of a model and "
+                            "cannot serve as the relation table of a many2many field.",
+                            rec.relation_table,
+                        )
+                    )
+
+    def _get_model_tables(self) -> set[str]:
+        return {
+            model._table for model in self.pool.models.values() if not model._abstract
+        }
 
     @api.constrains("currency_field")
     def _check_currency_field(self) -> None:
@@ -866,6 +898,12 @@ class IrModelFields(models.Model):
                     field.model,
                     field.name,
                 )
+        if model_tables := tables_to_drop & self._get_model_tables():
+            _logger.warning(
+                "Not dropping %s: a model keeps its records there",
+                ", ".join(sorted(model_tables)),
+            )
+            tables_to_drop -= model_tables
         if not tables_to_drop:
             return
 
@@ -1140,6 +1178,7 @@ class IrModelFields(models.Model):
         inverses_wanted = OrderedSet()
         inverses_in_batch = set()
         for vals in vals_list:
+            _check_compute_author(self.env, vals)
             _check_translate_value(self.env, vals)
             if "model_id" in vals:
                 vals["model"] = model_by_id.get(vals["model_id"], False)
@@ -1366,6 +1405,7 @@ class IrModelFields(models.Model):
             _debug.logic("write.skipped", count=len(self), fields=len(vals))
             return True
 
+        _check_compute_author(self.env, vals)
         for field_name in vals:
             if field_name not in self._fields:
                 _debug.logic(

@@ -29,6 +29,26 @@ class TestResourceIdentity(TransactionCase):
         self.assertFalse(self.press.identifier_ids)
         self.assertIsNone(self.press._get_identifier("serial"))
 
+    def test_a_resource_is_found_by_the_absence_of_an_identifier(self):
+        self.press._update_identifier("serial", "SN-0001")
+        both = self.press | self.grid
+        scope = [("id", "in", both.ids)]
+
+        def found(condition):
+            return self.Resource.search([condition, *scope])
+
+        self.assertEqual(found(("serial_number", "=", False)), self.grid)
+        self.assertEqual(found(("serial_number", "!=", False)), self.press)
+        self.assertEqual(found(("serial_number", "in", ["SN-0001", False])), both)
+        self.assertEqual(
+            found(("serial_number", "not in", ["SN-0001", False])),
+            self.Resource,
+        )
+        self.assertEqual(found(("serial_number", "=", "SN-0001")), self.press)
+        self.assertEqual(found(("serial_number", "!=", "SN-0001")), self.grid)
+        self.assertEqual(found(("serial_number", "ilike", "sn-")), self.press)
+        self.assertEqual(found(("serial_number", "not ilike", "sn-")), self.grid)
+
     def test_an_identifier_names_one_resource(self):
         self.press._update_identifier("serial", "SN-0001")
         with self.assertRaises(ValidationError):

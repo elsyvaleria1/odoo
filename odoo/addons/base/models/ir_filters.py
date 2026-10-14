@@ -45,6 +45,7 @@ class IrFilters(models.Model):
     user_ids = fields.Many2many(
         comodel_name="res.users",
         string="Users",
+        context={"active_test": False},
         ondelete="cascade",
         help="The users the filter is shared with. If empty, the filter is shared with all users.",
     )

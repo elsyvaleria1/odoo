@@ -937,6 +937,65 @@ class TestIrModelFieldsTranslation(HttpCase):
 
 @tagged("-at_install", "post_install")
 class TestIrModelFields(TransactionCase):
+    def _count_logging_rows(self):
+        return self.env.execute_query(SQL("SELECT count(*) FROM ir_logging"))[0][0]
+
+    def _seed_logging_row(self):
+        self.env["ir.logging"].create(
+            {
+                "name": "kept",
+                "type": "server",
+                "dbname": "kept",
+                "level": "INFO",
+                "message": "kept",
+                "path": "kept",
+                "func": "kept",
+                "line": "1",
+            }
+        )
+        self.env.flush_all()
+        return self._count_logging_rows()
+
+    def test_a_model_table_cannot_be_a_many2many_relation_table(self):
+        before = self._seed_logging_row()
+        with self.assertRaises(ValidationError):
+            self.env["ir.model.fields"].create(
+                {
+                    "model_id": self.env["ir.model"]._get_id("res.country.group"),
+                    "name": "x_logging_rel",
+                    "field_description": "Logging rel",
+                    "ttype": "many2many",
+                    "relation": "res.country",
+                    "relation_table": "ir_logging",
+                    "column1": "x_group_id",
+                    "column2": "x_country_id",
+                }
+            ).unlink()
+        self.assertEqual(self._count_logging_rows(), before)
+
+    def test_dropping_a_many2many_keeps_a_model_table_it_names(self):
+        before = self._seed_logging_row()
+        field = self.env["ir.model.fields"].create(
+            {
+                "model_id": self.env["ir.model"]._get_id("res.country.group"),
+                "name": "x_named_rel",
+                "field_description": "Named rel",
+                "ttype": "many2many",
+                "relation": "res.country",
+            }
+        )
+        self.env.flush_all()
+        self.env.execute_query(
+            SQL(
+                "UPDATE ir_model_fields SET relation_table = 'ir_logging' WHERE id = %s",
+                field.id,
+            )
+        )
+        field.invalidate_recordset(["relation_table"])
+        with self.assertLogs("odoo.addons.base.models.ir_model_fields", "WARNING"):
+            field.unlink()
+        self.assertEqual(self._count_logging_rows(), before)
+
     def _create_model_and_manual_field(self, stem, **vals):
         model = self.env["ir.model"].create(
             {"model": f"x_imf_{stem}", "name": f"IMF test {stem}"}
@@ -2309,6 +2368,34 @@ class TestIrModelFieldsSelection(TransactionCase):
             self.env["ir.default"]._get(Model._name, field.name), "finished"
         )
         self.assertEqual(self.env[Model._name].create({}).x_defren, "finished")
+
+    def test_option_value_rename_renames_the_default_of_an_inheriting_model(self):
+        field = self.env["ir.model.fields"].create(
+            {
+                "name": "x_inhren",
+                "field_description": "Sel inhren",
+                "model_id": self.env["ir.model"]._get_id("res.partner"),
+                "ttype": "selection",
+                "selection_ids": [
+                    Command.create({"value": value, "name": value, "sequence": index})
+                    for index, value in enumerate(("draft", "done"))
+                ],
+            }
+        )
+        self.assertTrue(self.env["res.users"]._fields[field.name].inherited)
+        self.env["ir.default"].set("res.users", field.name, "done")
+
+        field.selection_ids.filtered(lambda s: s.value == "done").write(
+            {"value": "finished"}
+        )
+
+        self.assertEqual(
+            self.env["ir.default"]._get("res.users", field.name), "finished"
+        )
+        user = self.env["res.users"].create(
+            {"name": "Inherited default", "login": "inherited_default_rename"}
+        )
+        self.assertEqual(user.x_inhren, "finished")
 
     def test_reference_option_value_rename_rewrites_stored_values(self):
         Model, field = self._create_model_and_reference_field("refren")

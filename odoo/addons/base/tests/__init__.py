@@ -213,3 +213,4 @@ from . import test_template_trust_attacks
 from . import test_method_name_migration
 from . import test_shipped_text
 from . import test_kpi_provider
+from . import test_model_metadata_authority
