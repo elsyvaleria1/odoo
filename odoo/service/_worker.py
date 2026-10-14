@@ -153,6 +153,7 @@ class Worker:
         self.request_max = multi.limit_request
         self.request_count = 0
         self.cpu_limit_s: float = 0
+        self._cpu_soft_outside_operation: int = resource.RLIM_INFINITY
         self.logger = _logger.getChild(self.__class__.__name__)
         _debug.lifecycle(
             "worker.created",
@@ -382,7 +383,18 @@ class Worker:
             budget == 0 and settings.limit_time_cpu <= 0
         ):
             return
-        self._arm_cpu_limit(budget if module_operation else settings.limit_time_cpu)
+        if module_operation:
+            soft, _hard = resource.getrlimit(resource.RLIMIT_CPU)
+            self._cpu_soft_outside_operation = soft
+            self._arm_cpu_limit(budget)
+        elif settings.limit_time_cpu > 0:
+            self._arm_cpu_limit(settings.limit_time_cpu)
+        else:
+            _soft, hard = resource.getrlimit(resource.RLIMIT_CPU)
+            resource.setrlimit(
+                resource.RLIMIT_CPU, (self._cpu_soft_outside_operation, hard)
+            )
+            self.cpu_limit_s = 0
         _debug.logic(
             "worker.cpu_limit_rearmed", pid=self.pid, module_operation=module_operation
         )

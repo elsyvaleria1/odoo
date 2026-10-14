@@ -462,3 +462,33 @@ class TestThePreforkWorkerSparesAModuleOperation:
             "a budget of its own replaces limit_time_cpu for the operation, "
             "even when limit_time_cpu is 0"
         )
+
+    def test_the_end_of_an_operation_restores_a_cpu_limit_set_outside_odoo(
+        self, worker_multi
+    ):
+        worker = self._worker(worker_multi, budget=2)
+        thread = self._thread(alive_for=3, elapsed=1)
+        marks = iter([True, False, False])
+        type(thread).module_operation = property(lambda self: next(marks, False))
+        res = MagicMock()
+        res.RLIM_INFINITY = resource.RLIM_INFINITY
+        res.getrusage.return_value = MagicMock(ru_utime=10.0, ru_stime=0.0)
+        res.getrlimit.return_value = (500, resource.RLIM_INFINITY)
+        with (
+            server_settings.override(
+                limit_time_real=120,
+                limit_time_cpu=0,
+                limit_time_real_module_operation=300,
+            ),
+            patch.object(_worker, "resource", res),
+            patch("odoo.db.cancel_queries_of"),
+        ):
+            worker._supervise_work_thread(thread)
+        assert [call.args[1][0] for call in res.setrlimit.call_args_list] == [
+            310,
+            500,
+        ], (
+            "with limit_time_cpu 0 the soft RLIMIT_CPU belongs to whoever set it "
+            "(ulimit -t, systemd LimitCPU): the operation's end lifted it to the "
+            "hard limit instead of restoring it"
+        )

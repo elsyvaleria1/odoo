@@ -233,7 +233,8 @@ its kind: an install started from the Apps menu has committed its modules as
 prefork monitor keeps feeding the master throughout, budget or none, and sets
 `RLIMIT_CPU` to the operation's budget whether or not `limit_time_cpu` is set
 (none for `0`, `limit_time_cpu` untouched for `-1`), re-arming `limit_time_cpu`
-(none for `0`) when it ends. The threaded
+when it ends, or, when that is `0`, restoring the soft limit in force before the
+operation (`ulimit -t`, systemd `LimitCPU`). The threaded
 server does not reload while a marked thread is within its budget, whoever else
 is over its limit (a request waiting on the registry lock the install holds is
 the usual one): the reload waits for the operation, and the grace for the other
@@ -256,7 +257,7 @@ loads data into the running registry without rebuilding it, so it takes the
 gate alone; a dependency it installs goes through the Apps button and those
 checks with it. The scheduled-upgrade wizard takes the gate alone as well:
 applying the pending modules is what it is for. A failed operation whose
-transaction is aborted releases the gate after the rollback
+transaction is aborted releases the gate once that transaction ends
 (`release_session_lock`), not inside the aborted transaction.
 
 Keep `limit_time_real` at or above `SUPERVISION_BEAT_S` (4 s): an idle prefork
