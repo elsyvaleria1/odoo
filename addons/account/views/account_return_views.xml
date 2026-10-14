@@ -26,6 +26,7 @@
                     <field name="days_to_deadline" />
                     <field name="return_type_category" />
                     <field name="manually_created" />
+                    <field name="is_superseded" />
                     <field name="visible_states" />
                     <field name="active" invisible="1" />
 
@@ -52,6 +53,7 @@
                                                 name="name"
                                                 class="oe_state_value pe-2 fs-5" />
                                             <span invisible="not is_closed_outside_odoo" class="badge rounded-pill text-bg-secondary me-1" t-att-title="record.closure_reason.raw_value">Closed outside Odoo</span>
+                                            <span invisible="not is_superseded" class="badge rounded-pill text-bg-warning me-1" title="Another return closes its tax lines; it was kept because it holds work.">No longer generated</span>
                                             <field
                                                 name="unresolved_check_count"
                                                 invisible="context.get('in_checks_view') or unresolved_check_count &lt;= 0"
@@ -155,7 +157,7 @@
                                     <t t-if="0">
                                     </t>
                                     <t id="default_buttons" t-else="">
-                                        <button name="action_validate" type="object" invisible="not context.get('in_checks_view') or next_state != 'reviewed' or is_completed or not is_main_company_active or unresolved_check_count or not active" class="btn btn-primary">Validate</button>
+                                        <button name="action_validate" type="object" invisible="not context.get('in_checks_view') or next_state != 'reviewed' or is_completed or is_superseded or not is_main_company_active or unresolved_check_count or not active" class="btn btn-primary">Validate</button>
                                         <button name="action_pay" type="object" invisible="not context.get('in_checks_view') or next_state != 'paid' or is_completed or not is_main_company_active" class="btn btn-primary">Pay</button>
                                     </t>
 

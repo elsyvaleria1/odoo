@@ -1,4 +1,5 @@
 import calendar
+from collections import defaultdict
 from datetime import date, timedelta
 from unittest.mock import patch
 
@@ -1326,7 +1327,7 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
             20,
         )
         self.env.invalidate_all()
-        with self.assertQueryCount(78):
+        with self.assertQueryCount(79):
             self.env["account.return.type"]._sync_all_returns(self.root_company)
 
     def test_a_return_holding_work_outlives_a_later_opening_date(self):
@@ -1374,3 +1375,581 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         self.assertIn(
             "no longer generated for its company", discussed.message_ids[:1].body
         )
+
+    def test_a_countryless_type_filed_by_hand_is_not_offered_where_a_country_type_files(
+        self,
+    ):
+        belgium = self.env.ref("base.be")
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        self._post_a_domestic_and_a_belgian_sale()
+        self.return_type.auto_generate = False
+        self._create_belgian_tax_type(auto_generate=True)
+
+        wizard = self.env["wizard.account.return.create"].create(
+            {
+                "return_type_id": self.return_type.id,
+                "date_from": "2026-03-01",
+                "date_to": "2026-03-31",
+            }
+        )
+
+        self.assertEqual(wizard.available_country_ids, fiscal_country)
+        wizard.country_id = belgium
+        with self.assertRaisesRegex(UserError, "VAT Return \\(Marin, BE\\)"):
+            wizard.action_create_manual_account_returns()
+
+    def _create_check_template_with_an_activity(self):
+        template = self.env["account.return.check.template"].create(
+            {
+                "name": "Review the ledger",
+                "code": "marin_review_the_ledger",
+                "return_type": self.return_type.id,
+                "type": "check",
+                "activity_type": self.env.ref("mail.mail_activity_data_todo").id,
+            }
+        )
+        template.update_field_translations("name", {"es_MX": "Revisar el libro"})
+        return template
+
+    def test_a_check_activity_is_not_user_work_in_any_language(self):
+        self.env["res.lang"]._activate_lang("es_MX")
+        self._post_a_domestic_and_a_belgian_sale()
+        belgian_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: r.country_id.code == "BE"
+        )
+        template = self._create_check_template_with_an_activity()
+
+        belgian_return.with_context(lang="es_MX").refresh_checks()
+        belgian_return.with_context(lang="en_US").refresh_checks()
+
+        self.assertEqual(len(belgian_return.activity_ids), 1)
+        for lang in ("en_US", "es_MX"):
+            with self.subTest(lang=lang):
+                self.assertFalse(
+                    belgian_return.with_context(
+                        lang=lang
+                    )._get_returns_holding_user_work()
+                )
+
+        self.assertEqual(
+            belgian_return.activity_ids.account_return_check_template_id, template
+        )
+        belgian_return.activity_schedule(
+            act_type_xmlid="mail.mail_activity_data_todo",
+            summary="Review the ledger",
+        )
+        self.assertEqual(
+            belgian_return._get_returns_holding_user_work(), belgian_return
+        )
+
+    def _post_a_sale(self, company, fiscal_position, tax, amount):
+        move = (
+            self.env["account.move"]
+            .with_company(company)
+            .create(
+                {
+                    "move_type": "out_invoice",
+                    "partner_id": self.partner_a.id,
+                    "invoice_date": "2024-01-15",
+                    "fiscal_position_id": fiscal_position.id,
+                    "invoice_line_ids": [
+                        Command.create(
+                            {
+                                "name": "line",
+                                "price_unit": amount,
+                                "tax_ids": [Command.set(tax.ids)],
+                            }
+                        )
+                    ],
+                }
+            )
+        )
+        move.action_post()
+        return move
+
+    def _create_foreign_vat(self, company, country, foreign_vat):
+        return self.env["account.fiscal.position"].create(
+            {
+                "name": f"{country.code} VAT {foreign_vat} {company.name}",
+                "company_id": company.id,
+                "country_id": country.id,
+                "foreign_vat": foreign_vat,
+            }
+        )
+
+    def _root_foreign_vat(self, country):
+        return self.env["account.fiscal.position"].search(
+            [("company_id", "=", self.root_company.id), ("country_id", "=", country.id)]
+        )
+
+    def _setup_branch_with_its_own_vat(self, name, parent):
+        branch = self._setup_branch(name, parent, vat="US98765432")
+        branch.account_config_id.write(
+            {
+                "account_return_periodicity": "monthly",
+                "account_return_reminder_day": 7,
+                "account_opening_date": "2023-01-01",
+            }
+        )
+        return branch
+
+    def _sync_returns(self):
+        self.env["account.return.type"]._sync_all_returns(self.root_company)
+
+    def _validate_the_january_returns(self):
+        return_types = self.env["account.return.type"].search(
+            [("name", "ilike", "Marin")]
+        )
+        self.env["account.return"].search(
+            [("type_id", "in", return_types.ids), ("date_to", "<", "2024-01-01")]
+        )._as_workflow_step().write({"is_completed": True})
+        refusals = {}
+        for account_return in self.env["account.return"].search(
+            [
+                ("type_id", "in", return_types.ids),
+                ("date_from", "<=", "2024-01-31"),
+                ("date_to", ">=", "2024-01-01"),
+                ("is_completed", "=", False),
+                ("date_lock", "=", False),
+            ],
+            order="date_deadline, id",
+        ):
+            try:
+                with self.env.cr.savepoint():
+                    account_return.action_validate(bypass_failing_tests=True)
+            except UserError as error:
+                refusals[account_return] = str(error)
+        return refusals
+
+    def _assert_each_tax_line_closed_once(self, taxes):
+        closed = defaultdict(float)
+        for line in (
+            self.env["account.move"]
+            .search([("closing_return_id", "!=", False)])
+            .line_ids
+        ):
+            if line.name in taxes.mapped("name"):
+                closed[line.company_id.name, line.name] += line.balance
+        owed = defaultdict(float)
+        for line in self.env["account.move.line"].search(
+            [
+                ("tax_line_id", "in", taxes.ids),
+                ("parent_state", "=", "posted"),
+                ("move_id.closing_return_id", "=", False),
+            ]
+        ):
+            owed[line.company_id.name, line.tax_line_id.name] -= line.balance
+        self.assertEqual(
+            {key: round(amount, 2) for key, amount in closed.items() if amount},
+            {key: round(amount, 2) for key, amount in owed.items()},
+        )
+
+    def test_each_tax_line_is_closed_once_when_only_a_branch_holds_a_foreign_vat(
+        self,
+    ):
+        belgium = self.env.ref("base.be")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        belgian_sale = self.env["account.move"].search(
+            [("line_ids.tax_line_id", "=", belgian_tax.id)]
+        )
+        belgian_sale.action_draft()
+        belgian_sale.unlink()
+        self._root_foreign_vat(belgium).active = False
+        branch = self._setup_branch("Branch holding the BE VAT", self.root_company)
+        branch.account_config_id.account_opening_date = "2023-01-01"
+        branch_foreign_vat = self._create_foreign_vat(branch, belgium, "BE0897223670")
+        self._post_a_sale(branch, branch_foreign_vat, belgian_tax, 500)
+        self._post_a_sale(
+            branch, self.env["account.fiscal.position"], domestic_tax, 300
+        )
+
+        self._sync_returns()
+        self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def test_each_tax_line_is_closed_once_when_a_branch_files_its_own_vat(self):
+        belgium = self.env.ref("base.be")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        root_foreign_vat = self._root_foreign_vat(belgium)
+        branch = self._setup_branch_with_its_own_vat("Branch", self.root_company)
+        sub_branch = self._setup_branch("Sub-branch", branch)
+        no_position = self.env["account.fiscal.position"]
+        for company, amount in ((branch, 500), (sub_branch, 400)):
+            self._post_a_sale(company, root_foreign_vat, belgian_tax, amount)
+            self._post_a_sale(company, no_position, domestic_tax, amount - 200)
+
+        self._sync_returns()
+        self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def test_each_tax_line_is_closed_once_when_a_branch_files_its_own_vat_abroad(
+        self,
+    ):
+        belgium = self.env.ref("base.be")
+        branch = self._setup_branch_with_its_own_vat("Branch", self.root_company)
+        branch_foreign_vat = self._create_foreign_vat(branch, belgium, "BE0897223670")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        self._post_a_sale(branch, branch_foreign_vat, belgian_tax, 500)
+
+        self._sync_returns()
+        self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def test_each_tax_line_is_closed_once_across_three_levels_of_foreign_vats(self):
+        belgium = self.env.ref("base.be")
+        branch = self._setup_branch("Branch", self.root_company)
+        branch.account_config_id.account_opening_date = "2023-01-01"
+        sub_branch = self._setup_branch("Sub-branch", branch)
+        sub_branch.account_config_id.account_opening_date = "2023-01-01"
+        sub_sub_branch = self._setup_branch("Sub-sub-branch", sub_branch)
+        sub_branch_foreign_vat = self._create_foreign_vat(
+            sub_branch, belgium, "BE0477472701"
+        )
+        branch_foreign_vat = self._create_foreign_vat(branch, belgium, "BE0897223670")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        for company, foreign_vat, amount in (
+            (branch, branch_foreign_vat, 500),
+            (sub_branch, sub_branch_foreign_vat, 700),
+            (sub_sub_branch, self._root_foreign_vat(belgium), 900),
+        ):
+            self._post_a_sale(company, foreign_vat, belgian_tax, amount)
+
+        self._sync_returns()
+        self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def _create_a_french_tax(self, company_data):
+        france = self.env.ref("base.fr")
+        payable, receivable = (
+            company_data["default_account_tax_sale"].copy({"code": code})
+            for code in ("252009", "152009")
+        )
+        group = self.env["account.tax.group"].create(
+            {
+                "name": "FR VAT",
+                "country_id": france.id,
+                "company_ids": [Command.set(company_data["company"].ids)],
+                "tax_payable_account_id": payable.id,
+                "tax_receivable_account_id": receivable.id,
+            }
+        )
+        return company_data["default_tax_sale"].copy(
+            {
+                "name": "FR 20%",
+                "amount": 20,
+                "country_id": france.id,
+                "tax_group_id": group.id,
+            }
+        )
+
+    def test_each_tax_line_is_closed_once_for_a_foreign_tax_unit_beside_a_foreign_vat(
+        self,
+    ):
+        france = self.env.ref("base.fr")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        tax_unit = self._create_foreign_tax_unit()
+        member = tax_unit.company_ids - self.root_company
+        member.account_config_id.account_opening_date = "2023-01-01"
+        french_tax = self._create_a_french_tax(self.company_data)
+        root_french_vat = self._create_foreign_vat(
+            self.root_company, france, "FR23334175221"
+        )
+        self._create_foreign_vat(member, france, "FR23334175221")
+        self._post_a_sale(self.root_company, root_french_vat, french_tax, 1000)
+
+        self._sync_returns()
+        self._sync_returns()
+        self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax + french_tax)
+
+    def test_a_foreign_tax_unit_files_for_its_members_holding_its_foreign_vat(self):
+        france = self.env.ref("base.fr")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        french_report = self.env["report.formula"].create(
+            {
+                "root_report_id": self.env.ref("account.generic_tax_report").id,
+                "name": "Marin French Tax Report",
+                "country_id": france.id,
+                "filter_multi_company": "tax_units",
+            }
+        )
+        french_type = self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, FR)",
+                "report_id": french_report.id,
+                "country_id": france.id,
+                "default_deadline_start_date": "2024-01-01",
+            }
+        )
+        member_data = self.setup_other_company(
+            name="French unit member", vat="US98765432"
+        )
+        member = member_data["company"]
+        member.account_config_id.account_opening_date = "2023-01-01"
+        root_french_vat = self._create_foreign_vat(
+            self.root_company, france, "FR23334175221"
+        )
+        member_french_vat = self._create_foreign_vat(member, france, "FR23334175221")
+        tax_unit = self.env["account.tax.unit"].create(
+            {
+                "name": "French tax unit",
+                "country_id": france.id,
+                "vat": "FR23334175221",
+                "company_ids": [Command.set((self.root_company + member).ids)],
+                "main_company_id": self.root_company.id,
+            }
+        )
+        french_taxes = self._create_a_french_tax(
+            self.company_data
+        ) + self._create_a_french_tax(member_data)
+        self._post_a_sale(member, member_french_vat, french_taxes[1], 500)
+        self._post_a_sale(self.root_company, root_french_vat, french_taxes[0], 1000)
+
+        self._sync_returns()
+        self._sync_returns()
+
+        french_returns = self._january_returns(french_type) + self._january_returns(
+            french_type, member
+        )
+        self.assertEqual(french_returns.company_id, self.root_company)
+        self.assertEqual(french_returns.tax_unit_id, tax_unit)
+        self.assertEqual(french_returns.company_ids, self.root_company + member)
+        self._validate_the_january_returns()
+        self._assert_each_tax_line_closed_once(
+            domestic_tax + belgian_tax + french_taxes
+        )
+
+    def test_a_domestic_tax_unit_on_a_countryless_report_files_for_its_members(self):
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        self.tax_report.filter_multi_company = "tax_units"
+        member = self.setup_other_company(name="US unit member", vat="US11111111")[
+            "company"
+        ]
+        member.account_config_id.write(
+            {
+                "account_opening_date": "2023-01-01",
+                "account_return_periodicity": "monthly",
+            }
+        )
+        self.env["account.tax.unit"].create(
+            {
+                "name": "US unit",
+                "country_id": self.root_company.tax_config_id.account_fiscal_country_id.id,
+                "vat": "US22222222",
+                "company_ids": [Command.set((self.root_company + member).ids)],
+                "main_company_id": self.root_company.id,
+            }
+        )
+        member_tax = self.env["account.tax"].search(
+            [("company_ids", "in", member.ids), ("type_tax_use", "=", "sale")], limit=1
+        )
+        self._post_a_sale(member, self.env["account.fiscal.position"], member_tax, 400)
+
+        self._sync_returns()
+        self._sync_returns()
+
+        self.assertIn(
+            member,
+            self._january_returns(self.return_type)
+            .filtered(lambda r: r.country_id.code == "US")
+            .company_ids,
+        )
+        self._validate_the_january_returns()
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax + member_tax)
+
+    def _assert_kept_returns_refused(self, kept_returns, refusals):
+        self.assertTrue(kept_returns)
+        for kept_return in kept_returns:
+            with self.subTest(kept_return=kept_return.name):
+                self.assertTrue(kept_return.is_superseded)
+                self.assertRegex(refusals.get(kept_return, ""), "no longer generated")
+
+    def test_a_return_kept_for_a_country_type_cannot_close_its_lines(self):
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        belgian_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: r.country_id.code == "BE"
+        )
+        belgian_return.message_post(body="Asked the accountant", message_type="comment")
+        self._create_belgian_tax_type(auto_generate=True)
+
+        self._sync_returns()
+        refusals = self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+        self._assert_kept_returns_refused(belgian_return, refusals)
+
+    def test_a_return_kept_across_a_periodicity_change_cannot_close_its_lines(self):
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        domestic_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: r.country_id.code == "US"
+        )
+        domestic_return.message_post(
+            body="Asked the accountant", message_type="comment"
+        )
+        self.root_company.account_config_id.account_return_periodicity = "trimester"
+
+        self._sync_returns()
+        refusals = self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+        self._assert_kept_returns_refused(domestic_return, refusals)
+
+    def test_a_kept_return_generated_again_is_handed_back_to_the_sync(self):
+        self._post_a_domestic_and_a_belgian_sale()
+        domestic_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: r.country_id.code == "US"
+        )
+        domestic_return.message_post(
+            body="Asked the accountant", message_type="comment"
+        )
+        self.root_company.account_config_id.account_return_periodicity = "trimester"
+        self._sync_returns()
+        self.assertTrue(domestic_return.is_superseded)
+
+        self.root_company.account_config_id.account_return_periodicity = "monthly"
+        self._sync_returns()
+
+        self.assertFalse(domestic_return.is_superseded)
+        self.assertFalse(domestic_return.manually_created)
+        self.assertFalse(
+            self._returns_of_the_countryless_type(date_from="2024-01-01").filtered(
+                lambda r: r.date_to == date(2024, 3, 31)
+            )
+        )
+
+    def test_a_return_kept_when_a_branch_takes_the_root_foreign_vat_cannot_close(
+        self,
+    ):
+        belgium = self.env.ref("base.be")
+        branch = self._setup_branch("Branch", self.root_company)
+        branch.account_config_id.account_opening_date = "2023-01-01"
+        branch_foreign_vat = self._create_foreign_vat(branch, belgium, "BE0897223670")
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        self._post_a_sale(branch, branch_foreign_vat, belgian_tax, 500)
+        self._sync_returns()
+        branch_return = self._january_returns(self.return_type, branch)
+        branch_return.message_post(body="Asked the accountant", message_type="comment")
+        branch_foreign_vat.foreign_vat = "BE0477472701"
+
+        self._sync_returns()
+        refusals = self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+        self._assert_kept_returns_refused(branch_return, refusals)
+
+    def test_a_return_kept_across_a_fiscal_country_move_cannot_close_its_lines(self):
+        belgium = self.env.ref("base.be")
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        domestic_tag = self.env["account.account.tag"].create(
+            {
+                "name": "US base",
+                "applicability": "taxes",
+                "country_id": fiscal_country.id,
+            }
+        )
+        domestic_tax.invoice_repartition_line_ids.filtered(
+            lambda line: line.repartition_type == "tax"
+        ).tag_ids = domestic_tag
+        self._post_a_sale(
+            self.root_company, self.env["account.fiscal.position"], domestic_tax, 400
+        )
+        domestic_return = self._january_returns_of_the_countryless_type().filtered(
+            lambda r: r.country_id == fiscal_country
+        )
+        domestic_return.message_post(
+            body="Asked the accountant", message_type="comment"
+        )
+        self._root_foreign_vat(belgium).active = False
+        self.root_company.tax_config_id.account_fiscal_country_id = belgium
+
+        self._sync_returns()
+        refusals = self._validate_the_january_returns()
+
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+        self._assert_kept_returns_refused(domestic_return, refusals)
+
+    def test_a_branch_return_posted_before_taking_the_root_vat_closes_it_alone(self):
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        branch = self._setup_branch_with_its_own_vat("Branch", self.root_company)
+        self._post_a_sale(
+            branch, self.env["account.fiscal.position"], domestic_tax, 300
+        )
+        self._sync_returns()
+        self.env["account.return"].search(
+            [("type_id", "=", self.return_type.id), ("date_to", "<", "2024-01-01")]
+        )._as_workflow_step().write({"is_completed": True})
+        branch_return = self._january_returns(self.return_type, branch).filtered(
+            lambda r: r.country_id.code == "US"
+        )
+        branch_return.action_validate(bypass_failing_tests=True)
+
+        branch.vat = self.root_company.vat
+        self._sync_returns()
+
+        self.assertNotIn(
+            branch,
+            self._january_returns(self.return_type)
+            .filtered(lambda r: r.country_id.code == "US")
+            .company_ids,
+        )
+        self._validate_the_january_returns()
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def test_a_tax_return_cannot_close_a_period_another_return_closed(self):
+        fiscal_country = self.root_company.tax_config_id.account_fiscal_country_id
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        self._sync_returns()
+        self.assertEqual(self._validate_the_january_returns(), {})
+        domestic_type = self.env["account.return.type"].create(
+            {
+                "name": "VAT Return (Marin, domestic)",
+                "report_id": self.tax_report.id,
+                "country_id": fiscal_country.id,
+                "auto_generate": False,
+            }
+        )
+        domestic_return = self.env["account.return"].create(
+            {
+                "name": "Domestic VAT January",
+                "type_id": domestic_type.id,
+                "company_id": self.root_company.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+            }
+        )
+
+        with self.assertRaisesRegex(UserError, "close those tax lines twice"):
+            domestic_return.action_validate(bypass_failing_tests=True)
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)

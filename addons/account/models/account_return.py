@@ -196,6 +196,13 @@ class AccountReturn(models.Model):
         compute="_compute_resolved_check_count",
     )
     manually_created = fields.Boolean()
+    is_superseded = fields.Boolean(
+        string="Superseded",
+        copy=False,
+        readonly=True,
+        help="The sync no longer generates this return; it was kept because it "
+        "holds work. It cannot be validated, only deleted.",
+    )
 
     total_amount_to_pay = fields.Monetary(currency_field="amount_to_pay_currency_id")
     payment_ids = fields.One2many(
@@ -506,12 +513,8 @@ class AccountReturn(models.Model):
                 not check.refresh_result or check.attachment_ids for check in checks
             ):
                 return True
-            # The check sync schedules one activity per template, under its name.
-            scheduled_summaries = set(
-                checks.template_id.filtered("activity_type").mapped("name")
-            )
             return any(
-                activity.summary not in scheduled_summaries
+                not activity.account_return_check_template_id
                 for activity in account_return.activity_ids
             )
 
@@ -548,13 +551,95 @@ class AccountReturn(models.Model):
                 "user work",
                 account_return.id,
             )
-        holding_work.manually_created = True
+        holding_work.write({"manually_created": True, "is_superseded": True})
         _debug.logic(
             "generated_returns_removed",
             kept=holding_work,
             removed=self - holding_work,
         )
         (self - holding_work).unlink()
+
+    def _resume_generation(self) -> None:
+        for account_return in self:
+            account_return.message_post(
+                body=self.env._(
+                    "This return is generated again for its company, country and "
+                    "period; it can be validated again."
+                )
+            )
+        _debug.logic("superseded_returns_resumed", tax_return=self)
+        self.write({"manually_created": False, "is_superseded": False})
+
+    def _get_filed_tax_returns(self):
+        tax_returns = self.filtered(
+            lambda account_return: (
+                account_return.is_tax_return
+                and account_return.date_from
+                and account_return.date_to
+            )
+        )
+        if not tax_returns:
+            return self.browse()
+        return self.search(
+            Domain("country_id", "in", tax_returns.country_id.ids)
+            & Domain("date_from", "<=", max(tax_returns.mapped("date_to")))
+            & Domain("date_to", ">=", min(tax_returns.mapped("date_from")))
+            & Domain("date_lock", "!=", False)
+        ).filtered("is_tax_return")
+
+    def _get_companies_left_to_file(self, companies) -> dict:
+        filed_returns = self._get_filed_tax_returns()
+        companies_left = {}
+        for account_return in self:
+            filed_companies = (
+                filed_returns.filtered(
+                    lambda filed, account_return=account_return: (
+                        filed.id != account_return.id
+                        and filed.country_id == account_return.country_id
+                        and filed.date_from <= account_return.date_from
+                        and filed.date_to >= account_return.date_to
+                    )
+                ).company_ids
+                if account_return.is_tax_return
+                else companies.browse()
+            )
+            companies_left[account_return] = companies - (
+                filed_companies - account_return.company_id
+            )
+        _debug.logic(
+            "companies_left_to_file",
+            tax_return=self,
+            filed=filed_returns,
+        )
+        return companies_left
+
+    def _check_no_filed_overlap(self) -> None:
+        self.check_singleton()
+        if not self.is_tax_return:
+            return
+        overlapping = self._get_filed_tax_returns().filtered(
+            lambda filed: (
+                filed != self
+                and filed.country_id == self.country_id
+                and filed.company_ids & self.company_ids
+            )
+        )
+        _debug.logic("filed_overlap_checked", tax_return=self, overlapping=overlapping)
+        if overlapping:
+            raise UserError(
+                self.env._(
+                    "%(name)s cannot be validated: %(other)s already closed the tax "
+                    "of %(companies)s for part of its period, and validating it would "
+                    "close those tax lines twice.",
+                    name=self.display_name,
+                    other=overlapping[0].display_name,
+                    companies=", ".join(
+                        (overlapping[0].company_ids & self.company_ids).mapped(
+                            "display_name"
+                        )
+                    ),
+                )
+            )
 
     @api.model
     @_debug.perf.timed
@@ -622,6 +707,8 @@ class AccountReturn(models.Model):
 
         if report:
             previous_options = {"tax_unit": tax_unit.id if tax_unit else "company_only"}
+            if country:
+                previous_options["selected_return_country_id"] = country.id
             options = (
                 report.sudo()
                 .with_context(allowed_company_ids=companies.ids)
@@ -668,9 +755,11 @@ class AccountReturn(models.Model):
             ] |= record
 
         for (company, tax_unit, report, country), returns in company_ids_map.items():
-            returns.company_ids = self._get_company_ids(
-                company, tax_unit, report, country
-            )
+            companies = self._get_company_ids(company, tax_unit, report, country)
+            for account_return, companies_left in returns._get_companies_left_to_file(
+                companies
+            ).items():
+                account_return.company_ids = companies_left
 
     @api.depends_context("allowed_company_ids")
     @api.depends("company_ids")
@@ -1118,6 +1207,16 @@ class AccountReturn(models.Model):
                     name=self.display_name,
                 )
             )
+        if self.is_superseded:
+            raise UserError(
+                self.env._(
+                    "%(name)s is no longer generated for its company, country and "
+                    "period: another return closes its tax lines. It was kept "
+                    "because it holds work; delete it once that work is no longer "
+                    "needed.",
+                    name=self.display_name,
+                )
+            )
         if self.state != "new" or posted_closing:
             raise UserError(
                 self.env._(
@@ -1161,6 +1260,7 @@ class AccountReturn(models.Model):
     def _proceed_with_locking(self, options_to_inject=None):
         self.check_singleton()
         self._check_lockable(allow_posted_closing=True)
+        self._check_no_filed_overlap()
 
         domain = [
             ("company_id", "=", self.company_id.id),
@@ -1169,6 +1269,7 @@ class AccountReturn(models.Model):
             ("date_deadline", "<", self.date_deadline),
             ("date_lock", "=", False),
             ("is_completed", "=", False),
+            ("is_superseded", "=", False),
             ("return_type_category", "!=", "audit"),
         ]
         count = self.env["account.return"].search_count(domain, limit=1)
@@ -2675,8 +2776,10 @@ class AccountReturn(models.Model):
                     existing_check_by_template_id[template].attachment_ids.unlink()
 
             if template.activity_type:
-                current_template_activities = self.activity_ids.filtered_domain(
-                    [("summary", "=", template.name)]
+                current_template_activities = self.activity_ids.filtered(
+                    lambda activity, template=template: (
+                        activity.account_return_check_template_id == template
+                    )
                 )
                 activities_to_unlink = current_template_activities.filtered(
                     lambda act: act.state != "done"
@@ -2694,6 +2797,7 @@ class AccountReturn(models.Model):
                         activity_type_id=template.activity_type.id,
                         summary=template.name,
                         note=template.description,
+                        account_return_check_template_id=template.id,
                     )
 
             if template.type == "check" and template.model:

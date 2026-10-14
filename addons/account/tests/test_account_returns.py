@@ -2948,11 +2948,16 @@ class TestAccountReturn(TestAccountReportsCommon):
             ]
         )
 
-        for return_type in return_types + [audit_return_type]:
+        # Each tax return type files its own month: two tax returns of one
+        # company and country over one period would close its tax lines twice.
+        for month, return_type in enumerate(
+            [*return_types, audit_return_type], start=1
+        ):
             with self.subTest(return_type=return_type):
+                date_from = fields.Date.from_string(f"2024-{month:02d}-01")
                 account_return = return_type.with_context(
-                    forced_date_from=fields.Date.from_string("2024-01-01"),
-                    forced_date_to=fields.Date.from_string("2024-01-31"),
+                    forced_date_from=date_from,
+                    forced_date_to=fields.Date.end_of(date_from, "month"),
                 )._try_create_returns_for_fiscal_year(self.env.company, False)
                 self.assertEqual(account_return.state, "new")
                 self.assertEqual(account_return.is_completed, False)

@@ -1021,12 +1021,12 @@ class ResCompany(models.Model):
 
         return self.account_config_id.account_tax_return_journal_id
 
-    def _get_available_tax_units(self, report, limit=None):
+    def _get_available_tax_units(self, report, limit=None, country=None):
         self.check_singleton()
         return self.env["account.tax.unit"].search(
             [
                 ("company_ids", "in", self.id),
-                ("country_id", "=", report.country_id.id),
+                ("country_id", "=", (report.country_id or country).id),
             ],
             limit=limit,
         )

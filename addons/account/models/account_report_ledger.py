@@ -992,7 +992,12 @@ class AccountReport(models.Model):
 
     @_debug.perf.timed
     def _multi_company_tax_units_init_options(self, options, previous_options):
-        available_tax_units = self.env.company._get_available_tax_units(self)
+        available_tax_units = self.env.company._get_available_tax_units(
+            self,
+            country=self.env["res.country"].browse(
+                previous_options.get("selected_return_country_id")
+            ),
+        )
 
         available_tax_units = available_tax_units.filtered(
             lambda x: all(
@@ -1184,8 +1189,10 @@ class AccountReport(models.Model):
                     [
                         "|",
                         "|",
+                        "|",
                         ("move_id.fiscal_position_id", "=", False),
                         ("move_id.fiscal_position_id.foreign_vat", "=", False),
+                        ("move_id.fiscal_position_id.country_id", "=", country.id),
                         ("tax_tag_ids.country_id", "=", country.id),
                     ]
                 )

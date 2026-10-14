@@ -306,12 +306,7 @@ class AccountReturnType(models.Model):
         return Domain("country_id", "=", filing_country.id)
 
     def _get_replacing_country_types(self, country):
-        if (
-            not country
-            or self.country_id
-            or not self.auto_generate
-            or not self.is_tax_return_type
-        ):
+        if not country or self.country_id or not self.is_tax_return_type:
             return self.browse()
         return self.search(
             [("country_id", "=", country.id), ("report_id", "!=", False)]
@@ -408,6 +403,20 @@ class AccountReturnType(models.Model):
         )
         return filing_companies
 
+    def _get_filing_tax_units(self, company, country):
+        if self.report_id.filter_multi_company != "tax_units":
+            return self.env["account.tax.unit"]
+        return self.env["account.tax.unit"].search(
+            [("company_ids", "in", company.id), ("country_id", "=", country.id)]
+        )
+
+    def _get_domain_tax_unit(self, company, country, tax_unit) -> Domain:
+        if tax_unit:
+            return Domain("tax_unit_id", "in", [tax_unit.id, False])
+        return Domain(
+            "tax_unit_id", "not in", self._get_filing_tax_units(company, country).ids
+        )
+
     def _is_filed_by_an_ancestor(self, company, country) -> bool:
         return (
             self._get_foreign_vat_filing_companies(company, country)[company.id]
@@ -423,6 +432,19 @@ class AccountReturnType(models.Model):
                 returntype=self,
                 company=company,
                 country=country or fiscal_country,
+            )
+            return False
+
+        if not tax_unit and (
+            filing_tax_units := self._get_filing_tax_units(
+                company, country or fiscal_country
+            )
+        ):
+            _debug.logic(
+                "return_filed_by_a_tax_unit",
+                returntype=self,
+                company=company,
+                tax_unit=filing_tax_units,
             )
             return False
 
@@ -694,6 +716,9 @@ class AccountReturnType(models.Model):
                         ("is_completed", "=", False),
                         ("type_id", "=", self.id),
                         *self._get_domain_filing_country(main_company, filing_country),
+                        *self._get_domain_tax_unit(
+                            main_company, filing_country, tax_unit
+                        ),
                         ("date_to", ">=", date_from),
                         ("date_from", "<=", date_to),
                         ("manually_created", "=", False),
@@ -771,6 +796,7 @@ class AccountReturnType(models.Model):
                     ),
                     ("type_id", "=", self.id),
                     *self._get_domain_filing_country(main_company, filing_country),
+                    *self._get_domain_tax_unit(main_company, filing_country, tax_unit),
                     ("date_to", ">=", date_from),
                     ("date_from", "<=", date_to),
                 ]
@@ -821,17 +847,37 @@ class AccountReturnType(models.Model):
                     transition_period
                 ]
 
-            for matched_period in matched_periods:
-                for matched_return in existing_periods[matched_period]:
-                    if (
-                        matched_return.company_id == main_company
-                        and not matched_return.is_completed
-                        and not matched_return.date_lock
-                    ):
-                        if matched_return.tax_unit_id != tax_unit:
-                            matched_return.tax_unit_id = tax_unit
-                        elif matched_return.company_ids != expected_companies:
-                            matched_return.company_ids = expected_companies
+            open_matched_returns = self.env["account.return"].union(
+                *(
+                    existing_periods[matched_period].filtered(
+                        lambda account_return: (
+                            account_return.company_id == main_company
+                            and not account_return.is_completed
+                            and not account_return.date_lock
+                        )
+                    )
+                    for matched_period in matched_periods
+                )
+            )
+            superseded_periods = {
+                period
+                for period in matched_periods
+                if all(existing_periods[period].mapped("is_superseded"))
+            }
+            open_matched_returns.filtered(
+                lambda account_return: (
+                    (account_return.date_from, account_return.date_to)
+                    in superseded_periods
+                )
+            )._resume_generation()
+            companies_to_file = open_matched_returns._get_companies_left_to_file(
+                expected_companies
+            )
+            for matched_return in open_matched_returns:
+                if matched_return.tax_unit_id != tax_unit:
+                    matched_return.tax_unit_id = tax_unit
+                elif matched_return.company_ids != companies_to_file[matched_return]:
+                    matched_return.company_ids = companies_to_file[matched_return]
 
             returns_to_unlink = unmatched_existing_periods_unposted_returns.filtered(
                 lambda r: not r.manually_created
