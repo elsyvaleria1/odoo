@@ -268,25 +268,38 @@ def checked_attributes(computed: Any) -> dict[Any, Any]:
     return attributes
 
 
-def checked_call_values(value: Any) -> dict[Any, Any]:
-    call_values = dict(mapping_value(value))
-    for name in call_values:
+def _checked_bindings(bindings: dict[Any, Any], directive: str) -> dict[Any, Any]:
+    for name in bindings:
         if isinstance(name, str) and "__" in name:
-            _debug.logic("call_value_rejected", name=str(name)[:40])
-            msg = f"t-call value {name!r} is reserved for the renderer"
+            _debug.logic("binding_rejected", directive=directive, name=str(name)[:40])
+            msg = f"{directive} value {name!r} is reserved for the renderer"
             raise ValueError(msg)
-    return call_values
+    return bindings
 
 
-def checked_call_options(options: Mapping[str, Any]) -> Mapping[str, Any]:
+def checked_call_values(value: Any) -> dict[Any, Any]:
+    return _checked_bindings(dict(mapping_value(value)), "t-call")
+
+
+def checked_set_values(value: Any) -> dict[Any, Any]:
+    return _checked_bindings(dict(value), "t-set")
+
+
+def checked_render_options(
+    options: Mapping[str, Any], source: str
+) -> Mapping[str, Any]:
     for name in options:
         if isinstance(name, str) and (
             name.startswith(RENDER_INTERNAL_PREFIXES) or name in RENDER_PROCESS_OPTIONS
         ):
-            _debug.logic("call_option_rejected", name=name[:40])
-            msg = f"t-call option {name!r} is reserved for the renderer"
+            _debug.logic("render_option_rejected", source=source, name=name[:40])
+            msg = f"{source} option {name!r} is reserved for the renderer"
             raise ValueError(msg)
     return options
+
+
+def checked_call_options(options: Mapping[str, Any]) -> Mapping[str, Any]:
+    return checked_render_options(options, "t-call")
 
 
 def _xmlns_attribute(prefix: str | None) -> str:
@@ -2139,6 +2152,7 @@ class IrQweb(models.AbstractModel):
             "TemplateAttributeValue": TemplateAttributeValue,
             "checked_attributes": checked_attributes,
             "checked_call_values": checked_call_values,
+            "checked_set_values": checked_set_values,
             "checked_call_options": checked_call_options,
             "VOID_ELEMENTS": VOID_ELEMENTS,
             "QwebCallParameters": QwebCallParameters,
@@ -2790,7 +2804,9 @@ class IrQweb(models.AbstractModel):
             ]
         if varname[0] == "{":
             _debug.logic("directive_set.value", varname="{dict}", mode="dict")
-            return [indent_code(f"values.update({self._compile_expr(varname)})", level)]
+            return [
+                self._compile_dict_merge("values", varname, level, "checked_set_values")
+            ]
         return None
 
     def _compile_set_content(
@@ -3499,7 +3515,7 @@ class IrQweb(models.AbstractModel):
         code = []
         for key in list(el.attrib):
             if key.endswith(".f"):
-                name = key.removesuffix(".f")
+                name = self._check_call_value_name(key.removesuffix(".f"))
                 value = el.attrib.pop(key)
                 code.append(
                     indent_code(
@@ -3508,7 +3524,7 @@ class IrQweb(models.AbstractModel):
                     )
                 )
             elif key.endswith(".translate"):
-                name = key.removesuffix(".translate")
+                name = self._check_call_value_name(key.removesuffix(".translate"))
                 value = el.attrib.pop(key)
                 code.append(
                     indent_code(
@@ -3517,14 +3533,11 @@ class IrQweb(models.AbstractModel):
                     )
                 )
             elif not key.startswith("t-"):
-                if "__" in key:
-                    _debug.logic("directive_call.rejected", reason="reserved", key=key)
-                    msg = f"t-call value {key!r} is reserved for the renderer"
-                    raise SyntaxError(msg)
+                name = self._check_call_value_name(key)
                 value = el.attrib.pop(key)
                 code.append(
                     indent_code(
-                        f"t_call_values[{key!r}] = {self._compile_expr(value)}",
+                        f"t_call_values[{name!r}] = {self._compile_expr(value)}",
                         level,
                     )
                 )
@@ -3537,6 +3550,14 @@ class IrQweb(models.AbstractModel):
                 )
         _debug.pipeline("directive_call.values_compiled", tag=el.tag, values=len(code))
         return code
+
+    @staticmethod
+    def _check_call_value_name(name: str) -> str:
+        if "__" in name:
+            _debug.logic("directive_call.rejected", reason="reserved", key=name)
+            msg = f"t-call value {name!r} is reserved for the renderer"
+            raise SyntaxError(msg)
+        return name
 
     def _compile_directive_lang(
         self, el: etree._Element, compile_context: CompileContext, level: int

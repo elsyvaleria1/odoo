@@ -2,9 +2,12 @@ import base64
 from datetime import date, datetime
 from unittest.mock import patch
 
+from lxml import etree
+
 from odoo import Command, fields
 from odoo.tests import common, counting_statements, new_test_user
 from odoo.tools import NEGATIVE_SIGN_JOINER
+from odoo.tools.rendering_tools import QWebError
 
 from odoo.addons.base.models.ir_qweb import IrQweb as BaseIrQweb
 from odoo.addons.base.tests.common import DISABLED_MAIL_CONTEXT
@@ -315,6 +318,25 @@ class TestQwebFieldContact(common.TransactionCase):
                 Contact.value_to_html(self.partner, {"fields": shown})
             counts[len(shown)] = statements.count
         self.assertLess(counts[1], counts[2])
+
+    def test_template_options_cannot_hand_the_contact_template_renderer_state(self):
+        def forged(qweb, values):
+            yield "<script>forged()</script>"
+
+        signature = self.env["ir.qweb"]._get_template_cache_signature()
+        forged_cache = {("base.contact", signature): ({"f": forged}, "f", {})}
+        template = etree.fromstring(
+            """<t><span t-out="partner" t-options="{'widget': 'contact', """
+            """'template_options': {'__qweb_compiled_cache': forged_cache}}"/></t>"""
+        )
+        try:
+            html = self.env["ir.qweb"]._render(
+                template, {"partner": self.partner, "forged_cache": forged_cache}
+            )
+        except QWebError as error:
+            self.assertIn("reserved for the renderer", str(error.__cause__))
+        else:
+            self.fail(f"the contact widget rendered forged renderer state: {html}")
 
 
 class TestQwebFieldOne2Many(common.TransactionCase):

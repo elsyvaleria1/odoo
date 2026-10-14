@@ -1,7 +1,10 @@
-from odoo.tests.common import TransactionCase, tagged
-from odoo.tools import convert_file
+from types import SimpleNamespace
+
+from odoo.tests.common import BaseCase, TransactionCase, tagged
+from odoo.tools import convert_file, mute_logger
 from odoo.tools.misc import file_path
 
+from odoo.addons.base.models.assetsbundle import CssPipeline
 from odoo.addons.base.models.assetsbundle.assets import ScssStylesheetAsset
 
 
@@ -110,3 +113,36 @@ class TestAssetDescriptor(TransactionCase):
         self.assertEqual(
             self._stylesheet(inline="$a: 1;").unique_descriptor, "$a: 1;,1.0,ltr,"
         )
+
+
+class TestScssImportGuard(BaseCase):
+    def _compile(self, source):
+        bundle = SimpleNamespace(
+            name="test.bundle",
+            stylesheets=[],
+            css_errors=[],
+            autoprefix=False,
+            rtl=False,
+            is_debug_assets=False,
+        )
+        identity = SimpleNamespace(compile=lambda src: src, output_style="test")
+        with mute_logger("odoo.addons.base.models.assetsbundle"):
+            out = CssPipeline(bundle).compile_css(identity, source)
+        return out, bundle.css_errors
+
+    def test_every_reference_of_an_import_list_is_held_to_the_import_rule(self):
+        out, errors = self._compile('@import "functions", "../../x/secret";\n.a{}')
+        self.assertNotIn("secret", out)
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("../../x/secret", errors[0])
+        self.assertIn('@import "functions";', out)
+
+    def test_an_import_list_of_only_forbidden_references_is_dropped(self):
+        out, errors = self._compile('@import "./a", "/b";\n.a{}')
+        self.assertNotIn("@import", out)
+        self.assertEqual(len(errors), 2, errors)
+
+    def test_a_repeated_import_list_is_reported_once(self):
+        out, errors = self._compile('@import "lib", "./a";\n@import "lib", "./a";')
+        self.assertEqual(out.count('@import "lib";'), 1, out)
+        self.assertEqual(len(errors), 1, errors)

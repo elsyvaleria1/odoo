@@ -27,6 +27,8 @@ from odoo.tools.formatting import DATE_LENGTH, hours_to_minutes
 from odoo.tools.mail import safe_attrs
 from odoo.tools.misc import babel_locale_parse, get_lang
 
+from odoo.addons.base.models.ir_qweb import checked_render_options
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
@@ -863,7 +865,9 @@ class IrQwebFieldContact(models.AbstractModel):
 
     @api.model
     def value_to_html(self, value: Any, options: dict[str, Any]) -> str | Markup:
-        template_options = options.get("template_options") or {}
+        template_options = checked_render_options(
+            options.get("template_options") or {}, "template_options"
+        )
         if not value:
             _debug.logic("contact_empty", null_text=bool(options.get("null_text")))
             if options.get("null_text"):

@@ -82,8 +82,10 @@ def _rtlcss_config_path() -> str:
 
 class CssPipeline:
     rx_preprocess_imports = re.compile(
-        r"""@(?P<rule>import|use|forward)\s*['"](?P<ref>[^'"]+)['"](?P<tail>[^;{]*;?)"""
+        r"""@(?P<rule>import|use|forward)\s*"""
+        r"""(?P<refs>['"][^'"]+['"](?:\s*,\s*['"][^'"]+['"])*)(?P<tail>[^;{]*;?)"""
     )
+    rx_import_ref = re.compile(r"""['"]([^'"]+)['"]""")
     rx_load_css = re.compile(r"\bload-css\s*\(")
     rx_css_split = re.compile(r"/\*! odoo-split:([a-f0-9-]+) \*/")
     rx_css_import = re.compile(r"(@import[^;{]+;?)")
@@ -275,17 +277,9 @@ class CssPipeline:
         bundle = self._bundle
         seen_imports: set[str] = set()
 
-        def _remove_duplicate_and_forbidden_imports(matchobj: re.Match) -> str:
-            rule, ref = matchobj.group("rule", "ref")
-            line = f'@{rule} "{ref}"{matchobj.group("tail")}'
-            if line in seen_imports:
-                _debug.logic(
-                    "scss_import_deduplicated", bundle=self._bundle.name, ref=ref
-                )
-                return ""
-            seen_imports.add(line)
+        def _is_allowed_import(rule: str, ref: str) -> bool:
             if rule != "import" and ref.startswith("sass:"):
-                return line
+                return True
             if any(char in ref for char in ".:\\%") or ref.startswith(("/", "~")):
                 msg = (
                     f"Local import {ref!r} is forbidden for security reasons."
@@ -295,8 +289,25 @@ class CssPipeline:
                 _logger.warning(msg)
                 bundle.css_errors.append(msg)
                 _debug.logic("scss_import_forbidden", bundle=self._bundle.name, ref=ref)
+                return False
+            return True
+
+        def _import_line(rule: str, refs: Sequence[str], tail: str) -> str:
+            quoted = ", ".join(f'"{ref}"' for ref in refs)
+            return f"@{rule} {quoted}{tail}"
+
+        def _remove_duplicate_and_forbidden_imports(matchobj: re.Match) -> str:
+            rule, tail = matchobj.group("rule", "tail")
+            refs = self.rx_import_ref.findall(matchobj.group("refs"))
+            line = _import_line(rule, refs, tail)
+            if line in seen_imports:
+                _debug.logic(
+                    "scss_import_deduplicated", bundle=self._bundle.name, ref=refs[0]
+                )
                 return ""
-            return line
+            seen_imports.add(line)
+            allowed = [ref for ref in refs if _is_allowed_import(rule, ref)]
+            return _import_line(rule, allowed, tail) if allowed else ""
 
         source = _rewrite_css_outside_strings(
             self.rx_preprocess_imports,

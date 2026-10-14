@@ -5279,3 +5279,28 @@ class TestQWebRenderedValueBoundaries(TransactionCase):
         )
         self.assertIn('<a href="javascript:void(0)" class="c">x</a>', out)
         self.assertNotIn("alert(1)", out)
+
+    LAZY_ROOT_SCOPED_CALL = {
+        "s": '<t><t t-set="c"><t t-call="z">y</t></t><t t-out="len(c)"/></t>',
+        "z": '<t><t t-out="0"/></t>',
+    }
+
+    def test_a_renderer_name_cannot_be_rebound_through_a_call_format_value(self):
+        templates = {"m": '<t><t t-call="s"/></t>', **self.LAZY_ROOT_SCOPED_CALL}
+        self.assertEqual(str(render("m", {}, self._load(templates))), "1")
+        for attribute in ("__qweb_root_values.f", "__qweb_root_values.translate"):
+            with self.subTest(attribute=attribute):
+                templates["m"] = f'<t><t t-call="s" {attribute}="x"/></t>'
+                with self.assertRaises(QWebError) as cm:
+                    str(render("m", {}, self._load(templates)))
+                self.assertIn("reserved for the renderer", str(cm.exception.__cause__))
+
+    def test_a_renderer_name_cannot_be_rebound_through_a_computed_set_mapping(self):
+        templates = {
+            "m": "<t><t t-set=\"{'_' + '_qweb_root_values': 1}\"/>"
+            '<t t-call="s"/></t>',
+            **self.LAZY_ROOT_SCOPED_CALL,
+        }
+        with self.assertRaises(QWebError) as cm:
+            str(render("m", {}, self._load(templates)))
+        self.assertIn("reserved for the renderer", str(cm.exception.__cause__))
