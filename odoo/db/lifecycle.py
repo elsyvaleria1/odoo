@@ -4,7 +4,7 @@ from time import monotonic
 
 import psycopg
 from psycopg import IsolationLevel
-from psycopg.pq import ExecStatus
+from psycopg.pq import ExecStatus, TransactionStatus
 from psycopg.types.numeric import FloatLoader
 
 from odoo.libs.debug_log import DebugLog
@@ -131,11 +131,24 @@ def _probe_liveness(conn: psycopg.Connection) -> None:
         raise
 
 
+def _end_open_transaction(conn: psycopg.Connection) -> None:
+    status = conn.info.transaction_status
+    if status == TransactionStatus.IDLE:
+        return
+    _debug.lifecycle(
+        "connection.returned_in_transaction",
+        status=status.name,
+        backend_pid=get_backend_pid(conn),
+    )
+    conn.rollback()
+
+
 def _reset_connection(
     conn: psycopg.Connection, *, discard: bool | None = None, readonly: bool = False
 ) -> None:
     if discard is None:
         discard = current().discard_on_return
+    _end_open_transaction(conn)
     with _debug.perf("connection.reset", discard=discard):
         if discard:
             _run_session_reset(conn, "DISCARD ALL")

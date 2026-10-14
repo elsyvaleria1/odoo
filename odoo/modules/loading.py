@@ -2411,26 +2411,58 @@ def release_session_lock(
     shared: bool = False,
     then: Callable[[], None] | None = None,
 ) -> None:
+    if cr.in_failed_transaction():
+        _debug.logic("session_lock.release_deferred", holder=holder, reason="aborted")
+        release = functools.partial(
+            _release_session_lock, cr, key, holder, shared, then
+        )
+        cr.postrollback.add(release)
+        cr.postcommit.add_durable(release)
+        return
+    _release_session_lock(cr, key, holder, shared, then)
+
+
+def _release_session_lock(
+    cr: typing.Any,
+    key: tools.SQL,
+    holder: str,
+    shared: bool,
+    then: Callable[[], None] | None,
+) -> None:
     unlock = tools.SQL(
         "SELECT pg_advisory_unlock_shared(%s)"
         if shared
         else "SELECT pg_advisory_unlock(%s)",
         key,
     )
-    if cr.in_failed_transaction():
-        _debug.logic("session_lock.release_deferred", holder=holder, reason="aborted")
-        cr.postrollback.add(functools.partial(cr.execute, unlock))
-        if then is not None:
-            cr.postrollback.add(then)
-        return
-    try:
-        cr.execute(unlock)
-    except psycopg.Error:
-        _logger.warning(
-            "%s: could not release its session lock, leaving it to the connection pool",
-            holder,
+    if cr.closed:
+        _debug.logic(
+            "session_lock.release_skipped", holder=holder, reason="connection_lost"
         )
-        _debug.logic("session_lock.release_failed", holder=holder, reason="pg_error")
+    else:
+        connection = cr.connection
+        try:
+            if (
+                connection.autocommit
+                or connection.info.transaction_status
+                != psycopg.pq.TransactionStatus.IDLE
+            ):
+                cr.execute(unlock)
+            else:
+                connection.autocommit = True
+                try:
+                    connection.execute(unlock.code, unlock.params)
+                finally:
+                    connection.autocommit = False
+        except psycopg.Error:
+            _logger.warning(
+                "%s: could not release its session lock, leaving it to the "
+                "connection pool",
+                holder,
+            )
+            _debug.logic(
+                "session_lock.release_failed", holder=holder, reason="pg_error"
+            )
     if then is not None:
         then()
 

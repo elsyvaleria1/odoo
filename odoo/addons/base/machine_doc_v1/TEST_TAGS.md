@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5773 methods, 1088 classes, 209 files)
+# All base tests (5775 methods, 1088 classes, 209 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -327,12 +327,12 @@ These run in **both** at_install and post_install phases by default.
 |--------|-------|
 | Total test files | 209 |
 | Total test classes | 1088 |
-| Total test methods | 5773 |
+| Total test methods | 5775 |
 | Files with @tagged | 138 (66%) |
 | Files without @tagged | 71 (34%) |
 | Classes using post_install | 438 |
 | Unique tags | 29 |
-| Largest test file | test_db_cursor.py (125 classes, 404 tests) |
+| Largest test file | test_db_cursor.py (125 classes, 406 tests) |
 
 Counted as unittest collects them: a method whose name starts with `test`, not
 `test_` — a `testCamelCase` method would run too, so it is counted. A class with

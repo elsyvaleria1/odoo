@@ -2108,6 +2108,23 @@ class TestConnectionStateReset(BaseCase):
         conn.autocommit = True
         self._assert_clean(conn)
 
+    def test_a_connection_returned_mid_transaction_is_reset_outside_it(self):
+        for discard in (False, True):
+            conn = self._raw_conn()
+            self._dirty(conn)
+            conn.autocommit = False
+            conn.execute("SELECT 1")
+            with self._override_discard(discard):
+                _reset_connection(conn)
+            self.assertEqual(
+                conn.info.transaction_status,
+                _TxStatus.IDLE,
+                "the session reset ran inside the open transaction, so the "
+                "pool's rollback on return undoes it",
+            )
+            conn.autocommit = True
+            self._assert_clean(conn)
+
     def test_discard_mode_closes_leaks(self):
         conn = self._raw_conn()
         self._dirty(conn)
@@ -6594,6 +6611,39 @@ class TestCloseRunsHooksOnALiveCursor(BaseCase):
         cr.postrollback.add(partial(cr.execute, "SELECT 1"))
         with self.assertNoLogs("psycopg.pool", level="WARNING"):
             cr.close()
+
+    @mute_logger("odoo.db.cursor")
+    def test_a_session_setting_does_not_outlive_a_hook_opened_transaction(self):
+        dbname = common.get_db_name()
+        _, info = get_connection_info_for_database(dbname)
+        pool = ConnectionPool(maxconn=1, settings=pool_settings.current())
+        self.addCleanup(pool.close_all)
+        cr = Cursor(pool, dbname, info)
+        cr.execute("SHOW work_mem")
+        work_mem = cr.fetchscalar()
+        cr.execute("SHOW idle_session_timeout")
+        idle_session_timeout = cr.fetchscalar()
+        cr.execute("SET work_mem = '77MB'")
+        cr.execute("SET idle_session_timeout = 0")
+        cr.execute("SELECT pg_backend_pid()")
+        pid = cr.fetchscalar()
+        cr.commit()
+        cr.prerollback.add(lambda: (_ for _ in ()).throw(RuntimeError("hook boom")))
+        cr.postrollback.add(partial(cr.execute, "SELECT 1"))
+        with self.assertNoLogs("psycopg.pool", level="WARNING"):
+            cr.close()
+        with contextlib.closing(Cursor(pool, dbname, info)) as cr:
+            cr.execute(
+                "SELECT pg_backend_pid(), current_setting('work_mem'),"
+                " current_setting('idle_session_timeout')"
+            )
+            self.assertEqual(
+                cr.fetchone(),
+                (pid, work_mem, idle_session_timeout),
+                "the session reset ran inside the transaction a post-rollback "
+                "hook opened, and the pool's rollback undid it for the next "
+                "borrower",
+            )
 
     def test_rollback_runs_even_if_logging_raises(self):
         cr = registry().cursor()

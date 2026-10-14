@@ -52,7 +52,6 @@ _debug = DebugLog(__name__)
 
 _TX_IDLE = _TxStatus.IDLE
 _TX_INERROR = _TxStatus.INERROR
-_TX_INTRANS = _TxStatus.INTRANS
 
 
 def _get_statement_text(query: Any) -> str:
@@ -1104,11 +1103,6 @@ class Cursor(_BulkAccessMixin, _MetricsMixin, _PipelineMixin, BaseCursor):
                         self._drain_postrollback()
                     except Exception:
                         _logger.exception("A post-rollback hook failed on cursor close")
-                    if self._get_transaction_status() in (_TX_INTRANS, _TX_INERROR):
-                        try:
-                            self._cnx.rollback()
-                        except Exception:
-                            keep_in_pool = self._is_connection_clean()
             self._obj.close()
         finally:
             self._closed = True

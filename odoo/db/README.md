@@ -314,6 +314,12 @@ library; a `TYPE_CHECKING` import is the one exception.
   threads. The one number that goes the other way is the serial loop,
   **117 → 140 µs per cycle**: the returning thread now waits for the round
   trip that seven spare backends used to hide.
+- **The session reset rolls back first.** A connection can come back inside a
+  transaction a post-rollback hook opened on cursor close. Run inside it,
+  `RESET ALL` and `pg_advisory_unlock_all()` were undone by psycopg_pool's own
+  rollback in `putconn`, and a session `SET` (`work_mem`, `load_modules`'
+  `idle_session_timeout = 0`) reached the next borrower; `_reset_connection`
+  now rolls back a non-idle connection before the reset, for every caller.
 - **A pooled connection's transaction flags are set once, and the session
   reset goes through libpq's simple-query call.** `Cursor.__init__` used to
   set `isolation_level` and `read_only` on every borrow and `_reset_connection`
