@@ -1568,3 +1568,141 @@ class TestMarinHandEncodedTaxEntry(TestAccountReportsCommon):
         self.assertFalse(result["messages"])
         self.assertEqual(entry.line_ids, lines)
         self.assertEqual(entry.line_ids.partner_id, self.partner_b)
+
+
+@tagged("post_install", "-at_install")
+class TestMarinHandEncodedCashBasisEntry(AccountTestInvoicingCommon):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.env.company.account_config_id.tax_exigibility = True
+        cls.final_account = cls.env["account.account"].create(
+            {
+                "name": "VAT paid",
+                "code": "VATPAID",
+                "account_type": "asset_current",
+            }
+        )
+        cls.tax = cls.env["account.tax"].create(
+            {
+                "name": "cash basis 16%",
+                "type_tax_use": "purchase",
+                "amount": 16.0,
+                "tax_exigibility": "on_payment",
+                "cash_basis_transition_account_id": cls.env["account.account"]
+                .create(
+                    {
+                        "name": "VAT due",
+                        "code": "VATDUE",
+                        "account_type": "asset_current",
+                        "reconcile": True,
+                    }
+                )
+                .id,
+                "invoice_repartition_line_ids": [
+                    Command.create({"repartition_type": "base"}),
+                    Command.create(
+                        {
+                            "repartition_type": "tax",
+                            "account_id": cls.final_account.id,
+                        }
+                    ),
+                ],
+            }
+        )
+        cls.tax_rep = cls.tax.invoice_repartition_line_ids.filtered(
+            lambda rep: rep.repartition_type == "tax"
+        )
+        cls.payable = cls.company_data["default_account_payable"]
+
+    def _hand_encoded_bill(self):
+        entry = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": "2026-01-01",
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "base",
+                            "partner_id": self.partner_a.id,
+                            "account_id": self.company_data[
+                                "default_account_expense"
+                            ].id,
+                            "balance": 1000.0,
+                            "tax_ids": [Command.set(self.tax.ids)],
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": self.tax.name,
+                            "partner_id": self.partner_a.id,
+                            "account_id": self.final_account.id,
+                            "balance": 160.0,
+                            "tax_repartition_line_id": self.tax_rep.id,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "payable",
+                            "partner_id": self.partner_a.id,
+                            "account_id": self.payable.id,
+                            "balance": -1160.0,
+                        }
+                    ),
+                ],
+            }
+        )
+        entry.action_post()
+        return entry
+
+    def _pay(self, entry, amount, date):
+        payment = self.env["account.move"].create(
+            {
+                "move_type": "entry",
+                "date": date,
+                "line_ids": [
+                    Command.create(
+                        {
+                            "name": "payment",
+                            "partner_id": self.partner_a.id,
+                            "account_id": self.payable.id,
+                            "balance": amount,
+                        }
+                    ),
+                    Command.create(
+                        {
+                            "name": "bank",
+                            "account_id": self.company_data[
+                                "default_journal_bank"
+                            ].default_account_id.id,
+                            "balance": -amount,
+                        }
+                    ),
+                ],
+            }
+        )
+        payment.action_post()
+        (entry + payment).line_ids.filtered(
+            lambda line: line.account_id == self.payable and not line.reconciled
+        ).reconcile()
+
+    def _cash_basis_tax_balances(self, entry):
+        return (
+            self.env["account.move"]
+            .search(
+                [("tax_cash_basis_origin_move_id", "=", entry.id)], order="date, id"
+            )
+            .line_ids.filtered("tax_repartition_line_id")
+            .mapped("balance")
+        )
+
+    def test_tax_line_on_a_non_reconcilable_account_is_carried_when_paid(self):
+        entry = self._hand_encoded_bill()
+        self._pay(entry, 1160.0, "2026-01-10")
+        self.assertEqual(self._cash_basis_tax_balances(entry), [160.0])
+
+    def test_tax_line_on_a_non_reconcilable_account_is_carried_in_installments(self):
+        entry = self._hand_encoded_bill()
+        self._pay(entry, 580.0, "2026-01-10")
+        self._pay(entry, 580.0, "2026-01-20")
+        self.assertEqual(self._cash_basis_tax_balances(entry), [80.0, 80.0])

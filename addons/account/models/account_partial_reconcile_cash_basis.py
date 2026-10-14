@@ -325,7 +325,7 @@ class AccountPartialReconcile(models.Model):
         amount_currency = line.currency_id.round(
             line.amount_currency * partial_values["percentage"]
         )
-        if caba_treatment != "tax":
+        if caba_treatment != "tax" or line.id not in residual_per_tax_line:
             return amount_currency
         if (
             move_values["is_fully_paid"]
@@ -493,7 +493,7 @@ class AccountPartialReconcile(models.Model):
             residual_per_tax_line = {
                 line.id: line.amount_residual_currency
                 for line_type, line in move_values["to_process_lines"]
-                if line_type == "tax"
+                if line_type == "tax" and line.account_id.reconcile
             }
             for partial_values in move_values["partials"]:
                 move_vals = self._prepare_cash_basis_move_vals(move, partial_values)
