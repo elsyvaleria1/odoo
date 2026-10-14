@@ -1,3 +1,6 @@
+from types import SimpleNamespace
+from unittest.mock import patch
+
 from odoo.exceptions import UserError
 from odoo.tests import common, tagged
 
@@ -81,6 +84,114 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
         )
         self.assertEqual(found, tracker)
         self.assertFalse(found.source_id)
+
+    def test_search_or_create_keeps_visitor_cookies_out_of_outgoing_links(self):
+        source = self.env["utm.source"].create({"name": "Visitor source"})
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://cookie.example.com", "title": "Cookie test"}
+        )
+        with patch(
+            "odoo.addons.utm.models.mixin_utm.request",
+            SimpleNamespace(cookies={"odoo_utm_source": source.name}),
+        ):
+            found = self.env["link.tracker"].search_or_create(
+                [{"url": tracker.url, "title": "Cookie test"}]
+            )
+        self.assertEqual(found, tracker)
+        self.assertFalse(found.source_id)
+
+    def test_context_tracking_defaults_win_over_visitor_cookies(self):
+        wanted, visitor = self.env["utm.source"].create(
+            [{"name": "Wanted source"}, {"name": "Visitor source"}]
+        )
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://cookie.example.com", "source_id": wanted.id}
+        )
+        with patch(
+            "odoo.addons.utm.models.mixin_utm.request",
+            SimpleNamespace(cookies={"odoo_utm_source": visitor.name}),
+        ):
+            found = (
+                self.env["link.tracker"]
+                .with_context(default_source_id=wanted.id)
+                .search_or_create([{"url": tracker.url}])
+            )
+        self.assertEqual(found, tracker)
+
+    def test_a_context_short_code_is_issued_once(self):
+        tracker = (
+            self.env["link.tracker"]
+            .with_context(default_code="context-code")
+            .search_or_create([{"url": "https://default-code.example.com"}])
+        )
+        self.assertEqual(tracker.code, "context-code")
+        self.assertEqual(tracker.link_code_ids.mapped("code"), ["context-code"])
+
+    def test_direct_create_checks_defaulted_labels_for_uniqueness(self):
+        model = self.env["link.tracker"].with_context(default_label="Context label")
+        model.create({"url": "https://default-label.example.com"})
+        with self.assertRaises(UserError):
+            model.create({"url": "https://default-label.example.com"})
+
+    def test_ordinary_utm_defaults_still_read_cookies(self):
+        source = self.env["utm.source"].create({"name": "Visitor source"})
+        with patch(
+            "odoo.addons.utm.models.mixin_utm.request",
+            SimpleNamespace(cookies={"odoo_utm_source": source.name}),
+        ):
+            defaults = self.env["link.tracker"].default_get(["source_id"])
+        self.assertEqual(defaults["source_id"], source.id)
+
+    def test_an_explicit_short_code_overrides_the_context_default(self):
+        tracker = (
+            self.env["link.tracker"]
+            .with_context(default_code="context-code")
+            .create(
+                {"url": "https://explicit-code.example.com", "code": "explicit-code"}
+            )
+        )
+        self.assertEqual(tracker.code, "explicit-code")
+        self.assertEqual(tracker.link_code_ids.mapped("code"), ["explicit-code"])
+
+    def test_an_explicit_false_code_gets_one_generated_code(self):
+        tracker = (
+            self.env["link.tracker"]
+            .with_context(default_code="context-code")
+            .create({"url": "https://generated-code.example.com", "code": False})
+        )
+        self.assertTrue(tracker.code)
+        self.assertNotEqual(tracker.code, "context-code")
+        self.assertEqual(len(tracker.link_code_ids), 1)
+
+    def test_lookup_normalizes_many2one_inputs_before_matching(self):
+        source = self.env["utm.source"].create({"name": "Key source"})
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://key.example.com", "source_id": source.id}
+        )
+        for value in (source, (source.id, source.name)):
+            with self.subTest(value=value):
+                found = self.env["link.tracker"].search_or_create(
+                    [{"url": tracker.url, "source_id": value}]
+                )
+                self.assertEqual(found, tracker)
+
+    def test_duplicate_keys_use_the_char_representation_that_creation_stores(self):
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://key.example.com", "label": "12"}
+        )
+        with self.assertRaises(UserError):
+            self.env["link.tracker"].create({"url": tracker.url, "label": 12})
+
+    def test_write_checks_the_stored_label_representation_for_uniqueness(self):
+        first, second = self.env["link.tracker"].create(
+            [
+                {"url": "https://key.example.com", "label": "12"},
+                {"url": "https://key.example.com", "label": "Other"},
+            ]
+        )
+        with self.assertRaises(UserError):
+            second.write({"label": 12})
+        self.assertEqual(first.label, "12")
 
     def test_search_or_create(self):
         values_1, values_2, values_3 = [

@@ -33,6 +33,9 @@ class MixinUtm(models.AbstractModel):
     def default_get(self, fields):
         values = super().default_get(fields)
 
+        if not self.env.context.get("utm_cookie_defaults", True):
+            return values
+
         if not self.env.is_superuser() and self.env.user.has_group(
             "sale.group_sale_salesman"
         ):

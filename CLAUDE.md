@@ -148,6 +148,8 @@ Return contracts follow §2.4.23: one typed contract per name, `None` or the emp
 
 Preparation results must be consumed (§2.4.21): a returned mapping does not mutate its input. Deduplication and creation use the same defaulted values, with explicit false values preserved. Cache keys keep input roles and observable request order separate; a default-field cache retains field selection, not default values.
 
+Trace default-hook effects before consuming a previously discarded result (§2.4.21): hooks can read visitor cookies and create tracking records. Resolve only the operation's required fields, compare keys using the representations the fields store, and keep one owner for inverse-backed creation values. Test context defaults, real request cookies and uniqueness after writes.
+
 System-setting reads follow §10.9: trusted server code uses `env.registry.settings.get(env, key, default)` to receive a scalar without holding an elevated recordset. A migrated `get_param(key)` passes `False` explicitly; typed values come from `get_int`/`get_float`/`get_bool`; the `_settings_port_reads` fixer rewrites elevated reads; setting writes retain their normal ACL.
 
 ### `ruff.toml` (repo root)

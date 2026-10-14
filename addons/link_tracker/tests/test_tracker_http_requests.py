@@ -6,6 +6,35 @@ from odoo.addons.link_tracker.tests.common import MockLinkTracker
 
 @tagged("post_install", "-at_install")
 class TestTrackerHttpRequests(MockLinkTracker, common.HttpCase):
+    def test_outgoing_links_ignore_visitor_attribution_over_http(self):
+        wanted = self.env["utm.source"].create({"name": "Wanted source"})
+        plain, attributed = self.env["link.tracker"].create(
+            [
+                {"url": "https://outgoing.example.com", "source_id": False},
+                {"url": "https://outgoing.example.com", "source_id": wanted.id},
+            ]
+        )
+        self.authenticate("admin", "admin")
+        for context, expected in (
+            ({}, plain),
+            ({"default_source_id": wanted.id}, attributed),
+        ):
+            with self.subTest(context=context):
+                found_ids = self.call_jsonrpc(
+                    "/web/dataset/call_kw/link.tracker/search_or_create",
+                    {
+                        "model": "link.tracker",
+                        "method": "search_or_create",
+                        "args": [[{"url": plain.url}]],
+                        "kwargs": {"context": context},
+                    },
+                    cookies={"odoo_utm_source": "Unrelated visitor source"},
+                )
+                self.assertEqual(found_ids, expected.ids)
+        self.assertFalse(
+            self.env["utm.source"].search([("name", "=", "Unrelated visitor source")])
+        )
+
     @mute_logger("odoo.addons.http_routing.models.ir_http", "odoo.http")
     def test_no_preview_tracking(self):
         link_tracker = self.env["link.tracker"].create(

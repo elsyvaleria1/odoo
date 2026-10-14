@@ -1,6 +1,6 @@
 {
     "name": "Tracked Short Links",
-    "version": "19.0.1.3",
+    "version": "19.0.1.4",
     "oldest_upgradable_version": "19.0.1.3",
     "category": "Marketing",
     "summary": "Shorten URLs and use them to track clicks and UTMs",

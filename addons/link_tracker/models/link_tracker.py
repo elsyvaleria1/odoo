@@ -6,6 +6,7 @@ from typing import Self
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from odoo import api, fields, models, tools
+from odoo.api import ValuesType
 from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.http import request
@@ -251,9 +252,21 @@ class LinkTracker(models.Model):
         return url
 
     @api.model
-    def _normalize_vals(self, vals):
+    def _normalize_vals(self, vals: ValuesType) -> ValuesType:
         if "label" in vals and not vals["label"]:
             vals["label"] = False
+        for fname in LINK_TRACKER_UNIQUE_FIELDS:
+            if fname == "url" or fname not in vals:
+                continue
+            field = self._fields[fname]
+            value = field.convert_to_cache(vals[fname], self)
+            if (
+                field.type == "many2one"
+                and value is not None
+                and type(value) is not int
+            ):
+                raise ValueError(f"Wrong value for {field}: {vals[fname]!r}")
+            vals[fname] = value or False
         if "url" in vals:
             url = vals["url"]
             if url.startswith(("?", "#")):
@@ -333,14 +346,35 @@ class LinkTracker(models.Model):
                 )
             )
 
+    @api.model
+    def _prepare_link_values_with_key_defaults(self, vals: ValuesType) -> ValuesType:
+        vals = dict(vals)
+        if "url" not in vals:
+            raise UserError(
+                self.env._("Creating a Link Tracker without URL is not possible")
+            )
+        vals = self.with_context(
+            utm_cookie_defaults=False
+        )._prepare_values_with_defaults(vals, only=LINK_TRACKER_UNIQUE_FIELDS)
+        return self._normalize_vals(vals)
+
+    @api.model
+    def _prepare_create_values(self, vals_list: list[ValuesType]) -> list[ValuesType]:
+        values = super()._prepare_create_values(vals_list)
+        # Codes are issued once after super().create(); keep their inverse inactive.
+        for vals in values:
+            vals.pop("code", None)
+        return values
+
     @api.model_create_multi
     def create(self, vals_list):
-        vals_list = [self._normalize_vals(vals.copy()) for vals in vals_list]
-        for vals in vals_list:
-            if "url" not in vals:
-                raise UserError(
-                    self.env._("Creating a Link Tracker without URL is not possible")
-                )
+        defaults = self.with_context(utm_cookie_defaults=False)
+        vals_list = [
+            defaults._prepare_values_with_defaults(
+                self._prepare_link_values_with_key_defaults(vals), only=("code",)
+            )
+            for vals in vals_list
+        ]
         self._check_url_is_not_a_short_url(vals_list)
 
         requested_codes = [vals.pop("code", False) for vals in vals_list]
@@ -412,12 +446,7 @@ class LinkTracker(models.Model):
             vals_list = [vals_list]
 
         for vals in vals_list:
-            if "url" not in vals:
-                raise UserError(
-                    self.env._("Creating a Link Tracker without URL is not possible")
-                )
-            self._normalize_vals(vals)
-            vals.update(self._prepare_values_with_defaults(vals))
+            vals.update(self._prepare_link_values_with_key_defaults(vals))
             vals.update(
                 {key: False for key in LINK_TRACKER_UNIQUE_FIELDS if not vals.get(key)}
             )

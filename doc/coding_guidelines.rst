@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.102
+:Version: 7.103
 :Date: 2026-10-14
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2869,6 +2869,15 @@ creation, and explicit false values still override defaults. A cache key keeps
 each input role separate: given field names and requested field names are two
 operands, never their union. Preserve request order when hooks can observe it;
 cache field selection, not the default values themselves.
+
+**Default preparation can read request state and create records** ``[review]``.
+Trace ``default_get`` overrides before consuming a previously discarded result.
+Resolve only the fields the operation needs, preserve explicit false values,
+and apply the same defaults and field conversions before lookup, uniqueness
+checks and creation. An inverse-backed value has one creation owner: prevent
+a later defaults phase from reintroducing it and triggering its inverse twice.
+Test context defaults alongside real request cookies and compare keys with the
+representations the fields actually store, including writes.
 
 **A protocol namespace belongs only to names its dispatcher calls**
 ``[review]``. A model's private helper does not wear ``_load_pos_data_*``
@@ -6443,6 +6452,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.103
+     - 2026-10-14
+     - §2.4.21 traces default-hook effects, checks request and context defaults,
+       aligns lookup and write keys with stored representations, and gives
+       inverse-backed creation values one owner.
    * - 7.102
      - 2026-10-14
      - §2.4.21 checks discarded preparation results, uses defaulted values

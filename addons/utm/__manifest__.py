@@ -1,6 +1,6 @@
 {
     "name": "Campaign Attribution",
-    "version": "1.1",
+    "version": "1.2",
     "category": "Marketing",
     "summary": "Track campaign, medium and source on business records",
     "description": "Provide UTM campaign, medium and source records and attribution helpers. Applications use the tracking mixin to capture campaign information.",
