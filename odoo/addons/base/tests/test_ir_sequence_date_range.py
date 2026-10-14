@@ -457,3 +457,46 @@ class TestIrSequenceDateRangeUnlinkDropsPgSequences(TransactionCase):
             set(),
             "unlink must drop the main and every date-range PostgreSQL sequence",
         )
+
+
+class TestIrSequenceDateRangeMovedToAnotherSequence(TransactionCase):
+    def _sequence(self, name, implementation, step=1):
+        return self.env["ir.sequence"].create(
+            {
+                "name": name,
+                "use_date_range": True,
+                "implementation": implementation,
+                "number_increment": step,
+            }
+        )
+
+    def _moved_range(self, source_implementation, target_implementation):
+        year = date.today().year - 1
+        source = self._sequence("moved-from", source_implementation)
+        target = self._sequence("moved-to", target_implementation, step=2)
+        for _ in range(3):
+            source.next_by_id(sequence_date=date(year, 6, 15))
+        moved = source.date_range_ids
+        moved.write({"sequence_id": target.id})
+        return target, moved, date(year, 6, 15)
+
+    def test_a_moved_range_keeps_counting_where_it_stopped(self):
+        for source, target in (
+            ("standard", "standard"),
+            ("standard", "no_gap"),
+            ("no_gap", "standard"),
+            ("no_gap", "no_gap"),
+        ):
+            with self.subTest(source=source, target=target):
+                sequence, moved, day = self._moved_range(source, target)
+                self.assertEqual(sequence.next_by_id(sequence_date=day), "4")
+                self.assertEqual(sequence.next_by_id(sequence_date=day), "6")
+                self.assertEqual(moved.sequence_id, sequence)
+
+    def test_a_moved_range_takes_an_explicit_counter(self):
+        year = date.today().year - 1
+        source = self._sequence("moved-from", "standard")
+        target = self._sequence("moved-to", "standard")
+        source.next_by_id(sequence_date=date(year, 6, 15))
+        source.date_range_ids.write({"sequence_id": target.id, "number_next": 40})
+        self.assertEqual(target.next_by_id(sequence_date=date(year, 6, 15)), "40")

@@ -16,6 +16,7 @@ import odoo
 from odoo import fields
 from odoo.exceptions import AccessError, UserError
 from odoo.modules.registry import Registry
+from odoo.service.model import get_public_method
 from odoo.tests import common
 from odoo.tests.common import BaseCase, Like, RecordCapturer, TransactionCase, tagged
 from odoo.tools import config, mute_logger
@@ -328,6 +329,10 @@ class TestIrCron(TransactionCase, CronMixinCase):
             self.assertTrue(
                 self.cron.toggle("res.partner", [("id", "=", self.partner.id)])
             )
+
+    def test_toggle_is_not_reachable_over_rpc(self):
+        with self.assertRaises(AccessError):
+            get_public_method(self.env["ir.cron"], "toggle")
 
     def test_toggle_noop_on_neutralized_database(self):
         self.env["ir.config_parameter"].sudo().set_param("database.is_neutralized", "1")

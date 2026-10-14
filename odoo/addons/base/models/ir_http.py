@@ -528,6 +528,7 @@ class IrHttp(models.AbstractModel):
     def _generate_routing_rules(self, modules: list[str]) -> Any:
         return http._generate_routing_rules(modules, False)
 
+    @api.private
     @tools.ormcache("key", cache="routing")
     def routing_map(self, key: str | None = None) -> werkzeug.routing.Map:
         _logger.info("Generating routing map for key %s", key)

@@ -8,8 +8,9 @@ from freezegun import freeze_time
 
 import odoo
 from odoo import Command
-from odoo.exceptions import ConcurrencyError, UserError
+from odoo.exceptions import AccessError, ConcurrencyError, UserError
 from odoo.modules.registry import Registry
+from odoo.service.model import get_public_method
 from odoo.tests import Form, common, counting_statements
 from odoo.tests.common import BaseCase
 from odoo.tools.misc import mute_logger
@@ -962,6 +963,36 @@ class TestIrSequenceNextBatch(common.TransactionCase):
                         3,
                         "twenty values should not cost twenty statements",
                     )
+
+
+class TestIrSequenceCopy(common.TransactionCase):
+    def test_a_copy_continues_from_the_source_next_number(self):
+        for implementation in ("standard", "no_gap"):
+            with self.subTest(implementation=implementation):
+                source = self.env["ir.sequence"].create(
+                    {
+                        "name": f"copied {implementation}",
+                        "implementation": implementation,
+                    }
+                )
+                for _ in range(3):
+                    source._next()
+                source.invalidate_recordset()
+                copy = source.copy()
+                self.assertEqual(copy.number_next_actual, source.number_next_actual)
+                self.assertEqual(copy._next(), "4")
+
+    def test_an_explicit_next_number_wins_over_the_source(self):
+        source = self.env["ir.sequence"].create({"name": "copied explicit"})
+        source._next()
+        self.assertEqual(source.copy({"number_next": 50})._next(), "50")
+
+
+class TestIrSequenceRpcSurface(common.TransactionCase):
+    def test_batch_draw_is_not_reachable_over_rpc(self):
+        with self.assertRaises(AccessError):
+            get_public_method(self.env["ir.sequence"], "next_by_code_batch")
+        get_public_method(self.env["ir.sequence"], "next_by_code")
 
 
 class TestIrSequenceTimezone(common.TransactionCase):

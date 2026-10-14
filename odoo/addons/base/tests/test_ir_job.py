@@ -720,6 +720,28 @@ class TestIrJob(TransactionCase):
             j2.action_requeue()
         self.assertEqual(j2.state, "cancelled")
 
+    def test_deleting_an_unrun_prerequisite_cancels_its_dependents(self):
+        j1 = self.partner.delayed()._ir_job_test_append()
+        j2 = self.partner.delayed(after=j1)._ir_job_test_append()
+        j3 = self.partner.delayed(after=j2)._ir_job_test_append()
+        j1.unlink()
+        IrJob._release_ready_dependents(self.env.cr)
+        (j2 | j3).invalidate_recordset()
+        self.assertEqual(j2.state, "cancelled")
+        self.assertEqual(j2.exc_name, "DependencyFailed")
+        self.assertEqual(j3.state, "cancelled")
+
+    def test_deleting_a_done_prerequisite_keeps_its_dependents_waiting(self):
+        done = self.partner.delayed()._ir_job_test_append()
+        blocker = self.partner.delayed()._ir_job_test_append()
+        waiting = self.partner.delayed(after=done | blocker)._ir_job_test_append()
+        done.sudo().write({"state": "done"})
+        done.unlink()
+        IrJob._release_ready_dependents(self.env.cr)
+        waiting.invalidate_recordset()
+        self.assertEqual(waiting.state, "wait_deps")
+        self.assertEqual(waiting.depends_on_ids, blocker)
+
     def test_repair_sweep_resolves_stuck_jobs(self):
         j1 = self.partner.delayed()._ir_job_test_append()
         j2 = self.partner.delayed(after=j1)._ir_job_test_append()

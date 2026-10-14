@@ -1953,6 +1953,21 @@ class IrJob(models.Model):
         )
         return len(records), len(records) == GC_UNLINK_LIMIT
 
+    def unlink(self) -> bool:
+        if unfinished := self.filtered(lambda job: job.state != JobState.DONE):
+            self.env.flush_all()
+            cancelled = type(self)._cancel_dependents(self.env.cr, unfinished.ids)
+            if cancelled:
+                self.invalidate_model(
+                    ["state", "done_at", "exc_name", "exc_message", "write_date"]
+                )
+            _debug.lifecycle(
+                "unlink.dependents_cancelled",
+                unfinished=len(unfinished),
+                cancelled=cancelled,
+            )
+        return super().unlink()
+
     def write(self, vals: dict[str, Any]) -> bool:
         _debug.lifecycle("write", count=len(self), fields=list(vals))
         result = super().write(vals)

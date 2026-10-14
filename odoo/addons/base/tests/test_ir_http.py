@@ -5,9 +5,10 @@ from unittest.mock import patch
 
 from odoo import http
 from odoo.db.errors import PG_RETRY_EXCEPTIONS
-from odoo.exceptions import AccessDenied, ConcurrencyError
+from odoo.exceptions import AccessDenied, AccessError, ConcurrencyError
 from odoo.http import SessionExpiredException
 from odoo.http.core import _request_stack
+from odoo.service.model import get_public_method
 from odoo.tests.common import TransactionCase
 
 from odoo.addons.base.models.ir_http import IrHttp as BaseIrHttp
@@ -174,3 +175,9 @@ class TestSlugifyPath(TransactionCase):
             self.env["ir.http"]._slugify("My Dir/Main Style.css", path=True),
             "my-dir/main-style.css",
         )
+
+
+class TestIrHttpRpcSurface(TransactionCase):
+    def test_the_routing_map_is_not_reachable_over_rpc(self):
+        with self.assertRaises(AccessError):
+            get_public_method(self.env["ir.http"], "routing_map")

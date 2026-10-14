@@ -1195,7 +1195,7 @@ class IrCron(models.Model):
         (actions - shared).exists().unlink()
         return True
 
-    @api.model
+    @api.private
     def toggle(self, model: str, domain: list[Any]) -> bool:
         if self.env.registry.settings.get(self.env, "database.is_neutralized", False):
             _debug.logic("toggle_skipped", reason="neutralized")

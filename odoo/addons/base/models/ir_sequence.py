@@ -298,6 +298,16 @@ class IrSequence(models.Model):
                 )
         return seqs
 
+    def copy_data(self, default: ValuesType | None = None) -> list[ValuesType]:
+        default = dict(default or {})
+        vals_list = super().copy_data(default=default)
+        if "number_next" in default or "number_next_actual" in default:
+            return vals_list
+        for seq, vals in zip(self, vals_list, strict=True):
+            vals.pop("number_next_actual", None)
+            vals["number_next"] = seq.number_next_actual
+        return vals_list
+
     def unlink(self) -> bool:
         _debug.lifecycle(
             "unlink", count=len(self), date_ranges=len(self.date_range_ids)
@@ -698,6 +708,7 @@ class IrSequence(models.Model):
             return False
         return sequence._next(sequence_date=sequence_date)
 
+    @api.private
     @api.model
     def next_by_code_batch(
         self, sequence_code: str, count: int, sequence_date: Any = None
@@ -862,8 +873,9 @@ class IrSequenceDate_Range(models.Model):
 
     def write(self, vals: dict[str, Any]) -> bool:
         _debug.lifecycle("range_write", ranges=self.ids, fields=list(vals))
+        moved = self._detach_moved_counters(vals)
         if "number_next" in vals:
-            seq_to_alter = self.filtered(
+            seq_to_alter = (self - moved).filtered(
                 lambda seq: seq.sequence_id.implementation == "standard"
             )
             _debug.logic(
@@ -874,4 +886,31 @@ class IrSequenceDate_Range(models.Model):
             seq_to_alter._alter_sequence(number_next=vals["number_next"])
         res = super().write(vals)
         self.flush_model(vals.keys())
+        for rng in moved.filtered(
+            lambda rng: rng.sequence_id.implementation == "standard"
+        ):
+            _create_sequence(
+                self.env,
+                rng._get_pg_sequence_name(),
+                rng.sequence_id.number_increment or 1,
+                rng.number_next,
+            )
         return res
+
+    def _detach_moved_counters(self, vals: dict[str, Any]) -> Self:
+        if "sequence_id" not in vals:
+            return self.browse()
+        moved = self.filtered(lambda rng: rng.sequence_id.id != vals["sequence_id"])
+        standard = moved.filtered(
+            lambda rng: rng.sequence_id.implementation == "standard"
+        )
+        _debug.lifecycle(
+            "ranges_moved",
+            ranges=moved.ids,
+            standard=len(standard),
+            to=vals["sequence_id"],
+        )
+        if "number_next" not in vals and "number_next_actual" not in vals:
+            _carry_over_pg_counters(standard)
+        _drop_sequences(self.env, [rng._get_pg_sequence_name() for rng in standard])
+        return moved
