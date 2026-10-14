@@ -8,69 +8,48 @@ from odoo.addons.stock.tests.common import TestStockCommon
 
 class TestStockReplenish(TestStockCommon):
     def test_base_delay(self):
-        push_location = self.env["stock.location"].create(
-            {
-                "location_id": self.stock_location.location_id.id,
-                "name": "push location",
-            }
+        far_warehouse = self.env["stock.warehouse"].create(
+            {"name": "Far away", "code": "FAR"}
         )
 
-        route_no_delay = self.env["stock.route"].create(
-            {
-                "name": "new route",
-                "rule_ids": [
-                    Command.create(
-                        {
-                            "name": "create a move to push location",
-                            "location_src_id": self.stock_location.id,
-                            "location_dest_id": push_location.id,
-                            "company_id": self.env.company.id,
-                            "action": "push",
-                            "auto": "manual",
-                            "picking_type_id": self.picking_type_in.id,
-                            "delay": 0,
-                        }
-                    )
-                ],
-            }
-        )
+        def pull(warehouse, delay):
+            return Command.create(
+                {
+                    "name": f"buy into {warehouse.code}",
+                    "location_src_id": self.supplier_location.id,
+                    "location_dest_id": warehouse.lot_stock_id.id,
+                    "warehouse_id": warehouse.id,
+                    "company_id": self.env.company.id,
+                    "action": "pull",
+                    "procure_method": "make_to_stock",
+                    "picking_type_id": warehouse.in_type_id.id,
+                    "delay": delay,
+                }
+            )
 
-        route_delay = self.env["stock.route"].create(
-            {
-                "name": "new route",
-                "rule_ids": [
-                    Command.create(
-                        {
-                            "name": "create a move to push location",
-                            "location_src_id": self.stock_location.id,
-                            "location_dest_id": push_location.id,
-                            "company_id": self.env.company.id,
-                            "action": "push",
-                            "auto": "manual",
-                            "picking_type_id": self.picking_type_in.id,
-                            "delay": 2,
-                        }
-                    ),
-                    (
-                        0,
-                        False,
-                        {
-                            "name": "create a move to push location",
-                            "location_src_id": push_location.id,
-                            "location_dest_id": self.stock_location.id,
-                            "company_id": self.env.company.id,
-                            "action": "push",
-                            "auto": "manual",
-                            "picking_type_id": self.picking_type_in.id,
-                            "delay": 4,
-                        },
-                    ),
-                ],
-            }
+        route_no_delay, route_delay = self.env["stock.route"].create(
+            [
+                {
+                    "name": "no delay",
+                    "product_selectable": True,
+                    "rule_ids": [pull(self.warehouse_1, 0)],
+                },
+                {
+                    "name": "delay",
+                    "product_selectable": True,
+                    "rule_ids": [pull(self.warehouse_1, 2), pull(far_warehouse, 30)],
+                },
+            ]
         )
 
         with freeze_time("2023-01-01"):
-            wizard = Form(self.env["wizard.product.product.replenish"])
+            wizard = Form(
+                self.env["wizard.product.product.replenish"].with_context(
+                    default_product_id=self.productA.id,
+                    default_product_tmpl_id=self.productA.product_tmpl_id.id,
+                )
+            )
+            wizard.warehouse_id = self.warehouse_1
             wizard.route_id = route_no_delay
             self.assertEqual(
                 fields.Datetime.from_string("2023-01-01 00:00:00"),
@@ -78,8 +57,9 @@ class TestStockReplenish(TestStockCommon):
             )
             wizard.route_id = route_delay
             self.assertEqual(
-                fields.Datetime.from_string("2023-01-07 00:00:00"),
+                fields.Datetime.from_string("2023-01-03 00:00:00"),
                 wizard._values["date_planned"],
+                "only the chain into the chosen warehouse delays the replenishment",
             )
 
     def test_replenish_no_routes(self):

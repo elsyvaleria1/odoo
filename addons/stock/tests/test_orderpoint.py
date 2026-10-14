@@ -4,7 +4,7 @@ from datetime import timedelta
 from unittest.mock import patch
 
 from odoo import SUPERUSER_ID, fields
-from odoo.fields import Command
+from odoo.fields import Command, Domain
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.stock.models.stock_orderpoint_replenish import (
@@ -169,6 +169,25 @@ class TestOrderpointReplenishment(TransactionCase):
             orderpoint.qty_to_order_computed,
             "Nothing suppressed the suggestion, so the scheduler will see it.",
         )
+
+    def test_the_scheduler_orders_a_manual_quantity_once(self):
+        product = self._product("Ordered Once")
+        orderpoint = self._orderpoint(product, product_min_qty=0, product_max_qty=0)
+        orderpoint.qty_to_order = 50
+        orderpoint.trigger = "auto"
+        incoming = Domain("product_id", "=", product.id) & Domain(
+            "location_dest_id", "=", self.stock_location.id
+        )
+
+        for _run in range(2):
+            self.env["stock.scheduler"]._replenish()
+
+        self.assertEqual(
+            sum(self.env["stock.move"].search(incoming).mapped("product_uom_qty")),
+            50,
+            "the manual quantity is a one-off order, not a standing one",
+        )
+        self.assertFalse(orderpoint.qty_to_order_manual_set)
 
     def test_an_explicit_zero_keeps_its_undo(self):
         product = self._product("Audit Undo", suppliable=False)

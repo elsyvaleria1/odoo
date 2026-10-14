@@ -47,8 +47,13 @@ class StockScheduler(models.AbstractModel):
                     use_new_cursor=use_new_cursor,
                     company_id=company_id,
                 )
-            if use_new_cursor:
-                Cron._commit_progress(1)
+            if use_new_cursor and not Cron._commit_progress(1):
+                _logger.info(
+                    "Stock scheduler ran out of time after %s; the cron reruns the"
+                    " remaining tasks.",
+                    task,
+                )
+                break
 
     @api.model
     def _update_orderpoint_values(self, use_new_cursor=False, company_id=False) -> None:
@@ -65,15 +70,20 @@ class StockScheduler(models.AbstractModel):
 
     @api.model
     def _replenish(self, use_new_cursor=False, company_id=False) -> None:
-        orderpoints = self.env["stock.warehouse.orderpoint"].search(
-            self._get_domain_orderpoint(company_id=company_id),
+        orderpoints = (
+            self.env["stock.warehouse.orderpoint"]
+            .search(self._get_domain_orderpoint(company_id=company_id))
+            .sudo()
         )
         _debug.pipeline("scheduler_replenish", orderpoints=orderpoints)
-        orderpoints.sudo()._procure_orderpoint_confirm(
+        orderpoints._procure_orderpoint_confirm(
             use_new_cursor=use_new_cursor,
             company_id=company_id,
             raise_user_error=False,
         )
+        ordered_once = orderpoints.exists().filtered("qty_to_order_manual_set")
+        _debug.logic("scheduler_manual_quantities_consumed", orderpoints=ordered_once)
+        ordered_once.action_remove_manual_qty_to_order()
         self._reserve_due_moves(use_new_cursor=use_new_cursor, company_id=company_id)
 
     @api.model
@@ -94,8 +104,7 @@ class StockScheduler(models.AbstractModel):
             )
             if not remaining_time:
                 _logger.info(
-                    "Stock scheduler ran out of time with moves left to assign;"
-                    " the next run resumes from them.",
+                    "Stock scheduler ran out of time with moves left to assign.",
                 )
                 break
 

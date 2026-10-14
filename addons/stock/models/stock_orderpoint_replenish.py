@@ -13,7 +13,7 @@ from odoo.fields import Domain
 from odoo.libs.datetime import timezone
 from odoo.libs.debug_log import DebugLog
 from odoo.modules.registry import Registry
-from odoo.tools import format_date
+from odoo.tools import format_date, html2plaintext, plaintext2html
 
 from odoo.addons.stock.models.stock_procurement import ProcurementException
 
@@ -87,48 +87,26 @@ class StockWarehouseOrderpointReplenish(models.Model):
                 orderpoint.name,
                 orderpoint.name,
                 orderpoint.company_id,
-                {
-                    "route_ids": orderpoint.route_id,
-                    "warehouse_id": orderpoint.warehouse_id,
-                },
+                {"warehouse_id": orderpoint.warehouse_id},
             )
             for orderpoint in self
         ]
         return dict(zip(self, Rule._get_rules_batch(procurements), strict=True))
 
     def _get_default_route_map(self):
-        to_compute = self.filtered("location_id")
         empty_route = self.env["stock.route"]
         result = {orderpoint.id: empty_route for orderpoint in self}
-        if not to_compute:
-            return result
-        rules_groups = self.env["stock.rule"]._read_group(
-            [
-                "|",
-                ("route_id.product_selectable", "!=", False),
-                ("route_id.product_categ_selectable", "!=", False),
-                ("location_dest_id", "in", to_compute.location_id.ids),
-                ("action", "in", ["pull_push", "pull"]),
-                ("route_id.active", "!=", False),
-            ],
-            ["location_dest_id", "route_id"],
+        to_compute = self.filtered(
+            lambda orderpoint: orderpoint.product_id and orderpoint.location_id
         )
-        routes_by_location = defaultdict(list)
-        for location_dest, route in rules_groups:
-            routes_by_location[location_dest.id].append(route)
-        for orderpoint in to_compute:
-            product_routes = (
-                orderpoint.product_id.route_ids
-                | orderpoint.product_id.categ_id.total_route_ids
-            )
-            result[orderpoint.id] = next(
-                (
-                    route
-                    for route in routes_by_location.get(orderpoint.location_id.id, ())
-                    if route in product_routes
-                ),
-                empty_route,
-            )
+        for orderpoint, rule in to_compute._get_default_rule_map().items():
+            route = rule.route_id
+            product = orderpoint.product_id
+            if route and route in (
+                product.route_ids | product.categ_id.total_route_ids
+            ):
+                result[orderpoint.id] = route
+        _debug.logic("default_routes", orderpoints=to_compute, routes=result)
         return result
 
     def _get_replenishment_multiple_alternative_map(self, qty_by_orderpoint):
@@ -541,18 +519,22 @@ class StockWarehouseOrderpointReplenish(models.Model):
                 ("res_model_id", "=", model_product_template_id),
             ]
         ):
-            notes_per_template[activity.res_id].append(activity.note or "")
+            notes_per_template[activity.res_id].append(
+                html2plaintext(activity.note or "")
+            )
 
         for orderpoint, error_msg in reported:
             template = orderpoint.product_id.product_tmpl_id
-            if any(error_msg in note for note in notes_per_template[template.id]):
+            note = plaintext2html(error_msg)
+            known = html2plaintext(note)
+            if any(known in text for text in notes_per_template[template.id]):
                 continue
             template.with_user(SUPERUSER_ID).activity_schedule(
                 "mail.mail_activity_data_warning",
-                note=error_msg,
+                note=note,
                 user_id=orderpoint.product_id.responsible_id.id or SUPERUSER_ID,
             )
-            notes_per_template[template.id].append(error_msg)
+            notes_per_template[template.id].append(known)
 
     @_debug.perf.timed
     def _procure_orderpoint_confirm(

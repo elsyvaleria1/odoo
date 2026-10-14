@@ -39,7 +39,7 @@ class StockReplenishmentReport(models.AbstractModel):
         Move = self.env["stock.move"].with_context(active_test=False)
         Quant = self.env["stock.quant"].with_context(active_test=False)
         Location = self.env["stock.location"]
-        domain_quant, _dummy, domain_move_out_loc = Location._get_domains_quantity(
+        domain_quant, _dummy, _dummy = Location._get_domains_quantity(
             locations.ids,
         )
         domain_state = Domain(
@@ -49,9 +49,7 @@ class StockReplenishmentReport(models.AbstractModel):
         )
         domain_product = Domain("product_id", "in", products.ids)
         domain_quant = Domain.AND((domain_product, domain_quant))
-        domain_move_out = Domain.AND(
-            (domain_product, domain_state, domain_move_out_loc),
-        )
+        domain_move_out = Domain.AND((domain_product, domain_state, domain_quant))
 
         replenish_ids = set(locations.ids)
         ancestors_by_location = {}
@@ -73,13 +71,15 @@ class StockReplenishmentReport(models.AbstractModel):
             return ancestors
 
         net_qty = defaultdict(float)
-        for product, location, qty in Move._read_group(
+        for product, location, destination, final, qty in Move._read_group(
             domain_move_out,
-            ["product_id", "location_id"],
+            ["product_id", "location_id", "location_dest_id", "location_final_id"],
             ["product_qty:sum"],
         ):
+            arrival = set(get_replenish_ancestor_ids(final or destination))
             for replenish_id in get_replenish_ancestor_ids(location):
-                net_qty[product, replenish_id] -= qty
+                if replenish_id not in arrival:
+                    net_qty[product, replenish_id] -= qty
         for product, location, qty in Quant._read_group(
             domain_quant,
             ["product_id", "location_id"],

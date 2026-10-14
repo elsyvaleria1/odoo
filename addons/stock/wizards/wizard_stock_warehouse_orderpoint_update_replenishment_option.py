@@ -24,6 +24,9 @@ class WizardStockWarehouseOrderpointUpdateReplenishmentOption(models.TransientMo
     uom = fields.Char(related="product_id.uom_name")
     qty_to_order = fields.Float(related="replenishment_info_id.qty_to_order")
     qty_free = fields.Float(compute="_compute_qty_free")
+    trigger = fields.Selection(
+        related="replenishment_info_id.orderpoint_id.trigger",
+    )
     lead_time = fields.Char(compute="_compute_lead_time")
     warning_message = fields.Char(compute="_compute_warning_message")
 
@@ -34,19 +37,19 @@ class WizardStockWarehouseOrderpointUpdateReplenishmentOption(models.TransientMo
                 location=record.location_id.id
             ).qty_free
 
-    @api.depends("replenishment_info_id")
+    @api.depends("replenishment_info_id.orderpoint_id.location_id", "route_id")
     def _compute_lead_time(self):
         for record in self:
-            rule = self.env["stock.rule"]._get_rule(
-                record.product_id,
-                record.location_id,
-                {
-                    "route_ids": record.route_id,
-                    "warehouse_id": record.warehouse_id,
-                },
+            rules = record.product_id._get_rules_from_location(
+                record.replenishment_info_id.orderpoint_id.location_id,
+                route_ids=record.route_id,
             )
             delay = (
-                rule._get_lead_days(record.product_id)[0]["total_delay"] if rule else 0
+                rules.with_context(bypass_delay_description=True)._get_lead_days(
+                    record.product_id
+                )[0]["total_delay"]
+                if rules
+                else 0
             )
             record.lead_time = self.env._("%s days", delay)
 

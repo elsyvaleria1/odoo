@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import api, models
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
@@ -13,10 +13,6 @@ class WizardProductProductReplenish(models.TransientModel):
         super()._compute_allowed_uom_ids()
         for rec in self:
             rec.allowed_uom_ids |= rec.product_id.bom_ids.product_uom_id
-
-    @api.depends("route_id", "product_id", "warehouse_id")
-    def _compute_date_planned(self) -> None:
-        super()._compute_date_planned()
 
     def _get_record_to_notify(self, date):
         order_line = self.env["mrp.production"].search(
@@ -35,32 +31,6 @@ class WizardProductProductReplenish(models.TransientModel):
                 }
             ]
         return super()._get_replenishment_order_notification_link(production)
-
-    def _get_date_planned(self, route, **kwargs):
-        date = super()._get_date_planned(route, **kwargs)
-        if "manufacture" not in route.rule_ids.mapped("action"):
-            return date
-        product = self.product_id.with_company(self.warehouse_id.company_id)
-        rules = product._get_rules_from_location(
-            self.warehouse_id.lot_stock_id, route_ids=route
-        )
-        manufacture_rule = rules.filtered(lambda rule: rule.action == "manufacture")
-        if not manufacture_rule:
-            return date
-        bom = manufacture_rule._get_matching_bom(
-            product, self.warehouse_id.company_id, {}
-        )
-        delays, _description = rules.with_context(
-            bypass_delay_description=True
-        )._get_lead_days(product, bom_id=bom)
-        _debug.logic(
-            "replenish_date_planned",
-            product=product.id,
-            route=route.id,
-            rules=rules,
-            lead_days=delays["total_delay"],
-        )
-        return fields.Datetime.add(fields.Datetime.now(), days=delays["total_delay"])
 
     def _get_domain_route(self, product_tmpl_id):
         domain = super()._get_domain_route(product_tmpl_id)

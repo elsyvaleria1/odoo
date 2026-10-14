@@ -6,9 +6,14 @@ from odoo import api, models
 from odoo.exceptions import UserError
 from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
-from odoo.tools import OrderedSet
+from odoo.tools import OrderedSet, TransactionMemo
 
 from .stock_orderpoint import ORDERPOINTS_BY_SCOPE
+
+PUSH_RULES = TransactionMemo(
+    "stock.move.push_rule",
+    invalidated_by=("stock.rule", "stock.route", "stock.location", "stock.warehouse"),
+)
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -266,17 +271,19 @@ class StockMoveProcurement(models.Model):
 
     def _get_push_rule_cached(self, StockRule, values):
         self.check_singleton()
-        cache = self.env.context.get("_push_rule_cache")
-        if cache is None:
-            return StockRule._get_push_rule(
-                self.product_id, self.location_dest_id, values
-            )
+        cache = PUSH_RULES(self.env)
         routes = values.get("route_ids")
         warehouse = values.get("warehouse_id")
         packaging_uom = values.get("packaging_uom_id")
         key = (
+            StockRule.env.su,
+            StockRule.env.uid,
+            tuple(StockRule.env.companies.ids),
+            StockRule.env.context.get("active_test", True),
             self.location_dest_id.id,
             self.product_id.id,
+            frozenset(self.product_id.route_ids.ids),
+            frozenset(self.product_id.categ_id.total_route_ids.ids),
             tuple(sorted(routes.ids)) if routes else (),
             packaging_uom.id if packaging_uom else False,
             warehouse.id if warehouse else False,
@@ -286,8 +293,8 @@ class StockMoveProcurement(models.Model):
         if key not in cache:
             cache[key] = StockRule._get_push_rule(
                 self.product_id, self.location_dest_id, values
-            )
-        return cache[key]
+            ).ids
+        return StockRule.browse(cache[key])
 
     @_debug.perf.timed
     def _push_apply(self):
@@ -301,7 +308,6 @@ class StockMoveProcurement(models.Model):
             )
         moves = self.with_context(
             _push_apply_depth=depth,
-            _push_rule_cache=self.env.context.get("_push_rule_cache", {}),
         )
         plan = [move._plan_push() for move in moves]
         moves_by_rule = defaultdict(list)

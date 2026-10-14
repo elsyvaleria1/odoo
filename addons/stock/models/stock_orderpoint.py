@@ -710,20 +710,13 @@ class StockWarehouseOrderpoint(models.Model):
         predicate = DOMAIN_PREDICATES.get(operator)
         if predicate is None:
             return NotImplemented
-        stored = Domain(
-            [
-                "|",
-                "&",
-                ("qty_to_order_manual_set", "=", True),
-                ("qty_to_order_manual", operator, value),
-                "&",
-                ("qty_to_order_manual_set", "=", False),
-                ("qty_to_order_computed", operator, value),
-            ],
+        overridden = Domain("qty_to_order_manual_set", "=", True)
+        stored = (overridden & Domain("qty_to_order_manual", operator, value)) | (
+            ~overridden & Domain("qty_to_order_computed", operator, value)
         )
         if self.env.context.get("global_horizon_days") is None:
             return stored
-        candidates = self.search(Domain("qty_to_order_manual_set", "=", False))
+        candidates = self.search(~overridden)
         what_if = candidates._get_horizon_suggestion_map()
         if not what_if:
             return stored

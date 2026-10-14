@@ -1,4 +1,4 @@
-from odoo import api, fields, models
+from odoo import api, models
 from odoo.fields import Domain
 
 
@@ -42,14 +42,9 @@ class WizardProductProductReplenish(models.TransientModel):
                 res["supplier_id"] = orderpoint.supplier_id.id
         return res
 
-    @api.depends("route_id", "supplier_id")
+    @api.depends("supplier_id", "show_vendor")
     def _compute_date_planned(self) -> None:
         super()._compute_date_planned()
-        for rec in self:
-            if rec.route_id._has_buy_rule():
-                rec.date_planned = rec._get_date_planned(
-                    rec.route_id, supplier=rec.supplier_id, show_vendor=rec.show_vendor
-                )
 
     @api.onchange("route_id")
     def _onchange_supplier_id(self) -> None:
@@ -104,19 +99,11 @@ class WizardProductProductReplenish(models.TransientModel):
             ]
         return super()._get_replenishment_order_notification_link(order_line)
 
-    def _get_date_planned(self, route, **kwargs):
-        date = super()._get_date_planned(route, **kwargs)
-        if not route._has_buy_rule():
-            return date
-
-        supplier = kwargs.get("supplier")
-        show_vendor = kwargs.get("show_vendor")
-        if not show_vendor or not supplier:
-            return date
-
-        delay = supplier.delay + self.env.company.purchase_config_id.days_to_purchase
-
-        return fields.Datetime.add(date, days=delay)
+    def _get_lead_days_values(self) -> dict:
+        values = super()._get_lead_days_values()
+        if self.show_vendor and self.supplier_id:
+            values["supplierinfo"] = self.supplier_id
+        return values
 
     def _get_domain_route(self, product_tmpl_id):
         domain = super()._get_domain_route(product_tmpl_id)

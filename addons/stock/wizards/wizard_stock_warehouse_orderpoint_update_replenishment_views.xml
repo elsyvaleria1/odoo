@@ -121,7 +121,7 @@
                     <field name="warning_message" />
                 </div>
                 <footer>
-                    <button name="action_order_available_quantity" type="object" invisible="qty_free &lt;= 0.0" class="btn-primary"> Order <field name="qty_free" />
+                    <button name="action_order_available_quantity" type="object" invisible="qty_free &lt;= 0.0 or trigger == 'auto'" class="btn-primary"> Order <field name="qty_free" />
                     </button>
                     <button name="action_order_full_quantity" type="object"> Order <field name="qty_to_order" />
                     </button>

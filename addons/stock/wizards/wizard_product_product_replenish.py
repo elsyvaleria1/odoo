@@ -78,10 +78,10 @@ class WizardProductProductReplenish(models.TransientModel):
                 warehouse_id=rec.warehouse_id.id
             ).qty_available_virtual
 
-    @api.depends("route_id")
+    @api.depends("route_id", "product_id", "warehouse_id")
     def _compute_date_planned(self) -> None:
         for rec in self:
-            rec.date_planned = rec._get_date_planned(rec.route_id)
+            rec.date_planned = rec._get_date_planned()
 
     @api.model
     def default_get(self, fields):
@@ -116,10 +116,29 @@ class WizardProductProductReplenish(models.TransientModel):
             )
         return res
 
-    def _get_date_planned(self, route, **kwargs):
+    def _get_date_planned(self):
+        self.check_singleton()
         now = fields.Datetime.now()
-        delay = sum(route.rule_ids.mapped("delay"))
-        return fields.Datetime.add(now, days=delay)
+        if not (self.route_id and self.product_id and self.warehouse_id):
+            return now
+        product = self.product_id.with_company(self.warehouse_id.company_id)
+        rules = product._get_rules_from_location(
+            self.warehouse_id.lot_stock_id, route_ids=self.route_id
+        )
+        delays, _description = rules.with_context(
+            bypass_delay_description=True
+        )._get_lead_days(product, **self._get_lead_days_values())
+        _debug.logic(
+            "replenish_date_planned",
+            product=product.id,
+            route=self.route_id.id,
+            rules=rules,
+            lead_days=delays["total_delay"],
+        )
+        return fields.Datetime.add(now, days=delays["total_delay"])
+
+    def _get_lead_days_values(self) -> dict:
+        return {}
 
     @_debug.perf.timed
     def action_replenish(self):
