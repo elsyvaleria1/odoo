@@ -88,6 +88,54 @@ class TestCompanyDependentInsertFallback(TransactionCase):
         self.assertEqual(record.foo, "GLOBAL")
 
 
+class TestDefaultFieldCache(TransactionCase):
+    def test_cached_defaults_keep_given_and_requested_fields_separate(self):
+        partner = self.env["res.partner"].with_context(
+            default_city="Default city", default_street="Default street"
+        )
+        cache = {}
+        first = partner._prepare_values_with_defaults(
+            {"city": "Given city"},
+            _missing_defaults_cache=cache,
+            only=["city", "street"],
+        )
+        second = partner._prepare_values_with_defaults(
+            {"street": "Given street"},
+            _missing_defaults_cache=cache,
+            only=["city", "street"],
+        )
+        self.assertEqual(first, {"city": "Given city", "street": "Default street"})
+        self.assertEqual(second, {"city": "Default city", "street": "Given street"})
+
+    def test_cached_defaults_preserve_requested_field_order(self):
+        partner = self.env["res.partner"]
+        requested = []
+
+        def default_get(records, fields):
+            requested.append(list(fields))
+            return {}
+
+        self.patch(type(partner), "default_get", default_get)
+        cache = {}
+        for names in (["city", "street"], ["street", "city"]):
+            partner._prepare_values_with_defaults(
+                {}, _missing_defaults_cache=cache, only=names
+            )
+        self.assertEqual(requested, [["city", "street"], ["street", "city"]])
+
+    def test_cached_field_selection_reads_default_values_from_each_environment(self):
+        cache = {}
+        for city in ("First city", "Second city"):
+            partner = self.env["res.partner"].with_context(default_city=city)
+            values = {"street": False}
+            prepared = partner._prepare_values_with_defaults(
+                values, _missing_defaults_cache=cache, only=["city", "street"]
+            )
+            self.assertEqual(prepared, {"city": city, "street": False})
+            self.assertEqual(values, {"street": False})
+            self.assertIsNot(prepared, values)
+
+
 class TestDatetimeEqualsDate(TransactionCase):
     def test_equals_date_matches_whole_day(self):
         record = self.env["test_orm.mixed"].create({})

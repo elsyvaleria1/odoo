@@ -55,6 +55,33 @@ class TestLinkTracker(common.TransactionCase, MockLinkTracker):
 
         self.assertEqual(len(set(link_trackers.mapped("code"))), 3)
 
+    def test_search_or_create_matches_the_source_from_context_defaults(self):
+        source = self.env["utm.source"].create({"name": "Context source"})
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://odoo.com", "title": "Odoo", "source_id": source.id}
+        )
+        found = (
+            self.env["link.tracker"]
+            .with_context(default_source_id=source.id)
+            .search_or_create([{"url": tracker.url, "title": "Odoo"}])
+        )
+        self.assertEqual(found, tracker)
+
+    def test_search_or_create_keeps_an_explicit_false_over_the_context_default(self):
+        source = self.env["utm.source"].create({"name": "Context source"})
+        tracker = self.env["link.tracker"].create(
+            {"url": "https://odoo.com", "title": "Odoo", "source_id": False}
+        )
+        found = (
+            self.env["link.tracker"]
+            .with_context(default_source_id=source.id)
+            .search_or_create(
+                [{"url": tracker.url, "title": "Odoo", "source_id": False}]
+            )
+        )
+        self.assertEqual(found, tracker)
+        self.assertFalse(found.source_id)
+
     def test_search_or_create(self):
         values_1, values_2, values_3 = [
             {"url": "https://odoo.com", "title": "Odoo"},

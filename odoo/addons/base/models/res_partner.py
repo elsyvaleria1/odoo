@@ -2047,11 +2047,13 @@ class ResPartner(models.Model):
 
     def _sync_new_partners(self, vals_list: list[ValuesType]) -> None:
         synced = self._synced_field_names()
-        missing_defaults_cache: dict[frozenset[str], list[str]] = {}
+        missing_defaults_cache: dict[
+            tuple[frozenset[str], tuple[str, ...] | None], list[str]
+        ] = {}
         with_children = self.filtered("child_ids")
         batches: dict[Hashable, tuple[dict[str, Any], list[int]]] = {}
         for partner, vals in zip(self, vals_list, strict=True):
-            vals = self.env["res.partner"]._add_missing_default_values(
+            vals = self.env["res.partner"]._prepare_values_with_defaults(
                 vals, _missing_defaults_cache=missing_defaults_cache, only=synced
             )
             synced_vals = {fname: vals[fname] for fname in synced if fname in vals}

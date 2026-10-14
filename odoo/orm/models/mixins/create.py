@@ -31,11 +31,37 @@ from ._crud_common import (
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
-    from ..._typing import BaseModel, IdType
+    from ..._typing import BaseModel, IdType, ModelLike
 else:
     BaseModel = typing.Any
+    ModelLike = typing.Any
 
 _debug = DebugLog(__name__)
+
+type DefaultFieldsCache = dict[tuple[frozenset[str], tuple[str, ...] | None], list[str]]
+
+
+def get_supplied_parent_model_names(model: ModelLike, values: ValuesType) -> set[str]:
+    names = set()
+    for parent_model_name, parent_field_name in model._inherits.items():
+        if parent_field_name in values:
+            names.add(parent_model_name)
+        else:
+            names.update(
+                get_supplied_parent_model_names(model.env[parent_model_name], values)
+            )
+    return names
+
+
+def is_field_inherited_from_models(
+    field: Field[typing.Any], model_names: Collection[str]
+) -> bool:
+    if model_names:
+        while field.inherited:
+            field = field.related_field
+            if field.model_name in model_names:
+                return True
+    return False
 
 
 class _CreatePlan(typing.NamedTuple):
@@ -46,6 +72,11 @@ class _CreatePlan(typing.NamedTuple):
 class _CreateCacheResult[Records](typing.NamedTuple):
     records: Records
     inverses_update: dict[Field[typing.Any], defaultdict[typing.Any, list[int]]]
+
+
+class _PrecomputePlan(typing.NamedTuple):
+    values_to_precompute: list[ValuesType]
+    recompute_fields_by_values_id: dict[int, set[Field[typing.Any]]]
 
 
 class CreateMixin(_ModelStubs):
@@ -113,60 +144,49 @@ class CreateMixin(_ModelStubs):
             )
         return defaults
 
-    @api.model
-    def _add_missing_default_values(
+    def _get_missing_default_field_names(
         self,
         values: ValuesType,
-        _missing_defaults_cache: dict[frozenset[str], list[str]] | None = None,
+        only: Collection[str] | None,
+        supplied_parents: Collection[str],
+    ) -> list[str]:
+        candidates = (
+            self._fields.items()
+            if only is None
+            else [
+                (name, field)
+                for name in only
+                if (field := self._fields.get(name)) is not None
+            ]
+        )
+        return [
+            name
+            for name, field in candidates
+            if name not in values
+            if not is_field_inherited_from_models(field, supplied_parents)
+        ]
+
+    @api.model
+    def _prepare_values_with_defaults(
+        self,
+        values: ValuesType,
+        _missing_defaults_cache: DefaultFieldsCache | None = None,
         only: Collection[str] | None = None,
     ) -> ValuesType:
-        vals_keys = frozenset(values)
-        cache_key = (
-            vals_keys if only is None else vals_keys | {"\0only"} | frozenset(only)
-        )
+        cache_key = (frozenset(values), tuple(only) if only is not None else None)
         if _missing_defaults_cache is not None and cache_key in _missing_defaults_cache:
             missing_defaults = _missing_defaults_cache[cache_key]
         else:
-            avoid_models = set()
-
-            def collect_models_to_avoid(model: typing.Any) -> None:
-                for parent_mname, parent_fname in model._inherits.items():
-                    if parent_fname in values:
-                        avoid_models.add(parent_mname)
-                    else:
-                        collect_models_to_avoid(self.env[parent_mname])
-
-            collect_models_to_avoid(self)
-
-            def avoid(field: Field[typing.Any]) -> bool:
-                if avoid_models:
-                    while field.inherited:
-                        field = field.related_field
-                        if field.model_name in avoid_models:
-                            return True
-                return False
-
-            candidates = (
-                self._fields.items()
-                if only is None
-                else [
-                    (name, field)
-                    for name in only
-                    if (field := self._fields.get(name)) is not None
-                ]
+            supplied_parents = get_supplied_parent_model_names(self, values)
+            missing_defaults = self._get_missing_default_field_names(
+                values, only, supplied_parents
             )
-            missing_defaults = [
-                name
-                for name, field in candidates
-                if name not in values
-                if not avoid(field)
-            ]
             _debug.logic(
                 "create.missing_defaults_computed",
                 model=self._name,
                 given=len(values),
                 missing=len(missing_defaults),
-                avoided_parents=len(avoid_models),
+                avoided_parents=len(supplied_parents),
                 cached=_missing_defaults_cache is not None,
             )
             if _missing_defaults_cache is not None:
@@ -441,7 +461,7 @@ class CreateMixin(_ModelStubs):
             uid=self.env.uid,
             company_checked=self._check_company_auto,
         )
-        self._create_update_xmlids(records, vals_list)
+        self._update_created_record_xmlids(records, vals_list)
         return records
 
     def _check_created_inverse_fields(self, data_list: list[CreateRecordData]) -> None:
@@ -467,11 +487,11 @@ class CreateMixin(_ModelStubs):
         if precompute_readonly:
             bad_names |= precompute_readonly
 
-        missing_defaults_cache: dict[frozenset[str], list[str]] = {}
+        missing_defaults_cache: DefaultFieldsCache = {}
 
         result_vals_list = []
         for vals in vals_list:
-            vals = self._add_missing_default_values(vals, missing_defaults_cache)
+            vals = self._prepare_values_with_defaults(vals, missing_defaults_cache)
 
             for fname in bad_names:
                 vals.pop(fname, None)
@@ -504,7 +524,7 @@ class CreateMixin(_ModelStubs):
         )
 
     def _get_precompute_scratch_fields(self) -> frozenset[Field[typing.Any]]:
-        def collect() -> frozenset[Field[typing.Any]]:
+        def get_scratch_fields() -> frozenset[Field[typing.Any]]:
             fields = self._fields
             field_computed = self.pool.field_computed
             field_depends = self.pool.field_depends
@@ -523,20 +543,21 @@ class CreateMixin(_ModelStubs):
             return frozenset(seen)
 
         cls = type(self)
-        return get_or_create_class_memo(cls, "_precompute_scratch_fields__", collect)
+        return get_or_create_class_memo(
+            cls, "_precompute_scratch_fields__", get_scratch_fields
+        )
 
-    def _add_precomputed_values(self, vals_list: list[ValuesType]) -> None:
-        precomputable = self._get_precompute_fields()
-        if not precomputable:
-            return
-
+    def _get_precompute_plan(
+        self, vals_list: list[ValuesType], precomputable: tuple[Field[typing.Any], ...]
+    ) -> _PrecomputePlan:
         vals_list_todo = [
             vals
             for vals in vals_list
             if any(field.name not in vals for field in precomputable)
         ]
         skipped_ids = {
-            id(vals) for vals in self._get_vals_a_draft_reads_otherwise(vals_list)
+            id(vals)
+            for vals in self._get_values_with_unreliable_precompute_drafts(vals_list)
         }
         if skipped_ids:
             vals_list_todo = [
@@ -556,6 +577,15 @@ class CreateMixin(_ModelStubs):
             for vals in vals_list_todo
             if id(vals) in skipped_ids
         }
+        return _PrecomputePlan(vals_list_todo, recompute_after)
+
+    def _add_precomputed_values(self, vals_list: list[ValuesType]) -> None:
+        precomputable = self._get_precompute_fields()
+        if not precomputable:
+            return
+        vals_list_todo, recompute_after = self._get_precompute_plan(
+            vals_list, precomputable
+        )
         if not vals_list_todo:
             return
 
@@ -610,7 +640,7 @@ class CreateMixin(_ModelStubs):
                         continue
                     for record, vals, given in todo:
                         if given:
-                            self._restore_given_values(
+                            self._restore_precompute_given_values(
                                 typing.cast("BaseModel", record), vals, given
                             )
                     reads_as_su = (
@@ -623,7 +653,7 @@ class CreateMixin(_ModelStubs):
             finally:
                 self._discard_precompute_scratch(records, given_names)
 
-    def _get_vals_a_draft_reads_otherwise(
+    def _get_values_with_unreliable_precompute_drafts(
         self, vals_list: list[ValuesType]
     ) -> list[ValuesType]:
         batch = len(vals_list) > 1
@@ -648,7 +678,11 @@ class CreateMixin(_ModelStubs):
                         command=code,
                     )
                     return vals_list
-        return [vals for vals in vals_list if self._has_lines_a_create_keeps(vals)]
+        return [
+            vals
+            for vals in vals_list
+            if self._has_one2many_commands_before_replacement(vals)
+        ]
 
     def _iter_x2many_commands(
         self, vals: ValuesType
@@ -661,7 +695,7 @@ class CreateMixin(_ModelStubs):
                     if not isinstance(command, dict):
                         yield field, command
 
-    def _has_lines_a_create_keeps(self, vals: ValuesType) -> bool:
+    def _has_one2many_commands_before_replacement(self, vals: ValuesType) -> bool:
         commanded: set[Field[typing.Any]] = set()
         for field, command in self._iter_x2many_commands(vals):
             code = command[0] if isinstance(command, (tuple, list)) else None
@@ -673,7 +707,7 @@ class CreateMixin(_ModelStubs):
         return False
 
     @staticmethod
-    def _restore_given_values(
+    def _restore_precompute_given_values(
         record: BaseModel, vals: ValuesType, given: dict[Field[typing.Any], typing.Any]
     ) -> None:
         id_ = record._ids[0]
@@ -960,7 +994,9 @@ class CreateMixin(_ModelStubs):
         )
 
     @api.model
-    def _create_update_xmlids(self, records: Self, vals_list: list[ValuesType]) -> None:
+    def _update_created_record_xmlids(
+        self, records: Self, vals_list: list[ValuesType]
+    ) -> None:
         import_module = self.env.context.get("_import_current_module")
         if not import_module:
             return

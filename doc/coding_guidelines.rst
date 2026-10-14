@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.101
+:Version: 7.102
 :Date: 2026-10-14
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -2860,6 +2860,15 @@ Group several results in a typed product while preserving the runtime shape
 that overrides consume. Create and write inverse hooks have distinct protection
 scopes: keep their ordering around cache updates, constraints and access
 notifications, and test persisted records together with drafts.
+
+**A preparation method returning values must be consumed** ``[review]``.
+When renaming an apparent mutator into ``_prepare_*``, inspect callers that
+discard its result. A defaults helper returning a new mapping does not update
+the caller's mapping; deduplication must use the same defaulted values as
+creation, and explicit false values still override defaults. A cache key keeps
+each input role separate: given field names and requested field names are two
+operands, never their union. Preserve request order when hooks can observe it;
+cache field selection, not the default values themselves.
 
 **A protocol namespace belongs only to names its dispatcher calls**
 ``[review]``. A model's private helper does not wear ``_load_pos_data_*``
@@ -6434,6 +6443,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.102
+     - 2026-10-14
+     - §2.4.21 checks discarded preparation results, uses defaulted values
+       consistently in deduplication and creation, and keeps cache-key operands
+       and observable request order separate.
    * - 7.101
      - 2026-10-14
      - §2.4.21 names CRUD phase effects and results explicitly; typed products

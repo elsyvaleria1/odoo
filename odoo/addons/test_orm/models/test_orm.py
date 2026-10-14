@@ -128,7 +128,7 @@ class TestOrmDiscussion(models.Model):
                 message.body = "not last dummy message"
             for message in self.important_messages:
                 message.body = "not last dummy message"
-            message_vals = self.messages._add_missing_default_values(
+            message_vals = self.messages._prepare_values_with_defaults(
                 {"body": "dummy message", "important": True}
             )
             self.messages |= self.messages.new(message_vals)

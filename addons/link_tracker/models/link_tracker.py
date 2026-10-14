@@ -417,7 +417,7 @@ class LinkTracker(models.Model):
                     self.env._("Creating a Link Tracker without URL is not possible")
                 )
             self._normalize_vals(vals)
-            self._add_missing_default_values(vals)
+            vals.update(self._prepare_values_with_defaults(vals))
             vals.update(
                 {key: False for key in LINK_TRACKER_UNIQUE_FIELDS if not vals.get(key)}
             )

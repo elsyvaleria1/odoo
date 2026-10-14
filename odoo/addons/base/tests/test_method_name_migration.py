@@ -752,6 +752,9 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
     def test_shared_crud_methods_upgrade_every_stored_code_owner_and_column(self):
         self._check_shared_stored_method_upgrade("1.165")
 
+    def test_shared_create_methods_upgrade_every_stored_code_owner_and_column(self):
+        self._check_shared_stored_method_upgrade("1.166")
+
     def _check_shared_stored_method_upgrade(self, version):
         def get_partner_code(source: str) -> str:
             return source.replace("records.", 'env["res.partner"].').replace(

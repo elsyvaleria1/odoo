@@ -146,6 +146,8 @@ Method refactors follow §2.4.21: search related implementations, compare typed 
 
 Return contracts follow §2.4.23: one typed contract per name, `None` or the empty value for absence (never `is False`), a result type for several outcomes, `dict | None` for actions (never `True`: `test_lint` `return_action_bool_result_<repo>` counts the rest), an override keeps the base's contract; `method-census/batch-06/mixed_report.py` ranks the mixed ones.
 
+Preparation results must be consumed (§2.4.21): a returned mapping does not mutate its input. Deduplication and creation use the same defaulted values, with explicit false values preserved. Cache keys keep input roles and observable request order separate; a default-field cache retains field selection, not default values.
+
 System-setting reads follow §10.9: trusted server code uses `env.registry.settings.get(env, key, default)` to receive a scalar without holding an elevated recordset. A migrated `get_param(key)` passes `False` explicitly; typed values come from `get_int`/`get_float`/`get_bool`; the `_settings_port_reads` fixer rewrites elevated reads; setting writes retain their normal ACL.
 
 ### `ruff.toml` (repo root)
