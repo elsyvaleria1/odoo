@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-10-14 00:03+0000\n"
-"PO-Revision-Date: 2026-10-14 00:03+0000\n"
+"POT-Creation-Date: 2026-10-14 02:47+0000\n"
+"PO-Revision-Date: 2026-10-14 02:47+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -311,6 +311,15 @@ msgstr ""
 #. module: account
 #. odoo-python
 #: code:addons/account/models/account_return.py:0
+msgid ""
+"%(name)s cannot be validated: %(other)s already closed the tax of "
+"%(companies)s for part of its period, and validating it would close those "
+"tax lines twice."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return.py:0
 msgid "%(name)s cannot move to %(target)s from its current step (%(state)s)."
 msgstr ""
 
@@ -344,6 +353,15 @@ msgstr ""
 msgid ""
 "%(name)s is being filed and the authority has not answered yet; wait for its"
 " answer before resetting it."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return.py:0
+msgid ""
+"%(name)s is no longer generated for its company, country and period: another"
+" return closes its tax lines. It was kept because it holds work; delete it "
+"once that work is no longer needed."
 msgstr ""
 
 #. module: account
@@ -1571,6 +1589,14 @@ msgstr ""
 #. module: account
 #: model_terms:ir.ui.view,arch_db:account.autopost_bills_wizard
 msgid "<span invisible=\"nb_unmodified_bills &lt; 10\">10+</span>"
+msgstr ""
+
+#. module: account
+#: model_terms:ir.ui.view,arch_db:account.account_return_kanban_view
+msgid ""
+"<span invisible=\"not is_superseded\" class=\"badge rounded-pill text-bg-"
+"warning me-1\" title=\"Another return closes its tax lines; it was kept "
+"because it holds work.\">No longer generated</span>"
 msgstr ""
 
 #. module: account
@@ -20590,6 +20616,11 @@ msgid "Return"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,field_description:account.field_mail_activity__account_return_check_template_id
+msgid "Return Check Template"
+msgstr ""
+
+#. module: account
 #. odoo-python
 #: code:addons/account/models/account_return.py:0
 msgid "Return Completed"
@@ -22754,6 +22785,11 @@ msgid "Summary Data"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,field_description:account.field_account_return__is_superseded
+msgid "Superseded"
+msgstr ""
+
+#. module: account
 #: model:ir.model.fields.selection,name:account.selection__account_account__audit_status__supervised
 #: model:ir.model.fields.selection,name:account.selection__account_audit_account_status__status__supervised
 #: model:ir.model.fields.selection,name:account.selection__account_return_check__result__supervised
@@ -24892,6 +24928,13 @@ msgid "The statement line that created this entry"
 msgstr ""
 
 #. module: account
+#: model:ir.model.fields,help:account.field_account_return__is_superseded
+msgid ""
+"The sync no longer generates this return; it was kept because it holds work."
+" It cannot be validated, only deleted."
+msgstr ""
+
+#. module: account
 #: model_terms:ir.ui.view,arch_db:account.res_config_settings_view_form_fiscal_year
 msgid ""
 "The system will try to predict the product on vendor bill lines based on the"
@@ -25523,6 +25566,14 @@ msgstr ""
 msgid ""
 "This report uses the CTA conversion method to consolidate multiple companies using different currencies,\n"
 "        which can lead the report to be unbalanced."
+msgstr ""
+
+#. module: account
+#. odoo-python
+#: code:addons/account/models/account_return.py:0
+msgid ""
+"This return is generated again for its company, country and period; it can "
+"be validated again."
 msgstr ""
 
 #. module: account
