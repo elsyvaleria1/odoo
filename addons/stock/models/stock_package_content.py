@@ -68,15 +68,8 @@ class StockPackageContent(models.Model):
                 ],
             )
 
-    def _prefetch_move_line_ids(self) -> None:
-        saved = self.filtered("id")
-        if len(saved) > 1:
-            _debug.perf.count("move_lines_prefetched", packages=len(saved))
-            saved._fields["move_line_ids"].compute_value(saved)
-
     @api.depends("move_line_ids", "move_line_ids.location_dest_id")
     def _compute_json_popover(self) -> None:
-        self._prefetch_move_line_ids()
         for package in self:
             if not package._has_issues():
                 package.json_popover = False
@@ -98,7 +91,6 @@ class StockPackageContent(models.Model):
 
     @api.depends("move_line_ids.location_dest_id")
     def _compute_location_dest_id(self):
-        self._prefetch_move_line_ids()
         for package in self:
             locations = package.move_line_ids.location_dest_id
             package.location_dest_id = locations if len(locations) == 1 else False
@@ -167,7 +159,6 @@ class StockPackageContent(models.Model):
 
     @api.depends("move_line_ids")
     def _compute_picking_ids(self) -> None:
-        self._prefetch_move_line_ids()
         for package in self:
             package.picking_ids = package.move_line_ids.picking_id
 
@@ -376,9 +367,13 @@ class StockPackageContent(models.Model):
     def _get_all_package_dest_ids(self):
         return list(self._walk_dest_tree(self, "package_dest_id"))
 
-    def _update_parent_packages_from_dest(self, processed_package_ids=None) -> None:
+    def _update_parent_packages_from_dest(
+        self, processed_package_ids=None, moved_packages=None
+    ) -> None:
         if processed_package_ids is None:
             processed_package_ids = set()
+        if moved_packages is None:
+            moved_packages = self.browse()
         packages_todo = self.filtered(lambda p: p.id not in processed_package_ids)
         packs_by_container = packages_todo.grouped("package_dest_id")
         for container_package, packages in packs_by_container.items():
@@ -388,7 +383,15 @@ class StockPackageContent(models.Model):
                 container=container_package.id,
             )
             if not container_package:
-                packages.write({"parent_package_id": False})
+                packages.filtered(
+                    lambda p: (
+                        p.parent_package_id
+                        and (
+                            p in moved_packages
+                            or p.location_id != p.parent_package_id.location_id
+                        )
+                    )
+                ).write({"parent_package_id": False})
                 processed_package_ids.update(packages.ids)
                 continue
             new_location = packages.location_id
@@ -428,7 +431,7 @@ class StockPackageContent(models.Model):
             or packages_todo.parent_package_id.parent_package_id
         ):
             packages_todo.parent_package_id._update_parent_packages_from_dest(
-                processed_package_ids
+                processed_package_ids, moved_packages
             )
 
     def _update_package_dest_for_entire_packs(self, allowed_package_ids=None) -> None:

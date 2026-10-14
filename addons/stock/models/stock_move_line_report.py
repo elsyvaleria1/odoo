@@ -120,15 +120,18 @@ class StockMoveLineReport(models.Model):
         backorder_lines_by_base,
         get_line_key,
     ) -> None:
+        backorder_counted = set()
         for move, line_key in undelivered_key.items():
             entry = aggregated_move_lines[line_key]
             uom = entry["product_uom_id"]
-            backorder_lines = backorder_lines_by_base.get(
-                get_line_key(move), self.env["stock.move.line"]
-            )
-            undelivered = move.product_uom_qty + sum(
-                backorder_lines.move_id.mapped("product_uom_qty")
-            )
+            base_key = get_line_key(move)
+            undelivered = move.product_uom_qty
+            if base_key not in backorder_counted:
+                backorder_counted.add(base_key)
+                backorder_lines = backorder_lines_by_base.get(
+                    base_key, self.env["stock.move.line"]
+                )
+                undelivered += sum(backorder_lines.move_id.mapped("product_uom_qty"))
             undelivered -= sum(
                 line.product_uom_id._get_quantity_in_unit(line.quantity, uom)
                 for line in move.move_line_ids

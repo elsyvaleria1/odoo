@@ -342,14 +342,14 @@ class StockPackage(models.Model):
 
     def action_remove_package(self) -> None:
         all_package_dest_ids = self._get_all_package_dest_ids()
-        all_move_line_ids = set(self.move_line_ids.ids)
         move_line_ids_to_unlink = set()
         related_move_ids = set()
         move_line_ids_to_update = set()
         picking_ids = self.env.context.get("picking_ids")
-        for line in self.move_line_ids:
-            if picking_ids and line.picking_id.id not in picking_ids:
-                continue
+        in_scope = self.move_line_ids.filtered(
+            lambda line: not picking_ids or line.picking_id.id in picking_ids
+        )
+        for line in in_scope:
             if line.result_package_id.id in self.ids:
                 if line.is_entire_pack:
                     move_line_ids_to_unlink.add(line.id)
@@ -385,8 +385,8 @@ class StockPackage(models.Model):
             field_names=["id"],
         ).write({"package_dest_id": False})
 
-        self.env["stock.move.line"].browse(
-            all_move_line_ids - move_line_ids_to_unlink
+        (
+            in_scope - self.env["stock.move.line"].browse(move_line_ids_to_unlink)
         )._apply_putaway_strategy()
 
     def action_view_picking(self):

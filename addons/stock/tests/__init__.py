@@ -86,3 +86,4 @@ from . import test_traceability_report
 from . import test_warehouse
 from . import test_warehouse_rule_roles
 from . import test_home_tile_transfers
+from . import test_package_lifecycle

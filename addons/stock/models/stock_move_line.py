@@ -13,7 +13,6 @@ from ..const import (
     OUTGOING_BLOCK_TYPES,
     is_internal_flag,
 )
-from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
 
 LOGGED_RELATIONS = [
     ("trace_id", "lot_name"),
@@ -495,8 +494,6 @@ class StockMoveLine(models.Model):
     @_debug.perf.timed
     def unlink(self):
         _debug.lifecycle("unlink", move_lines=self)
-        if not self.env.context.get(MODULE_UNINSTALL_FLAG):
-            self._unlink_except_done_or_cancel()
         self.filtered(lambda ml: ml.state not in ("done", "cancel"))._release_quants()
         moves = self.mapped("move_id")
         packages = self._get_package_dests()
@@ -760,11 +757,10 @@ class StockMoveLine(models.Model):
         mls_todo._update_quants_done()
 
         if not self.env.context.get("ignore_dest_packages"):
-            mls_todo.result_package_id._update_parent_packages_from_dest()
+            mls_todo.result_package_id._update_parent_packages_from_dest(
+                moved_packages=mls_todo.package_id
+            )
 
-        affected_pickings = mls_todo.picking_id
-        if affected_pickings:
-            affected_pickings._check_entire_pack()
         mls_todo.write(
             {
                 "date": fields.Datetime.now(),
@@ -777,10 +773,7 @@ class StockMoveLine(models.Model):
         ml_ids_needing_lot_check = OrderedSet()
 
         for ml in self:
-            qty_done_float_compared = ml.product_uom_id.compare(ml.quantity, 0)
-            if qty_done_float_compared < 0:
-                raise UserError(self._get_negative_quantity_message())
-            if qty_done_float_compared == 0:
+            if ml.product_uom_id.is_zero(ml.quantity):
                 if not ml.is_inventory:
                     ml_ids_to_delete.add(ml.id)
                 continue
@@ -948,9 +941,13 @@ class StockMoveLine(models.Model):
 
     def _check_serials_unique(self) -> None:
         serials = Counter(
-            ml.lot_name for ml in self if ml.tracking == "serial" and ml.lot_name
+            (ml.product_id, ml.lot_name)
+            for ml in self
+            if ml.tracking == "serial" and ml.lot_name
         )
-        duplicated = sorted(name for name, count in serials.items() if count > 1)
+        duplicated = sorted(
+            name for (_product, name), count in serials.items() if count > 1
+        )
         if duplicated:
             raise ValidationError(
                 self.env._(
