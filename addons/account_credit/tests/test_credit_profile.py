@@ -622,7 +622,7 @@ class TestPolicy(CreditProfileCase):
             "order",
             amount=100.0,
             immediate=False,
-            term_days=profile._term_days(long_term),
+            term_days=long_term._credit_days(Date.today()),
         )
         self.assertIn("term_over_max", verdict.conditions)
         self.assertEqual(verdict.outcome, "approve")

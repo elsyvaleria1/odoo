@@ -1,10 +1,7 @@
-from collections import defaultdict
-
 from odoo import Command, api, fields, models
 from odoo.exceptions import UserError, ValidationError
-from odoo.tools import SQL
 
-from .credit_aging import AGING_SELECTION, aging_bucket
+from .credit_aging import CREDIT_LADDER
 
 RUN_STATES = [
     ("draft", "Draft"),
@@ -126,60 +123,18 @@ class CreditProvisionRun(models.Model):
 
     def _read_open_receivables(self):
         self.check_singleton()
-        self.env.flush_all()
-        self.env.cr.execute(
-            SQL(
-                """
-                WITH settled AS (
-                    SELECT line_id, SUM(amount) AS amount
-                      FROM (
-                            SELECT debit_move_id AS line_id, amount
-                              FROM account_partial_reconcile
-                             WHERE max_date <= %(date)s
-                            UNION ALL
-                            SELECT credit_move_id, -amount
-                              FROM account_partial_reconcile
-                             WHERE max_date <= %(date)s
-                           ) sides
-                     GROUP BY line_id
-                )
-                SELECT partner.commercial_partner_id,
-                       COALESCE(line.date_maturity, line.date),
-                       SUM(line.balance - COALESCE(settled.amount, 0))
-                  FROM account_move_line line
-                  JOIN account_account account ON account.id = line.account_id
-                  JOIN res_partner partner ON partner.id = line.partner_id
-                  LEFT JOIN settled ON settled.line_id = line.id
-                 WHERE account.account_type = 'asset_receivable'
-                   AND line.parent_state = 'posted'
-                   AND line.date <= %(date)s
-                   AND line.company_id = ANY(%(company_ids)s)
-                 GROUP BY 1, 2
-                """,
-                date=self.date,
-                company_ids=self.env["res.company"]
-                .sudo()
-                .search([("id", "child_of", self.company_id.id)])
-                .ids,
-            )
+        positions = self.env["account.move.line"]._read_receivable_position(
+            None, self.company_id, as_of=self.date, ladder=CREDIT_LADDER
         )
-        rows = self.env.cr.fetchall()
         Partner = self.env["res.partner"]
+        debtors = Partner.browse([partner_id for partner_id, _company in positions])
         profiles = (
-            self.env["credit.profile"]
-            .sudo()
-            ._for_partners(Partner.browse({row[0] for row in rows}), self.company_id)
+            self.env["credit.profile"].sudo()._for_partners(debtors, self.company_id)
         )
-        amounts = defaultdict(lambda: defaultdict(float))
-        currency = self.company_id.currency_id
-        for partner_id, due, residual in rows:
-            if currency.compare_amounts(residual, 0.0) <= 0:
-                continue
-            days = (self.date - due).days
-            amounts[partner_id][aging_bucket(days)] += residual
         return {
-            (Partner.browse(partner_id), profiles.get(partner_id)): buckets
-            for partner_id, buckets in amounts.items()
+            (Partner.browse(partner_id), profiles.get(partner_id)): position.by_bucket
+            for (partner_id, _company), position in positions.items()
+            if position.by_bucket
         }
 
     def action_compute(self) -> None:
@@ -346,7 +301,7 @@ class CreditProvisionRunLine(models.Model):
     )
     grade_id = fields.Many2one(comodel_name="credit.grade")
     bucket = fields.Selection(
-        selection=AGING_SELECTION,
+        selection=CREDIT_LADDER.selection,
         required=True,
     )
     amount = fields.Monetary(currency_field="currency_id")

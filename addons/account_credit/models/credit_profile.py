@@ -551,38 +551,17 @@ class CreditProfile(models.Model):
 
     def _read_receivable_exposure(self, today):
         result = {}
-        by_company = self.grouped("company_id")
-        for company, profiles in by_company.items():
-            partner_ids = profiles._partner_ids_by_profile()
-            profile_by_partner = {
-                pid: profile for profile, ids in partner_ids.items() for pid in ids
-            }
-            groups = (
-                self.env["account.move.line"]
-                .sudo()
-                ._read_group(
-                    [
-                        ("account_id.account_type", "=", "asset_receivable"),
-                        ("parent_state", "=", "posted"),
-                        ("reconciled", "=", False),
-                        ("company_id", "child_of", company.id),
-                        ("partner_id", "in", list(profile_by_partner)),
-                    ],
-                    ["partner_id", "date_maturity:day"],
-                    ["amount_residual:sum"],
-                )
+        for company, profiles in self.grouped("company_id").items():
+            positions = self.env["account.move.line"]._read_receivable_position(
+                profiles.partner_id, company, today=today
             )
-            totals = defaultdict(lambda: [0.0, 0.0, None])
-            for partner, due, residual in groups:
-                profile = profile_by_partner.get(partner.id)
-                if not profile or not residual:
-                    continue
-                entry = totals[profile]
-                entry[0] += residual
-                if due and due < today and residual > 0:
-                    entry[1] += residual
-                    entry[2] = min(entry[2] or due, due)
-            result.update({p: tuple(v) for p, v in totals.items()})
+            for profile in profiles:
+                if position := positions.get((profile.partner_id.id, company.id)):
+                    result[profile] = (
+                        position.open,
+                        position.overdue,
+                        position.oldest_due,
+                    )
         return result
 
     def _read_draft_exposure(self):
@@ -840,27 +819,6 @@ class CreditProfile(models.Model):
                     "trigger_event_id": trigger_event.id if trigger_event else False,
                 }
             )
-        )
-
-    def _term_days(self, payment_term):
-        if not payment_term:
-            return 0
-        return max(
-            (
-                line.nb_days
-                + (
-                    30
-                    if line.delay_type
-                    in (
-                        "days_after_end_of_month",
-                        "days_after_end_of_next_month",
-                        "days_end_of_month_on_the",
-                    )
-                    else 0
-                )
-                for line in payment_term.line_ids
-            ),
-            default=0,
         )
 
     def _facts(self, kind, amount, immediate, term_days) -> dict:

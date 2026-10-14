@@ -1,7 +1,7 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
-from .credit_aging import AGING_SELECTION
+from .credit_aging import CREDIT_LADDER
 
 
 class CreditProvisionMatrix(models.Model):
@@ -65,7 +65,7 @@ class CreditProvisionMatrixLine(models.Model):
         help="Empty applies to every grade the matrix names no specific rate for.",
     )
     bucket = fields.Selection(
-        selection=AGING_SELECTION,
+        selection=CREDIT_LADDER.selection,
         required=True,
     )
     rate = fields.Float(

@@ -81,10 +81,6 @@ class SaleOrder(models.Model):
         methods.append("_check_confirm_credit_status")
         return methods
 
-    def _is_immediate_payment(self):
-        self.check_singleton()
-        return not self.payment_term_id or self.payment_term_id.is_immediate
-
     def _is_credit_authorization_open(self) -> bool:
         self.check_singleton()
         return self.state != "cancel" and self.invoice_state not in (
@@ -132,11 +128,12 @@ class SaleOrder(models.Model):
             credit_exclude_order_ids=tuple(self.ids),
             credit_extra_exposure=extra_exposure,
         )
+        term_days = self._credit_days()
         return profile._evaluate(
             "order",
             amount=self._get_credit_exposure(),
-            immediate=self._is_immediate_payment(),
-            term_days=profile._term_days(self.payment_term_id),
+            immediate=not term_days,
+            term_days=term_days,
         )
 
     @api.depends("partner_id", "payment_term_id", "amount_total", "company_id")
@@ -309,11 +306,12 @@ class SaleOrder(models.Model):
             if not profile:
                 continue
             profile = profile.with_context(credit_exclude_order_ids=tuple(order.ids))
+            term_days = order._credit_days()
             profile._check_credit(
                 "order",
                 amount=order._get_credit_exposure(),
-                immediate=order._is_immediate_payment(),
-                term_days=profile._term_days(order.payment_term_id),
+                immediate=not term_days,
+                term_days=term_days,
                 approval_exempt=order._credit_approval_exempt(),
             )
 
@@ -333,7 +331,7 @@ class SaleOrder(models.Model):
                     and verdict.is_approval_required_for(("limit_exceeded",))
                 ):
                     blocked |= order
-                if not order._is_immediate_payment():
+                if order._credit_days():
                     running += order._get_credit_exposure()
         return blocked
 
@@ -342,7 +340,7 @@ class SaleOrder(models.Model):
 
     def _get_credit_limited_partner(self):
         self.check_singleton()
-        if self._is_immediate_payment():
+        if not self._credit_days():
             return self.env["res.partner"]
         profile = self._credit_profile()
         if not profile.grade_id or profile.grade_id.kind != "performing":
@@ -361,7 +359,7 @@ class SaleOrder(models.Model):
         for orders in self.grouped(
             lambda o: (o.partner_id.commercial_partner_id, o.company_id)
         ).values():
-            credit_orders = orders.filtered(lambda o: not o._is_immediate_payment())
+            credit_orders = orders.filtered(lambda o: o._credit_days())
             if not credit_orders:
                 continue
             first = credit_orders[:1].with_context(

@@ -1060,6 +1060,32 @@ class TestAccountPaymentTerms(AccountTestInvoicingCommon):
         immediate = self.env.ref("payment_term.account_payment_term_immediate")
         self.assertTrue(immediate.is_immediate)
 
+    def test_credit_days_count_to_the_last_installment(self):
+        reference = fields.Date.from_string("2026-01-15")
+        self.assertEqual(self.pay_term_today._credit_days(reference), 0)
+        self.assertEqual(self.pay_term_net_30_days._credit_days(reference), 30)
+        self.assertEqual(
+            self.pay_term_days_end_of_month_10._credit_days(reference),
+            54,
+            "30 days to February 14, then the 10th of the following month",
+        )
+        self.assertEqual(
+            self.env["account.payment.term"]._credit_days(reference),
+            0,
+            "no payment term falls due on the reference date",
+        )
+
+    def test_an_invoice_counts_its_credit_days_from_its_date(self):
+        invoice = self.init_invoice(
+            "out_invoice",
+            invoice_date=fields.Date.from_string("2026-01-15"),
+            amounts=[100.0],
+        )
+        invoice.invoice_payment_term_id = self.pay_term_net_30_days
+        self.assertEqual(invoice._credit_days(), 30)
+        invoice.invoice_payment_term_id = self.pay_term_today
+        self.assertEqual(invoice._credit_days(), 0)
+
     def test_days_next_month_out_of_range_raises_validation(self):
         term = self.env["account.payment.term"].create({"name": "range days"})
         for bad_value in (-1, 32):

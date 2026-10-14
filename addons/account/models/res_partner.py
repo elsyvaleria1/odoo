@@ -296,51 +296,58 @@ class ResPartner(models.Model):
         )
         if not self.ids:
             return
+        root = self.env.company.root_id
+        positions = self.env["account.move.line"]._read_receivable_position(self, root)
+        for partner in self:
+            position = positions.get(
+                (partner._origin.commercial_partner_id._origin.id, root.id)
+            )
+            partner.credit = position.open if position else 0.0
         query = self.env["account.move.line"]._search(
             [
                 ("parent_state", "=", "posted"),
-                ("company_id", "child_of", self.env.company.root_id.id),
+                ("company_id", "child_of", root.id),
+                ("account_id.account_type", "=", "liability_payable"),
+                ("partner_id", "in", self.ids),
+                ("reconciled", "=", False),
             ],
             bypass_access=True,
         )
-        self.env["account.move.line"].flush_model(
-            [
-                "account_id",
-                "amount_residual",
-                "company_id",
-                "parent_state",
-                "partner_id",
-                "reconciled",
-            ]
-        )
-        self.env["account.account"].flush_model(["account_type"])
+        self.env["account.move.line"].flush_model(["amount_residual", "partner_id"])
         sql = SQL(
             """
-            SELECT account_move_line.partner_id, a.account_type, SUM(account_move_line.amount_residual)
-            FROM %s
-            LEFT JOIN account_account a ON (account_move_line.account_id=a.id)
-            WHERE a.account_type IN ('asset_receivable','liability_payable')
-            AND account_move_line.partner_id = ANY(%s)
-            AND account_move_line.reconciled IS NOT TRUE
-            AND %s
-            GROUP BY account_move_line.partner_id, a.account_type
+            SELECT account_move_line.partner_id, SUM(account_move_line.amount_residual)
+              FROM %s
+             WHERE %s
+          GROUP BY account_move_line.partner_id
             """,
             query.from_clause,
-            list(self.ids),
             query.where_clause or SQL("TRUE"),
         )
-        for pid, account_type, val in self.env.execute_query(sql):
-            partner = self.browse(pid)
-            if account_type == "asset_receivable":
-                partner.credit = val
-            elif account_type == "liability_payable":
-                partner.debit = -val
+        for partner_id, residual in self.env.execute_query(sql):
+            self.browse(partner_id).debit = -residual
 
     @api.depends_context("company")
     def _compute_credit_to_invoice(self) -> None:
         self.credit_to_invoice = False
 
     def _get_asset_difference_query(self, account_type, operator, operand):
+        if account_type == "asset_receivable":
+            return SQL(
+                """
+                SELECT position.partner_id
+                  FROM (%(positions)s) AS position(
+                       partner_id, company_id, bucket, open, unapplied, overdue, oldest_due
+                       )
+              GROUP BY position.partner_id
+                HAVING COALESCE(SUM(position.open), 0) %(operator)s %(operand)s
+                """,
+                positions=self.env["account.move.line"]._receivable_position_query(
+                    None, self.env.company.root_id
+                ),
+                operator=SQL(operator),  # noqa: E8501 -- caller whitelists the operator
+                operand=operand,
+            )
         return SQL(
             """
             SELECT aml.partner_id
@@ -353,12 +360,11 @@ class ResPartner(models.Model):
                AND SPLIT_PART(line_company.parent_path, '/', 1)::int = %(root_id)s
                AND move.state = 'posted'
           GROUP BY aml.partner_id
-            HAVING %(sign)s * COALESCE(SUM(aml.amount_residual), 0)
+            HAVING -COALESCE(SUM(aml.amount_residual), 0)
                    %(operator)s %(operand)s
             """,
             account_type=account_type,
             root_id=self.env.company.root_id.id,
-            sign=-1 if account_type == "liability_payable" else 1,
             operator=SQL(operator),  # noqa: E8501 -- caller whitelists the operator
             operand=operand,
         )
@@ -371,6 +377,9 @@ class ResPartner(models.Model):
         elif isinstance(operand, bool) or not isinstance(operand, (float, int)):
             return NotImplemented
 
+        matched = (
+            "commercial_partner_id" if account_type == "asset_receivable" else "id"
+        )
         if ASSET_DIFFERENCE_COMPARISONS[operator](0.0, operand):
             negated = ASSET_DIFFERENCE_NEGATIONS[operator]
             _debug.logic(
@@ -381,12 +390,12 @@ class ResPartner(models.Model):
                 operand=operand,
             )
             return Domain(
-                "id",
+                matched,
                 "not any!",
                 self._get_asset_difference_query(account_type, negated, operand),
             )
         return Domain(
-            "id",
+            matched,
             "any!",
             self._get_asset_difference_query(account_type, operator, operand),
         )

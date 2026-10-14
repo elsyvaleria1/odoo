@@ -7992,6 +7992,18 @@ class AccountMove(models.Model):
     def is_entry(self) -> bool:
         return self.move_type == "entry"
 
+    def _credit_days(self) -> int:
+        self.check_singleton()
+        invoice_date = self.invoice_date or fields.Date.context_today(self)
+        return max(
+            0,
+            *(
+                (line.date_maturity - invoice_date).days
+                for line in self.line_ids
+                if line.display_type == "payment_term" and line.date_maturity
+            ),
+        )
+
     @api.model
     def get_sale_types(self, include_receipts=False):
         return ["out_invoice", "out_refund"] + (

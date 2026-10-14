@@ -146,6 +146,7 @@ from . import test_trial_balance_report
 from . import test_partner_ledger_report
 from . import test_reconciliation_report
 from . import test_aged_receivable_report
+from . import test_receivable_position
 from . import test_aged_payable_report
 from . import test_aged_pending_match
 from . import test_tax_report_engine

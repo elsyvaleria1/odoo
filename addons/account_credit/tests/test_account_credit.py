@@ -676,13 +676,13 @@ class TestSaleOrderValidation(TransactionCase):
     def test_cash_partner_order_without_payment_term_is_immediate(self):
         self.partner.credit_status = "cash"
         order = self._create_sale_order(self.env["account.payment.term"])
-        self.assertTrue(order._is_immediate_payment())
+        self.assertEqual(order._credit_days(), 0)
         order._check_confirm_credit_status()
 
     def test_cash_partner_order_with_credit_term_is_blocked(self):
         self.partner.credit_status = "cash"
         order = self._create_sale_order()
-        self.assertFalse(order._is_immediate_payment())
+        self.assertGreater(order._credit_days(), 0)
         with self.assertRaises(ValidationError):
             order._check_confirm_credit_status()
 
@@ -757,7 +757,7 @@ class TestInvoiceValidation(TransactionCase):
     def test_cash_invoice_without_payment_term_due_on_invoice_date_posts(self):
         self.partner.credit_status = "cash"
         invoice = self._create_invoice()
-        self.assertTrue(invoice._is_immediate_payment())
+        self.assertEqual(invoice._credit_days(), 0)
         invoice.action_post()
         self.assertEqual(invoice.state, "posted")
 
@@ -766,14 +766,14 @@ class TestInvoiceValidation(TransactionCase):
         invoice = self._create_invoice(
             invoice_date_due=Date.today() + timedelta(days=30)
         )
-        self.assertFalse(invoice._is_immediate_payment())
+        self.assertEqual(invoice._credit_days(), 30)
         with self.assertRaises(ValidationError):
             invoice.action_post()
 
     def test_cash_invoice_with_credit_term_is_blocked(self):
         self.partner.credit_status = "cash"
         invoice = self._create_invoice(invoice_payment_term_id=self.credit_term.id)
-        self.assertFalse(invoice._is_immediate_payment())
+        self.assertEqual(invoice._credit_days(), 30)
         with self.assertRaises(ValidationError):
             invoice.action_post()
 

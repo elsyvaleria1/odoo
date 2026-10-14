@@ -1,13 +1,16 @@
-from odoo import fields, models
+from odoo import api, fields, models
 from odoo.exceptions import UserError
 
 
 class SaleOrder(models.Model):
     _inherit = "sale.order"
 
-    is_cash_sale = fields.Boolean(
-        related="payment_term_id.is_immediate",
-    )
+    is_cash_sale = fields.Boolean(compute="_compute_is_cash_sale")
+
+    @api.depends("payment_term_id", "date_order")
+    def _compute_is_cash_sale(self) -> None:
+        for order in self:
+            order.is_cash_sale = not order._credit_days()
 
     def action_open_cash_collect(self) -> dict:
         self.check_singleton()
@@ -35,8 +38,7 @@ class SaleOrder(models.Model):
         if (
             not company.account_config_id.collection_hold_credit_sales
             or not self.user_id
-            or not self.payment_term_id
-            or self.payment_term_id.is_immediate
+            or not self._credit_days()
         ):
             return None
         status = self.user_id._get_custody_status(company)
@@ -52,7 +54,7 @@ class SaleOrder(models.Model):
 
     def _is_cash_sale(self) -> bool:
         self.check_singleton()
-        return bool(self.payment_term_id) and self.payment_term_id.is_immediate
+        return not self._credit_days()
 
     def _get_cash_sale_problem(self) -> str | None:
         self.check_singleton()

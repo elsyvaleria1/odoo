@@ -1,6 +1,6 @@
 {
     "name": "Payment Terms",
-    "version": "1.0",
+    "version": "1.1",
     "category": "Hidden",
     "summary": "Define installment schedules, due dates and early-payment discounts",
     "description": "Stores payment terms and their lines, computes schedule examples and adds customer and supplier term defaults to contacts. Supplies reusable term calculations and configuration views. Trade and accounting addons consume the terms on orders, invoices and payments; this module does not create those documents itself.",

@@ -664,6 +664,26 @@ class TestAgedReceivableReport(TestAccountReportsCommon):
             options,
         )
 
+    def test_the_receivable_position_totals_what_the_report_ages(self):
+        self.env.company.account_config_id.totals_below_sections = False
+        for date in ("2016-10-31", "2016-12-15", "2017-02-01"):
+            options = self._generate_options(self.report, date, date)
+            report_total = next(
+                next(
+                    column["no_format"]
+                    for column in line["columns"]
+                    if column["expression_label"] == "total"
+                )
+                for line in self.report._get_lines(options)
+                if line["name"] == "partner_a"
+            )
+            position = self.env["account.move.line"]._read_receivable_position(
+                self.partner_a,
+                self.env.company,
+                as_of=fields.Date.from_string(date),
+            )[self.partner_a.id, self.env.company.id]
+            self.assertAlmostEqual(position.open, report_total, msg=date)
+
     def test_aged_receivable_sort_lines_by_date(self):
         options = self._generate_options(
             self.report,

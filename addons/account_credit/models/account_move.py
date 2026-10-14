@@ -1,31 +1,12 @@
 from collections import defaultdict
 
-from odoo import fields, models
+from odoo import models
 
 from .sale_order import APPROVAL_ROUTE_CONDITIONS
 
 
 class AccountMove(models.Model):
     _inherit = "account.move"
-
-    def _is_immediate_payment(self) -> bool:
-        self.check_singleton()
-        invoice_date = self.invoice_date or fields.Date.today()
-        return all(
-            line.date_maturity <= invoice_date
-            for line in self.line_ids
-            if line.display_type == "payment_term" and line.date_maturity
-        )
-
-    def _credit_term_days(self):
-        self.check_singleton()
-        invoice_date = self.invoice_date or fields.Date.today()
-        due_dates = [
-            line.date_maturity
-            for line in self.line_ids
-            if line.display_type == "payment_term" and line.date_maturity
-        ]
-        return max(((due - invoice_date).days for due in due_dates), default=0)
 
     def _credit_profile(self):
         self.check_singleton()
@@ -101,11 +82,12 @@ class AccountMove(models.Model):
                 if profile.hold_active:
                     profile._check_credit("invoice", immediate=True, refresh=False)
                 continue
+            term_days = move._credit_days()
             profile._check_credit(
                 "invoice",
                 amount=abs(move.amount_total_signed),
-                immediate=move._is_immediate_payment(),
-                term_days=move._credit_term_days(),
+                immediate=not term_days,
+                term_days=term_days,
                 approval_exempt=move._credit_approved_conditions(),
                 refresh=False,
             )

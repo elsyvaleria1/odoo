@@ -15,9 +15,13 @@ class AccountMoveLine(models.Model):
         if groupby_spec != "followup_overdue":
             return super()._read_group_groupby(alias, groupby_spec, query)
         return SQL(
-            "%(date_maturity)s IS NOT NULL AND %(date_maturity)s < %(current_date)s",
-            date_maturity=self._field_to_sql(self._table, "date_maturity", query),
-            current_date=SQL("'%s'" % fields.Date.context_today(self)),
+            "COALESCE(%(date_maturity)s, %(date)s) < %(current_date)s",
+            date_maturity=self._field_to_sql(alias, "date_maturity", query),
+            date=self._field_to_sql(alias, "date", query),
+            current_date=SQL(
+                "%s::date",
+                SQL.literal(fields.Date.to_string(fields.Date.context_today(self))),
+            ),
         )
 
     def _read_group_empty_value(self, spec):

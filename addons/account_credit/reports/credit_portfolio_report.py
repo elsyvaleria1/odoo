@@ -1,7 +1,7 @@
 from odoo import fields, models
 from odoo.tools import SQL
 
-from ..models.credit_aging import AGING_CODES, aging_case_sql
+from ..models.credit_aging import CREDIT_LADDER
 
 
 class CreditPortfolioReport(models.Model):
@@ -96,40 +96,46 @@ class CreditPortfolioReport(models.Model):
     )
 
     def _with_cte(self) -> SQL:
-        bucket = aging_case_sql(
-            "((now() AT TIME ZONE 'UTC')::date - COALESCE(l.date_maturity, l.date))"
-        )
+        today = SQL("(now() AT TIME ZONE 'UTC')::date")
         return SQL(
-            f"""
+            """
+            position (
+                partner_id, company_id, bucket, open, unapplied, overdue, oldest_due
+            ) AS (%(positions)s),
             receivable AS (
                 SELECT p.id AS profile_id,
-                       SUM(l.amount_residual) AS amount_open,
-                       SUM(l.amount_residual) FILTER (WHERE l.amount_residual > 0 AND COALESCE(l.date_maturity, l.date) < (now() AT TIME ZONE 'UTC')::date) AS amount_overdue,
-                       {
-                " ".join(
-                    f"SUM(l.amount_residual) FILTER (WHERE l.amount_residual > 0 AND {bucket} = '{code}') AS amount_{code},"
-                    for code in AGING_CODES
-                )
-            }
-                       MAX((now() AT TIME ZONE 'UTC')::date - COALESCE(l.date_maturity, l.date)) FILTER (WHERE l.amount_residual > 0 AND COALESCE(l.date_maturity, l.date) < (now() AT TIME ZONE 'UTC')::date) AS oldest_due_days
+                       SUM(pos.open) AS amount_open,
+                       SUM(pos.overdue) AS amount_overdue,
+                       %(buckets)s,
+                       GREATEST(%(today)s - MIN(pos.oldest_due), 0) AS oldest_due_days
                   FROM credit_profile p
-                  JOIN res_partner rp ON rp.commercial_partner_id = p.partner_id
-                  JOIN account_move_line l ON l.partner_id = rp.id AND l.company_id = p.company_id
-                  JOIN account_account a ON a.id = l.account_id
-                 WHERE a.account_type = 'asset_receivable'
-                   AND l.parent_state = 'posted'
-                   AND l.reconciled IS NOT TRUE
+                  JOIN res_company pc ON pc.id = p.company_id
+                  JOIN position pos
+                    ON pos.partner_id = p.partner_id
+                   AND pos.company_id = SPLIT_PART(pc.parent_path, '/', 1)::int
                  GROUP BY p.id
             ),
             facility AS (
                 SELECT f.profile_id, SUM(f.amount) AS amount
                   FROM credit_facility f
                  WHERE f.state = 'active'
-                   AND f.date_start <= (now() AT TIME ZONE 'UTC')::date
-                   AND (f.date_end IS NULL OR f.date_end >= (now() AT TIME ZONE 'UTC')::date)
+                   AND f.date_start <= %(today)s
+                   AND (f.date_end IS NULL OR f.date_end >= %(today)s)
                  GROUP BY f.profile_id
             )
-            """
+            """,
+            positions=self.env["account.move.line"]._receivable_position_query(
+                today=today, ladder=CREDIT_LADDER
+            ),
+            buckets=SQL(",\n").join(
+                SQL(
+                    "SUM(pos.open) FILTER (WHERE pos.bucket = %s) AS %s",
+                    code,
+                    SQL.identifier(f"amount_{code}"),
+                )
+                for code in CREDIT_LADDER.codes
+            ),
+            today=today,
         )
 
     def _get_fields_select(self) -> dict:
@@ -150,7 +156,7 @@ class CreditPortfolioReport(models.Model):
             "expected_loss": "COALESCE(r.amount_open, 0) * COALESCE(g.expected_loss_rate, 0) / 100.0",
             "limit_amount": "COALESCE(f.amount, 0)",
         }
-        for code in AGING_CODES:
+        for code in CREDIT_LADDER.codes:
             select[f"amount_{code}"] = f"COALESCE(r.amount_{code}, 0)"
         return select
 

@@ -1290,6 +1290,15 @@ class SaleOrder(models.Model):
     def _compute_partner_credit_warning(self) -> None:
         super()._compute_partner_credit_warning()
 
+    def _credit_days(self) -> int:
+        self.check_singleton()
+        date_ref = (
+            fields.Date.context_today(self, self.date_order)
+            if self.date_order
+            else fields.Date.context_today(self)
+        )
+        return self.payment_term_id._credit_days(date_ref)
+
     def _is_partner_credit_warning_applicable(self) -> bool:
         return super()._is_partner_credit_warning_applicable() and not (
             self.company_id.sale_config_id.is_credit_immediate_exempt

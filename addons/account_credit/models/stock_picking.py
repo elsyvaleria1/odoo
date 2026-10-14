@@ -29,9 +29,7 @@ class StockPicking(models.Model):
         self.check_singleton()
         order = self._credit_order()
         return bool(
-            self.picking_type_code == "outgoing"
-            and order
-            and not order._is_immediate_payment()
+            self.picking_type_code == "outgoing" and order and order._credit_days()
         )
 
     def _credit_verdict(self):
@@ -50,7 +48,7 @@ class StockPicking(models.Model):
         return profile._evaluate(
             "picking",
             immediate=False,
-            term_days=profile._term_days(order.payment_term_id),
+            term_days=order._credit_days(),
         )
 
     @api.depends("sale_id", "picking_type_code", "state")
@@ -84,5 +82,5 @@ class StockPicking(models.Model):
             profile._check_credit(
                 "picking",
                 immediate=False,
-                term_days=profile._term_days(order.payment_term_id),
+                term_days=order._credit_days(),
             )

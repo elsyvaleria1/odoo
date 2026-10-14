@@ -19,6 +19,7 @@ from odoo.tools import (
 from odoo.tools.authority_keys import declare_authority_keys
 
 from odoo.addons.account.models.account_move import MAX_HASH_VERSION
+from odoo.addons.account.tools.aging import AgingLadder, ReceivablePosition
 from odoo.addons.account.tools.display_types import (
     NON_ACCOUNTABLE_DISPLAY_TYPES,
 )
@@ -5014,4 +5015,179 @@ class AccountMoveLine(models.Model):
             and not (self.name or "").strip()
             and self.currency_id.is_zero(self.price_unit)
             and self.currency_id.is_zero(self.price_total)
+        )
+
+    @api.model
+    def _read_receivable_position(
+        self,
+        partners,
+        companies,
+        *,
+        as_of: date | None = None,
+        today: date | None = None,
+        ladder: AgingLadder | None = None,
+        domain=None,
+    ) -> dict[tuple[int, int], ReceivablePosition]:
+        self.flush_model(
+            [
+                "account_id",
+                "amount_residual",
+                "balance",
+                "company_id",
+                "date",
+                "date_maturity",
+                "parent_state",
+                "partner_id",
+                "reconciled",
+            ]
+        )
+        self.env["account.partial.reconcile"].flush_model(
+            ["amount", "credit_move_id", "debit_move_id", "max_date"]
+        )
+        self.env["res.partner"].flush_model(["commercial_partner_id"])
+        rows = self.env.execute_query(
+            self._receivable_position_query(
+                partners,
+                companies,
+                as_of=as_of,
+                today=today,
+                ladder=ladder,
+                domain=domain,
+            )
+        )
+        totals = defaultdict(lambda: [0.0, 0.0, 0.0, None, {}])
+        for partner_id, company_id, bucket, amount, unapplied, overdue, oldest in rows:
+            entry = totals[partner_id, company_id]
+            entry[0] += amount
+            entry[1] += unapplied or 0.0
+            entry[2] += overdue or 0.0
+            if oldest and (entry[3] is None or oldest < entry[3]):
+                entry[3] = oldest
+            if bucket:
+                entry[4][bucket] = entry[4].get(bucket, 0.0) + amount
+        return {
+            key: ReceivablePosition(
+                open=amount,
+                unapplied=unapplied,
+                overdue=overdue,
+                oldest_due=oldest,
+                by_bucket=buckets,
+            )
+            for key, (amount, unapplied, overdue, oldest, buckets) in totals.items()
+        }
+
+    @api.model
+    def _receivable_position_query(
+        self,
+        partners=None,
+        companies=None,
+        *,
+        as_of: date | None = None,
+        today: date | SQL | None = None,
+        ladder: AgingLadder | None = None,
+        domain=None,
+    ) -> SQL:
+        lines = Domain("account_id.account_type", "=", "asset_receivable") & Domain(
+            "parent_state", "=", "posted"
+        )
+        if partners is not None:
+            lines &= Domain(
+                "partner_id.commercial_partner_id",
+                "in",
+                partners._origin.commercial_partner_id._origin.ids,
+            )
+        if companies is not None:
+            lines &= Domain("company_id", "child_of", companies.ids)
+            scope = SQL(
+                """
+                JOIN res_company scope
+                  ON scope.id = ANY(%s)
+                 AND company.parent_path LIKE scope.parent_path || '%%'
+                """,
+                companies.ids,
+            )
+            scope_id = SQL("scope.id")
+        else:
+            scope = SQL()
+            scope_id = SQL("SPLIT_PART(company.parent_path, '/', 1)::int")
+        if as_of:
+            lines &= Domain("date", "<=", as_of)
+            reference = as_of
+        else:
+            lines &= Domain("reconciled", "=", False)
+            reference = today or fields.Date.context_today(self)
+        if domain is not None:
+            lines &= Domain(domain)
+        query = self._search(lines, active_test=False, bypass_access=True)
+        if as_of:
+            residual = SQL(
+                "account_move_line.balance"
+                " - COALESCE(debit_part.amount, 0)"
+                " + COALESCE(credit_part.amount, 0)"
+            )
+            settlement = SQL(
+                """
+                LEFT JOIN LATERAL (
+                    SELECT SUM(part.amount) AS amount
+                      FROM account_partial_reconcile part
+                     WHERE part.debit_move_id = account_move_line.id
+                       AND part.max_date <= %(as_of)s
+                ) debit_part ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT SUM(part.amount) AS amount
+                      FROM account_partial_reconcile part
+                     WHERE part.credit_move_id = account_move_line.id
+                       AND part.max_date <= %(as_of)s
+                ) credit_part ON TRUE
+                """,
+                as_of=as_of,
+            )
+        else:
+            residual = SQL("account_move_line.amount_residual")
+            settlement = SQL()
+        days_past_due = SQL("(%s::date - line.due)", reference)
+        bucket = (
+            SQL(
+                "CASE WHEN line.residual > 0 THEN %s END",
+                ladder.case_sql(days_past_due),
+            )
+            if ladder
+            else SQL("NULL::varchar")
+        )
+        return SQL(
+            """
+            SELECT partner.commercial_partner_id,
+                   %(scope_id)s,
+                   %(bucket)s,
+                   SUM(line.residual),
+                   SUM(line.residual) FILTER (WHERE line.residual < 0),
+                   SUM(line.residual) FILTER (
+                       WHERE line.residual > 0 AND %(days_past_due)s > 0
+                   ),
+                   MIN(line.due) FILTER (WHERE line.residual > 0)
+              FROM (
+                    SELECT account_move_line.partner_id,
+                           account_move_line.company_id,
+                           COALESCE(
+                               account_move_line.date_maturity, account_move_line.date
+                           ) AS due,
+                           %(residual)s AS residual
+                      FROM %(from_clause)s
+                      %(settlement)s
+                     WHERE %(where_clause)s
+                   ) line
+              JOIN res_partner partner ON partner.id = line.partner_id
+              JOIN res_company company ON company.id = line.company_id
+              %(scope)s
+             WHERE line.residual != 0
+          GROUP BY 1, 2, 3
+            """,
+            scope_id=scope_id,
+            scope=scope,
+            bucket=bucket,
+            days_past_due=days_past_due,
+            residual=residual,
+            from_clause=query.from_clause,
+            settlement=settlement,
+            where_clause=query.where_clause or SQL("TRUE"),
         )

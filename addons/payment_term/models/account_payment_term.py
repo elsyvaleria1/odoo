@@ -112,8 +112,8 @@ class AccountPaymentTerm(models.Model):
         string="Immediate Payment Term",
         compute="_compute_is_immediate",
         store=True,
-        help="True when the whole amount falls due on the invoice date itself: "
-        "a single 100% line, no delay, counted from the invoice date.",
+        help="True when every installment falls due on the invoice date itself: "
+        "no delay, counted from the invoice date.",
     )
 
     def _get_percent_precision(self):
@@ -158,17 +158,20 @@ class AccountPaymentTerm(models.Model):
         "line_ids.delay_type",
     )
     def _compute_is_immediate(self) -> None:
-        precision = self._get_percent_precision()
         for term in self:
-            line = term.line_ids
-            term.is_immediate = (
-                len(line) == 1
-                and line.value == "percent"
-                and line.delay_type == "days_after"
-                and line.nb_days == 0
-                and float_compare(line.value_amount, 100.0, precision_digits=precision)
-                == 0
+            term.is_immediate = bool(term.line_ids) and all(
+                line.delay_type == "days_after" and line.nb_days == 0
+                for line in term.line_ids
             )
+
+    def _credit_days(self, date_ref) -> int:
+        if not self:
+            return 0
+        self.check_singleton()
+        return max(
+            ((line._get_due_date(date_ref) - date_ref).days for line in self.line_ids),
+            default=0,
+        )
 
     @api.depends(
         "currency_id",

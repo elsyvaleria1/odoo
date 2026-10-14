@@ -10,6 +10,7 @@ from odoo.tools import SQL
 from odoo.tools.misc import format_date, get_lang
 
 from .followup_request import FollowupRequest
+from odoo.addons.account.tools.aging import ReceivablePosition
 
 _logger = logging.getLogger(__name__)
 
@@ -274,48 +275,41 @@ class ResPartner(models.Model):
             self.total_overdue = 0.0
             self.total_overdue_followup = 0.0
             return
-        due_data = defaultdict(float)
-        overdue_data = defaultdict(float)
-        receivable_due_data = defaultdict(float)
-        receivable_overdue_data = defaultdict(float)
-        receivable_overdue_followup_data = defaultdict(float)
+        company = self.env.company
+        Line = self.env["account.move.line"]
+        positions = Line._read_receivable_position(self, company)
+        followed = Line._read_receivable_position(
+            self, company, domain=[("no_followup", "=", False)]
+        )
+        payable_due = defaultdict(float)
+        payable_overdue = defaultdict(float)
         unreconciled_aml_ids = defaultdict(list)
-        for (
-            account_type,
-            overdue,
-            partner,
-            no_followup,
-            amount_residual_sum,
-            aml_ids,
-        ) in self.env["account.move.line"]._read_group(
+        for account_type, overdue, partner, residual, aml_ids in Line._read_group(
             domain=self._get_domain_unreconciled_aml(),
-            groupby=["account_type", "followup_overdue", "partner_id", "no_followup"],
+            groupby=["account_type", "followup_overdue", "partner_id"],
             aggregates=["amount_residual:sum", "id:array_agg"],
         ):
             if account_type == "asset_receivable":
                 unreconciled_aml_ids[partner.id] += aml_ids
-                receivable_due_data[partner.id] += amount_residual_sum
-                if overdue:
-                    receivable_overdue_data[partner.id] += amount_residual_sum
-                    if not no_followup:
-                        receivable_overdue_followup_data[partner.id] += (
-                            amount_residual_sum
-                        )
-
-            due_data[partner.id] += amount_residual_sum
+                continue
+            payable_due[partner.id] += residual
             if overdue:
-                overdue_data[partner.id] += amount_residual_sum
+                payable_overdue[partner.id] += residual
 
+        empty = ReceivablePosition()
         for partner in self:
             origin_id = partner._origin.id
-            partner.total_net_due = due_data.get(origin_id, 0.0)
-            partner.total_net_overdue = overdue_data.get(origin_id, 0.0)
-            partner.total_due = receivable_due_data.get(origin_id, 0.0)
-            partner.total_overdue = receivable_overdue_data.get(origin_id, 0.0)
-            partner.total_overdue_followup = receivable_overdue_followup_data.get(
+            key = (partner._origin.commercial_partner_id._origin.id, company.id)
+            position = positions.get(key, empty)
+            followed_position = followed.get(key, empty)
+            partner.total_due = position.open
+            partner.total_overdue = position.net_overdue
+            partner.total_overdue_followup = followed_position.net_overdue
+            partner.total_net_due = position.open + payable_due.get(origin_id, 0.0)
+            partner.total_net_overdue = position.net_overdue + payable_overdue.get(
                 origin_id, 0.0
             )
-            partner.unreconciled_aml_ids = self.env["account.move.line"].browse(
+            partner.unreconciled_aml_ids = Line.browse(
                 unreconciled_aml_ids.get(origin_id, [])
             )
 
