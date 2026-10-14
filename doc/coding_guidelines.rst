@@ -4,7 +4,7 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.96
+:Version: 7.97
 :Date: 2026-10-13
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
@@ -3006,13 +3006,19 @@ and ``"""triple double quotes"""``:
 * A comment says why, never what.
 
 **Vendored code keeps its comments** ``[review]``
-``[factcheck web, mail, geoengine]``. A third-party file under ``static/lib/``
-stays byte-identical to the release it was vendored from, so a comment or
-docstring pass skips ``static/lib/``. Why: its banner carries the copyright and
-licence notice MIT, BSD and Apache require in every copy we ship, and the version
-the machine-doc probes (``versions.json``) read; stripped, it matches no release
-and cannot be diffed against one. Libraries ``versions.json`` marks
-``"upstream": false`` are fork-local and follow this section like any other code.
+``[factcheck web, mail, geoengine]``. A comment or docstring pass skips
+third-party files under ``static/lib/``. Pristine upstream files stay
+byte-identical to their pinned release. Locally built or fork-modified libraries
+keep the upstream notices and record their source version or revision, build
+procedure and reviewed divergences in ``versions.json`` and the adjacent
+``README.md``. A pinned artifact checksum verifies the shipped result; it does
+not prove equivalence to upstream, which requires comparing the release or
+reproducing the reviewed build. Why: upstream comments carry copyright and
+licence notices and sometimes the version the machine-doc probes read;
+stripping them erases provenance and hides changes unrelated to the fork's
+documented patches.
+Libraries ``versions.json`` marks ``"upstream": false`` are fork-local and
+follow this section like any other code.
 
 **Deleting an existing comment is a separate decision from shortening one**
 ``[review]``. Leave it unless it is now false. Shorten around the reason, never
@@ -6392,6 +6398,13 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.97
+     - 2026-10-13
+     - §2.5: pristine vendor files remain byte-identical; locally built and
+       fork-modified libraries preserve notices and document their pinned
+       source, reproduction procedure and reviewed divergences. Artifact
+       checksums detect drift but do not replace upstream comparison or a
+       reproducible build.
    * - 7.96
      - 2026-10-13
      - §1.5: ``agent_runner`` and ``agent_runner_github`` are ``runner`` and
