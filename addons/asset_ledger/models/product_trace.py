@@ -160,8 +160,6 @@ class ProductTrace(models.Model):
             self.asset_id.sudo().write(ledger)
         res = super().write(vals) if vals else True
         touched = vals.keys()
-        if "asset_id" in touched:
-            self.filtered("asset_id")._sync_resource_asset()
         if touched & ASSET_ATTRIBUTE_FIELDS:
             self.filtered("asset_id")._sync_resource_asset_attributes()
         return res

@@ -1,7 +1,7 @@
 from psycopg.errors import UniqueViolation
 
 from odoo.exceptions import ValidationError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import TransactionCase, counting_statements, new_test_user, tagged
 
 
 @tagged("post_install", "-at_install")
@@ -125,13 +125,6 @@ class TestResourceAssetStock(TransactionCase):
                 "company_id": self.env.company.id,
             }
         )
-        other = self.env["product.trace"].create(
-            {
-                "name": "PK-005",
-                "product_id": self.product.id,
-                "company_id": self.env.company.id,
-            }
-        )
         from odoo.tools import mute_logger
 
         with (
@@ -139,8 +132,31 @@ class TestResourceAssetStock(TransactionCase):
             mute_logger("odoo.sql_db", "odoo.db.cursor"),
         ):
             with self.env.cr.savepoint():
-                other.asset_id = lot.asset_id
-                other.flush_recordset()
+                lot.asset_id.copy({"trace_id": lot.id}).flush_recordset()
+
+    def test_giving_an_asset_another_serial_moves_the_lot_link(self):
+        lot, other = self.env["product.trace"].create(
+            [
+                {
+                    "name": name,
+                    "product_id": self.product.id,
+                    "company_id": self.env.company.id,
+                }
+                for name in ("PK-005", "PK-005B")
+            ]
+        )
+        asset = lot.asset_id
+        other.asset_id.trace_id = False
+        self.env.flush_all()
+        asset.trace_id = other
+        self.assertFalse(lot.asset_id)
+        self.assertEqual(other.asset_id, asset)
+        self.assertEqual(
+            self.env["product.trace"].search(
+                [("asset_id", "=", asset.id), ("id", "in", (lot | other).ids)]
+            ),
+            other,
+        )
 
     def test_a_stock_user_without_asset_rights_still_creates_the_asset(self):
         user = new_test_user(
@@ -191,6 +207,61 @@ class TestResourceAssetStock(TransactionCase):
         self.assertEqual(drill.location_id, shelf)
         drill.name = "Hammer drill"
         self.assertEqual(drill.location_id, shelf)
+
+    def test_delivering_serials_does_not_search_assets_per_line(self):
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", self.env.company.id)], limit=1
+        )
+        customers = self.env.ref("stock.stock_location_customers")
+
+        def statements_to_deliver(count):
+            lots = self.env["product.trace"].create(
+                [
+                    {
+                        "name": f"DELIVER-{count}-{index}",
+                        "product_id": self.product.id,
+                        "company_id": self.env.company.id,
+                    }
+                    for index in range(count)
+                ]
+            )
+            for lot in lots:
+                self.env["stock.quant"]._update_available_quantity(
+                    self.product, warehouse.lot_stock_id, 1, trace_id=lot
+                )
+            picking = self.env["stock.picking"].create(
+                {
+                    "picking_type_id": warehouse.out_type_id.id,
+                    "location_id": warehouse.lot_stock_id.id,
+                    "location_dest_id": customers.id,
+                    "move_ids": [
+                        (
+                            0,
+                            0,
+                            {
+                                "product_id": self.product.id,
+                                "product_uom_qty": count,
+                                "location_id": warehouse.lot_stock_id.id,
+                                "location_dest_id": customers.id,
+                            },
+                        )
+                    ],
+                }
+            )
+            picking.action_confirm()
+            picking.action_assign()
+            picking.move_ids.picked = True
+            self.env.flush_all()
+            self.env.invalidate_all()
+            with counting_statements(self.env.cr) as statements:
+                picking.button_validate()
+                self.env.flush_all()
+            self.assertEqual(picking.state, "done")
+            self.assertEqual(lots.asset_id.location_id, customers)
+            return statements.count
+
+        few, many = statements_to_deliver(2), statements_to_deliver(12)
+        self.assertLess(many - few, 10)
 
 
 @tagged("post_install", "-at_install")

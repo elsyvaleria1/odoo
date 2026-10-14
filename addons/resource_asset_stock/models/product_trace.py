@@ -4,23 +4,25 @@ from odoo import api, fields, models
 class ProductTrace(models.Model):
     _inherit = "product.trace"
 
+    asset_ids = fields.One2many(
+        comodel_name="resource.resource",
+        inverse_name="trace_id",
+        string="Assets",
+    )
     asset_id = fields.Many2one(
         comodel_name="resource.resource",
         compute="_compute_asset_id",
-        store=True,
-        index="btree_not_null",
-        copy=False,
-        readonly=False,
+        search="_search_asset_id",
+        compute_sudo=True,
     )
 
-    _asset_uniq = models.UniqueIndex(
-        "(asset_id) WHERE asset_id IS NOT NULL", "A lot is one asset at most."
-    )
-
-    @api.depends("product_id.asset_kind_id")
+    @api.depends("asset_ids")
     def _compute_asset_id(self) -> None:
         for lot in self:
-            lot.asset_id = lot.asset_id
+            lot.asset_id = lot.asset_ids[:1]
+
+    def _search_asset_id(self, operator, value):
+        return [("asset_ids", operator, value)]
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -48,8 +50,6 @@ class ProductTrace(models.Model):
             .sudo()
             .create([lot._prepare_asset_vals() for lot in self])
         )
-        for lot, asset in zip(self, assets, strict=True):
-            lot.sudo().asset_id = asset
         return assets.with_env(self.env)
 
     def action_view_asset(self) -> dict:

@@ -7,7 +7,6 @@ class ResourceResource(models.Model):
     trace_id = fields.Many2one(
         comodel_name="product.trace",
         string="Serial",
-        index="btree_not_null",
         copy=False,
         help="The inventory identity of this unit, when it entered through a receipt or a manufacturing order.",
     )
@@ -20,6 +19,10 @@ class ResourceResource(models.Model):
         readonly=False,
         domain="[('usage', '=', 'internal')]",
         help="Where the thing is kept: its serial's location when it has one, set by hand otherwise.",
+    )
+
+    _trace_uniq = models.UniqueIndex(
+        "(trace_id) WHERE trace_id IS NOT NULL", "A lot is one asset at most."
     )
 
     @api.depends("trace_id.location_id")
