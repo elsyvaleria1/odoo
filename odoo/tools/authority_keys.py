@@ -87,7 +87,6 @@ declare_authority_keys("sale_renting_planning", "rental_order_updated")
 declare_authority_keys(
     "stock",
     "bypass_entire_pack",
-    "from_inverse_qty",
     "skip_activity",
     "skip_uom_conversion",
     "stock_unlink_subtree",

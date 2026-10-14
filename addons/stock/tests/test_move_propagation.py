@@ -58,6 +58,18 @@ class TestMovePropagation(TransactionCase):
         self.assertEqual(move.location_dest_id, shelf)
         self.assertEqual(move.move_line_ids.location_dest_id, shelf)
 
+    def test_a_type_code_change_does_not_move_an_open_move(self):
+        shelf = self.env["stock.location"].create(
+            {"name": "Shelf-B", "location_id": self.stock.id}
+        )
+        move = self._receipt(self._product("Code")).move_ids
+        move.location_dest_id = shelf
+
+        self.warehouse.in_type_id.write({"code": "internal"})
+
+        self.assertEqual(move.location_dest_id, shelf)
+        self.assertEqual(move.move_line_ids.location_dest_id, shelf)
+
     def test_rewriting_a_deadline_keeps_the_chain_deadlines(self):
         product = self._product("Deadline")
         out_zone = self.env["stock.location"].create(
@@ -92,6 +104,34 @@ class TestMovePropagation(TransactionCase):
         self.assertEqual(
             tail.date_deadline, datetime(2026, 11, 5, 12) + timedelta(days=1)
         )
+
+    def test_clearing_an_empty_deadline_keeps_the_chain_deadlines(self):
+        product = self._product("No deadline")
+        head, tail = self.env["stock.move"].create(
+            [
+                {
+                    "product_id": product.id,
+                    "product_uom_qty": 1,
+                    "location_id": self.stock.id,
+                    "location_dest_id": self.customer.id,
+                },
+                {
+                    "product_id": product.id,
+                    "product_uom_qty": 1,
+                    "location_id": self.stock.id,
+                    "location_dest_id": self.customer.id,
+                },
+            ]
+        )
+        tail.move_orig_ids = head
+        (head | tail)._action_confirm(merge=False)
+        tail.with_context(
+            date_deadline_propagate_ids={head.id, tail.id}
+        ).date_deadline = datetime(2026, 11, 5, 12)
+
+        head.write({"date_deadline": False})
+
+        self.assertEqual(tail.date_deadline, datetime(2026, 11, 5, 12))
 
     def test_pushing_packed_moves_reads_packages_once(self):
         self.warehouse.reception_steps = "two_steps"

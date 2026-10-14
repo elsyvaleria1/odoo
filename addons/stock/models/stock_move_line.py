@@ -34,6 +34,13 @@ RESERVATION_KEY_FIELDS = (
     "package_id",
     "owner_id",
 )
+LINE_RESERVATION_KEY_FIELDS = (
+    "product_id",
+    "location_id",
+    "reservation_trace_id",
+    "package_id",
+    "owner_id",
+)
 
 RENDERED_KEYS = frozenset(
     {"quantity", *(rendered for _field, rendered in LOGGED_RELATIONS)}
@@ -310,7 +317,7 @@ class StockMoveLine(models.Model):
     _free_reservation_index = models.Index(
         """(%s, company_id)
         WHERE (state IS NULL OR state NOT IN ('done', 'cancel')) AND quantity_product_uom > 0 AND picked IS NOT TRUE"""
-        % ", ".join(RESERVATION_KEY_FIELDS)
+        % ", ".join(LINE_RESERVATION_KEY_FIELDS)
     )
 
     def _filtered_located_outside(self, location) -> Self:

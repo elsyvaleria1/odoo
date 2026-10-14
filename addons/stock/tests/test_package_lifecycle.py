@@ -186,3 +186,36 @@ class TestPackageLifecycle(TransactionCase):
         self.assertEqual(
             [values["qty_ordered"] for values in aggregated.values()], [20.0]
         )
+
+    def test_removing_a_container_from_one_transfer_leaves_the_others(self):
+        self.env.user.group_ids |= self.env.ref("stock.group_stock_multi_locations")
+        rack = self.env["stock.location"].create(
+            {"name": "Rack", "location_id": self.stock.id}
+        )
+        pallet_type = self.env["stock.package.type"].create({"name": "Pallet"})
+        self.env["stock.putaway.rule"].create(
+            {
+                "location_in_id": self.stock.id,
+                "location_out_id": rack.id,
+                "package_type_ids": [(6, 0, pallet_type.ids)],
+            }
+        )
+        first = self._receipt((self._product("Removed A"), 2))
+        second = self._receipt((self._product("Removed B"), 2))
+        first.move_line_ids.action_put_in_pack(package_name="BOX-A")
+        second.move_line_ids.action_put_in_pack(package_name="BOX-B")
+        pallet = self.env["stock.package"].create(
+            {"name": "PALLET-R", "package_type_id": pallet_type.id}
+        )
+        boxes = (
+            first.move_line_ids.result_package_id
+            | second.move_line_ids.result_package_id
+        )
+        boxes.action_put_in_pack(package_id=pallet.id)
+        self.assertEqual(second.move_line_ids.location_dest_id, rack)
+
+        pallet.with_context(picking_ids=first.ids).action_remove_package()
+
+        self.assertFalse(first.move_line_ids.result_package_id.package_dest_id)
+        self.assertEqual(second.move_line_ids.result_package_id.package_dest_id, pallet)
+        self.assertEqual(second.move_line_ids.location_dest_id, rack)

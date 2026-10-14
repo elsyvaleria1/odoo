@@ -136,4 +136,6 @@ class WizardStockQuantRelocate(models.TransientModel):
             return trace_ids.action_lot_open_quants()
         elif self.env.context.get("single_product", False) and len(product_ids) == 1:
             return product_ids.action_view_quants()
-        return self.quant_ids.with_context(always_show_loc=1).action_view_quants()
+        return self.quant_ids.with_context(always_show_loc=1)._get_action_view_quants(
+            products=self.quant_ids.product_id
+        )

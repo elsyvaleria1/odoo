@@ -84,7 +84,10 @@ class StockPickingBatchMembership(models.Model):
             lambda picking: (
                 picking.batch_id
                 and picking.state != "done"
-                and any(p not in self for p in picking.batch_id.picking_ids)
+                and any(
+                    p not in self and p.state != "done"
+                    for p in picking.batch_id.picking_ids
+                )
             )
         )
         if leaving:

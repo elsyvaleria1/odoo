@@ -450,7 +450,11 @@ class StockQuant(models.Model):
                 plain_records.filtered("company_id")._check_company()
         if auto_applied:
             elevated = next(iter(auto_applied))
-            elevated.concat(*auto_applied)._apply_counted_quantities(auto_applied)
+            counted = elevated.concat(*auto_applied)
+            if self.env.context.get("import_file"):
+                counted._apply_imported_counts(auto_applied)
+            else:
+                counted._apply_counted_quantities(auto_applied)
         return self.env["stock.quant"].concat(*results)
 
     @_debug.perf.timed
@@ -709,7 +713,11 @@ class StockQuant(models.Model):
 
     @api.model
     def action_view_quants(self):
-        return self._get_action_view_quants()
+        product_id = self.env.context.get("default_product_id")
+        products = (
+            self.env["product.product"].browse(product_id) if product_id else None
+        )
+        return self._get_action_view_quants(products=products)
 
     @api.model
     def _get_action_view_quants(self, products=None):

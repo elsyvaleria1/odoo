@@ -744,7 +744,11 @@ class StockPicking(models.Model):
     def _compute_location_id(self):
         for picking in self:
             if picking.location_id and (
-                picking.state in DONE_CANCEL_STATES or picking.return_id
+                picking.state in DONE_CANCEL_STATES
+                or picking.return_id
+                or picking._is_location_kept_in_form(
+                    "default_location_src_id", "supplier"
+                )
             ):
                 continue
             if picking.picking_type_id:
@@ -754,11 +758,25 @@ class StockPicking(models.Model):
     def _compute_location_dest_id(self):
         for picking in self:
             if picking.location_dest_id and (
-                picking.state in DONE_CANCEL_STATES or picking.return_id
+                picking.state in DONE_CANCEL_STATES
+                or picking.return_id
+                or picking._is_location_kept_in_form(
+                    "default_location_dest_id", "customer"
+                )
             ):
                 continue
             if picking.picking_type_id:
                 picking.location_dest_id = picking._get_type_default_location_dest_id()
+
+    def _is_location_kept_in_form(self, default_field, partner_usage) -> bool:
+        self.check_singleton()
+        origin = self._origin
+        return bool(
+            not self.id
+            and origin
+            and origin.picking_type_id == self.picking_type_id
+            and self.picking_type_id[default_field].usage != partner_usage
+        )
 
     def _get_type_default_location_id(self):
         self.check_singleton()

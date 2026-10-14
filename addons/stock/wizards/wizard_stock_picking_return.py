@@ -117,7 +117,7 @@ class WizardStockPickingReturn(models.TransientModel):
             downstream = self.product_return_moves.filtered(
                 lambda line: not line.uom_id.is_zero(line.quantity)
             ).move_id.move_dest_ids.filtered(
-                lambda m: m.state not in ("done", "cancel")
+                lambda m: m.state in ("assigned", "partially_available")
             )
             downstream._unreserve()
 

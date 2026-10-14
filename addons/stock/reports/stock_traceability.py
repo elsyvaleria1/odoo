@@ -395,7 +395,9 @@ class StockTraceabilityReportHandler(models.AbstractModel):
             "unfolded": line_id in options["unfolded_lines"] or options["unfold_all"],
             "expand_function": "_report_expand_unfoldable_line_traceability",
             "caret_options": (
-                "stock.move.line.used" if row["is_used"] else "stock.move.line"
+                "stock.move.line.used"
+                if row["is_used"] and row["lot_name"]
+                else "stock.move.line"
             ),
         }
 

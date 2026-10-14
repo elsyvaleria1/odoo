@@ -88,3 +88,5 @@ from . import test_warehouse_rule_roles
 from . import test_home_tile_transfers
 from . import test_package_lifecycle
 from . import test_move_propagation
+from . import test_quant_counting
+from . import test_picking_scope

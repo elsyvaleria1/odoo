@@ -1,6 +1,7 @@
 import logging
 import math
 from ast import literal_eval
+from collections import defaultdict
 from typing import Self
 
 from markupsafe import escape
@@ -180,6 +181,30 @@ class StockQuantInventory(models.Model):
         self._apply_counted_quantities(
             {quant: quant.inventory_quantity_auto_apply for quant in self}
         )
+
+    def _apply_imported_counts(self, counted_by_quant) -> None:
+        def key(quant):
+            return (quant.product_id, *quant._get_reservation_key())
+
+        counted_by_key = defaultdict(float)
+        for quant, counted in counted_by_quant.items():
+            counted_by_key[key(quant)] += counted
+        products, locations = self.product_id, self.location_id
+        self._merge_quants(products=products, locations=locations)
+        merged = {
+            quant: counted_by_key[key(quant)]
+            for quant in self.search(
+                [
+                    ("product_id", "in", products.ids),
+                    ("location_id", "in", locations.ids),
+                ]
+            )
+            if key(quant) in counted_by_key
+        }
+        _debug.pipeline(
+            "imported_counts_applied", rows=len(counted_by_quant), quants=len(merged)
+        )
+        self.browse().concat(*merged)._apply_counted_quantities(merged)
 
     def _apply_counted_quantities(self, counted_by_quant) -> None:
         quant_to_inventory = self.browse()

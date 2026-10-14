@@ -189,6 +189,22 @@ class TestOrderpointReplenishment(TransactionCase):
         )
         self.assertFalse(orderpoint.qty_to_order_manual_set)
 
+    def test_a_failed_order_keeps_its_manual_quantity(self):
+        product = self._product("Not Suppliable", suppliable=False)
+        orderpoint = self._orderpoint(
+            product,
+            location_id=self._unsuppliable_location("Nowhere").id,
+            product_min_qty=0,
+            product_max_qty=0,
+        )
+        orderpoint.qty_to_order = 50
+        orderpoint.trigger = "auto"
+
+        self.env["stock.scheduler"]._replenish()
+
+        self.assertTrue(orderpoint.qty_to_order_manual_set)
+        self.assertEqual(orderpoint.qty_to_order, 50)
+
     def test_an_explicit_zero_keeps_its_undo(self):
         product = self._product("Audit Undo", suppliable=False)
         orderpoint = self._orderpoint(product, product_min_qty=5, product_max_qty=10)

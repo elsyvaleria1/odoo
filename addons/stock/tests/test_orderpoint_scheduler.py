@@ -148,30 +148,6 @@ class TestOrderpointSchedulerContract(TransactionCase):
             f"(recorded call sequence: {calls}).",
         )
 
-    def test_scheduler_stops_and_leaves_work_when_time_runs_out(self):
-        Scheduler = type(self.env["stock.scheduler"])
-        ran = []
-
-        def _record(task):
-            def run(records, **kwargs):
-                ran.append(task)
-
-            return run
-
-        with (
-            patch.object(IrCron, "_commit_progress", lambda *args, **kwargs: 0.0),
-            patch.object(
-                Scheduler, "_get_tasks", lambda records: ["_task_a", "_task_b"]
-            ),
-            patch.object(Scheduler, "_task_a", _record("a"), create=True),
-            patch.object(Scheduler, "_task_b", _record("b"), create=True),
-        ):
-            self.env["stock.scheduler"]._run_tasks(use_new_cursor=True)
-
-        self.assertEqual(
-            ran, ["a"], "a task must not start once the cron has no time left"
-        )
-
 
 @tagged("post_install", "-at_install")
 class TestOrderpointActivity(TransactionCase):

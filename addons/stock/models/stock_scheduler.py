@@ -47,13 +47,8 @@ class StockScheduler(models.AbstractModel):
                     use_new_cursor=use_new_cursor,
                     company_id=company_id,
                 )
-            if use_new_cursor and not Cron._commit_progress(1):
-                _logger.info(
-                    "Stock scheduler ran out of time after %s; the cron reruns the"
-                    " remaining tasks.",
-                    task,
-                )
-                break
+            if use_new_cursor:
+                Cron._commit_progress(1)
 
     @api.model
     def _update_orderpoint_values(self, use_new_cursor=False, company_id=False) -> None:
@@ -81,9 +76,6 @@ class StockScheduler(models.AbstractModel):
             company_id=company_id,
             raise_user_error=False,
         )
-        ordered_once = orderpoints.exists().filtered("qty_to_order_manual_set")
-        _debug.logic("scheduler_manual_quantities_consumed", orderpoints=ordered_once)
-        ordered_once.action_remove_manual_qty_to_order()
         self._reserve_due_moves(use_new_cursor=use_new_cursor, company_id=company_id)
 
     @api.model

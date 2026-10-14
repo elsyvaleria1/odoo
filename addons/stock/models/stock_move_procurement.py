@@ -17,7 +17,14 @@ PACKAGE_ROUTE_IDS = TransactionMemo(
 )
 PUSH_RULES = TransactionMemo(
     "stock.move.push_rule",
-    invalidated_by=("stock.rule", "stock.route", "stock.location", "stock.warehouse"),
+    invalidated_by=(
+        "stock.rule",
+        "stock.route",
+        "stock.location",
+        "stock.warehouse",
+        "stock.package.type",
+        "uom.uom",
+    ),
 )
 
 _logger = logging.getLogger(__name__)
@@ -347,7 +354,7 @@ class StockMoveProcurement(models.Model):
         if not packages:
             return Route
         memo = PACKAGE_ROUTE_IDS(self.env)
-        scope = (self.env.uid, self.env.su)
+        scope = (self.env.uid, self.env.su, tuple(self.env.companies.ids))
         if any((*scope, package.id) not in memo for package in packages):
             batch = (
                 self.browse(self._prefetch_ids).move_line_ids.result_package_id

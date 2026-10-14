@@ -547,7 +547,7 @@ class StockMove(models.Model):
         if "date_deadline" in vals:
             new_deadline = fields.Datetime.to_datetime(vals["date_deadline"])
             self.filtered(
-                lambda m: m.date_deadline != new_deadline
+                lambda m: (m.date_deadline or None) != new_deadline
             )._update_date_deadline(new_deadline)
         if "move_orig_ids" in vals:
             move_to_recompute_state |= self.filtered(

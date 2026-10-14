@@ -206,9 +206,7 @@ class StockWarehousePickingType(models.Model):
                     else self.wh_qc_stock_loc_id.id
                 ),
             },
-            "int_type_id": {
-                "active": self._is_int_type_wanted() and self.active,
-            },
+            "int_type_id": {},
             "xdock_type_id": {
                 "active": self.reception_steps != "one_step"
                 and self.delivery_steps != "ship_only"

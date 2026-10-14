@@ -488,6 +488,9 @@ class StockWarehouseOrderpointReplenish(models.Model):
                 failures = []
                 pending = [self]
             else:
+                ordered_once = orderpoints.filtered("qty_to_order_manual_set")
+                _debug.logic("manual_quantities_consumed", orderpoints=ordered_once)
+                ordered_once.action_remove_manual_qty_to_order()
                 orderpoints._post_process_scheduler()
         return failures
 

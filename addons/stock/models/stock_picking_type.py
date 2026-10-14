@@ -391,6 +391,7 @@ class StockPickingType(models.Model):
 
     def _get_moves_kept_on_default_change(self, vals) -> list:
         Move = self.env["stock.move"]
+        field_depends = self.env.registry.field_depends
         changed = [
             Move._fields[move_field]
             for move_field, type_field in (
@@ -398,6 +399,8 @@ class StockPickingType(models.Model):
                 ("location_dest_id", "default_location_dest_id"),
             )
             if type_field in vals
+            or vals.keys()
+            & {dep.split(".")[0] for dep in field_depends[self._fields[type_field]]}
         ]
         if not changed:
             return []

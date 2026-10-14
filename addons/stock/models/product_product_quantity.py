@@ -105,6 +105,22 @@ class ProductProductQuantity(models.Model):
         self._update_qty_available([product.qty_available for product in self])
 
     def _update_qty_available(self, quantities) -> None:
+        filters = QuantityFilters.from_context(self.env)
+        if any(
+            value is not None
+            for value in (
+                filters.trace_id,
+                filters.owner_id,
+                filters.package_id,
+                filters.owners,
+            )
+        ):
+            raise UserError(
+                self.env._(
+                    "The quantity on hand shown here is filtered by lot, owner or"
+                    " package, so it cannot be set. Use an inventory adjustment."
+                ),
+            )
         product_ids = []
         quantities_to_apply = []
         for product, quantity in zip(self, quantities, strict=True):

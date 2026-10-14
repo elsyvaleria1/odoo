@@ -14,6 +14,7 @@ from ..tools.quantity import get_faithful_quantity
 from .stock_move_line import (
     _KEEP,
     DEST_QUANT_FIELDS,
+    LINE_RESERVATION_KEY_FIELDS,
     RENDERED_KEYS,
     RESERVATION_KEY_FIELDS,
     RESTOCK_TRIGGER_FIELDS,
@@ -176,10 +177,14 @@ class StockMoveLineQuant(models.Model):
     def _get_quants_cache(self):
         if not self:
             return None
-        return self.env["stock.quant"]._get_quants_by_products_locations(
-            self.product_id,
-            self.location_id | self.location_dest_id,
-            lot_scope=self.trace_id,
+        return (
+            self.env["stock.quant"]
+            ._with_quant_upkeep()
+            ._get_quants_by_products_locations(
+                self.product_id,
+                self.location_id | self.location_dest_id,
+                lot_scope=self.trace_id | self.reservation_trace_id,
+            )
         )
 
     def _update_quants_and_reservations(
@@ -217,63 +222,84 @@ class StockMoveLineQuant(models.Model):
         )
 
     @api.model
-    def _get_free_quantity_at_key(
-        self, product, location, lot, package, owner
-    ) -> float:
-        quants = (
-            self.env["stock.quant"]
-            ._gather(
-                product,
-                location,
-                trace_id=lot or None,
-                package_id=package or None,
-                owner_id=owner or None,
-                strict=True,
+    def _get_free_quantity_ledger(self, keys) -> dict:
+        keys = list(keys)
+        if not keys:
+            return {}
+        products, locations, lots = (
+            self.env[model].union(*(key[index] for key in keys))
+            for index, model in (
+                (0, "product.product"),
+                (1, "stock.location"),
+                (2, "product.trace"),
             )
-            .filtered(lambda quant: quant.trace_id == lot)
         )
-        return sum(quants.mapped("quantity")) - sum(quants.mapped("reserved_quantity"))
+        cache = (
+            self.env["stock.quant"]
+            ._with_quant_upkeep()
+            ._get_quants_by_products_locations(products, locations, lot_scope=lots)
+        )
+        ledger = {}
+        for key in keys:
+            quants = cache[tuple(record.id for record in key)]
+            ledger[key] = sum(quants.mapped("quantity")) - sum(
+                quants.mapped("reserved_quantity")
+            )
+        return ledger
+
+    @staticmethod
+    def _get_rekey_candidates(product, location, lot, package, owner) -> list:
+        candidates = [(product, location, lot, package, owner)]
+        if lot:
+            candidates.append((product, location, lot.browse(), package, owner))
+        return candidates
 
     @api.model
-    def _choose_reservation_trace(
-        self, product, location, lot, package, owner, quantity, freed=None
-    ):
-        if not lot:
-            return lot
-        freed = freed or {}
-        for candidate in (lot, lot.browse()):
-            free = self._get_free_quantity_at_key(
-                product, location, candidate, package, owner
-            ) + freed.get(candidate.id, 0.0)
-            if product.uom_id._compare_aggregate(free, quantity) >= 0:
-                _debug.logic(
-                    "reservation_trace_chosen",
-                    product=product.id,
-                    location=location.id,
-                    lot=lot.id,
-                    chosen=candidate.id,
-                    free=free,
-                    quantity=quantity,
-                )
-                return candidate
-        return lot
+    def _choose_reservation_key(self, candidates, quantity, ledger) -> tuple:
+        uom = candidates[0][0].uom_id
+        chosen = next(
+            (
+                key
+                for key in candidates
+                if uom._compare_aggregate(ledger.get(key, 0.0), quantity) >= 0
+            ),
+            candidates[0],
+        )
+        ledger[chosen] = ledger.get(chosen, 0.0) - quantity
+        _debug.logic(
+            "reservation_key_chosen",
+            product=chosen[0].id,
+            location=chosen[1].id,
+            lot=candidates[0][2].id,
+            chosen=chosen[2].id,
+            quantity=quantity,
+        )
+        return chosen
 
     def _assign_reservation_traces(self) -> None:
-        chosen = defaultdict(self.browse)
         holding = self.filtered(
             lambda line: line.state != "done"
         )._filtered_holding_reservation()
+        candidates_by_line = {
+            line: self._get_rekey_candidates(
+                line.product_id,
+                line.location_id,
+                line.trace_id,
+                line.package_id,
+                line.owner_id,
+            )
+            for line in holding
+        }
+        ledger = self._get_free_quantity_ledger(
+            {key for candidates in candidates_by_line.values() for key in candidates}
+        )
+        chosen = defaultdict(self.browse)
         for line in self:
             target = line.trace_id
-            if line in holding:
-                target = self._choose_reservation_trace(
-                    line.product_id,
-                    line.location_id,
-                    line.trace_id,
-                    line.package_id,
-                    line.owner_id,
-                    line.quantity_product_uom,
-                )
+            if line in candidates_by_line:
+                target = self._choose_reservation_key(
+                    candidates_by_line[line], line.quantity_product_uom, ledger
+                )[2]
             chosen[target] |= line
         for target, lines in chosen.items():
             lines.write({"reservation_trace_id": target.id})
@@ -467,7 +493,12 @@ class StockMoveLineQuant(models.Model):
             include_picked=bool(self.trace_id) and self.product_id.tracking == "serial"
         )
         domain &= Domain(
-            [(name, "=", self[name].id) for name in RESERVATION_KEY_FIELDS]
+            [
+                (line_name, "=", self[quant_name].id)
+                for line_name, quant_name in zip(
+                    LINE_RESERVATION_KEY_FIELDS, RESERVATION_KEY_FIELDS, strict=True
+                )
+            ]
         )
         domain &= Domain("id", "not in", tuple(ml_ids_to_ignore))
         return self.search(domain).sorted(get_candidate_rank)
@@ -503,6 +534,25 @@ class StockMoveLineQuant(models.Model):
         rekeyed = bool(
             {"trace_id", "location_id", "package_id", "owner_id"} & set(updates)
         )
+        candidates_by_line = {}
+        ledger = {}
+        if rekeyed:
+            for ml in self:
+                candidates_by_line[ml] = self._get_rekey_candidates(
+                    ml.product_id,
+                    updates.get("location_id", ml.location_id),
+                    updates.get("trace_id", ml.trace_id),
+                    updates.get("package_id", ml.package_id),
+                    updates.get("owner_id", ml.owner_id),
+                )
+            ledger = self._get_free_quantity_ledger(
+                {
+                    key
+                    for candidates in candidates_by_line.values()
+                    for key in candidates
+                }
+                | {ml._get_reservation_key() for ml in self}
+            )
         deltas = defaultdict(float)
         for ml in self:
             if rekeyed:
@@ -524,40 +574,22 @@ class StockMoveLineQuant(models.Model):
                 deltas[old_key] -= ml.quantity_product_uom
 
             new_location = updates.get("location_id", ml.location_id)
-            if ml._is_reservation_bypass_required(new_location):
-                continue
-            new_key = old_key
-            if rekeyed:
-                new_package = updates.get("package_id", ml.package_id)
-                new_owner = updates.get("owner_id", ml.owner_id)
-                same_place = (new_location, new_package, new_owner) == (
-                    ml.location_id,
-                    ml.package_id,
-                    ml.owner_id,
-                )
-                freed = (
-                    {ml.reservation_trace_id.id: ml.quantity_product_uom}
-                    if held and same_place
-                    else {}
-                )
-                target = self._choose_reservation_trace(
-                    ml.product_id,
-                    new_location,
-                    reservation_traces[ml.id],
-                    new_package,
-                    new_owner,
-                    new_reserved_qty,
-                    freed=freed,
-                )
-                reservation_traces[ml.id] = target
-                new_key = (ml.product_id, new_location, target, new_package, new_owner)
-            deltas[new_key] += new_reserved_qty
-
             if (
                 "quantity" in vals
                 and ml.product_uom_id.compare(vals["quantity"], ml.quantity)
             ) or "product_uom_id" in vals:
                 moves_to_recompute_state |= ml.move_id
+            if ml._is_reservation_bypass_required(new_location):
+                continue
+            new_key = old_key
+            if rekeyed:
+                if held:
+                    ledger[old_key] = ledger.get(old_key, 0.0) + ml.quantity_product_uom
+                new_key = self._choose_reservation_key(
+                    candidates_by_line[ml], new_reserved_qty, ledger
+                )
+                reservation_traces[ml.id] = new_key[2]
+            deltas[new_key] += new_reserved_qty
 
         _debug.logic(
             "quant_reservation_sync",
@@ -808,25 +840,32 @@ class StockMoveLineQuant(models.Model):
         lines = []
         domain = Domain("id", "in", dirty_quant_ids) | Domain.OR(
             Domain(
-                [(name, "=", move_line[name].id) for name in RESERVATION_KEY_FIELDS],
+                [
+                    (quant_name, "=", key_record.id)
+                    for quant_name, key_record in zip(
+                        RESERVATION_KEY_FIELDS,
+                        move_line._get_reservation_key(),
+                        strict=True,
+                    )
+                ],
             )
             for move_line in dirty_move_lines | deleted_move_lines
         )
         if not domain.is_false():
 
-            def get_reservation_key_ids(record):
-                return tuple(record[name].id for name in RESERVATION_KEY_FIELDS)
+            def get_line_key_ids(move_line):
+                return tuple(record.id for record in move_line._get_reservation_key())
 
             empty = self.env["stock.move.line"]
             dirty_by_key = defaultdict(lambda: empty)
             for move_line in dirty_move_lines:
-                dirty_by_key[get_reservation_key_ids(move_line)] |= move_line
+                dirty_by_key[get_line_key_ids(move_line)] |= move_line
             deleted_by_key = defaultdict(lambda: empty)
             for move_line in deleted_move_lines:
-                deleted_by_key[get_reservation_key_ids(move_line)] |= move_line
+                deleted_by_key[get_line_key_ids(move_line)] |= move_line
 
             for quant in self.env["stock.quant"].search(domain):
-                key = get_reservation_key_ids(quant)
+                key = tuple(quant[name].id for name in RESERVATION_KEY_FIELDS)
                 dirty_lines = dirty_by_key.get(key, empty)
                 deleted_lines = deleted_by_key.get(key, empty)
                 quants.append(

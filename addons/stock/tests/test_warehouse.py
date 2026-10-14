@@ -2743,3 +2743,34 @@ class TestWarehouseInternalTransferType(TransactionCase):
 
         self.assertTrue(warehouse.out_type_id.active)
         self.assertFalse(warehouse.int_type_id.active)
+
+    def test_editing_a_warehouse_keeps_a_manual_internal_transfer_choice(self):
+        warehouse = self.env["stock.warehouse"].create({"name": "Kept", "code": "KPT"})
+        chosen = not warehouse.int_type_id.active
+        warehouse.int_type_id.active = chosen
+
+        warehouse.write({"code": "KPX"})
+
+        self.assertEqual(warehouse.int_type_id.active, chosen)
+
+    def test_the_default_warehouse_follows_the_allowed_companies(self):
+        other = self.env["res.company"].create({"name": "Other default"})
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", other.id)], limit=1
+        )
+        self.assertTrue(warehouse)
+        manager = new_test_user(
+            self.env,
+            login="default_wh_manager",
+            groups="stock.group_stock_manager",
+            company_id=self.env.company.id,
+            company_ids=[(6, 0, [self.env.company.id, other.id])],
+        )
+        Warehouse = self.env["stock.warehouse"].with_user(manager)
+        main_only = Warehouse.with_context(allowed_company_ids=[self.env.company.id])
+        both = Warehouse.with_context(
+            allowed_company_ids=[other.id, self.env.company.id]
+        )
+
+        self.assertFalse(main_only._get_default_by_company(other)[other.id])
+        self.assertEqual(both._get_default_by_company(other)[other.id], warehouse)

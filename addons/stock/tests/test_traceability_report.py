@@ -142,6 +142,28 @@ class TestTraceabilityFormulaReport(TestStockCommon):
             [option["action"] for option in menu["stock.move.line.used"]],
         )
 
+    def test_the_stream_needs_a_lot_to_follow(self):
+        handler = self.env["stock.traceability.report.handler"]
+        options = self._options(active_model="product.trace", active_id=self.lot.id)
+        line = self._chain()[-1]
+
+        def caret(is_used, lot_name):
+            row = {
+                "model": "stock.move.line",
+                "model_id": line.id,
+                "columns": [""] * 7,
+                "unfoldable": False,
+                "is_used": is_used,
+                "lot_name": lot_name,
+            }
+            return handler._traceability_line(self.report, options, row)[
+                "caret_options"
+            ]
+
+        self.assertEqual(caret(True, "LOT-TRC"), "stock.move.line.used")
+        self.assertEqual(caret(True, False), "stock.move.line")
+        self.assertEqual(caret(False, "LOT-TRC"), "stock.move.line")
+
     def test_the_form_buttons_open_the_formula_report(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "stock.action_stock_report"

@@ -781,6 +781,7 @@ class StockWarehouse(models.Model):
             if values:
                 self.write(values)
             self._update_resupply_rule_activity()
+            self.int_type_id.active = self._is_int_type_wanted()
 
     def _check_archivable(self, picking_types, deleting=False) -> None:
         PickingType = self.env["stock.picking.type"].with_context(active_test=False)
@@ -977,7 +978,12 @@ class StockWarehouse(models.Model):
     @api.model
     def _get_default_by_company(self, companies) -> dict:
         per_company = DEFAULT_WAREHOUSE_BY_COMPANY(self.env)
-        scope = (self.env.uid, self.env.su, self.env.context.get("active_test", True))
+        scope = (
+            self.env.uid,
+            self.env.su,
+            tuple(self.env.companies.ids),
+            self.env.context.get("active_test", True),
+        )
         missing = [
             company_id
             for company_id in companies.ids

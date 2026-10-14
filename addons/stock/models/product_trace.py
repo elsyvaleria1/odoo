@@ -231,7 +231,9 @@ class ProductTrace(models.Model):
         quants = self.with_context(search_default_trace_id=self.id, create=False)
         if self.env.user.has_group("stock.group_stock_manager"):
             quants = quants.with_context(inventory_mode=True)
-        return quants.env["stock.quant"].action_view_quants()
+        return quants.env["stock.quant"]._get_action_view_quants(
+            products=self.product_id
+        )
 
     def action_lot_open_transfers(self):
         self.check_singleton()

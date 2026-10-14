@@ -1,6 +1,8 @@
+import importlib.util
 import inspect
 from collections import defaultdict
 from datetime import datetime
+from pathlib import Path
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
@@ -207,6 +209,132 @@ class TestReservationQuantConsistency(TransactionCase):
         self.Quant._update_available_quantity(product, self.stock, 5.0, trace_id=lot)
         line.trace_id = lot
         self.assertEqual(line.reservation_trace_id, lot)
+        self._assert_reservations_balance(product)
+
+    def test_editing_a_receipt_line_recomputes_its_move(self):
+        product = self._product()
+        move = self.env["stock.move"].create(
+            {
+                "product_id": product.id,
+                "product_uom_qty": 10.0,
+                "location_id": self.suppliers.id,
+                "location_dest_id": self.stock.id,
+                "picking_type_id": self.warehouse.in_type_id.id,
+            }
+        )
+        move._action_confirm()
+        move._action_assign()
+        self.assertEqual(move.state, "assigned")
+
+        move.move_line_ids.quantity = 4.0
+
+        self.assertEqual(move.state, "partially_available")
+
+    def _count(self, product, lot, quantity):
+        quant = self.Quant.search(
+            [
+                ("product_id", "=", product.id),
+                ("location_id", "=", self.stock.id),
+                ("trace_id", "=", lot.id),
+            ]
+        )
+        quant.with_context(inventory_mode=True).inventory_quantity = quantity
+        quant.action_apply_inventory()
+
+    def test_counting_untracked_stock_down_frees_what_it_holds(self):
+        product = self._product(tracking="lot")
+        lot = self._lot(product, "U1")
+        self.Quant._update_available_quantity(product, self.stock, 5.0)
+        move = self._moves(product, [5.0])
+        move._action_assign()
+        move.move_line_ids.trace_id = lot
+
+        self._count(product, lot.browse(), 0.0)
+
+        self.assertEqual(move.quantity, 0.0)
+        self._assert_reservations_balance(product)
+
+    def test_counting_a_lot_down_frees_the_line_holding_the_lot(self):
+        product = self._product(tracking="lot")
+        lot = self._lot(product, "U2")
+        self.Quant._update_available_quantity(product, self.stock, 5.0)
+        on_untracked = self._moves(product, [5.0])
+        on_untracked._action_assign()
+        on_untracked.move_line_ids.trace_id = lot
+        self.Quant._update_available_quantity(product, self.stock, 5.0, trace_id=lot)
+        on_lot = self._moves(product, [5.0])
+        on_lot._action_assign()
+        self.assertEqual(on_lot.move_line_ids.reservation_trace_id, lot)
+
+        self._count(product, lot, 0.0)
+
+        self.assertEqual(on_lot.quantity, 0.0)
+        self.assertEqual(on_untracked.quantity, 5.0)
+        self.assertEqual(on_untracked.move_line_ids.trace_id, lot)
+        self._assert_reservations_balance(product)
+
+    def test_lines_re_keyed_together_share_the_lot_s_free_quantity(self):
+        product = self._product(tracking="lot")
+        lot = self._lot(product, "U3")
+        self.Quant._update_available_quantity(product, self.stock, 10.0)
+        moves = self._moves(product, [5.0, 5.0])
+        moves._action_assign()
+        self.Quant._update_available_quantity(product, self.stock, 5.0, trace_id=lot)
+
+        moves.move_line_ids.write({"trace_id": lot.id})
+
+        self.assertEqual(
+            sorted(
+                moves.move_line_ids.mapped(lambda ml: bool(ml.reservation_trace_id))
+            ),
+            [False, True],
+            "the lot can hold one of them; the other stays on untracked stock",
+        )
+        self._assert_reservations_balance(product)
+
+    def _run_key_migration(self):
+        from odoo.addons import stock
+
+        path = Path(stock.__file__).parent / "migrations" / "1.25" / "post-migrate.py"
+        spec = importlib.util.spec_from_file_location("stock_post_migrate_125", path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        self.env.flush_all()
+        module.migrate(self.env.cr, "19.0.1.24")
+        self.env.invalidate_all()
+
+    def test_the_key_migration_keys_only_what_untracked_stock_holds(self):
+        product = self._product(tracking="lot")
+        on_untracked_lot, drifted_lot = (
+            self._lot(product, "M1"),
+            self._lot(product, "M2"),
+        )
+        self.Quant._update_available_quantity(product, self.stock, 5.0)
+        on_untracked = self._moves(product, [5.0])
+        on_untracked._action_assign()
+        on_untracked.move_line_ids.trace_id = on_untracked_lot
+        self.Quant._update_available_quantity(
+            product, self.stock, 3.0, trace_id=drifted_lot
+        )
+        drifted = self._moves(product, [3.0])
+        drifted._action_assign()
+        self.assertEqual(drifted.move_line_ids.trace_id, drifted_lot)
+        self.env.flush_all()
+        self.env.cr.execute(
+            "UPDATE stock_quant SET reserved_quantity = 0 WHERE trace_id = %s",
+            [drifted_lot.id],
+        )
+        self.env.cr.execute(
+            "UPDATE stock_move_line SET reservation_trace_id = NULL"
+            " WHERE product_id = %s",
+            [product.id],
+        )
+        self.env.invalidate_all()
+
+        self._run_key_migration()
+
+        self.assertFalse(on_untracked.move_line_ids.reservation_trace_id)
+        self.assertEqual(drifted.move_line_ids.reservation_trace_id, drifted_lot)
         self._assert_reservations_balance(product)
 
     def test_shipping_a_lot_reserved_on_untracked_stock_takes_the_lot(self):

@@ -101,7 +101,7 @@ class StockMove(models.Model):
         owner_id=None,
         strict=True,
     ):
-        if self.product_id.use_expiration_date:
+        if self.product_id.use_expiration_date and not strict:
             return super(
                 StockMove, self.with_context(with_expiration=self.date)
             )._update_reserved_quantity(

@@ -332,7 +332,7 @@ class StockPickingBatch(models.Model):
             ]
         )
         if lot:
-            lines = lines.filtered(lambda ml: ml.trace_id == lot)
+            lines = lines.filtered(lambda ml: ml.reservation_trace_id == lot)
         if picking:
             lines = lines.sorted(lambda ml: ml.picking_id != picking)
         quants = self.env["stock.quant"].search(

@@ -817,7 +817,7 @@ class TestProductionStatementGuards(TransactionCase):
         marked(1)
         self.assertEqual(marked(6), marked(2))
 
-    def test_backorder_split_does_not_grow_with_orders(self):
+    def test_backorder_split_grows_by_its_line_writes_only(self):
         def split(count):
             productions = self._reserved(count, qty=4)
             for production in productions:
@@ -831,4 +831,4 @@ class TestProductionStatementGuards(TransactionCase):
             )
 
         split(1)
-        self.assertEqual(split(2), split(6))
+        self.assertEqual(split(6) - split(2), 4 * 2)

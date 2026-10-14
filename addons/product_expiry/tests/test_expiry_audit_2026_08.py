@@ -617,3 +617,40 @@ class TestExpiryCutoffIsAnInstant(ExpiryAuditCommon):
             0.0,
             "stock past its removal date must not be free, whatever the hour",
         )
+
+
+class TestExpiryInAChain(ExpiryAuditCommon):
+    def test_a_chained_move_keeps_the_lot_its_origin_moved(self):
+        self.warehouse.delivery_steps = "pick_ship"
+        output = self.warehouse.wh_output_stock_loc_id
+        lot = self._lot("CHAIN", 30)
+        self.env["stock.quant"]._update_available_quantity(
+            self.product, self.stock_location, 5.0, trace_id=lot
+        )
+        pick, ship = self.env["stock.move"].create(
+            [
+                {
+                    "product_id": self.product.id,
+                    "product_uom_qty": 5.0,
+                    "location_id": self.stock_location.id,
+                    "location_dest_id": output.id,
+                },
+                {
+                    "product_id": self.product.id,
+                    "product_uom_qty": 5.0,
+                    "location_id": output.id,
+                    "location_dest_id": self.customer_location.id,
+                    "procure_method": "make_to_order",
+                },
+            ]
+        )
+        ship.move_orig_ids = pick
+        (pick | ship)._action_confirm(merge=False)
+        pick._action_assign()
+        pick.picked = True
+        lot.removal_date = fields.Datetime.now() - datetime.timedelta(days=1)
+
+        pick._action_done()
+
+        self.assertEqual(ship.move_line_ids.trace_id, lot)
+        self.assertEqual(ship.quantity, 5.0, "the goods already left the shelf")

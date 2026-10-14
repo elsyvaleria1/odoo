@@ -377,8 +377,13 @@ class StockPackage(models.Model):
             field_names=["id"],
         ).unlink()
 
-        self.child_package_dest_ids.package_dest_id = False
-        self.package_dest_id = False
+        def is_in_scope(package):
+            return not picking_ids or all(
+                line.picking_id.id in picking_ids for line in package.move_line_ids
+            )
+
+        self.child_package_dest_ids.filtered(is_in_scope).package_dest_id = False
+        self.filtered(is_in_scope).package_dest_id = False
 
         self.env["stock.package"].search_fetch(
             [("id", "in", all_package_dest_ids), ("move_line_ids", "=", False)],
