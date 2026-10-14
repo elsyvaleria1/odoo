@@ -301,16 +301,15 @@ class StockLocation(models.Model):
         if not replenish_locations:
             return
         ancestor_ids = replenish_locations._get_ancestor_ids(include_self=True)
-        others = self.with_context(active_test=False).search(
+        candidates = self.with_context(active_test=False).search(
             Domain("replenish_location", "=", True)
-            & Domain("id", "not in", replenish_locations.ids)
             & (
                 Domain("id", "in", list(ancestor_ids))
                 | Domain("id", "child_of", replenish_locations.ids)
             ),
         )
         for location in replenish_locations:
-            for other in others:
+            for other in candidates - location:
                 if location._is_descendant_of(other) or other._is_descendant_of(
                     location
                 ):
@@ -785,11 +784,17 @@ class StockLocation(models.Model):
         today = fields.Date.today()
         month = int(self.company_id.stock_config_id.annual_inventory_month)
         day = max(self.company_id.stock_config_id.annual_inventory_day, 1)
-        day = min(day, calendar.monthrange(today.year, month)[1])
-        annual_date = today.replace(month=month, day=day)
+
+        def annual_date_in(year):
+            return today.replace(
+                year=year,
+                month=month,
+                day=min(day, calendar.monthrange(year, month)[1]),
+            )
+
+        annual_date = annual_date_in(today.year)
         if annual_date <= today:
-            day = min(day, calendar.monthrange(today.year + 1, month)[1])
-            annual_date = annual_date.replace(day=day, year=today.year + 1)
+            annual_date = annual_date_in(today.year + 1)
         return annual_date
 
     def _get_usage_label(self):

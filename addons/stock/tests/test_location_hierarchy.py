@@ -239,6 +239,21 @@ class TestReplenishLocationConstraint(TestStockCommon):
         with self.assertRaises(ValidationError):
             parent.replenish_location = True
 
+    def test_one_write_cannot_make_a_parent_and_its_child_replenish(self):
+        parent, child = self._detached_branch("Together")
+
+        with self.assertRaises(ValidationError):
+            (parent | child).write({"replenish_location": True})
+
+    def test_one_write_may_make_siblings_replenish(self):
+        parent, child = self._detached_branch("Siblings")
+        sibling = self.StockLocationObj.create(
+            {"name": "Siblings sibling", "location_id": parent.id},
+        )
+
+        (child | sibling).write({"replenish_location": True})
+        self.assertTrue(all((child | sibling).mapped("replenish_location")))
+
     def test_the_refusal_names_the_conflicting_location_in_full(self):
         grandparent = self.StockLocationObj.create(
             {"name": "Named", "company_id": False, "usage": "view"},

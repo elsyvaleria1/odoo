@@ -125,6 +125,23 @@ class TestTraceabilityFormulaReport(TestStockCommon):
                 options, "caret_option_open_traceability_partner", {"line_id": line_id}
             )
 
+    def test_a_line_nothing_consumed_offers_no_stream(self):
+        self._chain()
+        options = self._options(active_model="product.trace", active_id=self.lot.id)
+        lines = self.report._get_lines(options)
+        self.assertEqual({line["caret_options"] for line in lines}, {"stock.move.line"})
+        menu = self.env[
+            "stock.traceability.report.handler"
+        ]._caret_options_initializer()
+        self.assertNotIn(
+            "caret_option_open_traceability_stream",
+            [option["action"] for option in menu["stock.move.line"]],
+        )
+        self.assertIn(
+            "caret_option_open_traceability_stream",
+            [option["action"] for option in menu["stock.move.line.used"]],
+        )
+
     def test_the_form_buttons_open_the_formula_report(self):
         action = self.env["ir.actions.actions"]._get_action_dict_by_xml_id(
             "stock.action_stock_report"

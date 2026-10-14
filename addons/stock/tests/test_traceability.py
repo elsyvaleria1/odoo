@@ -53,16 +53,42 @@ class TestStockTraceabilityReport(TestStockCommon):
         )
         return ml1, ml2, ml3
 
-    def test_get_move_lines_depth_is_deterministic(self):
+    def test_upstream_move_lines_are_one_level_up(self):
         ml1, ml2, ml3 = self._create_move_line_chain()
-        self.assertEqual(self.report._get_move_lines(ml3).ids, (ml2 | ml1).ids)
-        self.assertEqual(self.report._get_move_lines(ml3, line_id=999999).ids, ml2.ids)
-        self.assertEqual(self.report._get_move_lines(ml3, line_id=ml2.id).ids, ml2.ids)
+        upstream = self.report._get_upstream_move_lines(ml1 | ml2 | ml3)
+        self.assertEqual(upstream[ml3.id], ml2)
+        self.assertEqual(upstream[ml2.id], ml1)
+        self.assertFalse(upstream[ml1.id])
 
-    def test_has_upstream_move_lines(self):
-        ml1, _ml2, ml3 = self._create_move_line_chain()
-        self.assertTrue(self.report._has_upstream_move_lines(ml3))
-        self.assertFalse(self.report._has_upstream_move_lines(ml1))
+    def test_unfolding_costs_the_same_queries_whatever_the_line_count(self):
+        def picking_with_lines(count):
+            picking = self.env["stock.picking"].create(
+                {
+                    "picking_type_id": self.picking_type_out.id,
+                    "location_id": self.shelf_1.id,
+                    "location_dest_id": self.customer_location.id,
+                }
+            )
+            for day in range(1, count + 1):
+                self._done_move_line(
+                    self.stock_location, self.shelf_1, datetime(2026, 1, day)
+                )
+                line = self._done_move_line(
+                    self.shelf_1, self.customer_location, datetime(2026, 2, day)
+                )
+                line.move_id.picking_id = picking
+            return picking
+
+        pickings = {size: picking_with_lines(size) for size in (3, 12)}
+
+        def unfold(size):
+            lines = self.report.with_context(
+                model="stock.picking", active_id=pickings[size].id
+            ).get_lines()
+            self.assertEqual(len(lines), size)
+            self.assertTrue(all(line["unfoldable"] for line in lines))
+
+        self.assertQueriesConstant(unfold, small=3, large=12)
 
     def test_row_ids_are_deterministic(self):
         self._create_move_line_chain()

@@ -1,4 +1,4 @@
-from collections import deque
+from collections import defaultdict
 
 from odoo import api, models
 from odoo.exceptions import UserError
@@ -13,63 +13,56 @@ class StockTraceabilityReport(models.TransientModel):
     _description = "Traceability Report"
 
     @api.model
-    def _get_move_lines(self, move_lines, line_id=None):
-        lines_seen = move_lines
-        lines_todo = deque(move_lines)
-        while lines_todo:
-            move_line = lines_todo.popleft()
+    def _get_upstream_move_lines(self, move_lines):
+        MoveLine = self.env["stock.move.line"]
+        upstream = {}
+        stocked = MoveLine
+        for move_line in move_lines:
             if move_line.move_id.move_orig_ids:
-                lines = (
-                    move_line.move_id.move_orig_ids.move_line_ids.filtered_domain(
-                        [
-                            ("trace_id", "=", move_line.trace_id.id),
-                            ("state", "=", "done"),
-                        ]
+                upstream[move_line.id] = (
+                    move_line.move_id.move_orig_ids.move_line_ids.filtered(
+                        lambda m, ml=move_line: (
+                            m.trace_id == ml.trace_id and m.state == "done"
+                        )
                     )
-                    - lines_seen
+                    - move_line
                 )
             elif move_line.location_id.usage in ("internal", "transit"):
-                lines = self.env["stock.move.line"].search(
-                    [
-                        ("product_id", "=", move_line.product_id.id),
-                        ("trace_id", "=", move_line.trace_id.id),
-                        ("location_dest_id", "=", move_line.location_id.id),
-                        ("id", "not in", lines_seen.ids),
-                        ("date", "<=", move_line.date),
-                        ("state", "=", "done"),
-                    ]
-                )
+                stocked |= move_line
             else:
-                continue
-            if line_id is None:
-                lines_todo.extend(lines)
-            lines_seen |= lines
-        return lines_seen - move_lines
-
-    @api.model
-    def _has_upstream_move_lines(self, move_line) -> bool:
-        if move_line.move_id.move_orig_ids:
-            return bool(
-                move_line.move_id.move_orig_ids.move_line_ids.filtered(
-                    lambda m: m.trace_id == move_line.trace_id and m.state == "done"
-                )
-                - move_line
+                upstream[move_line.id] = MoveLine
+        if not stocked:
+            return upstream
+        candidates_by_key = defaultdict(list)
+        for candidate in MoveLine.search(
+            [
+                ("product_id", "in", stocked.product_id.ids),
+                ("trace_id", "in", stocked.trace_id.ids),
+                ("location_dest_id", "in", stocked.location_id.ids),
+                ("date", "<=", max(stocked.mapped("date"))),
+                ("state", "=", "done"),
+            ]
+        ):
+            key = (
+                candidate.product_id.id,
+                candidate.trace_id.id,
+                candidate.location_dest_id.id,
             )
-        if move_line.location_id.usage in ("internal", "transit"):
-            return bool(
-                self.env["stock.move.line"].search(
-                    [
-                        ("product_id", "=", move_line.product_id.id),
-                        ("trace_id", "=", move_line.trace_id.id),
-                        ("location_dest_id", "=", move_line.location_id.id),
-                        ("id", "!=", move_line.id),
-                        ("date", "<=", move_line.date),
-                        ("state", "=", "done"),
-                    ],
-                    limit=1,
+            candidates_by_key[key].append(candidate)
+        for move_line in stocked:
+            key = (
+                move_line.product_id.id,
+                move_line.trace_id.id,
+                move_line.location_id.id,
+            )
+            upstream[move_line.id] = MoveLine.union(
+                *(
+                    candidate
+                    for candidate in candidates_by_key[key]
+                    if candidate != move_line and candidate.date <= move_line.date
                 )
             )
-        return False
+        return upstream
 
     @_debug.perf.timed
     @api.model
@@ -258,16 +251,14 @@ class StockTraceabilityReport(models.TransientModel):
             if linked_lines:
                 lines = linked_lines
             else:
-                lines = self._get_move_lines(move_line, line_id=line_id)
+                lines = self._get_upstream_move_lines(move_line)[move_line.id]
+        upstream = (
+            self._get_upstream_move_lines(lines.filtered("trace_id"))
+            if model != "product.trace"
+            else {}
+        )
         for line in lines:
-            unfoldable = bool(
-                line.consume_line_ids
-                or (
-                    model != "product.trace"
-                    and line.trace_id
-                    and self._has_upstream_move_lines(line)
-                )
-            )
+            unfoldable = bool(line.consume_line_ids or upstream.get(line.id))
             final_vals.append(
                 self._prepare_dict_move(
                     level, parent_id=line_id, move_line=line, unfoldable=unfoldable
@@ -316,20 +307,24 @@ class StockTraceabilityReportHandler(models.AbstractModel):
             options["unfold_all"] = True
 
     def _caret_options_initializer(self):
+        record_options = [
+            {
+                "name": self.env._("Open Reference"),
+                "action": "caret_option_open_traceability_reference",
+            },
+            {
+                "name": self.env._("Open Lot/Serial Number"),
+                "action": "caret_option_open_traceability_lot",
+            },
+            {
+                "name": self.env._("Open Partner"),
+                "action": "caret_option_open_traceability_partner",
+            },
+        ]
         return {
-            "stock.move.line": [
-                {
-                    "name": self.env._("Open Reference"),
-                    "action": "caret_option_open_traceability_reference",
-                },
-                {
-                    "name": self.env._("Open Lot/Serial Number"),
-                    "action": "caret_option_open_traceability_lot",
-                },
-                {
-                    "name": self.env._("Open Partner"),
-                    "action": "caret_option_open_traceability_partner",
-                },
+            "stock.move.line": record_options,
+            "stock.move.line.used": [
+                *record_options,
                 {
                     "name": self.env._("Upstream and Downstream"),
                     "action": "caret_option_open_traceability_stream",
@@ -399,7 +394,9 @@ class StockTraceabilityReportHandler(models.AbstractModel):
             "unfoldable": row["unfoldable"],
             "unfolded": line_id in options["unfolded_lines"] or options["unfold_all"],
             "expand_function": "_report_expand_unfoldable_line_traceability",
-            "caret_options": "stock.move.line",
+            "caret_options": (
+                "stock.move.line.used" if row["is_used"] else "stock.move.line"
+            ),
         }
 
     def _clicked_move_line(self, options, params):

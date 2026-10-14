@@ -2,7 +2,7 @@ import datetime
 
 from odoo import fields
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.fields import Command
+from odoo.fields import Command, Domain
 from odoo.tests import Form, TransactionCase, new_test_user, tagged
 
 
@@ -578,7 +578,7 @@ class TestExpiryForecastDomains(ExpiryAuditCommon):
         original = type(report)._get_domain_base_quant
 
         def narrowed(records, location_ids, products):
-            return original(records, location_ids, products) + [marker]
+            return original(records, location_ids, products) & Domain(*marker)
 
         self.patch(type(report), "_get_domain_base_quant", narrowed)
         self.assertIn(

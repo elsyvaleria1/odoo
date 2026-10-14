@@ -2711,3 +2711,35 @@ class TestWarehouseTopologyEdgeCases(TransactionCase):
         restored = Location.search(production)
         self.assertEqual(len(restored), 1)
         self.assertEqual(warehouse._get_production_location(), restored)
+
+
+class TestWarehouseInternalTransferType(TransactionCase):
+    def test_unarchiving_keeps_internal_transfers_off_without_storage_locations(self):
+        group_user = self.env.ref("base.group_user")
+        group_user.write(
+            {
+                "implied_ids": [
+                    Command.unlink(self.env.ref(xmlid).id)
+                    for xmlid in (
+                        "stock.group_stock_multi_locations",
+                        "stock.group_adv_location",
+                        "stock.group_stock_multi_warehouses",
+                    )
+                ]
+            }
+        )
+        company = self.env["res.company"].create({"name": "One warehouse"})
+        warehouse = self.env["stock.warehouse"].search(
+            [("company_id", "=", company.id)]
+        )
+        self.assertNotIn(
+            self.env.ref("stock.group_stock_multi_locations"),
+            group_user.all_implied_ids,
+        )
+        self.assertFalse(warehouse.int_type_id.active)
+
+        warehouse.action_archive()
+        warehouse.action_unarchive()
+
+        self.assertTrue(warehouse.out_type_id.active)
+        self.assertFalse(warehouse.int_type_id.active)

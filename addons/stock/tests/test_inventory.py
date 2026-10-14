@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
+from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import ValidationError
@@ -714,3 +715,11 @@ class TestInventory(TransactionCase):
         self.assertEqual(
             quant_non_cyclic_loc.inventory_date, date.today() + relativedelta(years=1)
         )
+
+    def test_annual_inventory_on_the_last_february_day_reaches_a_leap_day(self):
+        self.stock_location.company_id.stock_config_id.write(
+            {"annual_inventory_month": "2", "annual_inventory_day": 31}
+        )
+        with freeze_time("2027-03-01"):
+            annual_date = self.stock_location._get_company_annual_inventory_date()
+        self.assertEqual(annual_date, date(2028, 2, 29))

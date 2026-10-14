@@ -165,6 +165,15 @@ class StockWarehousePickingType(models.Model):
         for field, values in zip(fields_order, wanted, strict=True):
             update_data[field]["barcode"] = values["barcode"]
 
+    def _is_int_type_wanted(self) -> bool:
+        self.check_singleton()
+        if self.reception_steps != "one_step" or self.delivery_steps != "ship_only":
+            return True
+        return (
+            self.env.ref("stock.group_stock_multi_locations")
+            in self.env.ref("base.group_user").all_implied_ids
+        )
+
     def _prepare_picking_type_update_vals(self):
         input_loc, output_loc = self._get_input_output_locations()
         return {
@@ -197,7 +206,9 @@ class StockWarehousePickingType(models.Model):
                     else self.wh_qc_stock_loc_id.id
                 ),
             },
-            "int_type_id": {},
+            "int_type_id": {
+                "active": self._is_int_type_wanted() and self.active,
+            },
             "xdock_type_id": {
                 "active": self.reception_steps != "one_step"
                 and self.delivery_steps != "ship_only"
@@ -262,7 +273,7 @@ class StockWarehousePickingType(models.Model):
                 "use_existing_lots": True,
                 "default_location_src_id": self.lot_stock_id.id,
                 "default_location_dest_id": self.lot_stock_id.id,
-                "active": self.env.user.has_group("stock.group_stock_multi_locations"),
+                "active": self._is_int_type_wanted(),
                 "company_id": self.company_id.id,
             },
             "xdock_type_id": {

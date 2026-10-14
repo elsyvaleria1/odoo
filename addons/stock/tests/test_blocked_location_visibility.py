@@ -147,6 +147,23 @@ class TestQuantityVisibility(BlockedLocationCase):
         )
         self.assertEqual(self._qty_for(self.vendor_user, "qty_incoming"), 33.0)
 
+    def test_forecast_free_stock_hides_what_the_header_hides(self):
+        self._add_stock(self.normal_location, 5.0)
+        self._add_stock(self.soft_out_location, 10.0)
+        report = (
+            self.env["stock.forecasted_product_product"]
+            .with_user(self.vendor_user)
+            .with_context(warehouse_id=self.env.ref("stock.warehouse0").id)
+        )
+        data = report._get_report_data(product_ids=self.product.ids)
+        free_stock = sum(
+            line["quantity"]
+            for line in data["lines"]
+            if not line["move_in"] and not line["move_out"]
+        )
+        self.assertEqual(data["product"][self.product.id]["quantity_on_hand"], 5.0)
+        self.assertEqual(free_stock, 5.0)
+
 
 class TestInventoryCount(BlockedLocationCase):
     def _count(self, location, counted, user=None):

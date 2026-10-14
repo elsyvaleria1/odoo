@@ -1,4 +1,5 @@
 from odoo import fields, models
+from odoo.fields import Domain
 from odoo.tools import format_date
 
 
@@ -27,17 +28,15 @@ class StockForecasted_Product_Product(models.AbstractModel):
     def _get_domain_quant(self, location_ids, products):
         res = super()._get_domain_quant(location_ids, products)
         if any(products.mapped("use_expiration_date")):
-            res += [
-                "|",
-                ("removal_date", "=", False),
-                ("removal_date", ">", fields.Datetime.now()),
-            ]
+            res &= Domain("removal_date", "=", False) | Domain(
+                "removal_date", ">", fields.Datetime.now()
+            )
         return res
 
     def _get_domain_expired_quant(self, location_ids, products):
-        return self._get_domain_base_quant(location_ids, products) + [
-            ("removal_date", "<=", fields.Datetime.now()),
-        ]
+        return self._get_domain_base_quant(location_ids, products) & Domain(
+            "removal_date", "<=", fields.Datetime.now()
+        )
 
     def _prepare_report_line(
         self,

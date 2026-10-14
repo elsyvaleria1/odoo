@@ -346,14 +346,17 @@ class StockForecasted_Product_Product(models.AbstractModel):
     def _get_fields_report_moves(self) -> list:
         return ["id", "date"]
 
-    def _get_domain_base_quant(self, location_ids, products) -> list:
-        return [
-            ("location_id", "in", location_ids),
-            ("quantity", ">", 0),
-            ("product_id", "in", products.ids),
-        ]
+    def _get_domain_base_quant(self, location_ids, products) -> Domain:
+        domain_quant = (
+            Domain("location_id", "in", location_ids)
+            & Domain("quantity", ">", 0)
+            & Domain("product_id", "in", products.ids)
+        )
+        return self.env["stock.location"]._get_domains_quantity_unblocked(
+            (domain_quant, Domain.TRUE, Domain.TRUE)
+        )[0]
 
-    def _get_domain_quant(self, location_ids, products):
+    def _get_domain_quant(self, location_ids, products) -> Domain:
         return self._get_domain_base_quant(location_ids, products)
 
     def _get_out_reserved(self, out, linked_moves, used_reserved_moves, ctx) -> dict:
