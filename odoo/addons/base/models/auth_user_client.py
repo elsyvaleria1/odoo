@@ -375,6 +375,7 @@ class AuthUserClient(models.Model):
                   AND client.session_generation = %s AND client.active
                   AND COALESCE(usr.session_epoch, 0) = %s
                   AND (usr.active OR usr.id = %s)
+                  AND usr.principal_type != 'service'
                   AND EXISTS (SELECT 1 FROM auth_user_client_session s
                       WHERE s.client_id = client.id AND s.active
                         AND s.session_identifier = %s)

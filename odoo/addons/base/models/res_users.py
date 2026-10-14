@@ -1038,6 +1038,7 @@ class ResUsers(models.Model):
     def _compute_role(self) -> None:
         system_id = self._group_id("base.group_system")
         user_id = self._group_id("base.group_user")
+        self.filtered("id")._prewarm_group_states()
         for user in self:
             gids = user._get_effective_group_ids()
             if system_id in gids:
@@ -1602,10 +1603,14 @@ class ResUsers(models.Model):
         login = credential["login"]
         ip = request.httprequest.remote_addr if request else "n/a"
         interactive = (user_agent_env or {}).get("interactive", True)
-        user = self.sudo().search(
-            self._get_domain_login(login),
-            order=self._get_login_order(),
-            limit=1,
+        user = (
+            self.sudo()
+            .with_context(active_test=True)
+            .search(
+                self._get_domain_login(login),
+                order=self._get_login_order(),
+                limit=1,
+            )
         )
         try:
             with self._admit_authentication_attempt(
@@ -1665,6 +1670,7 @@ class ResUsers(models.Model):
     def _prepare_login_denied_error(self) -> AccessDenied:
         return AccessDenied()
 
+    @api.private
     def authenticate(
         self, credential: dict[str, Any], user_agent_env: dict[str, Any]
     ) -> dict[str, Any]:

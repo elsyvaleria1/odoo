@@ -13,6 +13,7 @@ from odoo.exceptions import AccessDenied, AccessError, UserError, ValidationErro
 from odoo.fields import Command
 from odoo.http import _request_stack
 from odoo.libs.password import CryptContext, pbkdf2_sha512_hash
+from odoo.service.model import get_public_method
 from odoo.tests import (
     TEST_CURSOR_COOKIE_NAME,
     Form,
@@ -2064,6 +2065,21 @@ class TestRoleIsWritable(TransactionCase):
         self.assertIn(extra, user.group_ids)
         self.assertTrue(user._is_system())
 
+    def test_the_role_of_a_list_of_users_costs_what_one_users_does(self):
+        users = self.env["res.users"].concat(
+            *(self._user(f"ru_role_list_{index}") for index in range(12))
+        )
+
+        def cost(listed):
+            self.env.flush_all()
+            self.env.invalidate_all()
+            self.env.registry.clear_cache("memberships")
+            with counting_statements(self.env.cr) as statements:
+                listed.mapped("role")
+            return statements.count
+
+        self.assertEqual(cost(users), cost(users[:2]))
+
     def test_login_date_declares_no_write(self):
         field = self.env["res.users"]._fields["login_date"]
         self.assertTrue(
@@ -2368,6 +2384,18 @@ class TestLoginPath(TransactionCase):
         self.env.flush_all()
         with self.assertRaises(AccessDenied):
             self._login()
+
+    def test_an_archived_user_is_denied_whatever_the_callers_context(self):
+        self.user.active = False
+        self.env.flush_all()
+        with self.assertRaises(AccessDenied):
+            self.env["res.users"].with_context(active_test=False).authenticate(
+                self.credential, {"interactive": True}
+            )
+
+    def test_authenticate_is_no_remote_method(self):
+        with self.assertRaises(AccessError):
+            get_public_method(self.env["res.users"], "authenticate")
 
     def _production_crypt_context(self):
         return patch(

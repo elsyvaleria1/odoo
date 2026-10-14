@@ -616,6 +616,18 @@ class TestClientAuthority(DeviceCase):
         )
         self.assertFalse(self._devices()._is_session_valid(session))
 
+    def test_a_session_ends_when_its_user_becomes_a_service_principal(self):
+        user = new_test_user(self.env, login="rdev_turned_service")
+        sid = "sid_rdev_service" + "a" * 50
+        self._seen("2026-07-01 08:00:00", uid=user.id, sid=sid)
+        session = self.sessions[(user.id, sid)]
+        self.assertTrue(self._devices()._is_session_valid(session))
+
+        user.principal_type = "service"
+        self.env.flush_all()
+
+        self.assertFalse(self._devices()._is_session_valid(session))
+
     def test_a_caller_holding_a_fresh_primary_cursor_opens_none(self):
         self._seen("2026-07-01 08:00:00")
         client = self._devices()
