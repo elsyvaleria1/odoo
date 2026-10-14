@@ -368,7 +368,8 @@ class StockPickingType(models.Model):
             else {}
         )
 
-        res = super().write(vals)
+        with self.env.protecting(self._get_moves_kept_on_default_change(vals)):
+            res = super().write(vals)
         self._propagate_default_locations_to_draft_pickings(defaults_before)
 
         moved = self.filtered(
@@ -387,6 +388,24 @@ class StockPickingType(models.Model):
         if types_changing_warehouse:
             types_changing_warehouse._update_default_locations_for_warehouse(vals)
         return res
+
+    def _get_moves_kept_on_default_change(self, vals) -> list:
+        Move = self.env["stock.move"]
+        changed = [
+            Move._fields[move_field]
+            for move_field, type_field in (
+                ("location_id", "default_location_src_id"),
+                ("location_dest_id", "default_location_dest_id"),
+            )
+            if type_field in vals
+        ]
+        if not changed:
+            return []
+        kept = Move.with_context(active_test=False).search(
+            [("picking_type_id", "in", self.ids), ("state", "!=", "draft")]
+        )
+        _debug.logic("default_change_keeps_moves", picking_types=self, moves=len(kept))
+        return [(changed, kept)] if kept else []
 
     def copy_data(self, default=None):
         default = dict(default or {})

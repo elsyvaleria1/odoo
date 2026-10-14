@@ -10,6 +10,10 @@ from odoo.tools import OrderedSet, TransactionMemo
 
 from .stock_orderpoint import ORDERPOINTS_BY_SCOPE
 
+PACKAGE_ROUTE_IDS = TransactionMemo(
+    "stock.move.package_route_ids",
+    invalidated_by=("stock.package", "stock.package.type", "stock.route"),
+)
 PUSH_RULES = TransactionMemo(
     "stock.move.push_rule",
     invalidated_by=("stock.rule", "stock.route", "stock.location", "stock.warehouse"),
@@ -218,13 +222,7 @@ class StockMoveProcurement(models.Model):
 
         product_id = self.product_id.with_context(lang=self._get_lang())
         dates_info = {"date_planned": self._get_mto_procurement_date()}
-        route = self.route_ids
-        if not route and (result_packages := self.move_line_ids.result_package_id):
-            related_packages = self.env["stock.package"].search_fetch(
-                [("id", "parent_of", result_packages.ids)],
-                ["package_type_id"],
-            )
-            route = related_packages.package_type_id.route_ids
+        route = self.route_ids or self._get_result_package_routes()
         if (
             self.location_id.warehouse_id
             and self.location_id.warehouse_id.lot_stock_id.parent_path
@@ -340,6 +338,39 @@ class StockMoveProcurement(models.Model):
         _debug.pipeline("push_apply_confirm", moves=new_moves)
         return new_moves.sudo()._action_confirm()
 
+    def _get_result_package_routes(self):
+        self.check_singleton()
+        Route = self.env["stock.route"]
+        packages = self.move_line_ids.result_package_id
+        if not packages:
+            return Route
+        memo = PACKAGE_ROUTE_IDS(self.env)
+        scope = (self.env.uid, self.env.su)
+        if any((*scope, package.id) not in memo for package in packages):
+            batch = (
+                self.browse(self._prefetch_ids).move_line_ids.result_package_id
+                | packages
+            )
+            missing = batch.filtered(lambda p: (*scope, p.id) not in memo)
+            readable = self.env["stock.package"].search_fetch(
+                [("id", "parent_of", missing.ids)],
+                ["package_type_id", "parent_package_id"],
+            )
+            readable_ids = set(readable.ids)
+            _debug.perf.count(
+                "package_routes_fetched", packages=len(missing), readable=len(readable)
+            )
+            for package in missing:
+                route_ids = set()
+                ancestor = package
+                while ancestor and ancestor.id in readable_ids:
+                    route_ids.update(ancestor.package_type_id.route_ids.ids)
+                    ancestor = ancestor.parent_package_id
+                memo[(*scope, package.id)] = route_ids
+        return Route.browse(
+            set().union(*(memo[(*scope, package.id)] for package in packages))
+        )
+
     def _plan_push(self) -> tuple:
         self.check_singleton()
         move = self
@@ -353,14 +384,8 @@ class StockMoveProcurement(models.Model):
             )
             warehouse_id = False
 
-        related_packages = self.env["stock.package"]
-        if result_packages := move.move_line_ids.result_package_id:
-            related_packages = related_packages.search_fetch(
-                [("id", "parent_of", result_packages.ids)],
-                ["package_type_id"],
-            )
         push_values = {
-            "route_ids": move.route_ids | related_packages.package_type_id.route_ids,
+            "route_ids": move.route_ids | self._get_result_package_routes(),
             "warehouse_id": warehouse_id,
             "packaging_uom_id": move.packaging_uom_id,
         }

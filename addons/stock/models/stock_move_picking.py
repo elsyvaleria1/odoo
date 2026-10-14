@@ -156,10 +156,6 @@ class StockMovePicking(models.Model):
             ),
         ]
 
-    def _get_picking_for_assignation(self):
-        self.check_singleton()
-        return self._get_pickings_for_assignation([self])[self]
-
     @api.model
     def _get_pickings_for_assignation(self, leads) -> dict:
         Picking = self.env["stock.picking"]

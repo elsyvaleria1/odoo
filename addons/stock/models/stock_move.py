@@ -544,7 +544,10 @@ class StockMove(models.Model):
                 vals
             )
         if "date_deadline" in vals:
-            self._update_date_deadline(vals.get("date_deadline"))
+            new_deadline = fields.Datetime.to_datetime(vals["date_deadline"])
+            self.filtered(
+                lambda m: m.date_deadline != new_deadline
+            )._update_date_deadline(new_deadline)
         if "move_orig_ids" in vals:
             move_to_recompute_state |= self.filtered(
                 lambda m: m.state not in ["draft", "cancel", "done"],
@@ -606,15 +609,14 @@ class StockMove(models.Model):
     def unlink(self):
         _debug.lifecycle("unlink", moves=self)
         if not self.env.context.get(MODULE_UNINSTALL_FLAG):
-            self._unlink_except_done_or_linked()
+            self._check_unlinkable()
         self.with_context(prefetch_fields=False).mapped("move_line_ids").unlink()
         orderpoints = self._get_orderpoints_to_update()
         res = super().unlink()
         self._update_orderpoints(orderpoints)
         return res
 
-    @api.ondelete(at_uninstall=False)
-    def _unlink_except_done_or_linked(self) -> None:
+    def _check_unlinkable(self) -> None:
         for move in self:
             if move.state == "done":
                 raise UserError(
