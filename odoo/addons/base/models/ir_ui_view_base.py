@@ -30,6 +30,7 @@ _ARCH_CONTEXT_KEYS = (
     "read_arch_from_file",
     "inherit_branding",
 )
+_VIEW_OPTIONS = ("mobile",)
 
 
 VERBS_FIELD_DESCRIPTION = frozendict(
@@ -609,6 +610,7 @@ class Base(models.AbstractModel):
         **options: Any,
     ) -> dict[str, Any]:
         self.browse().check_access("read")
+        options = {key: options[key] for key in _VIEW_OPTIONS if key in options}
 
         cached = self._get_view_cache(view_id, view_type, **options)
         signature = self._view_capability_signature(cached["capabilities"])

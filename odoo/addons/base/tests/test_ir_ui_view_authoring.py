@@ -3,6 +3,7 @@ from contextlib import contextmanager
 from lxml import etree
 
 from odoo.exceptions import AccessError
+from odoo.service.model import call_kw
 from odoo.tests import TransactionCase, new_test_user, tagged
 from odoo.tools import convert_file
 from odoo.tools.convert import convert_csv_import, xml_import
@@ -679,6 +680,37 @@ class TestTemplateContextAuthoring(TransactionCase):
     def test_an_author_turns_off_an_option_a_module_ships_off(self):
         self.option.active = True
         self.option.with_user(self.author)._check_template_removal(deactivated=True)
+
+    def test_a_client_context_key_does_not_skip_the_check_on_write(self):
+        self.env["ir.access"].create(
+            {
+                "name": "Probe: the author writes qweb views, like a website designer",
+                "model_id": self.env["ir.model"]._get_id("ir.ui.view"),
+                "group_id": self.env.ref("base.group_user").id,
+                "kind": "permission",
+                "operation": "u",
+                "domain": "[('type', '=', 'qweb')]",
+            }
+        )
+        refused = (
+            '<xpath expr="//div[@id=\'guard\']" position="attributes">'
+            '<attribute name="t-if">True</attribute></xpath>'
+        )
+        for context in ({}, {"ir_ui_view_nested_arch_write": True}):
+            with (
+                self.subTest(context=context),
+                self.authored(
+                    '<xpath expr="//div[@id=\'guard\']" position="inside">'
+                    "<p>Only for some</p></xpath>"
+                ) as extension,
+                self.assertRaisesRegex(AccessError, "what it evaluates changes"),
+            ):
+                call_kw(
+                    self.env["ir.ui.view"].with_user(self.author),
+                    "write",
+                    [extension.ids, {"arch_db": refused}],
+                    {"context": context},
+                )
 
     def test_a_view_the_author_cannot_read_takes_part_all_the_same(self):
         reader = new_test_user(

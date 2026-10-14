@@ -918,7 +918,7 @@ View definitions — the core UI building block.
 Default view generators, view access, and access helpers.
 
 **Key Methods:**
-- `get_view(view_id, view_type, **options)` — Get view with inheritance applied
+- `get_view(view_id, view_type, **options)` — Get view with inheritance applied. Only the options the view cache key carries (`mobile`) reach the postprocessing; a client cannot steer the shared arch with `editable` or `preserve_groups`
 - `get_views(views, options)` — Load multiple views at once
 - `get_empty_list_help(help_message)` — Hook for empty list message
 - `_get_default_form_view()` — Auto-generate form view

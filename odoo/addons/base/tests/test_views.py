@@ -19,6 +19,7 @@ from odoo import Command, api
 from odoo.exceptions import AccessError, MissingError, UserError, ValidationError
 from odoo.fields import Domain
 from odoo.libs import xml
+from odoo.service.model import call_kw
 from odoo.tests import common, counting_statements, tagged
 from odoo.tests.common import get_cache_key_counter
 from odoo.tools import file_open, mute_logger, safe_eval, view_validation
@@ -9861,6 +9862,45 @@ class TestViewCacheContext(ViewCase):
         )
         self.assertEqual(unfiltered["id"], default_id)
         self.assertEqual(self.Partner.get_view(view_type="form")["id"], default_id)
+
+    def _served_form(self, view_id):
+        return self.Partner.get_views([[view_id, "form"]])["views"]["form"]["arch"]
+
+    def test_a_client_option_does_not_steer_the_shared_arch(self):
+        view_id = self.env.ref("base.view_partner_form").id
+        expected = self._served_form(view_id)
+        self.assertIn("can_create", expected)
+        self.env.registry.clear_cache("templates")
+        call_kw(
+            self.Partner,
+            "get_views",
+            [[[view_id, "form"]]],
+            {
+                "options": {"editable": False, "preserve_groups": True},
+                "context": {"lang": "en_US"},
+            },
+        )
+        self.assertEqual(self._served_form(view_id), expected)
+
+    def test_a_client_cannot_hide_an_extension_from_the_shared_arch(self):
+        base_view = self.env.ref("base.view_partner_form")
+        extension = self.View.create(
+            {
+                "name": "probe extension",
+                "model": "res.partner",
+                "inherit_id": base_view.id,
+                "arch": '<xpath expr="//sheet" position="inside">'
+                '<div class="o_probe_hidden"/></xpath>',
+            }
+        )
+        call_kw(
+            self.Partner,
+            "get_views",
+            [[[base_view.id, "form"]]],
+            {"context": {"lang": "en_US", "ir_ui_view_hidden_ids": extension.ids}},
+        )
+        served = etree.fromstring(self._served_form(base_view.id))
+        self.assertTrue(served.xpath("//div[hasclass('o_probe_hidden')]"))
 
 
 @tagged("post_install", "-at_install")

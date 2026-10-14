@@ -32,6 +32,7 @@ from odoo.libs.text import split_refs
 from odoo.libs.xml import hasclass
 from odoo.modules.module import get_resource_from_path
 from odoo.tools import SQL, config, frozendict, partition, unique
+from odoo.tools.authority_keys import declare_authority_keys
 from odoo.tools.convert import _fix_multiple_roots, template_arch
 from odoo.tools.misc import ConstantMapping, file_path
 from odoo.tools.template_inheritance import apply_inheritance_specs, locate_node
@@ -64,6 +65,18 @@ if TYPE_CHECKING:
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
+
+declare_authority_keys(
+    "base",
+    "check_view_ids",
+    "ir_ui_view_hidden_ids",
+    "ir_ui_view_nested_arch_write",
+    "ir_ui_view_partial_validation",
+    "ir_ui_view_tree_cut_off_view",
+    "ir_ui_view_validation_scope",
+    "load_all_views",
+    "validate_view_ids",
+)
 
 MOVABLE_BRANDING = frozenset(
     {
