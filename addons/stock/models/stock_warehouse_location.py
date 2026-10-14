@@ -306,17 +306,3 @@ class StockWarehouseLocation(models.Model):
         self.env["res.partner"].browse(partner_id).with_company(
             company
         )._update_stock_property_locations(transit_location)
-
-    @api.model
-    def _is_location_inside(self, location, ancestor) -> bool:
-        root, path = ancestor.parent_path, location.parent_path
-        if root and path:
-            return path.startswith(root)
-        current = location
-        seen = set()
-        while current and current.id not in seen:
-            if current == ancestor:
-                return True
-            seen.add(current.id)
-            current = current.location_id
-        return False

@@ -3,7 +3,6 @@ import itertools
 import logging
 from collections import defaultdict
 from datetime import timedelta
-from typing import Self
 
 from odoo import _lt, api, fields, models
 from odoo.api import MODULE_UNINSTALL_FLAG
@@ -21,6 +20,7 @@ from ..const import (
     OUTGOING_BLOCK_TYPES,
     is_internal_flag,
 )
+from ..tools.company import check_company_unchanged
 
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
@@ -352,14 +352,6 @@ class StockLocation(models.Model):
                 ),
             )
 
-    def _check_company_not_changed(self, company_id) -> None:
-        if any(location.company_id.id != company_id for location in self):
-            raise UserError(
-                self.env._(
-                    "Changing the company of this record is forbidden at this point, you should rather archive it and create a new one."
-                ),
-            )
-
     @api.model
     def _check_cyclic_inventory_frequency(self, frequency) -> None:
         if frequency is None or 0 <= frequency <= MAX_CYCLIC_INVENTORY_DAYS:
@@ -432,8 +424,7 @@ class StockLocation(models.Model):
 
         if "cyclic_inventory_frequency" in vals:
             self._check_cyclic_inventory_frequency(vals["cyclic_inventory_frequency"])
-        if "company_id" in vals:
-            self._check_company_not_changed(vals["company_id"])
+        check_company_unchanged(self, vals)
         if "usage" in vals:
             self._check_usage_convertible(vals["usage"])
         if "active" in vals:
@@ -481,7 +472,11 @@ class StockLocation(models.Model):
                 (
                     (location, children)
                     for location in self
-                    if (children := descendants._filtered_child_of(location))
+                    if (
+                        children := descendants.filtered(
+                            lambda d, loc=location: d._is_descendant_of(loc)
+                        )
+                    )
                 ),
                 (self.browse(), self.browse()),
             )
@@ -683,12 +678,6 @@ class StockLocation(models.Model):
             ],
         ).ids
 
-    def _is_child_of(self, other_location) -> bool:
-        return self._is_descendant_of(other_location)
-
-    def _filtered_child_of(self, other_location) -> Self:
-        return self.filtered(lambda location: location._is_child_of(other_location))
-
     def _is_prefixed_by_parent(self) -> bool:
         self.check_singleton()
         return bool(self.location_id) and self.usage != "view"
@@ -707,7 +696,7 @@ class StockLocation(models.Model):
             self.env.ref("stock.stock_location_inter_company", raise_if_not_found=False)
             or self.browse()
         )
-        return bool(self._is_child_of(inter_company_location))
+        return bool(self._is_descendant_of(inter_company_location))
 
     def is_reservation_bypass_required(self) -> bool:
         self.check_singleton()

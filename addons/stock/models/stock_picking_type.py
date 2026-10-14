@@ -7,6 +7,7 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 
 from ..const import PARTNER_LOCATION_USAGES, PARTNER_USAGE_BY_PICKING_CODE
+from ..tools.company import check_company_unchanged
 
 _debug = DebugLog(__name__)
 
@@ -341,7 +342,7 @@ class StockPickingType(models.Model):
     def write(self, vals):
         if _debug.lifecycle.enabled:
             _debug.lifecycle("write", picking_types=self, keys=sorted(vals))
-        self._check_company_change(vals)
+        check_company_unchanged(self, vals)
         types_changing_warehouse = (
             self.filtered(
                 lambda picking_type: (
@@ -402,16 +403,6 @@ class StockPickingType(models.Model):
         self._copy_translations_of_renamed_field(
             new, "name", lambda record, term: record.env._("%s (copy)", term)
         )
-
-    def _check_company_change(self, vals) -> None:
-        if "company_id" not in vals:
-            return
-        if self.filtered(lambda pt: pt.company_id.id != vals["company_id"]):
-            raise UserError(
-                self.env._(
-                    "Changing the company of this record is forbidden at this point, you should rather archive it and create a new one."
-                )
-            )
 
     def _update_move_reservation_dates(self, vals) -> None:
         days_changed = (

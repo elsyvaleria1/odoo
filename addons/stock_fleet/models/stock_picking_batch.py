@@ -203,7 +203,7 @@ class StockPickingBatch(models.Model):
         )
         fed_elsewhere = moves.filtered(
             lambda move: any(
-                not origin.location_dest_id._is_child_of(dock)
+                not origin.location_dest_id._is_descendant_of(dock)
                 for origin in move.move_orig_ids
                 if origin.state != "cancel"
             )

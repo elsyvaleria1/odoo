@@ -93,7 +93,7 @@ class StockLocationPutaway(models.Model):
             locations = destination.child_internal_location_ids
         else:
             locations = locations.filtered(
-                lambda loc, parent=destination: loc._is_child_of(parent),
+                lambda loc, parent=destination: loc._is_descendant_of(parent),
             )
         if putaway_rules:
             qty_by_location = destination._get_putaway_qty_by_location(

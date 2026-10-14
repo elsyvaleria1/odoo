@@ -151,11 +151,9 @@ class MrpUnbuild(models.Model):
 
     @api.depends("company_id")
     def _compute_locations(self) -> None:
-        warehouse_by_company = {}
-        for warehouse in self.env["stock.warehouse"].search(
-            [("company_id", "in", self.company_id.ids)]
-        ):
-            warehouse_by_company.setdefault(warehouse.company_id.id, warehouse)
+        warehouse_by_company = self.env["stock.warehouse"]._get_default_by_company(
+            self.company_id
+        )
         for order in self:
             if not order.company_id:
                 continue

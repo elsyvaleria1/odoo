@@ -7,6 +7,8 @@ from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import DOMAIN_PREDICATES, TransactionMemo, frozendict
 
+from ..tools.company import check_company_unchanged
+
 ORDERPOINT_SCOPE_FIELDS = ("product_id", "warehouse_id", "active", "company_id")
 ORDERPOINTS_BY_SCOPE = TransactionMemo(
     "stock.warehouse.orderpoint.by_scope",
@@ -312,14 +314,7 @@ class StockWarehouseOrderpoint(models.Model):
         if _debug.lifecycle.enabled:
             _debug.lifecycle("write", orderpoints=self, keys=sorted(vals))
         vals = self._update_vals_manual_qty_override(vals)
-        if "company_id" in vals:
-            for orderpoint in self:
-                if orderpoint.company_id.id != vals["company_id"]:
-                    raise UserError(
-                        self.env._(
-                            "Changing the company of this record is forbidden at this point, you should rather archive it and create a new one.",
-                        ),
-                    )
+        check_company_unchanged(self, vals)
         if vals.get("snoozed_until"):
             new_trigger = vals.get("trigger")
             if any(
@@ -459,7 +454,7 @@ class StockWarehouseOrderpoint(models.Model):
             if (
                 current
                 and warehouse
-                and current._is_child_of(warehouse.view_location_id)
+                and current._is_descendant_of(warehouse.view_location_id)
             ):
                 continue
             orderpoint.location_id = warehouse.lot_stock_id.id

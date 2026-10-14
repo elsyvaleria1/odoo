@@ -40,5 +40,5 @@ class StockLocation(models.Model):
             self.company_id.mrp_subcontracting_config_id.subcontracting_location_id
         )
         return bool(
-            subcontracting_location and self._is_child_of(subcontracting_location)
+            subcontracting_location and self._is_descendant_of(subcontracting_location)
         )

@@ -714,14 +714,14 @@ class StockMove(models.Model):
             is_move_to_interco_transit = False
             if location_dest:
                 is_move_to_interco_transit = (
-                    location_dest._is_child_of(customer_loc)
+                    location_dest._is_descendant_of(customer_loc)
                     and move.location_final_id == inter_comp_location
                 )
             if (
                 location_dest
                 and move.location_final_id
                 and (
-                    move.location_final_id._is_child_of(location_dest)
+                    move.location_final_id._is_descendant_of(location_dest)
                     or is_move_to_interco_transit
                 )
             ):
@@ -984,7 +984,7 @@ class StockMove(models.Model):
 
     def _inverse_location_dest_id(self) -> None:
         for ml in self.move_line_ids:
-            if ml.location_dest_id._is_child_of(ml.move_id.location_dest_id):
+            if ml.location_dest_id._is_descendant_of(ml.move_id.location_dest_id):
                 continue
             loc_dest = ml.move_id.location_dest_id._get_putaway_strategy(
                 ml.product_id,
@@ -1352,7 +1352,7 @@ class StockMove(models.Model):
 
     def _on_source_location_change(self):
         mls_to_unlink = self.move_line_ids.filtered(
-            lambda ml: not ml.location_id._is_child_of(ml.move_id.location_id),
+            lambda ml: not ml.location_id._is_descendant_of(ml.move_id.location_id),
         )
         if not mls_to_unlink:
             return self.browse()

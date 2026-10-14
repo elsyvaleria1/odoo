@@ -157,16 +157,13 @@ class ProductProductQuantity(models.Model):
             products_by_company = defaultdict(self.browse)
             for product in products_to_update:
                 products_by_company[product.company_id or self.env.company] += product
-            warehouses = self.env["stock.warehouse"].search(
-                [("company_id", "in", [company.id for company in products_by_company])],
+            warehouse_by_company = self.env["stock.warehouse"]._get_default_by_company(
+                self.env["res.company"].union(*products_by_company)
             )
-            warehouse_by_company = {}
-            for warehouse in warehouses:
-                warehouse_by_company.setdefault(warehouse.company_id, warehouse)
 
             vals_list = []
             for company, products in products_by_company.items():
-                warehouse = warehouse_by_company.get(company)
+                warehouse = warehouse_by_company[company.id]
                 if not warehouse:
                     self.env["stock.warehouse"].with_company(
                         company

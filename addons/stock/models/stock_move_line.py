@@ -306,7 +306,9 @@ class StockMoveLine(models.Model):
     )
 
     def _filtered_located_outside(self, location) -> Self:
-        return self.filtered(lambda line: not line.location_id._is_child_of(location))
+        return self.filtered(
+            lambda line: not line.location_id._is_descendant_of(location)
+        )
 
     @api.model
     def _get_negative_quantity_message(self) -> str:

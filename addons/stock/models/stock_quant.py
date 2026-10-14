@@ -339,7 +339,7 @@ class StockQuant(models.Model):
                     recommended_location = self.env["stock.location"]
                     if ref_doc_location_id:
                         for location in sn_locations:
-                            if location._is_child_of(ref_doc_location_id):
+                            if location._is_descendant_of(ref_doc_location_id):
                                 recommended_location = location
                                 break
                     else:

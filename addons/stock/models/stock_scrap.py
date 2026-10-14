@@ -152,16 +152,16 @@ class StockScrap(models.Model):
         "picking_id.location_dest_id",
     )
     def _compute_location_id(self):
-        company_warehouses = self.env["stock.warehouse"].search(
-            [("company_id", "in", self.company_id.ids)]
+        default_by_company = self.env["stock.warehouse"]._get_default_by_company(
+            self.company_id
         )
-        if len(company_warehouses) == 0 and self.company_id:
+        if self.company_id and not any(default_by_company.values()):
             self.env["stock.warehouse"]._raise_missing_warehouse()
-        locations_per_company = {}
-        for warehouse in company_warehouses:
-            locations_per_company.setdefault(
-                warehouse.company_id.id, warehouse.lot_stock_id.id
-            )
+        locations_per_company = {
+            company_id: warehouse.lot_stock_id.id
+            for company_id, warehouse in default_by_company.items()
+            if warehouse
+        }
         for scrap in self:
             if scrap.picking_id:
                 scrap.location_id = (

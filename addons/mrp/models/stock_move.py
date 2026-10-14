@@ -469,7 +469,7 @@ class StockMove(models.Model):
     @api.model
     def _get_production_final_location(self, location_dest):
         warehouse = location_dest.warehouse_id
-        if not warehouse.sam_loc_id or not location_dest._is_child_of(
+        if not warehouse.sam_loc_id or not location_dest._is_descendant_of(
             warehouse.sam_loc_id
         ):
             return location_dest

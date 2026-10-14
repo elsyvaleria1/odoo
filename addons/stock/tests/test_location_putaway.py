@@ -721,7 +721,7 @@ class TestStockLocationPutawayContract(TestStockCommon):
             self.productA, 1
         )
         self.assertTrue(
-            chosen._is_child_of(view_location),
+            chosen._is_descendant_of(view_location),
             f"{chosen.complete_name} is outside the destination "
             f"{view_location.complete_name}",
         )
@@ -777,7 +777,7 @@ class TestStockLocationPutawayContract(TestStockCommon):
 
         for line in move_lines:
             self.assertTrue(
-                line.location_dest_id._is_child_of(line.move_id.location_dest_id),
+                line.location_dest_id._is_descendant_of(line.move_id.location_dest_id),
                 f"line for move to {line.move_id.location_dest_id.complete_name} "
                 f"was put away in {line.location_dest_id.complete_name}",
             )

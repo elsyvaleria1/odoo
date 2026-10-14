@@ -421,14 +421,14 @@ class StockRule(models.Model):
         location_dest_id = self.location_dest_id.id
         if (
             move_to_copy.location_final_id
-            and not move_to_copy.location_dest_id._is_child_of(
+            and not move_to_copy.location_dest_id._is_descendant_of(
                 move_to_copy.location_final_id
             )
         ):
             final_location_id = move_to_copy.location_final_id.id
         if (
             move_to_copy.location_final_id
-            and move_to_copy.location_final_id._is_child_of(self.location_dest_id)
+            and move_to_copy.location_final_id._is_descendant_of(self.location_dest_id)
         ):
             location_dest_id = move_to_copy.location_final_id.id
         if move_to_copy.product_uom_id.compare(move_to_copy.product_uom_qty, 0) < 0:

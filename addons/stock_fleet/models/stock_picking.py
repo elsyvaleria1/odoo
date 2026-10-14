@@ -63,7 +63,9 @@ class StockPicking(models.Model):
     def _get_moves_outside_destination(self):
         self.check_singleton()
         return self.move_ids.filtered(
-            lambda move: not move.location_dest_id._is_child_of(self.location_dest_id)
+            lambda move: (
+                not move.location_dest_id._is_descendant_of(self.location_dest_id)
+            )
         )
 
     def _get_moves_outside_source(self):
@@ -71,7 +73,7 @@ class StockPicking(models.Model):
         return self.move_ids.filtered(
             lambda move: (
                 move.state not in ("done", "cancel")
-                and not move.location_id._is_child_of(self.location_id)
+                and not move.location_id._is_descendant_of(self.location_id)
             )
         )
 

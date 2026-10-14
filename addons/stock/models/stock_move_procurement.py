@@ -397,7 +397,7 @@ class StockMoveProcurement(models.Model):
                 and m.location_id == self.location_final_id
             ):
                 move_to_propagate_ids.add(m.id)
-            elif not m.location_id._is_child_of(self.location_dest_id):
+            elif not m.location_id._is_descendant_of(self.location_dest_id):
                 move_to_mts_ids.add(m.id)
         if _debug.logic.enabled and (move_to_mts_ids or move_to_propagate_ids):
             _debug.logic(
@@ -423,8 +423,8 @@ class StockMoveProcurement(models.Model):
             or (
                 self.move_dest_ids
                 and any(
-                    m.location_id._is_child_of(self.location_dest_id)
-                    or self.location_dest_id._is_child_of(m.location_id)
+                    m.location_id._is_descendant_of(self.location_dest_id)
+                    or self.location_dest_id._is_descendant_of(m.location_id)
                     for m in self.move_dest_ids
                 )
             )
@@ -489,8 +489,10 @@ class StockMoveProcurement(models.Model):
                         move.product_id.id,
                         move.company_id.id,
                     ]
-                    if move.location_id._is_child_of(candidate.location_id)
-                    and not move.location_dest_id._is_child_of(candidate.location_id)
+                    if move.location_id._is_descendant_of(candidate.location_id)
+                    and not move.location_dest_id._is_descendant_of(
+                        candidate.location_id
+                    )
                 ),
                 self.env["stock.warehouse.orderpoint"],
             )

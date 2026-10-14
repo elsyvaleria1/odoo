@@ -217,10 +217,10 @@ class TestPickingAvailabilityEdgeCases(TestStockCommon):
             {"name": "SN Child", "usage": "internal", "location_id": parent.id}
         )
         other = Location.create({"name": "SN Other", "usage": "internal"})
-        self.assertTrue(child._is_child_of(parent))
-        self.assertTrue(parent._is_child_of(parent))
-        self.assertFalse(child._is_child_of(other))
-        self.assertFalse(parent._is_child_of(child))
+        self.assertTrue(child._is_descendant_of(parent))
+        self.assertTrue(parent._is_descendant_of(parent))
+        self.assertFalse(child._is_descendant_of(other))
+        self.assertFalse(parent._is_descendant_of(child))
 
 
 class TestCancellationIsNotALatch(PickingCase):

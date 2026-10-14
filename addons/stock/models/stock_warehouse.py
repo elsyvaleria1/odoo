@@ -9,6 +9,8 @@ from odoo.libs.debug_log import DebugLog
 from odoo.tools import TransactionMemo
 from odoo.tools.translate import LazyTranslate
 
+from ..tools.company import check_company_unchanged
+
 _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 _lt = LazyTranslate(__name__)
@@ -336,7 +338,7 @@ class StockWarehouse(models.Model):
                 location = warehouse[field_name]
                 if not location:
                     continue
-                if not self._is_location_inside(location, view_location):
+                if not location._is_descendant_of(view_location):
                     raise ValidationError(
                         self.env._(
                             "%(location)s is not inside warehouse %(warehouse)s, so it "
@@ -360,13 +362,7 @@ class StockWarehouse(models.Model):
 
     @api.model
     def _get_default_for_company(self, company) -> Self:
-        per_company = DEFAULT_WAREHOUSE_BY_COMPANY(self.env)
-        key = (company.id, self.env.uid, self.env.su)
-        if key not in per_company:
-            per_company[key] = self.search(
-                [("company_id", "=", company.id)], limit=1
-            ).id
-        return self.browse(per_company[key])
+        return self._get_default_by_company(company)[company.id]
 
     @_debug.perf.timed
     @api.model_create_multi
@@ -471,7 +467,7 @@ class StockWarehouse(models.Model):
             _debug.lifecycle("write", warehouses=self, keys=sorted(vals))
         if vals.get("code"):
             vals = dict(vals, code=self._normalize_code(vals["code"]))
-        self._check_company_unchanged(vals)
+        check_company_unchanged(self, vals)
         warehouses = self.with_context(active_test=False)
         before = warehouses._pre_write_sync(vals)
 
@@ -479,17 +475,6 @@ class StockWarehouse(models.Model):
 
         warehouses._post_write_refresh(vals, before)
         return res
-
-    def _check_company_unchanged(self, vals) -> None:
-        if "company_id" not in vals:
-            return
-        for warehouse in self:
-            if warehouse.company_id.id != vals["company_id"]:
-                raise UserError(
-                    self.env._(
-                        "Changing the company of this record is forbidden at this point, you should rather archive it and create a new one."
-                    )
-                )
 
     def _pre_write_sync(self, vals):
         warehouses = self
@@ -991,14 +976,26 @@ class StockWarehouse(models.Model):
 
     @api.model
     def _get_default_by_company(self, companies) -> dict:
-        warehouses = self.search(
-            [("company_id", "in", companies.ids)],
-            order="company_id, sequence, id",
-        )
-        default_by_company = {}
-        for warehouse in warehouses:
-            default_by_company.setdefault(warehouse.company_id.id, warehouse)
-        return default_by_company
+        per_company = DEFAULT_WAREHOUSE_BY_COMPANY(self.env)
+        scope = (self.env.uid, self.env.su, self.env.context.get("active_test", True))
+        missing = [
+            company_id
+            for company_id in companies.ids
+            if (company_id, *scope) not in per_company
+        ]
+        if missing:
+            for company_id in missing:
+                per_company[company_id, *scope] = False
+            for warehouse in self.search(
+                [("company_id", "in", missing)],
+                order="company_id, sequence, id",
+            ):
+                key = (warehouse.company_id.id, *scope)
+                per_company[key] = per_company[key] or warehouse.id
+        return {
+            company_id: self.browse(per_company[company_id, *scope])
+            for company_id in companies.ids
+        }
 
     @api.model
     def _raise_missing_warehouse(self) -> None:

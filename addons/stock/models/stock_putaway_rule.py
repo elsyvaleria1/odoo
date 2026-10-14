@@ -1,9 +1,10 @@
 from collections import defaultdict
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
 from odoo.fields import Domain
 from odoo.libs.debug_log import DebugLog
+
+from ..tools.company import check_company_unchanged
 
 _debug = DebugLog(__name__)
 
@@ -93,14 +94,7 @@ class StockPutawayRule(models.Model):
     )
 
     def write(self, vals):
-        if "company_id" in vals:
-            for rule in self:
-                if rule.company_id.id != vals["company_id"]:
-                    raise UserError(
-                        self.env._(
-                            "Changing the company of this record is forbidden at this point, you should rather archive it and create a new one."
-                        ),
-                    )
+        check_company_unchanged(self, vals)
         return super().write(vals)
 
     @api.depends("sublocation")
@@ -132,7 +126,7 @@ class StockPutawayRule(models.Model):
     @api.onchange("location_in_id")
     def _onchange_location_in_id(self) -> None:
         loc_in, loc_out = self.location_in_id, self.location_out_id
-        if not loc_out or (loc_in and not loc_out._is_child_of(loc_in)):
+        if not loc_out or (loc_in and not loc_out._is_descendant_of(loc_in)):
             self.location_out_id = self.location_in_id
 
     def _default_category_id(self):
