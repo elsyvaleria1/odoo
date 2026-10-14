@@ -22,6 +22,7 @@ from .resource_utils import (
     hours_by_day,
     last_day_of,
     split_at_midnight,
+    wall_hours,
     week_of,
     week_type_of,
 )
@@ -970,10 +971,27 @@ class ResourceCalendar(models.Model):
                 "resource.reservation"
             ]._get_enforced_booking_intervals_batch(start_dt, end_dt, resources)
             work = {
-                resource_id: intervals - booked[resource_id]
-                for resource_id, intervals in work.items()
+                resource.id: work[resource.id]
+                - self._get_intervals_in_zone(booked[resource.id], resource, tz)
+                for resource in resources_list
             }
         return work
+
+    def _get_intervals_in_zone(
+        self,
+        intervals: Intervals,
+        resource: ResourceResource,
+        tz: ZoneInfo | str | None = None,
+    ) -> Intervals:
+        if isinstance(tz, str):
+            tz = timezone(tz)
+        zone = tz or timezone(self._get_tz(resource))
+        return Intervals(
+            [
+                (start.astimezone(zone), stop.astimezone(zone), meta)
+                for start, stop, meta in intervals
+            ]
+        )
 
     def _flexible_work_intervals_batch(
         self, start_dt, end_dt, resources, resources_list, domain, tz
@@ -1139,7 +1157,7 @@ class ResourceCalendar(models.Model):
                 if total_duration_hours:
                     day_days[start.date()] += (
                         sum(meta.mapped("duration_days"))
-                        * elapsed_hours(start, stop)
+                        * wall_hours(start, stop)
                         / total_duration_hours
                     )
 
@@ -1434,7 +1452,10 @@ class ResourceCalendar(models.Model):
                     resource,
                     reservations_to_ignore=reservations_to_ignore,
                 )
-                return {resource.id: work[resource.id] - booked[resource.id]}
+                return {
+                    resource.id: work[resource.id]
+                    - self._get_intervals_in_zone(booked[resource.id], resource)
+                }
 
         else:
             get_intervals = partial(
@@ -1515,7 +1536,7 @@ class ResourceCalendar(models.Model):
                     return revert(boundary)
                 found.add(start.date())
             boundary = stop if forward else start
-        return None
+        return revert(boundary) if len(found) == days else None
 
     def _prepare_default_attendance_vals(self, company_id=None) -> list:
         if company_id and (

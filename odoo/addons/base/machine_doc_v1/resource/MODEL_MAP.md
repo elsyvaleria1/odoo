@@ -84,14 +84,15 @@
 
 **Key methods:**
 - Intervals: `_attendance_intervals_batch`, `_leave_intervals_batch`, `_work_intervals_batch`
-  (`compute_leaves`, `exclude_bookings`), `_hard_reservation_intervals_batch`,
-  `_unavailable_intervals_batch`.
+  (`compute_leaves`, `exclude_bookings`), `_unavailable_intervals_batch`,
+  `_get_intervals_in_zone` (bookings read in the schedule's zone).
 - Figures: `get_work_hours_count`, `get_work_duration_data`, `get_attendance_duration_data`,
-  `_get_hours_by_day` (a fully flexible day counts at most `hours_per_day`),
+  `_get_hours_by_day`, `_get_duration_data` (a day of a schedule that is not fixed counts
+  at most one; a fixed line's share of its day is read on the wall clock),
   `_get_unusual_days`, `_get_hours_for_date`, `_is_working_day`.
 - The shared schedule: `_get_fully_flexible_calendar`, `_get_company_calendar`,
   `_normalize_calendar_vals` (an empty schedule written anywhere becomes it).
-- Planning: `plan_hours`, `plan_days`.
+- Planning: `plan_hours`, `plan_days` (the last day found within the horizon still ends the plan).
 - Hooks: `_get_fields_schedule` (the fields whose change recomputes open reservation hours)
   and `_recompute_reservation_hours`.
 
@@ -110,7 +111,7 @@ is the end of the day), `duration_hours`, `duration_days`, `day_period`, `week_t
 **Fields:** `name`, `company_id`, `calendar_id`, `resource_id`, `time_type_id`, `date_from`,
 `date_to`, `tz`, `local_date_from`, `local_date_to`, `local_hour_from`, `local_hour_to`.
 
-**Key methods:** `_get_interval_end`, `_get_domain_public_holidays`,
+**Key methods:** `_get_domain_public_holidays`, `_get_flexible_windows`,
 `_get_fields_schedule_scope`, `_get_schedule_scopes`, `_on_schedule_changed` (hook: base
 recomputes the reservations it overlaps; hr_holidays, planning_holidays and others extend
 it).
@@ -161,7 +162,7 @@ subtracts).
 **Key methods:**
 - Domains: `_get_domain_custody` (`live` / `planned` / `open`), `_get_domain_cancelled`.
 - Lookups: `_get_custody_assignments`, `_get_holder`, `_get_holding_custody_roles`,
-  `_get_holding_by_resource`, `_get_sql_effective_custody`.
+  `_get_custody_winners`, `_get_sql_effective_custody`.
 - Changes: `_supersede_rivals` (create, and write on `_get_fields_custody`), `_end`.
 
 ## resource.relation
@@ -186,8 +187,7 @@ serial, plate, VIN, engine, IMEI, cadastral, inventory tag.
 furniture, property, IT, telecom, device. **Fields:** `name`, `code` (unique; a model
 extending the kind names it), `sequence`, `scheduled` (takes its company's hours;
 otherwise around the clock), `identifier_type_ids`, `enforce_identifiers`, `group_id`
-(who sees its things; `res.users._get_enabled_asset_kinds`, `_get_hidden_asset_kinds`
-and the `resource.enabled_kind` access predicate read it), `properties_definition`,
+(who sees its things: the `base.enabled_kind` access predicate reads it), `properties_definition`,
 `resource_ids`, `resource_count`.
 
 ## mixin.resource.kind
@@ -298,6 +298,6 @@ create).
   held on a person's private facet; `_get_resources`, `_get_or_create_resources`,
   `_get_private_facet`, `_get_or_create_private_facet`.
 - `res.users`: `resource_ids`, `resource_calendar_id` (the schedule of the resource in the
-  current company); `_get_enabled_asset_kinds`, `_get_hidden_asset_kinds` (an asset
-  manager sees every kind).
-- `base`: `_access_predicate_enabled_asset_kind`, the `resource.enabled_kind` predicate.
+  current company).
+- `ir.access.predicate`: `_access_predicate_enabled_asset_kind`, the `base.enabled_kind`
+  predicate (an asset manager sees every kind).

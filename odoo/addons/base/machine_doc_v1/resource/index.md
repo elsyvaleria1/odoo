@@ -52,8 +52,10 @@ reasons live in `doc/architecture/resource.rst`.
 - **A cancelled plan** is an assignment that ends where it starts
   (`_get_domain_cancelled`). It is neither planned, open nor in use.
 - **Exceptions** belong to the resource whatever schedule reads them; only a
-  schedule-wide closure matches on `calendar_id`. A stored 23:59:59 local end covers the
-  whole day (`_get_interval_end`).
+  schedule-wide closure matches on `calendar_id`. A whole day ends at the next local
+  midnight, which the form shows as 24:00 (`local_hour_to`).
+- **Bookings** subtracted from working time are read in the zone the schedule is read in,
+  so a day keeps its booked hours whatever the zone.
 - **Days** passed to `_get_unusual_days` are read in the schedule's own zone.
 
 ## Hosts

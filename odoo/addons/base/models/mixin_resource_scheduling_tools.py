@@ -34,13 +34,6 @@ class MixinResourceSchedulingTools(models.AbstractModel):
             return (end_utc - start_utc).total_seconds() / 3600.0
 
         if calendar and calendar != resource.calendar_id:
-            if calendar.schedule_type != "fully_fixed" or resource._is_flexible():
-                return calendar.get_work_hours_count(
-                    start_utc,
-                    end_utc,
-                    compute_leaves=compute_leaves,
-                    domain=leave_domain,
-                )
             return get_intervals_hours(
                 calendar._work_intervals_batch(
                     start_utc,

@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
+from odoo import Command
 from odoo.libs.datetime import timezone
 from odoo.tests import TransactionCase, tagged
 
@@ -681,6 +682,79 @@ class TestTheScheduleReadDecides(ResourceCase):
         )[resource.id]
         self.assertFalse(own)
         self.assertIn((self.monday, self.monday.replace(hour=8)), imposed)
+
+    def test_an_imposed_schedule_reads_a_flexible_resource_as_any_other(self):
+        brussels = self.env["resource.calendar"].create(
+            {
+                "name": "Brussels days",
+                "company_id": self.company.id,
+                "tz": "Europe/Brussels",
+                "attendance_ids": [Command.clear()]
+                + [
+                    Command.create(
+                        {
+                            "name": f"Day {day}",
+                            "dayofweek": str(day),
+                            "hour_from": 8,
+                            "hour_to": 16,
+                            "day_period": "full_day",
+                        }
+                    )
+                    for day in range(5)
+                ],
+            }
+        )
+        flexible = self.env["resource.calendar"].create(
+            {
+                "name": "Flexible",
+                "company_id": self.company.id,
+                "schedule_type": "flexible",
+                "hours_per_week": 40,
+                "hours_per_day": 8,
+                "tz": "America/New_York",
+            }
+        )
+        fixed_hours = self._resource(name="Fixed", tz="America/New_York")
+        flexible_hours = self._resource(
+            name="Flexible", calendar_id=flexible.id, tz="America/New_York"
+        )
+
+        def booked_hours(resource):
+            return (
+                self.env["resource.reservation"]
+                .create(
+                    {
+                        "name": resource.name,
+                        "resource_id": resource.id,
+                        "resource_calendar_id": brussels.id,
+                        "date_start": datetime(2026, 6, 1, 12, 0),
+                        "date_end": datetime(2026, 6, 1, 20, 0),
+                    }
+                )
+                .allocated_hours
+            )
+
+        for resource in (fixed_hours, flexible_hours):
+            with self.subTest(resource=resource.name):
+                self.assertEqual(
+                    booked_hours(resource),
+                    8.0,
+                    "the schedule is read in the resource's zone: 08:00-16:00"
+                    " in New York",
+                )
+        self.env["resource.schedule.exception"].create(
+            {
+                "name": "Day off",
+                "resource_id": flexible_hours.id,
+                "date_from": datetime(2026, 6, 1, 4, 0),
+                "date_to": datetime(2026, 6, 2, 4, 0),
+            }
+        )
+        self.assertEqual(
+            booked_hours(flexible_hours),
+            0.0,
+            "the resource's own absence holds through any schedule",
+        )
 
     def test_a_flexible_schedule_widens_a_part_day_absence(self):
         resource = self._resource(name="Fixed hours")

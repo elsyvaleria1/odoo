@@ -108,6 +108,79 @@ class TestCalendarSchedule(TransactionCase):
             "five planned hours from local midnight end at 06:00 local, 04:00 UTC",
         )
 
+    def test_a_whole_day_line_is_one_day_across_daylight_saving(self):
+        brussels = self.Calendar.create(
+            {
+                "name": "Brussels Sundays",
+                "tz": "Europe/Brussels",
+                "attendance_ids": _lines(0, 24, days=[6], day_period="full_day"),
+            }
+        )
+        zone = timezone("Europe/Brussels")
+        for sunday, hours in ((date(2026, 3, 29), 23.0), (date(2026, 10, 25), 25.0)):
+            start = datetime.combine(sunday, time.min, zone)
+            with self.subTest(sunday=sunday):
+                self.assertEqual(
+                    brussels.get_work_duration_data(start, start + timedelta(days=1)),
+                    {"days": 1.0, "hours": hours},
+                )
+
+    def test_a_plan_of_days_ends_on_the_last_day_before_a_closure(self):
+        self.Exception.create(
+            {
+                "name": "Closed for good",
+                "calendar_id": self.calendar.id,
+                "date_from": datetime.combine(
+                    self.monday + timedelta(days=2), time.min
+                ),
+                "date_to": datetime.combine(
+                    self.monday + timedelta(days=4000), time.min
+                ),
+            }
+        )
+        start = datetime.combine(self.monday, time.min)
+        self.assertEqual(
+            self.calendar.plan_days(2, start, compute_leaves=True),
+            self.calendar.plan_hours(16, start, compute_leaves=True),
+        )
+        self.assertEqual(
+            self.calendar.plan_days(2, start, compute_leaves=True),
+            datetime.combine(self.monday + timedelta(days=1), time(17)),
+        )
+        self.assertIsNone(self.calendar.plan_days(3, start, compute_leaves=True))
+
+    def test_a_booking_cuts_working_time_in_the_resource_zone(self):
+        tokyo = self.Calendar.create(
+            {"name": "Tokyo", "tz": "Asia/Tokyo", "attendance_ids": _lines(8, 17)}
+        )
+        resource = self._resource(calendar_id=tokyo.id, tz="Asia/Tokyo")
+        self.env["resource.reservation"].create(
+            {
+                "name": "Tuesday at 08:00",
+                "resource_id": resource.id,
+                "date_start": datetime(2026, 10, 5, 23, 0),
+                "date_end": datetime(2026, 10, 5, 23, 30),
+                "enforcement_mode": "hard",
+            }
+        )
+        zone = timezone("Asia/Tokyo")
+        monday = datetime.combine(self.monday, time(7), zone)
+        free = tokyo._work_intervals_batch(
+            monday, monday + timedelta(days=3), resource, exclude_bookings=True
+        )[resource.id]
+        self.assertEqual(
+            dict(tokyo._get_hours_by_day(free)),
+            {
+                self.monday: 9.0,
+                self.monday + timedelta(days=1): 8.5,
+                self.monday + timedelta(days=2): 9.0,
+            },
+        )
+        self.assertEqual(
+            tokyo.plan_days(2, monday, compute_leaves=True, resource=resource),
+            datetime.combine(self.monday + timedelta(days=1), time(17), zone),
+        )
+
     def test_a_day_ends_at_the_next_midnight(self):
         clock = self.Calendar.create(
             {"name": "Round the clock", "tz": "UTC", "attendance_ids": _lines(0, 24)}

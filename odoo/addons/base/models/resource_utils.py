@@ -138,6 +138,14 @@ def changed_vals(record, vals: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def wall_hours(start: datetime, stop: datetime) -> float:
+    if start.tzinfo is not None and stop.tzinfo is not None:
+        stop = stop.astimezone(start.tzinfo)
+    return (
+        stop.replace(tzinfo=None) - start.replace(tzinfo=None)
+    ).total_seconds() / 3600
+
+
 def last_day_of(start: datetime, stop: datetime) -> date:
     if stop > start:
         stop -= timedelta(microseconds=1)
