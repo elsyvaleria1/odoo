@@ -1,6 +1,6 @@
 {
     "name": "Framework Base",
-    "version": "1.160",
+    "version": "1.161",
     "oldest_upgradable_version": "1.140",
     "category": "Hidden",
     "summary": "Provide the core registry, users, companies and module-management models",

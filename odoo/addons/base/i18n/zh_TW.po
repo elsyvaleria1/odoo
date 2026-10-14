@@ -2494,6 +2494,18 @@ msgid ""
 "        - Operations through electronic interfaces (IED)\n"
 "        - Invoices done with KSef\n"
 msgstr ""
+"\n"
+"Accounting reports for Poland\n"
+"\n"
+"        This module also provides the possibility to generate the JPK_VAT in "
+"xml, for Poland.\n"
+"\n"
+"        Currently, does not report specific values for :\n"
+"        - Cash basis for entries with input tax (MK)\n"
+"        - Margin-based operations (MR_T/MR_UZ)\n"
+"        - Bills for agricultural products (VAT_RR)\n"
+"        - Operations through electronic interfaces (IED)\n"
+"        - Invoices done with KSef \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pt_reports
@@ -3205,6 +3217,9 @@ msgid ""
 "Advanced features for the PoS like better views\n"
 "for IoT Box config.\n"
 msgstr ""
+"\n"
+"PoS 的延伸功能，如更好的視圖\n"
+"用於 IoT 盒子設定。   \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_agro_partner_scoring
@@ -3485,6 +3500,11 @@ msgid ""
 "===========================================================\n"
 "Additional information is displayed in the name of the SOL when it is used in services apps (project and planning).\n"
 msgstr ""
+"\n"
+"允許在 SOL 服務應用程式中顯示銷售訊息\n"
+"===========================================================\n"
+"當在服務應用程式（專案和規劃）中使用 SOL 時，附加資訊會顯示在 SOL 的名稱"
+"中。 \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_purchase_edi_ubl_bis3
@@ -3851,6 +3871,14 @@ msgid ""
 "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, then select the test\n"
 "and print the report from Print button in header area.\n"
 msgstr ""
+"\n"
+"會計上的資產\n"
+"======================\n"
+"在這個模組您可以從功能表 報表->財務->財務檢測 來手工檢查記帳模組的一致性.\n"
+"\n"
+"進入功能表  報表->會計測試，您可以寫一個查詢去建立一致性測試， \n"
+"最後能得到PDF格式的測試結果，\n"
+"選擇測試的頂部功能表執行列印按鈕來列印.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_depreciation
@@ -5549,6 +5577,9 @@ msgid ""
 "Configure IoT devices to be used in certain\n"
 "steps for taking measures, taking pictures, ...\n"
 msgstr ""
+"\n"
+"設定要在特定中使用的 IoT 設備\n"
+"採取措施，拍照，...\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_databases
@@ -9061,6 +9092,11 @@ msgid ""
 "It is like a regular invoice, but we need to keep track of the link with the original invoice.\n"
 "The wizard used is similar as the one for the credit note.\n"
 msgstr ""
+"\n"
+"在許多國家，借方票據用於增加現有發票的金額\n"
+"或在某些特殊情況下取消信用證。\n"
+"它與普通發票一樣，但我們需要跟蹤與原始發票的聯繫。  \n"
+"使用的嚮導與貸記單據類似。\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_dk_nemhandel_response
@@ -9443,6 +9479,16 @@ msgid ""
 "case the sale orders should be\n"
 "split per delivery.\n"
 msgstr ""
+"\n"
+"Inventory management for Avatax\n"
+"=======================================\n"
+"This module allows for line-level addresses when getting taxes from avatax.\n"
+"\n"
+"A current limitation is a single order line with more than one stock move "
+"(i.e. 10 units of \n"
+"product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this "
+"case the sale orders should be\n"
+"split per delivery.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account
@@ -12434,6 +12480,22 @@ msgid ""
 "For more information about RIBA standards, refer to the guidelines issued by "
 "the Italian Bankers Association (CBI).\n"
 msgstr ""
+"\n"
+"Ri.Ba. Export for Batch Payment\n"
+"================================\n"
+"\n"
+"This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
+"batch payments in Odoo.  \n"
+"It facilitates compliance with the Italian banking standard for managing "
+"receivables.\n"
+"\n"
+"- Group multiple receivables into a single batch for streamlined management "
+"and reconciliation.\n"
+"- Export batch payments as RIBA-compliant files to be submitted to your "
+"homebanking for processing.\n"
+"\n"
+"For more information about RIBA standards, refer to the guidelines issued by "
+"the Italian Bankers Association (CBI).\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ro_intrastat
@@ -15148,6 +15210,9 @@ msgid ""
 "This module adds a new template to the Newsletter Block to allow\n"
 "your visitors to subscribe with their phone number.\n"
 msgstr ""
+"\n"
+"該模組為 \"電子報\" 區塊添加了一個新模板，允許\n"
+"訪客使用電話號碼訂閱。\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_renting_crm
@@ -15657,6 +15722,10 @@ msgid ""
 "and decide the split of these costs among their stock moves in order to\n"
 "take them into account in your stock valuation.\n"
 msgstr ""
+"\n"
+"通過該模塊，您可以輕鬆地為生產訂單添加額外成本\n"
+"並決定這些成本在庫存移動中的分配，以便在庫存估值中將其考慮在內。\n"
+"在庫存估價中將其考慮在內。\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_us_direct_deposit
@@ -15840,6 +15909,10 @@ msgid ""
 "Install this if you are using the Point of Sale app in Chile.\n"
 "\n"
 msgstr ""
+"\n"
+"如果您在智利使用銷售點應用程序，\n"
+"請安裝此模塊以滿足智利監管要求的技術要求。    \n"
+"\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pe_pos
@@ -16863,6 +16936,8 @@ msgid ""
 "\n"
 "This module provides the link between quality steps and IoT devices.\n"
 msgstr ""
+"\n"
+"該模組提供品質步驟和物聯網設備之間的連結。 \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_mobile
@@ -17514,6 +17589,27 @@ msgid ""
 "countries,\n"
 "only the country code will be validated.\n"
 msgstr ""
+"\n"
+"合作夥伴的增值稅，增值稅的確認號碼.\n"
+"=========================================\n"
+"\n"
+" 安裝此模組以後，合作夥伴增值稅範疇內輸入的值將被驗證，前提該國家在模組支援的"
+"範圍內. 這一國家可以從增值稅前綴的 2 個字母的國家代碼推測出來，比如"
+"「BE0477472701」代表比利時須遵守當地的法律.\n"
+"\n"
+"有兩種不同的增值稅號碼驗證等級:\n"
+"--------------------------------------------------------\n"
+" * 預設情況下，使用該國家的一般驗證規則進行一個簡單的離線檢查，通常是一個簡單"
+"的驗證數字. 這通常是簡便而有效的，但這些允許的驗證數字，也許並不是真正的設"
+"定，或者不再有效.\n"
+" \n"
+" * 當「增值稅號碼的檢查」選項啟用(在使用者的公司設定)，增值稅號碼將替換並線上"
+"提交到歐盟國家資料庫，這將真正確認號碼是有效的和目前分配給歐盟的公司. 這比簡"
+"單離線檢查慢一點，需要網路連接，並且也不是一直有效的. 如果服務不可用或不支援"
+"請求的國家(例如非歐盟國家)，一個簡單的驗證將替代執行.\n"
+"\n"
+" 目前支援的國家包括歐盟國家，以及一些非歐盟國家，如智利，哥倫比亞，墨西哥，挪"
+"威和俄羅斯. 不支援的國家，只有國家代碼將被驗證.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_industry_fsm_stock
@@ -20051,13 +20147,15 @@ msgid ""
 "<code>UserError</code>: exception class for raising\n"
 "                                        user-facing warning messages"
 msgstr ""
+"<code>UserError</code>：此錯誤類別用於面向用戶顯示警告訊息（使用 "
+"<code>raise</code> 關鍵字）"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>_logger.info(message)</code>: logger to emit messages\n"
 "                                        in server logs"
-msgstr ""
+msgstr "<code>_logger.info(message)</code>:在伺服器日誌中發佈消息的日誌記錄器"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -20074,28 +20172,28 @@ msgstr "<code>dateutil</code> (Python模組)"
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>：觸發操作的環境"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>：觸發操作的環境"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>float_compare()</code>: utility function to\n"
 "                                            compare floats based on a specific precision"
-msgstr ""
+msgstr "<code>float_compare()</code>：根據特定精度比較浮點數的系統程式函數"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>float_compare()</code>: utility function to compare\n"
 "                                        floats based on a specific precision"
-msgstr ""
+msgstr "<code>float_compare()</code>：根據特定精度比較浮點數的系統程式函數"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20103,48 +20201,50 @@ msgid ""
 "<code>log(message, level='info')</code>: logging function to\n"
 "                                        record debug information in <code>ir.logging</code> table"
 msgstr ""
+"<code>log(message, level='info')</code>:在<code>ir.logging</code>表中記錄調試"
+"信息的日誌函數"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
-msgstr ""
+msgstr "<code>model</code>：觸發操作所針對的記錄的模型，是空白的記錄集"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
-msgstr ""
+msgstr "<code>model</code>：觸發操作所針對的記錄的模型，是空白的記錄集"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>記錄</code>:觸發操作的記錄"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
-msgstr ""
+msgstr "<code>record</code>:觸發操作的記錄；可能無效"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>records</code>: recordset of all records on which\n"
 "                                            the action is triggered in multi mode"
-msgstr ""
+msgstr "<code>records</code>:在多重模式下觸發操作的所有記錄的記錄集"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
-msgstr ""
+msgstr "<code>records</code>:在多個模式下觸發操作的所有記錄的記錄集；可能無效"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -20265,6 +20365,7 @@ msgid ""
 "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start the\n"
 "                        process...</span>"
 msgstr ""
+"<span class=\"o_form_label\" colspan=\"2\">請按下方「更新」開始程序⋯</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
@@ -20349,6 +20450,10 @@ msgid ""
 "                                    <span colspan=\"2\">Month: %(month)s</span>\n"
 "                                    <span colspan=\"2\">Day: %(day)s</span>"
 msgstr ""
+"<span colspan=\"2\">年代: %(year)s</span>\n"
+"                                <span colspan=\"2\">年份: %(y)s</span>\n"
+"                                <span colspan=\"2\">月: %(month)s</span>\n"
+"                                <span colspan=\"2\">日: %(day)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20357,6 +20462,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">年內第幾天：%(doy)s</span>\n"
+"                                <span colspan=\"2\">年內第幾週：%(woy)s</"
+"span>\n"
+"                                <span colspan=\"2\">星期幾（0 = 週一）：%"
+"(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20366,6 +20476,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">時 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">時 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">分: %(min)s</span>\n"
+"                                <span colspan=\"2\">秒: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20374,6 +20489,11 @@ msgid ""
 "                                    <span colspan=\"2\">ISO 8601 Week Year without Century: %(isoy)s</span>\n"
 "                                    <span colspan=\"2\">ISO 8601 Week Number: %(isoweek)s</span>"
 msgstr ""
+"<span colspan=\"2\">ISO 8601 星期所在年份，連世紀：%(isoyear)s</span>\n"
+"                                <span colspan=\"2\">ISO 8601 星期所在年份，不"
+"連世紀：%(isoy)s</span>\n"
+"                                <span colspan=\"2\">ISO 8601 週數：%"
+"(isoweek)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20403,6 +20523,11 @@ msgid ""
 "                    <span invisible=\"reset_mode != 'hard'\">This view is not coming from a file.</span>\n"
 "                    <span invisible=\"reset_mode != 'other_view'\">You need two views to compare.</span>"
 msgstr ""
+"<span invisible=\"reset_mode != 'soft'\">此視圖沒有先前版本。</span>\n"
+"                        <span invisible=\"reset_mode != 'hard'\">此視圖不是來"
+"自檔案。</span>\n"
+"                        <span invisible=\"reset_mode != 'other_view'\">您需要"
+"兩個視圖進行比較。</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20413,6 +20538,12 @@ msgid ""
 "                                to this Python expression:\n"
 "                            </span>"
 msgstr ""
+"<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
+"class=\"o_actions_server_set_a_value text-muted\">設定一個值⋯</span>\n"
+"                                <span invisible=\"evaluation_type != "
+"'equation'\">\n"
+"                                    給這 Python 表達式：\n"
+"                                </span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -20430,6 +20561,9 @@ msgid ""
 "<strong>Important:</strong> The key cannot be retrieved later and provides <b>full\n"
 "                        access</b> to your user account, it is very important to store it securely."
 msgstr ""
+"<strong>重要提示:</strong>\n"
+"                            以後無法檢索密鑰並提供<b>完全存取權限</b>\n"
+"                            對於您的使用者帳戶，安全地儲存它是非常重要的."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.res_users_identitycheck_view_form
@@ -20457,7 +20591,7 @@ msgstr "<strong>關聯該使用者的聯繫人仍然處於啟用狀態</strong>"
 msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
-msgstr ""
+msgstr "<strong>此操作將永久刪除目前由模組儲存的所有資料!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -23842,6 +23976,9 @@ msgstr "法國的付款服務商，服務幾個歐洲國家。"
 #: model:ir.module.module,summary:base.module_html_editor
 msgid "A Html Editor component and plugin system"
 msgstr ""
+"\n"
+"        Html 編輯工具的組件及插件系統\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_payment_dpo
@@ -23957,6 +24094,9 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"使用者組用於把一系列功能分配給使用者，使其能夠存取特定的模組和功能. 可以新建"
+"或修改現有的使用者組，這樣就可以自訂該組使用者的功能表，或者對某個對象的增刪"
+"改查權利."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -24155,6 +24295,9 @@ msgid ""
 "A powerful suite of AI tools and agents integrated directly into your Odoo "
 "environment."
 msgstr ""
+"\n"
+"        一套強大的 AI 工具及代理，\n"
+"        直接整合至你的 Odoo 系統內。"
 
 #. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_access_predicate_template_or_method
@@ -24328,6 +24471,8 @@ msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
 "            application, create and manage appraisals for himself and the people he's manager of."
 msgstr ""
+"沒有任何表現評核權限的使用者，可查看該應用程式，以及為自己及他以經理身份管理"
+"的下屬，建立及管理評核。"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_wallet
@@ -24984,11 +25129,17 @@ msgstr "Accounting reports for Brazil"
 #: model:ir.module.module,summary:base.module_l10n_ph_reports
 msgid "Accounting reports for the Philippines"
 msgstr ""
+"\n"
+"Accounting reports for the Philippines\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_vn_reports
 msgid "Accounting reports for the Vietnam"
 msgstr ""
+"\n"
+"越南會計報表\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_automation_account
@@ -29505,7 +29656,7 @@ msgstr "銀行"
 msgid ""
 "Banks are the financial institutions at which you and your contacts have their\n"
 "                accounts."
-msgstr ""
+msgstr "銀行是您和您的聯繫人擁有賬戶的金融機構."
 
 #. module: base
 #: model:res.country,name:base.bb
@@ -29712,6 +29863,8 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"請注意，不建議編輯標準檢視的架構，因為在將來的模組更新期間更改將被覆蓋. <br/>"
+"我們建議通過繼承檢視或使用 Odoo Studio 進行自訂來對標準檢視進行修改."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -30391,7 +30544,7 @@ msgstr "橋接模組向活動參與者推送通知"
 #. module: base
 #: model:ir.module.module,summary:base.module_website_event_track_live_quiz
 msgid "Bridge module to support quiz features during \"live\" tracks."
-msgstr ""
+msgstr "橋接模組在\"即時\"追蹤期間支援測驗功能. "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_account_move_template_purchase
@@ -31406,7 +31559,7 @@ msgstr "更改密碼"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "更改地址在報表中的顯示方式"
 
 #. module: base
 #. odoo-python
@@ -31656,7 +31809,7 @@ msgstr "選擇一項⋯"
 msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
-msgstr ""
+msgstr "選擇僅包含地址欄位的合作夥伴子檢視，以更改使用者輸入地址的方式."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -31903,7 +32056,7 @@ msgstr "通過 SEPA 直接扣款從您的客戶收款."
 #. module: base
 #: model:ir.module.module,summary:base.module_document
 msgid "Collect, organize and share documents."
-msgstr ""
+msgstr "收集、整理、共享文件。"
 
 #. module: base
 #: model:res.country,name:base.co
@@ -32284,6 +32437,9 @@ msgid ""
 "Computed fields are defined with the fields <strong>Dependencies</strong>\n"
 "                                    and <strong>Compute</strong>."
 msgstr ""
+"使用欄位\n"
+"                                                <strong>相關性</strong> 和 "
+"<strong>計算</strong> 定義計算欄位."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__auth_user_client__platform_type__computer
@@ -32586,7 +32742,7 @@ msgstr "必須填寫聯絡人姓名"
 msgid ""
 "Contains In-App\n"
 "                            Purchases"
-msgstr ""
+msgstr "包含應用內購買"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_enterprise
@@ -32994,6 +33150,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"在此處建立與管理系統中的公司機構資訊. 門市與下屬機構也可以在這裡進行建立與維"
+"護."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -33003,6 +33161,8 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"為系統建立和管理使用者. 在一段時間內用該系統的使用者可以暫不啟用. 您還可以給"
+"使用者分配某一個組，以便他們能用到系統的指定功能."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -33671,7 +33831,7 @@ msgstr "自訂的檢視"
 msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
-msgstr ""
+msgstr "如果使用者重新組織過他的控制面板檢視，則使用其自訂的檢視."
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -34241,6 +34401,8 @@ msgid ""
 "Demo data should only be used on test databases!\n"
 "                                Once they are loaded, they cannot be removed!"
 msgstr ""
+"展示用資料只能用於測試資料庫！\n"
+"                             一旦載入，就無法移除！"
 
 #. module: base
 #: model:ir.model,name:base.model_ir_demo_failure
@@ -35269,6 +35431,9 @@ msgstr "E-Invoicing, Offentlig Information Online Universal Business Language"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi
 msgid "E-Invoicing, Universal Business Language"
 msgstr ""
+"\n"
+"        電子發票，通用商業語言\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_tw_edi_ecpay
@@ -35537,6 +35702,9 @@ msgstr "埃及電子發票"
 #: model:ir.module.module,summary:base.module_l10n_eg_edi_eta
 msgid "Egypt Tax Authority Invoice Integration"
 msgstr ""
+"\n"
+"            埃及稅務機關發票整合功能\n"
+"        "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__eire
@@ -38152,7 +38320,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "忘記密碼?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -38430,9 +38598,8 @@ msgstr "家具、傢俬、玩具、遊戲、兒童、男孩、女孩、商店"
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
-msgstr ""
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
+msgstr "G - 批發及零售業；汽車及電單車修理"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -39605,6 +39772,10 @@ msgid ""
 "            User : Access to referral, share job, gain points, buy rewards\n"
 "            Administrator : edit rewards and more"
 msgstr ""
+"幫助你管理內部推薦\n"
+"                使用者：可存取內部推薦應用程式、分享職位、賺取積分、購買獎"
+"勵\n"
+"                管理員：編輯獎勵詳情等"
 
 #. module: base
 #: model:ir.module.category,description:base.module_category_sales_sign
@@ -39622,6 +39793,8 @@ msgid ""
 "Here is your new API key, use it instead of a password for RPC access.\n"
 "                        Your login is still necessary for interactive usage."
 msgstr ""
+"這是您的新 API 密鑰，使用它代替密碼進行 RPC 訪問.\n"
+"                            您的登入仍然是交互式使用所必需的."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__denied_field_ids
@@ -40319,6 +40492,10 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"當這是繼承檢視時，\n"
+"* 如果為是，則此檢視僅延伸母檢視\n"
+"* 如果為否，則此檢視目前不延伸母檢視，但可以被啟用\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -41761,6 +41938,8 @@ msgid ""
 "                        will be the only way to\n"
 "                            identify the key once created</strong>."
 msgstr ""
+"清楚和完整的描述是非常重要的，這<strong>將是識別密鑰一旦建立的唯一方法</"
+"strong>."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_it_intrastat
@@ -42150,16 +42329,25 @@ msgstr "Kenya Tremol Device EDI Integration"
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu
 msgid "Kenya eTIMS Device EDI Integration"
 msgstr ""
+"\n"
+"            肯亞 eTIMS 裝置 EDI 整合功能\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_mrp
 msgid "Kenya eTIMS Device EDI Manufacturing Integration"
 msgstr ""
+"\n"
+"        肯亞 eTIMS 裝置 EDI 製造整合功能\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_stock
 msgid "Kenya eTIMS Device EDI Stock Integration"
 msgstr ""
+"\n"
+"            肯亞 eTIMS 裝置 EDI 庫存整合功能\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_ke_edi_oscu
@@ -42940,7 +43128,7 @@ msgstr "讓我們在你的電子商務中選擇 Point Relais®"
 #. module: base
 #: model:ir.module.module,summary:base.module_delivery_mondialrelay
 msgid "Let's choose a Point Relais® as shipping address"
-msgstr ""
+msgstr " 讓我們選擇 Point Relais® 作為送貨地址 "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
@@ -44040,6 +44228,8 @@ msgid ""
 "            then delete it through the button that appeared. Items can be assigned to specific\n"
 "            groups in order to make them accessible to some users within the system."
 msgstr ""
+"管理和自訂使用者的功能表項. 您可以用勾選一些功能表項，然後刪除. 功能表項可以"
+"分配給某些特定的使用者群組，以便他們使用系統的某些特定的功能."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_slides
@@ -46372,6 +46562,10 @@ msgid ""
 "This here module is useful to validate that they're doing what they're\n"
 "supposed to do\n"
 msgstr ""
+"非繁瑣的測試實用程序可能需要模型和所有\n"
+"\n"
+"此模塊可用於驗證它們是否在做它們\n"
+"應該做的事情\n"
 
 #. module: base
 #: model:res.country,name:base.nf
@@ -48693,6 +48887,13 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"只在此檢視繼承其它檢視時有效( inherit_id 不是否或 Null ).\n"
+"\n"
+"* 若設為延伸(預設)，此檢視被呼叫時會尋找最接近的主要檢視，\n"
+"並套用所有繼承這個檢視且為此檢視模型的檢視\n"
+"* 若設為主要，則最接近的主要檢視會被完整解析(即使用了不同\n"
+"的模型)，然後套用這個檢視的所有繼承規則，(<xpath/>). 然後結\n"
+"果會被拿來使用，如同這就是這個檢視的實際架構一樣.\n"
 
 #. module: base
 #. odoo-python
@@ -53364,7 +53565,7 @@ msgstr "餐廳"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "POS中的飯店功能延伸 "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -54571,6 +54772,10 @@ msgid ""
 "                        Odoo will propose you to merge only those having\n"
 "                        all these fields in common. (not one of the fields)."
 msgstr ""
+"選擇用於搜尋重複記錄的欄位列表.\n"
+"                            如果選擇多個欄位,\n"
+"                            Odoo將會建議您只合併那些有相同欄位的.\n"
+"                            (而不是只有一個欄位相同)."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_model_fields__selectable
@@ -54585,6 +54790,10 @@ msgid ""
 "                            will be redirected to the destination contact.\n"
 "                            You can remove contacts from this list to avoid merging them."
 msgstr ""
+"選定的聯繫人將被合併在一起.\n"
+"所有的文件連結到其中的一個聯繫\n"
+"將被重導向到目的地聯繫.\n"
+"您可以從這個列表中刪除聯繫人以避免合併它們."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_partner_merge__state__selection
@@ -55249,6 +55458,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_link_tracker
 msgid "Shorten URLs and use them to track clicks and UTMs"
 msgstr ""
+"\n"
+"縮短網址並使用它們追蹤點擊及 UTM\n"
 
 #. module: base
 #: model:ir.model,name:base.model_res_users_apikeys_show
@@ -55376,7 +55587,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "POS中的簡單折扣 "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -56517,7 +56728,7 @@ msgstr "訂閱"
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_sale_subscription_partnership
 msgid "Subscriptions of membership / partnership"
-msgstr ""
+msgstr "會員 / 合作夥伴資格訂閱 "
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_sequence__date_range_ids
@@ -56781,9 +56992,9 @@ msgstr "塞內加爾 - 會計報表"
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-msgstr ""
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+msgstr "T - 家庭作為僱主的活動；家庭自用的不經分辨商品和服務生產活動"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -57757,6 +57968,8 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"配置精靈用於協助你配置新的 Odoo 安裝個體。它們會在安裝新模組期間啟動，但你亦"
+"可使用此選單，手動重新啟動部份精靈。"
 
 #. module: base
 #. odoo-python
@@ -57903,6 +58116,10 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"<strong>計算</strong>欄位是用於\n"
+"計算一組記錄中欄位值的 Python 代碼. 必須通過類似字典的\n"
+"分配方式將欄位的值\n"
+"分配給每條記錄."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -58811,6 +59028,8 @@ msgid ""
 "file encoding, please be sure to view and edit\n"
 "                            using the same encoding."
 msgstr ""
+"此文件是使用 <strong>Unicode/UTF-8</strong> 文件編碼建立的，請務必使用相同"
+"的編碼檢視和編輯."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_actions_act_window__views
@@ -59690,6 +59909,9 @@ msgid ""
 "                                        there is remaining tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count,\n"
 "                                        remaining=task_remaining_count)</code>"
 msgstr ""
+"若要就 CRON 召用的進度發出通知，並在仍有剩餘任務時重新觸發召用，請使用 "
+"<code>env['ir.cron']._notify_progress(done=task_done_count, "
+"remaining=task_remaining_count)</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -59936,7 +60158,7 @@ msgstr "交通運輸 / 物流"
 #. module: base
 #: model:ir.module.module,summary:base.module_theme_aviato
 msgid "Travel, Excursion, Plane, Tour, Agency"
-msgstr ""
+msgstr "旅行、遊覽、飛機、旅程、旅遊、代理 "
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_treehouse
@@ -61036,6 +61258,7 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"使用組來組織經常被選擇在一起的國家(例如\"LATAM\"、\"BeNeLux\"、\"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -61633,6 +61856,8 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"檢視允許您個性化odoo的每一個檢視. 您能增加新欄位，移動欄位，重命名欄位，或者"
+"刪除您不需要的欄位."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -62298,6 +62523,9 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"當使用每個日期範圍的子序列時，可以在變量前加'range_'\n"
+"                                使用範圍的開始而不是目前日期，例如 %"
+"(range_year)s 而不是 %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -63020,7 +63248,7 @@ msgid ""
 "You will be able to define additional\n"
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
-msgstr ""
+msgstr "通過編輯在設定/使用者功能表下的新建使用者，您將能夠定義額外的存取權."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -63032,6 +63260,9 @@ msgstr "元（人民幣）"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi_pos
 msgid "ZATCA E-Invoicing, support for PoS"
 msgstr ""
+"\n"
+"        ZATCA 電子發票，支援 PoS\n"
+"    "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_company_form
@@ -63410,6 +63641,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"在記錄本身:\n"
+"        record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -63428,6 +63661,8 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"已成功安裝。\n"
+"                            用戶可以在偏好設置中選擇自己喜歡的語言。"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -63560,6 +63795,8 @@ msgid ""
 "partner_name = record.name + '_code' env['res.partner'].create({'name': "
 "partner_name})"
 msgstr ""
+"partner_name = record.name + '_code'\n"
+"env['res.partner'].create({'name': partner_name})"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.UYW
@@ -65083,129 +65320,12 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "            Egypt Tax Authority Invoice Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            埃及稅務機關發票整合功能\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            肯亞 eTIMS 裝置 EDI 整合功能\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Stock Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            肯亞 eTIMS 裝置 EDI 庫存整合功能\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "        A Html Editor component and plugin system\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Html 編輯工具的組件及插件系統\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        A powerful suite of AI tools and agents\n"
-#~ "        integrated directly into your Odoo environment."
-#~ msgstr ""
-#~ "\n"
-#~ "        一套強大的 AI 工具及代理，\n"
-#~ "        直接整合至你的 Odoo 系統內。"
-
-#~ msgid ""
-#~ "\n"
-#~ "        E-Invoicing, Universal Business Language\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        電子發票，通用商業語言\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Kenya eTIMS Device EDI Manufacturing Integration\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        肯亞 eTIMS 裝置 EDI 製造整合功能\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        ZATCA E-Invoicing, support for PoS\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        ZATCA 電子發票，支援 PoS\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Accounting Reports\n"
 #~ "==================\n"
 #~ msgstr ""
 #~ "\n"
 #~ "會計報告\n"
 #~ "==================\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Poland\n"
-#~ "\n"
-#~ "        This module also provides the possibility to generate the JPK_VAT in "
-#~ "xml, for Poland.\n"
-#~ "\n"
-#~ "        Currently, does not report specific values for :\n"
-#~ "        - Cash basis for entries with input tax (MK)\n"
-#~ "        - Margin-based operations (MR_T/MR_UZ)\n"
-#~ "        - Bills for agricultural products (VAT_RR)\n"
-#~ "        - Operations through electronic interfaces (IED)\n"
-#~ "        - Invoices done with KSef \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Accounting reports for Poland\n"
-#~ "\n"
-#~ "        This module also provides the possibility to generate the JPK_VAT in "
-#~ "xml, for Poland.\n"
-#~ "\n"
-#~ "        Currently, does not report specific values for :\n"
-#~ "        - Cash basis for entries with input tax (MK)\n"
-#~ "        - Margin-based operations (MR_T/MR_UZ)\n"
-#~ "        - Bills for agricultural products (VAT_RR)\n"
-#~ "        - Operations through electronic interfaces (IED)\n"
-#~ "        - Invoices done with KSef \n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Philippines\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Accounting reports for the Philippines\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Vietnam\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "越南會計報表\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -65232,15 +65352,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "Advanced features for the PoS like better views \n"
-#~ "for IoT Box config.   \n"
-#~ msgstr ""
-#~ "\n"
-#~ "PoS 的延伸功能，如更好的視圖\n"
-#~ "用於 IoT 盒子設定。   \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Allow clients to Schedule Appointments through the Portal\n"
 #~ msgstr ""
 #~ "\n"
@@ -65248,45 +65359,10 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "Allows to display sale information in the SOL services apps\n"
-#~ "===========================================================\n"
-#~ "Additional information is displayed in the name of the SOL when it is used "
-#~ "in services apps (project and planning). \n"
-#~ msgstr ""
-#~ "\n"
-#~ "允許在 SOL 服務應用程式中顯示銷售訊息\n"
-#~ "===========================================================\n"
-#~ "當在服務應用程式（專案和規劃）中使用 SOL 時，附加資訊會顯示在 SOL 的名稱"
-#~ "中。 \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "App to upload and manage your documents.\n"
 #~ msgstr ""
 #~ "\n"
 #~ "用於上傳和管理文件的應用程式.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "With this module you can manually check consistencies and inconsistencies of "
-#~ "accounting module from menu Reporting/Accounting/Accounting Tests.\n"
-#~ "\n"
-#~ "You can write a query in order to create Consistency Test and you will get "
-#~ "the result of the test \n"
-#~ "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, "
-#~ "then select the test \n"
-#~ "and print the report from Print button in header area.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "會計上的資產\n"
-#~ "======================\n"
-#~ "在這個模組您可以從功能表 報表->財務->財務檢測 來手工檢查記帳模組的一致性.\n"
-#~ "\n"
-#~ "進入功能表  報表->會計測試，您可以寫一個查詢去建立一致性測試， \n"
-#~ "最後能得到PDF格式的測試結果，\n"
-#~ "選擇測試的頂部功能表執行列印按鈕來列印.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -65332,15 +65408,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "\n"
 #~ "於 project_enterprise 和 hr 的橋接模組\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Configure IoT devices to be used in certain \n"
-#~ "steps for taking measures, taking pictures, ...\n"
-#~ msgstr ""
-#~ "\n"
-#~ "設定要在特定中使用的 IoT 設備\n"
-#~ "採取措施，拍照，...\n"
 
 #~ msgid ""
 #~ "\n"
@@ -65397,44 +65464,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "\n"
 #~ " 目標和徽章都是靈活的，並且可適用於大量的模組和操作. 安裝時，此模組會建立簡單"
 #~ "的目標以求助新使用者探索 Odoo 並設定其使用者設定文件.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "In a lot of countries, a debit note is used as an increase of the amounts of "
-#~ "an existing invoice \n"
-#~ "or in some specific cases to cancel a credit note. \n"
-#~ "It is like a regular invoice, but we need to keep track of the link with the "
-#~ "original invoice.  \n"
-#~ "The wizard used is similar as the one for the credit note.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "在許多國家，借方票據用於增加現有發票的金額\n"
-#~ "或在某些特殊情況下取消信用證。\n"
-#~ "它與普通發票一樣，但我們需要跟蹤與原始發票的聯繫。  \n"
-#~ "使用的嚮導與貸記單據類似。\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Inventory management for Avatax\n"
-#~ "=======================================\n"
-#~ "This module allows for line-level addresses when getting taxes from avatax.\n"
-#~ "\n"
-#~ "A current limitation is a single order line with more than one stock move "
-#~ "(i.e. 10 units of \n"
-#~ "product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this "
-#~ "case the sale orders should be\n"
-#~ "split per delivery.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Inventory management for Avatax\n"
-#~ "=======================================\n"
-#~ "This module allows for line-level addresses when getting taxes from avatax.\n"
-#~ "\n"
-#~ "A current limitation is a single order line with more than one stock move "
-#~ "(i.e. 10 units of \n"
-#~ "product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this "
-#~ "case the sale orders should be\n"
-#~ "split per delivery.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -65689,48 +65718,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "Ri.Ba. Export for Batch Payment\n"
-#~ "================================\n"
-#~ "\n"
-#~ "This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
-#~ "batch payments in Odoo.  \n"
-#~ "It facilitates compliance with the Italian banking standard for managing "
-#~ "receivables.\n"
-#~ "\n"
-#~ "- Group multiple receivables into a single batch for streamlined management "
-#~ "and reconciliation.\n"
-#~ "- Export batch payments as RIBA-compliant files to be submitted to your "
-#~ "homebanking for processing.\n"
-#~ "\n"
-#~ "For more information about RIBA standards, refer to the guidelines issued by "
-#~ "the Italian Bankers Association (CBI).\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Ri.Ba. Export for Batch Payment\n"
-#~ "================================\n"
-#~ "\n"
-#~ "This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
-#~ "batch payments in Odoo.  \n"
-#~ "It facilitates compliance with the Italian banking standard for managing "
-#~ "receivables.\n"
-#~ "\n"
-#~ "- Group multiple receivables into a single batch for streamlined management "
-#~ "and reconciliation.\n"
-#~ "- Export batch payments as RIBA-compliant files to be submitted to your "
-#~ "homebanking for processing.\n"
-#~ "\n"
-#~ "For more information about RIBA standards, refer to the guidelines issued by "
-#~ "the Italian Bankers Association (CBI).\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Shorten URLs and use them to track clicks and UTMs\n"
-#~ msgstr ""
-#~ "\n"
-#~ "縮短網址並使用它們追蹤點擊及 UTM\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Stock in Maintenance\n"
 #~ "====================\n"
 #~ "Open the record of the serial number from an equipment form\n"
@@ -65778,15 +65765,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "This module adds a new template to the Newsletter Block to allow \n"
-#~ "your visitors to subscribe with their phone number.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "該模組為 \"電子報\" 區塊添加了一個新模板，允許\n"
-#~ "訪客使用電話號碼訂閱。\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module adds required base code for a fully integrated customer portal.\n"
 #~ "It contains the base controller class and base templates. Business addons\n"
 #~ "will add their specific templates and controllers to extend the customer\n"
@@ -65815,17 +65793,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "This module allows you to easily add extra costs on manufacturing order \n"
-#~ "and decide the split of these costs among their stock moves in order to \n"
-#~ "take them into account in your stock valuation.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "通過該模塊，您可以輕鬆地為生產訂單添加額外成本\n"
-#~ "並決定這些成本在庫存移動中的分配，以便在庫存估值中將其考慮在內。\n"
-#~ "在庫存估價中將其考慮在內。\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module assigns an hourly wage to employees to be used by other "
 #~ "modules.\n"
 #~ "============================================================================\n"
@@ -65834,17 +65801,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "\n"
 #~ "此模組為員工分配時薪，供其他模組使用.\n"
 #~ "============================================================================\n"
-#~ "\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "This module brings the technical requirement for the Chilean regulation.\n"
-#~ "Install this if you are using the Point of Sale app in Chile.    \n"
-#~ "\n"
-#~ msgstr ""
-#~ "\n"
-#~ "如果您在智利使用銷售點應用程序，\n"
-#~ "請安裝此模塊以滿足智利監管要求的技術要求。    \n"
 #~ "\n"
 
 #~ msgid ""
@@ -65921,80 +65877,10 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "\n"
-#~ "This module provides the link between quality steps and IoT devices. \n"
-#~ msgstr ""
-#~ "\n"
-#~ "該模組提供品質步驟和物聯網設備之間的連結。 \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Track equipment and maintenance requests"
 #~ msgstr ""
 #~ "\n"
 #~ "跟蹤設備和維護申請"
-
-#~ msgid ""
-#~ "\n"
-#~ "VAT validation for Partner's VAT numbers.\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ "After installing this module, values entered in the VAT field of Partners "
-#~ "will\n"
-#~ "be validated for all supported countries. The country is inferred from the\n"
-#~ "2-letter country code that prefixes the VAT number, e.g. ``BE0477472701``\n"
-#~ "will be validated using the Belgian rules.\n"
-#~ "\n"
-#~ "There are two different levels of VAT number validation:\n"
-#~ "--------------------------------------------------------\n"
-#~ "    * By default, a simple off-line check is performed using the known "
-#~ "validation\n"
-#~ "      rules for the country, usually a simple check digit. This is quick "
-#~ "and \n"
-#~ "      always available, but allows numbers that are perhaps not truly "
-#~ "allocated,\n"
-#~ "      or not valid anymore.\n"
-#~ "\n"
-#~ "    * When the \"VAT VIES Check\" option is enabled (in the configuration of "
-#~ "the user's\n"
-#~ "      Company), VAT numbers will be instead submitted to the online EU VIES\n"
-#~ "      database, which will truly verify that the number is valid and "
-#~ "currently\n"
-#~ "      allocated to a EU company. This is a little bit slower than the "
-#~ "simple\n"
-#~ "      off-line check, requires an Internet connection, and may not be "
-#~ "available\n"
-#~ "      all the time. If the service is not available or does not support the\n"
-#~ "      requested country (e.g. for non-EU countries), a simple check will be "
-#~ "performed\n"
-#~ "      instead.\n"
-#~ "\n"
-#~ "Supported countries currently include EU countries, and a few non-EU "
-#~ "countries\n"
-#~ "such as Chile, Colombia, Mexico, Norway or Russia. For unsupported "
-#~ "countries,\n"
-#~ "only the country code will be validated.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "合作夥伴的增值稅，增值稅的確認號碼.\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ " 安裝此模組以後，合作夥伴增值稅範疇內輸入的值將被驗證，前提該國家在模組支援的"
-#~ "範圍內. 這一國家可以從增值稅前綴的 2 個字母的國家代碼推測出來，比如"
-#~ "「BE0477472701」代表比利時須遵守當地的法律.\n"
-#~ "\n"
-#~ "有兩種不同的增值稅號碼驗證等級:\n"
-#~ "--------------------------------------------------------\n"
-#~ " * 預設情況下，使用該國家的一般驗證規則進行一個簡單的離線檢查，通常是一個簡單"
-#~ "的驗證數字. 這通常是簡便而有效的，但這些允許的驗證數字，也許並不是真正的設"
-#~ "定，或者不再有效.\n"
-#~ " \n"
-#~ " * 當「增值稅號碼的檢查」選項啟用(在使用者的公司設定)，增值稅號碼將替換並線上"
-#~ "提交到歐盟國家資料庫，這將真正確認號碼是有效的和目前分配給歐盟的公司. 這比簡"
-#~ "單離線檢查慢一點，需要網路連接，並且也不是一直有效的. 如果服務不可用或不支援"
-#~ "請求的國家(例如非歐盟國家)，一個簡單的驗證將替代執行.\n"
-#~ "\n"
-#~ " 目前支援的國家包括歐盟國家，以及一些非歐盟國家，如智利，哥倫比亞，墨西哥，挪"
-#~ "威和俄羅斯. 不支援的國家，只有國家代碼將被驗證.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -66030,9 +65916,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "* 為所有車輛加入服務、里程錶讀數\n"
 #~ "* 顯示與某輛車輛或某個服務類型相關的所有成本\n"
 #~ "* 成本分析圖表\n"
-
-#~ msgid " Let's choose a Point Relais® as shipping address "
-#~ msgstr " 讓我們選擇 Point Relais® 作為送貨地址 "
 
 #~ msgid "# Access Rights"
 #~ msgstr "# 存取權限"
@@ -66111,54 +65994,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "<a href=\"#\" class=\"btn btn-primary o_translate_inline\">發現更多</a>"
 
 #~ msgid ""
-#~ "<code>UserError</code>: exception class for raising user-facing warning "
-#~ "messages"
-#~ msgstr ""
-#~ "<code>UserError</code>：此錯誤類別用於面向用戶顯示警告訊息（使用 "
-#~ "<code>raise</code> 關鍵字）"
-
-#~ msgid ""
-#~ "<code>_logger.info(message)</code>: logger to emit messages in server logs"
-#~ msgstr "<code>_logger.info(message)</code>:在伺服器日誌中發佈消息的日誌記錄器"
-
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>：觸發操作的環境"
-
-#~ msgid ""
-#~ "<code>float_compare()</code>: utility function to compare floats based on a "
-#~ "specific precision"
-#~ msgstr "<code>float_compare()</code>：根據特定精度比較浮點數的系統程式函數"
-
-#~ msgid ""
-#~ "<code>log(message, level='info')</code>: logging function to record debug "
-#~ "information in <code>ir.logging</code> table"
-#~ msgstr ""
-#~ "<code>log(message, level='info')</code>:在<code>ir.logging</code>表中記錄調試"
-#~ "信息的日誌函數"
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr "<code>model</code>：觸發操作所針對的記錄的模型，是空白的記錄集"
-
-#~ msgid "<code>record</code>: record on which the action is triggered"
-#~ msgstr "<code>記錄</code>:觸發操作的記錄"
-
-#~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr "<code>record</code>:觸發操作的記錄；可能無效"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode"
-#~ msgstr "<code>records</code>:在多重模式下觸發操作的所有記錄的記錄集"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr "<code>records</code>:在多個模式下觸發操作的所有記錄的記錄集；可能無效"
-
-#~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
@@ -66215,12 +66050,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "<i class=\"fa fa-warning pe-2\" title=\"Warning\"/>"
 #~ msgstr "<i class=\"fa fa-warning pe-2\" title=\"警告\"/>"
 
-#~ msgid ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start "
-#~ "the process...</span>"
-#~ msgstr ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">請按下方「更新」開始程序⋯</span>"
-
 #~ msgid "<span class=\"o_form_label\">MB</span>"
 #~ msgstr "<span class=\"o_form_label\">MB</span>"
 
@@ -66235,57 +66064,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "<span class=\"o_form_label\">我們提議重載功能表來檢視新功能表 (Ctrl+T 然後 "
 #~ "Ctrl+R).\"</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Current Year with Century: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Current Year without "
-#~ "Century: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Month: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Day: %(day)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">年代: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">年份: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">月: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">日: %(day)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">年內第幾天：%(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">年內第幾週：%(woy)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">星期幾（0 = 週一）：%"
-#~ "(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">時 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">時 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">分: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">秒: %(sec)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">ISO 8601 Week Year with Century: %(isoyear)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Week Year "
-#~ "without Century: %(isoy)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Week Number: %"
-#~ "(isoweek)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">ISO 8601 星期所在年份，連世紀：%(isoyear)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 星期所在年份，不"
-#~ "連世紀：%(isoy)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 週數：%"
-#~ "(isoweek)s</span>"
 
 #~ msgid ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type in "
@@ -66304,35 +66082,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">由</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"reset_mode != 'soft'\">This view has no previous version.</"
-#~ "span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">This view "
-#~ "is not coming from a file.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">You "
-#~ "need two views to compare.</span>"
-#~ msgstr ""
-#~ "<span invisible=\"reset_mode != 'soft'\">此視圖沒有先前版本。</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">此視圖不是來"
-#~ "自檔案。</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">您需要"
-#~ "兩個視圖進行比較。</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
-#~ "class=\"o_actions_server_set_a_value text-muted\">Set a value...</span>\n"
-#~ "                                <span invisible=\"evaluation_type != "
-#~ "'equation'\">\n"
-#~ "                                    to this Python expression:\n"
-#~ "                                </span>"
-#~ msgstr ""
-#~ "<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
-#~ "class=\"o_actions_server_set_a_value text-muted\">設定一個值⋯</span>\n"
-#~ "                                <span invisible=\"evaluation_type != "
-#~ "'equation'\">\n"
-#~ "                                    給這 Python 表達式：\n"
-#~ "                                </span>"
 
 #~ msgid "<span>, </span>"
 #~ msgstr "<span>, </span>"
@@ -66373,17 +66122,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "<strong>Idx</strong>"
 #~ msgstr "<strong>Idx</strong>"
 
-#~ msgid ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            The key cannot be retrieved later and provides "
-#~ "<b>full access</b>\n"
-#~ "                            to your user account, it is very important to "
-#~ "store it securely."
-#~ msgstr ""
-#~ "<strong>重要提示:</strong>\n"
-#~ "                            以後無法檢索密鑰並提供<b>完全存取權限</b>\n"
-#~ "                            對於您的使用者帳戶，安全地儲存它是非常重要的."
-
 #~ msgid "<strong>Inherited</strong>"
 #~ msgstr "<strong>繼承</strong>"
 
@@ -66410,11 +66148,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>序號</strong>"
-
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr "<strong>此操作將永久刪除目前由模組儲存的所有資料!</strong>"
 
 #~ msgid "<strong>Tr</strong>"
 #~ msgstr "<strong>Tr</strong>"
@@ -66443,18 +66176,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>檢視</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "使用者組用於把一系列功能分配給使用者，使其能夠存取特定的模組和功能. 可以新建"
-#~ "或修改現有的使用者組，這樣就可以自訂該組使用者的功能表，或者對某個對象的增刪"
-#~ "改查權利."
-
 #~ msgid "A module to generate exceptions."
 #~ msgstr "建立異常的模組."
 
@@ -66478,13 +66199,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "非營利性國際教育和科學組織，下設三個系（航空航天系、環境和應用流體力學系以及"
 #~ "透平機械和推進系）。"
-
-#~ msgid ""
-#~ "A user without any rights on Appraisals will be able to see the application, "
-#~ "create and manage appraisals for himself and the people he's manager of."
-#~ msgstr ""
-#~ "沒有任何表現評核權限的使用者，可查看該應用程式，以及為自己及他以經理身份管理"
-#~ "的下屬，建立及管理評核。"
 
 #~ msgid "A valid email is required for find_or_create to work properly."
 #~ msgstr "需要有有效的電子郵件，find_or_create 才可正常運作。"
@@ -66671,11 +66385,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Bakery"
 #~ msgstr "烘焙店"
 
-#~ msgid ""
-#~ "Banks are the financial institutions at which you and your contacts have "
-#~ "their accounts."
-#~ msgstr "銀行是您和您的聯繫人擁有賬戶的金融機構."
-
 #~ msgid "Bar & Pub"
 #~ msgstr "酒吧及酒館"
 
@@ -66687,15 +66396,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Basic models and helpers to support Internet of Things."
 #~ msgstr "支援物聯網的基本模型和求助程式."
-
-#~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "請注意，不建議編輯標準檢視的架構，因為在將來的模組更新期間更改將被覆蓋. <br/>"
-#~ "我們建議通過繼承檢視或使用 Odoo Studio 進行自訂來對標準檢視進行修改."
 
 #~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
@@ -66746,9 +66446,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Bridge module for project_enterprise and hr"
 #~ msgstr "於 project_enterprise 和 hr 的橋接模組"
 
-#~ msgid "Bridge module to support quiz features during \"live\" tracks. "
-#~ msgstr "橋接模組在\"即時\"追蹤期間支援測驗功能. "
-
 #~ msgid "By default the widget uses the field information"
 #~ msgstr "預設情況下，小部件使用欄位資訊"
 
@@ -66780,9 +66477,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Certificate-based authentication requires a TLS transport"
 #~ msgstr "證書身份驗證需要以 TLS 傳輸"
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "更改地址在報表中的顯示方式"
-
 #~ msgid "Checksum/SHA1"
 #~ msgstr "校驗碼/SHA1"
 
@@ -66790,11 +66484,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "Child server actions that will be executed. Note that the last return "
 #~ "returned action value will be used as global return value."
 #~ msgstr "子伺服器將被被啟用. 注意最後返回動作的值將做用做一般變量."
-
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr "選擇僅包含地址欄位的合作夥伴子檢視，以更改使用者輸入地址的方式."
 
 #~ msgid ""
 #~ "Choose the connection encryption scheme:\n"
@@ -66826,9 +66515,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Clothing Store"
 #~ msgstr "服裝店"
-
-#~ msgid "Collect, organize and share documents."
-#~ msgstr "收集、整理、共享文件。"
 
 #~ msgid ""
 #~ "Colleen Diaz works in IT sector <b>since 10 years</b>. He is known\n"
@@ -66878,15 +66564,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid ""
 #~ "Computed fields are defined with the fields\n"
-#~ "                                                <strong>Dependencies</"
-#~ "strong> and <strong>Compute</strong>."
-#~ msgstr ""
-#~ "使用欄位\n"
-#~ "                                                <strong>相關性</strong> 和 "
-#~ "<strong>計算</strong> 定義計算欄位."
-
-#~ msgid ""
-#~ "Computed fields are defined with the fields\n"
 #~ "                                    <strong>Dependencies</strong> and "
 #~ "<strong>Compute</strong>."
 #~ msgstr ""
@@ -66933,9 +66610,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Consulting Services"
 #~ msgstr "顧問服務"
 
-#~ msgid "Contains In-App Purchases"
-#~ msgstr "包含應用內購買"
-
 #~ msgid "Convert attachments to links for emails over"
 #~ msgstr "將附件轉換為連結，若電郵超過"
 
@@ -66964,22 +66638,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Create a Customer"
 #~ msgstr "建立客戶"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "在此處建立與管理系統中的公司機構資訊. 門市與下屬機構也可以在這裡進行建立與維"
-#~ "護."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "為系統建立和管理使用者. 在一段時間內用該系統的使用者可以暫不啟用. 您還可以給"
-#~ "使用者分配某一個組，以便他們能用到系統的指定功能."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "建立和驗證批准請求"
 
@@ -66994,11 +66652,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "客戶關係管理(CRM)"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr "如果使用者重新組織過他的控制面板檢視，則使用其自訂的檢視."
 
 #~ msgid "DIY Workshops"
 #~ msgstr "DIY 手作工作室"
@@ -67066,13 +66719,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Delete Access"
 #~ msgstr "刪除存取"
-
-#~ msgid ""
-#~ "Demo data should only be used on test databases!\n"
-#~ "                             Once they are loaded, they cannot be removed!"
-#~ msgstr ""
-#~ "展示用資料只能用於測試資料庫！\n"
-#~ "                             一旦載入，就無法移除！"
 
 #~ msgid "Demo logo"
 #~ msgstr "模擬標誌"
@@ -67318,9 +66964,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "出於安全原因，您不能在一起合併超過 3 聯繫人.如果需要 您可以重新打開該引導幾"
 #~ "次."
 
-#~ msgid "Forgot password?"
-#~ msgstr "忘記密碼?"
-
 #~ msgid "Formatting: long, short, narrow (not used for digital)"
 #~ msgstr "格式: 長、短、窄(不適用於數字)"
 
@@ -67335,10 +66978,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Furniture Store"
 #~ msgstr "家具店"
-
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr "G - 批發及零售業；汽車及電單車修理"
 
 #~ msgid "Gallery"
 #~ msgstr "畫廊"
@@ -67433,25 +67072,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Height"
 #~ msgstr "高度"
 
-#~ msgid ""
-#~ "Helps you manage referrals\n"
-#~ "                User : Access to referral, share job, gain points, buy "
-#~ "rewards\n"
-#~ "                Administrator : edit rewards and more"
-#~ msgstr ""
-#~ "幫助你管理內部推薦\n"
-#~ "                使用者：可存取內部推薦應用程式、分享職位、賺取積分、購買獎"
-#~ "勵\n"
-#~ "                管理員：編輯獎勵詳情等"
-
-#~ msgid ""
-#~ "Here is your new API key, use it instead of a password for RPC access.\n"
-#~ "                            Your login is still necessary for interactive "
-#~ "usage."
-#~ msgstr ""
-#~ "這是您的新 API 密鑰，使用它代替密碼進行 RPC 訪問.\n"
-#~ "                            您的登入仍然是交互式使用所必需的."
-
 #~ msgid "Hidden"
 #~ msgstr "隱藏"
 
@@ -67534,18 +67154,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "If set, action binding only applies for this user."
 #~ msgstr "如果設定， 動作綁定只用於這個使用者."
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "當這是繼承檢視時，\n"
-#~ "* 如果為是，則此檢視僅延伸母檢視\n"
-#~ "* 如果為否，則此檢視目前不延伸母檢視，但可以被啟用\n"
-#~ "         "
 
 #~ msgid ""
 #~ "If user belongs to several groups, the results from step 2 are combined with "
@@ -67645,14 +67253,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr "IoT 物聯網基礎數據"
 
 #~ msgid ""
-#~ "It is very important that this description be clear\n"
-#~ "                        and complete, <strong>it will be the only way to\n"
-#~ "                        identify the key once created</strong>."
-#~ msgstr ""
-#~ "清楚和完整的描述是非常重要的，這<strong>將是識別密鑰一旦建立的唯一方法</"
-#~ "strong>."
-
-#~ msgid ""
 #~ "It provides post-graduate education in fluid dynamics\n"
 #~ "                    (research master in fluid dynamics, former \"Diploma\n"
 #~ "                    Course\", doctoral program, stagiaire program and "
@@ -67744,16 +67344,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Manage accounting with fleets"
 #~ msgstr "會計使用車隊管理"
-
-#~ msgid ""
-#~ "Manage and customize the items available and displayed in your Odoo system "
-#~ "menu. You can delete an item by clicking on the box at the beginning of each "
-#~ "line and then delete it through the button that appeared. Items can be "
-#~ "assigned to specific groups in order to make them accessible to some users "
-#~ "within the system."
-#~ msgstr ""
-#~ "管理和自訂使用者的功能表項. 您可以用勾選一些功能表項，然後刪除. 功能表項可以"
-#~ "分配給某些特定的使用者群組，以便他們使用系統的某些特定的功能."
 
 #~ msgid "Manage your fleet and track car costs"
 #~ msgstr "追蹤管理陸運和船運的費用"
@@ -67871,17 +67461,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "沒有收到回應. 檢查伺服器地址和埠位址.\n"
 #~ "  %s"
-
-#~ msgid ""
-#~ "Non-trivial testing utilities can require models & all\n"
-#~ "\n"
-#~ "This here module is useful to validate that they're doing what they're \n"
-#~ "supposed to do\n"
-#~ msgstr ""
-#~ "非繁瑣的測試實用程序可能需要模型和所有\n"
-#~ "\n"
-#~ "此模塊可用於驗證它們是否在做它們\n"
-#~ "應該做的事情\n"
 
 #~ msgid "None"
 #~ msgstr "無"
@@ -68116,27 +67695,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Online Appointment"
 #~ msgstr "網上預約"
-
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "只在此檢視繼承其它檢視時有效( inherit_id 不是否或 Null ).\n"
-#~ "\n"
-#~ "* 若設為延伸(預設)，此檢視被呼叫時會尋找最接近的主要檢視，\n"
-#~ "並套用所有繼承這個檢視且為此檢視模型的檢視\n"
-#~ "* 若設為主要，則最接近的主要檢視會被完整解析(即使用了不同\n"
-#~ "的模型)，然後套用這個檢視的所有繼承規則，(<xpath/>). 然後結\n"
-#~ "果會被拿來使用，如同這就是這個檢視的實際架構一樣.\n"
 
 #~ msgid "Open Sans"
 #~ msgstr "Open Sans"
@@ -68601,9 +68159,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "未能分拆檔案以另外儲存為附件，因為報告範本內類別名稱（classname）為"
 #~ "「article」的 div 未有包括 data-oe-model 及 data-oe-id 屬性。"
 
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "POS中的飯店功能延伸 "
-
 #~ msgid "Roboto"
 #~ msgstr "Roboto"
 
@@ -68685,34 +68240,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "See lots used in maintenance"
 #~ msgstr "查看保養維護已使用的批次"
 
-#~ msgid ""
-#~ "Select the list of fields used to search for\n"
-#~ "                            duplicated records. If you select several "
-#~ "fields,\n"
-#~ "                            Odoo will propose you to merge only those "
-#~ "having\n"
-#~ "                            all these fields in common. (not one of the "
-#~ "fields)."
-#~ msgstr ""
-#~ "選擇用於搜尋重複記錄的欄位列表.\n"
-#~ "                            如果選擇多個欄位,\n"
-#~ "                            Odoo將會建議您只合併那些有相同欄位的.\n"
-#~ "                            (而不是只有一個欄位相同)."
-
-#~ msgid ""
-#~ "Selected contacts will be merged together.\n"
-#~ "                                All documents linked to one of these "
-#~ "contacts\n"
-#~ "                                will be redirected to the destination "
-#~ "contact.\n"
-#~ "                                You can remove contacts from this list to "
-#~ "avoid merging them."
-#~ msgstr ""
-#~ "選定的聯繫人將被合併在一起.\n"
-#~ "所有的文件連結到其中的一個聯繫\n"
-#~ "將被重導向到目的地聯繫.\n"
-#~ "您可以從這個列表中刪除聯繫人以避免合併它們."
-
 #~ msgid "Self"
 #~ msgstr "本身"
 
@@ -68745,9 +68272,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Short"
 #~ msgstr "短"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "POS中的簡單折扣 "
 
 #~ msgid "Slash"
 #~ msgstr "削減"
@@ -68806,19 +68330,11 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "Student Organization"
 #~ msgstr "學生組織"
 
-#~ msgid "Subscriptions of membership / partnership "
-#~ msgstr "會員 / 合作夥伴資格訂閱 "
-
 #~ msgid "Summer Camps"
 #~ msgstr "夏令營"
 
 #~ msgid "Surveying & Mapping"
 #~ msgstr "測量及地圖繪製"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr "T - 家庭作為僱主的活動；家庭自用的不經分辨商品和服務生產活動"
 
 #~ msgid "TLS (STARTTLS), encryption and validation"
 #~ msgstr "TLS（STARTTLS），加密及驗證"
@@ -68899,27 +68415,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "公司 %(company_name)s 無法存檔，因為它仍被用作 %(active_users)s 用戶的預設公"
 #~ "司。"
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "配置精靈用於協助你配置新的 Odoo 安裝個體。它們會在安裝新模組期間啟動，但你亦"
-#~ "可使用此選單，手動重新啟動部份精靈。"
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "<strong>計算</strong>欄位是用於\n"
-#~ "計算一組記錄中欄位值的 Python 代碼. 必須通過類似字典的\n"
-#~ "分配方式將欄位的值\n"
-#~ "分配給每條記錄."
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -69075,15 +68570,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr "二手舊貨店"
 
 #~ msgid ""
-#~ "To notify progress for CRON call and re-trigger a call if there is remaining "
-#~ "tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-#~ msgstr ""
-#~ "若要就 CRON 召用的進度發出通知，並在仍有剩餘任務時重新觸發召用，請使用 "
-#~ "<code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-
-#~ msgid ""
 #~ "Toni Rhodes works in IT sector <b>since 10 years</b>. He is known\n"
 #~ "                notably for selling mouse traps. With that trick he cut\n"
 #~ "                IT budget by almost half within the last 2 years.\n"
@@ -69105,9 +68591,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "Transient: True"
 #~ msgstr "瞬態:真"
-
-#~ msgid "Travel, Excursion, Plane, Tour, Agency "
-#~ msgstr "旅行、遊覽、飛機、旅程、旅遊、代理 "
 
 #~ msgid "Tried to convert multiple documents in wkhtmltopdf using unpatched QT"
 #~ msgstr "已嘗試在 wkhtmltopdf 中，使用未補丁的 QT 轉換多份文件"
@@ -69174,12 +68657,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr "使用 css 邊距"
 
 #~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "使用組來組織經常被選擇在一起的國家(例如\"LATAM\"、\"BeNeLux\"、\"ASEAN\")."
-
-#~ msgid ""
 #~ "Use the SMTP configuration set in the \"Command Line Interface\" arguments."
 #~ msgstr "使用指令行界面引數中設置的 SMTP 配置。"
 
@@ -69203,13 +68680,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "View in speedscope"
 #~ msgstr "在 speedscope 檢視"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "檢視允許您個性化odoo的每一個檢視. 您能增加新欄位，移動欄位，重命名欄位，或者"
-#~ "刪除您不需要的欄位."
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -69255,16 +68725,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgstr ""
 #~ "若郵件沒有特地的郵件伺服器被要求，最高優先級的伺服器將被使用. 預設優先級是"
 #~ "10(數字越小，優先級越高)"
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "當使用每個日期範圍的子序列時，可以在變量前加'range_'\n"
-#~ "                                使用範圍的開始而不是目前日期，例如 %"
-#~ "(range_year)s 而不是 %(year)s."
 
 #~ msgid "Whether this contact is an Employee."
 #~ msgstr "此聯絡人是否為員工。"
@@ -69393,11 +68853,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "You should update this document to reflect your T&amp;C."
 #~ msgstr "您應該更新此文件以反映您的 T&amp;C."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr "通過編輯在設定/使用者功能表下的新建使用者，您將能夠定義額外的存取權."
-
 #~ msgid "Your conditions..."
 #~ msgstr "你的條件..."
 
@@ -69455,23 +68910,8 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ msgid "float"
 #~ msgstr "浮點"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "在記錄本身:\n"
-#~ "        record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "格式format() 必須是嚴格的 %char 格式"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "已成功安裝。\n"
-#~ "                            用戶可以在偏好設置中選擇自己喜歡的語言。"
 
 #~ msgid "hour"
 #~ msgstr "小時"
@@ -69511,13 +68951,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 
 #~ msgid "parent_id"
 #~ msgstr "parent_id"
-
-#~ msgid ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
-#~ msgstr ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
 
 #~ msgid "payroll"
 #~ msgstr "薪酬管理"
@@ -71332,14 +70765,6 @@ msgstr "對服務的請求逾時。請聯絡應用程式的作者。嘗試聯絡
 #~ "分隔符的格式應該類似 [,n]，其中 0 < n:從個位數字開始. 以 -1 結束分隔. 例"
 #~ "如，[3,2,-1] 將 106500 表示為1,06,500；[1,2,-1] 將其表示為 106,50,0；[3] "
 #~ "將其表示為 106,500. 在每種情況中提供千位分隔符."
-
-#~ msgid ""
-#~ "This file was generated using the universal <strong>Unicode/UTF-8</"
-#~ "strong> file encoding, please be sure to view and edit\n"
-#~ "                           using the same encoding."
-#~ msgstr ""
-#~ "此文件是使用 <strong>Unicode/UTF-8</strong> 文件編碼建立的，請務必使用相同"
-#~ "的編碼檢視和編輯."
 
 #~ msgid "This model is used to make a bridge between Appraisal and Contract"
 #~ msgstr "該模型用於在評估和合約之間的橋接"

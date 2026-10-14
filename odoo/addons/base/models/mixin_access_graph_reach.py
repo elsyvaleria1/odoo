@@ -296,11 +296,7 @@ class MixinAccessGraph(models.AbstractModel):
             if company_column
             else SQL("NULL::int4")
         )
-        if graph.container:
-            cfield, cvalue = graph.container
-            is_container = SQL("%s = %s", SQL.identifier("held_by", cfield), cvalue)
-        else:
-            is_container = SQL("TRUE")
+        is_container = self._get_access_container_condition("held_by")
         top = len(graph.roles)
         scope_join = SQL(
             """JOIN %(table)s AS held_by

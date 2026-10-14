@@ -1455,6 +1455,8 @@ msgid ""
 "\n"
 "Accounting reports for Belgium\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Belgiju"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_bj_reports
@@ -1505,6 +1507,8 @@ msgid ""
 "\n"
 "Accounting reports for Chile\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Čile"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_cn_reports
@@ -1908,6 +1912,8 @@ msgid ""
 "\n"
 "Accounting reports for Romania\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Rumuniju"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_rw_reports
@@ -1973,6 +1979,8 @@ msgid ""
 "\n"
 "Accounting reports for Spain\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Španiju"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_lk_reports
@@ -1994,6 +2002,8 @@ msgid ""
 "\n"
 "Accounting reports for Switzerland\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Švicarsku"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_sn_reports
@@ -4141,6 +4151,12 @@ msgid ""
 "\n"
 "Thai accounting chart and localization.\n"
 msgstr ""
+"\n"
+"Kontni plan Tajlanda\n"
+"====================================\n"
+"\n"
+"Thai kontni plan i lokalizacija\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_si
@@ -9075,6 +9091,12 @@ msgid ""
 "\n"
 "Italian accounting chart and localization.\n"
 msgstr ""
+"\n"
+"Piano dei conti italiano di un'impresa generica.\n"
+"================================================\n"
+"\n"
+"Italijanski kontni plan i lokalizacija.\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_planning_holidays
@@ -11152,6 +11174,12 @@ msgid ""
 "\n"
 "Greek accounting chart and localization.\n"
 msgstr ""
+"\n"
+"Ovo je bazni modul koji upravlja kontnim planom za Grčku.\n"
+"====================================================\n"
+"\n"
+"Grčki kontni plan i lokalizacija\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_gt
@@ -19706,6 +19734,12 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Grupa je skup funkcionalnih područja koja će biti dodeljena korisniku kako "
+"bi imli prava pristupa na posebne programe i zadatke u sistemu. Možete "
+"stvoriti prilagođene grupe ili izmeniti one postojeće kako bi prilagodili "
+"preglede i polja na obrascima koje će korisnici moći vidjeti. Ovde možete "
+"upravljati pravima čitanja, uređivanja, kreiranja i brisanja zapisa po "
+"grupama."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -28643,6 +28677,10 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Upravljanje korisnicima koji će se spajati na sistem. Korisnici mogu biti "
+"deaktivirani kako bi im se trajno ili provremeno ograničio pristup sistemu. "
+"Korisnicima možete dodeliti grupe koje im daju prava pristupa aplikacijama "
+"koje su im potrebne."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -29310,6 +29348,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Prilagođeni pogledi se koriste kada korisnik reorganizira sadržaj kontrolnih "
+"ploča (web klijent)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -33748,7 +33788,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "Zaboravili ste lozinku?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -34024,8 +34064,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -51209,8 +51248,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -59056,21 +59095,6 @@ msgstr ""
 #~ msgid "<strong>Name</strong>"
 #~ msgstr "<strong>Naziv</strong>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Grupa je skup funkcionalnih područja koja će biti dodeljena korisniku kako "
-#~ "bi imli prava pristupa na posebne programe i zadatke u sistemu. Možete "
-#~ "stvoriti prilagođene grupe ili izmeniti one postojeće kako bi prilagodili "
-#~ "preglede i polja na obrascima koje će korisnici moći vidjeti. Ovde možete "
-#~ "upravljati pravima čitanja, uređivanja, kreiranja i brisanja zapisa po "
-#~ "grupama."
-
 #~ msgid "Access Controls"
 #~ msgstr "Kontrole pristupa"
 
@@ -59120,26 +59144,8 @@ msgstr ""
 #~ msgid "Create Date"
 #~ msgstr "Kreiraj Datum"
 
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Upravljanje korisnicima koji će se spajati na sistem. Korisnici mogu biti "
-#~ "deaktivirani kako bi im se trajno ili provremeno ograničio pristup sistemu. "
-#~ "Korisnicima možete dodeliti grupe koje im daju prava pristupa aplikacijama "
-#~ "koje su im potrebne."
-
 #~ msgid "Custom Shortcuts"
 #~ msgstr "Prilagođene prečice"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Prilagođeni pogledi se koriste kada korisnik reorganizira sadržaj kontrolnih "
-#~ "ploča (web klijent)"
 
 #~ msgid "Debugging"
 #~ msgstr "Otklanjanje grešaka"
@@ -59158,9 +59164,6 @@ msgstr ""
 
 #~ msgid "Fed. State"
 #~ msgstr "Država"
-
-#~ msgid "Forgot password?"
-#~ msgstr "Zaboravili ste lozinku?"
 
 #~ msgid "Full Access"
 #~ msgstr "Potpuni pristup"
@@ -59448,66 +59451,11 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        Accounting reports for Belgium\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Belgiju"
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Chile\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Čile"
-
-#~ msgid ""
-#~ "\n"
 #~ "        Accounting reports for Netherlands\n"
 #~ "    "
 #~ msgstr ""
 #~ "\n"
 #~ "Računovodstveni izvještaji za Holandiju"
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Romania\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Rumuniju"
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Spain\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Španiju"
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Switzerland\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Švicarsku"
-
-#~ msgid ""
-#~ "\n"
-#~ "Chart of Accounts for Thailand.\n"
-#~ "===============================\n"
-#~ "\n"
-#~ "Thai accounting chart and localization.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Kontni plan Tajlanda\n"
-#~ "====================================\n"
-#~ "\n"
-#~ "Thai kontni plan i lokalizacija\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -59524,36 +59472,6 @@ msgstr ""
 #~ "==============================================================================\n"
 #~ "\n"
 #~ "Nemački kontni plan i lokalizacija\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Piano dei conti italiano di un'impresa generica.\n"
-#~ "================================================\n"
-#~ "\n"
-#~ "Italian accounting chart and localization.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Piano dei conti italiano di un'impresa generica.\n"
-#~ "================================================\n"
-#~ "\n"
-#~ "Italijanski kontni plan i lokalizacija.\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "This is the base module to manage the accounting chart for Greece.\n"
-#~ "==================================================================\n"
-#~ "\n"
-#~ "Greek accounting chart and localization.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Ovo je bazni modul koji upravlja kontnim planom za Grčku.\n"
-#~ "====================================================\n"
-#~ "\n"
-#~ "Grčki kontni plan i lokalizacija\n"
 #~ "    "
 
 #~ msgid ""

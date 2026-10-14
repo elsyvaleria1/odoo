@@ -154,6 +154,23 @@ class TestAccessReview(TransactionCase):
         self.assertEqual(item.decision, "revoked")
         self.assertTrue(exception.revoked_at)
 
+    def test_the_deadline_decides_an_administrator_s_own_access_when_they_close(self):
+        self.admin.group_ids = [Command.link(self.group.id)]
+        own_grant = self.env["res.users.grant"].search(
+            [("user_id", "=", self.admin.id), ("group_id", "=", self.group.id)]
+        )
+        campaign = self.campaign(on_deadline="revoke")
+        campaign.action_start()
+        own = self.item_of(campaign, own_grant)
+        self.assertEqual(own.subject_user_id, self.admin)
+
+        campaign.action_close()
+
+        self.assertEqual(campaign.state, "closed")
+        self.assertEqual(own.decision, "revoked")
+        self.assertEqual(self.item_of(campaign, self.grant).decision, "revoked")
+        self.assertEqual(own_grant.state, "revoked")
+
     def test_a_closed_break_glass_session_is_reviewed_by_another_administrator(self):
         glass = self.env["res.users.eligibility"].create(
             {

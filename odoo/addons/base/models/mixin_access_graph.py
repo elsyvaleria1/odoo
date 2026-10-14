@@ -289,6 +289,9 @@ class MixinAccessGraph(models.AbstractModel):
                        ON grant_row.group_id = %(group)s
                       AND grant_row.%(resource)s = ANY(%(chain)s)
                       AND (grant_row.date_to IS NULL OR grant_row.date_to > now() AT TIME ZONE 'UTC')
+                     JOIN %(table)s AS holder
+                       ON holder.id = grant_row.%(resource)s
+                      AND (holder.id = node.id OR %(is_container)s)
                     WHERE node.id = ANY(%(ids)s)
                  GROUP BY node.id""",
                 roles=list(graph.roles),
@@ -298,6 +301,7 @@ class MixinAccessGraph(models.AbstractModel):
                 group=group_id,
                 resource=SQL.identifier(names.resource),
                 chain=path_ids(SQL.identifier("node", "access_scope_path")),
+                is_container=self._get_access_container_condition("holder"),
                 ids=ids,
             )
         )
@@ -352,6 +356,13 @@ class MixinAccessGraph(models.AbstractModel):
             )
         )
 
+    def _get_access_container_condition(self, alias: str) -> SQL:
+        graph = self._access_graph
+        if not graph.container:
+            return SQL("TRUE")
+        field, value = graph.container
+        return SQL("%s = %s", SQL.identifier(alias, field), value)
+
     def _access_graph_condition(
         self,
         role: str,
@@ -385,12 +396,15 @@ class MixinAccessGraph(models.AbstractModel):
         owner = (
             SQL(
                 """UNION ALL
-                   SELECT node.id, NULL, users.partner_id, NULL, NULL, %s
+                   SELECT holder.id, NULL, users.partner_id, NULL, NULL, %s
                      FROM target
-                     JOIN %s AS node ON node.id = ANY(target.chain)
-                     JOIN res_users AS users ON users.id = node.%s""",
+                     JOIN %s AS holder
+                       ON holder.id = ANY(target.chain)
+                      AND (holder.id = target.id OR %s)
+                     JOIN res_users AS users ON users.id = holder.%s""",
                 graph.roles[-1],
                 SQL.identifier(self._table),
+                self._get_access_container_condition("holder"),
                 SQL.identifier(graph.owner),
             )
             if graph.owner
@@ -399,13 +413,16 @@ class MixinAccessGraph(models.AbstractModel):
         self.env.cr.execute(
             SQL(
                 """WITH target AS (
-                       SELECT %(chain)s AS chain FROM %(table)s WHERE id = %(id)s
+                       SELECT id, %(chain)s AS chain FROM %(table)s WHERE id = %(id)s
                    )
                    SELECT grant_row.%(resource)s, grant_row.id, grant_row.partner_id,
                           grant_row.group_id, grant_row.company_id, grant_row.%(role)s
                      FROM target
                      JOIN %(grant_table)s AS grant_row
                        ON grant_row.%(resource)s = ANY(target.chain)
+                     JOIN %(table)s AS holder
+                       ON holder.id = grant_row.%(resource)s
+                      AND (holder.id = target.id OR %(is_container)s)
                     WHERE (grant_row.date_to IS NULL
                            OR grant_row.date_to > now() AT TIME ZONE 'UTC')
                    %(owner)s""",
@@ -415,6 +432,7 @@ class MixinAccessGraph(models.AbstractModel):
                 resource=SQL.identifier(names.resource),
                 role=SQL.identifier(names.role),
                 grant_table=SQL.identifier(grant_model._table),
+                is_container=self._get_access_container_condition("holder"),
                 owner=owner,
             )
         )

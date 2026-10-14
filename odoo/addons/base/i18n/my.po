@@ -34010,9 +34010,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
-msgstr ""
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
+msgstr "G - ကုန်သွယ် ရောင်းဝယ်ရေးနှင့် မော်တော်ယာဉ်ပြင်ဆင်ရေးလုပ်ငန်း"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -51190,9 +51189,9 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-msgstr ""
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+msgstr "T - အိမ်ထောင်စုများ၏ အလုပ်ရှင်အဖြစ်လုပ်ကိုင်မှုများ"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -57681,6 +57680,8 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"ကိုအောင်မြင်စွာသွင်းပြီးပါပြီ။\n"
+"                             အသုံးပြုသူသည် သူ့စိတ်ကြိုက်ဘာသာစကားကို အပြင်အဆင်တွင်ရွေးနိုင်သည်။"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -59107,10 +59108,6 @@ msgstr ""
 #~ msgid "Furniture Store"
 #~ msgstr "ပရိဘောဂ ဆိုင်"
 
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr "G - ကုန်သွယ် ရောင်းဝယ်ရေးနှင့် မော်တော်ယာဉ်ပြင်ဆင်ရေးလုပ်ငန်း"
-
 #~ msgid "Merge Automatically all process"
 #~ msgstr "အလိုအလျှာက်ပေါင်းရန်"
 
@@ -59125,11 +59122,6 @@ msgstr ""
 
 #~ msgid "Secondary Color"
 #~ msgstr "ဒုတိယ အရောင်"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr "T - အိမ်ထောင်စုများ၏ အလုပ်ရှင်အဖြစ်လုပ်ကိုင်မှုများ"
 
 #~ msgid "Use css margins"
 #~ msgstr "css မာဂျင် သုံး"
@@ -59154,14 +59146,6 @@ msgstr ""
 
 #~ msgid "expenses"
 #~ msgstr "အသုံးစရိတ်များ"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "ကိုအောင်မြင်စွာသွင်းပြီးပါပြီ။\n"
-#~ "                             အသုံးပြုသူသည် သူ့စိတ်ကြိုက်ဘာသာစကားကို အပြင်အဆင်တွင်ရွေးနိုင်သည်။"
 
 #~ msgid "month"
 #~ msgstr "လ"

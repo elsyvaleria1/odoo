@@ -2725,6 +2725,9 @@ msgid ""
 "Advanced features for the PoS like better views\n"
 "for IoT Box config.\n"
 msgstr ""
+"\n"
+"Napredne funkcije za PoS, kot so boljši pogledi za konfiguracijo IoT "
+"Box.   \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_agro_partner_scoring
@@ -3010,6 +3013,11 @@ msgid ""
 "===========================================================\n"
 "Additional information is displayed in the name of the SOL when it is used in services apps (project and planning).\n"
 msgstr ""
+"\n"
+"Omogoča prikaz informacij o prodaji v aplikacijah SOL storitev\n"
+"===========================================================\n"
+"Dodatne informacije so prikazane v imenu SOL, ko se ta uporablja v servisnih "
+"aplikacijah (projekti in načrtovanje). \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_purchase_edi_ubl_bis3
@@ -3381,6 +3389,17 @@ msgid ""
 "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, then select the test\n"
 "and print the report from Print button in header area.\n"
 msgstr ""
+"\n"
+"Preverbe računovodstva.\n"
+"======================\n"
+"S tem modulom lahko ročno preverjamo neskladja in skladja računovodskega "
+"modula preko menija Poročanje/Računovodstvo/Računovodski testi.\n"
+"\n"
+"Zapišete lahko poizvedbo, da bi ustvarili test skladja in dobili rezultat "
+"testa v  \n"
+"PDF formatu, do katerega se dostopa preko menija Poročanje -> Računovodski "
+"testi, kjer izberete test in \n"
+"natisnete poročilo preko gumba Natisni v glavi zaslona.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_depreciation
@@ -4795,6 +4814,9 @@ msgid ""
 "Configure IoT devices to be used in certain\n"
 "steps for taking measures, taking pictures, ...\n"
 msgstr ""
+"\n"
+"Konfigurirajte naprave \"interneta stvari - IoT\" za uporabo v določenih \n"
+"koraki za sprejemanje ukrepov, fotografiranje, ...\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_databases
@@ -7959,6 +7981,13 @@ msgid ""
 "It is like a regular invoice, but we need to keep track of the link with the original invoice.\n"
 "The wizard used is similar as the one for the credit note.\n"
 msgstr ""
+"\n"
+"V mnogih državah se bremepis uporablja za povečanje zneskov obstoječega "
+"računa. \n"
+"ali v nekaterih posebnih primerih za preklic dobropisa. \n"
+"Je kot navaden račun, vendar moramo spremljati povezavo z originalnim "
+"računom.  \n"
+"Uporabljeni čarovnik je podoben tistemu za dobropis.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_dk_nemhandel_response
@@ -13263,6 +13292,9 @@ msgid ""
 "This module adds a new template to the Newsletter Block to allow\n"
 "your visitors to subscribe with their phone number.\n"
 msgstr ""
+"\n"
+"Ta modul doda novo predlogo v blok glasila, ki omogoča, \n"
+"da se vaši obiskovalci naročijo s svojo telefonsko številko.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_renting_crm
@@ -13785,6 +13817,11 @@ msgid ""
 "and decide the split of these costs among their stock moves in order to\n"
 "take them into account in your stock valuation.\n"
 msgstr ""
+"\n"
+"Ta modul vam omogoča enostavno dodajanje dodatnih stroškov k proizvodnemu "
+"naročilu \n"
+"in se odločitev o razdelitvi teh stroškov med svoje premike delnic, da bi \n"
+"jih upoštevali pri vrednotenju delnic.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_us_direct_deposit
@@ -14818,6 +14855,9 @@ msgid ""
 "\n"
 "This module provides the link between quality steps and IoT devices.\n"
 msgstr ""
+"\n"
+"Ta modul zagotavlja povezavo med koraki kakovosti in napravami interneta "
+"stvari. \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_mobile
@@ -17903,6 +17943,9 @@ msgid ""
 "<code>UserError</code>: exception class for raising\n"
 "                                        user-facing warning messages"
 msgstr ""
+"<code>Napaka uporabnika\n"
+"</code>: razred izjem za prikaz opozorilnih sporočil, ki so obrnjena proti "
+"uporabniku"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17910,6 +17953,8 @@ msgid ""
 "<code>_logger.info(message)</code>: logger to emit messages\n"
 "                                        in server logs"
 msgstr ""
+"<code>_logger.info(sporočilo)</code>: beležnik za oddajanje sporočil v "
+"dnevnike strežnika"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -17926,14 +17971,14 @@ msgstr "<code>dateutil</code> (Python modul)"
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>: okolje, v katerem se dejanje sproži"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>: okolje, v katerem se dejanje sproži"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17941,6 +17986,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to\n"
 "                                            compare floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: uporabna funkcija za primerjavo števil s "
+"plavajočo plovko na podlagi določene natančnosti"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17948,6 +17995,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to compare\n"
 "                                        floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: uporabna funkcija za primerjavo števil s "
+"plavajočo plovko na podlagi določene natančnosti"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17955,6 +18004,8 @@ msgid ""
 "<code>log(message, level='info')</code>: logging function to\n"
 "                                        record debug information in <code>ir.logging</code> table"
 msgstr ""
+"<code>log(message, level='info')</code>: funkcija beleženja za beleženje "
+"informacij o odpravljanju napak v <code>ir.logging</code> table"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17962,6 +18013,8 @@ msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model zapisa, na katerem se sproži dejanje; je "
+"neveljaven nabor zapisov"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17969,13 +18022,15 @@ msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model zapisa, na katerem se sproži dejanje; je "
+"neveljaven nabor zapisov"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>record</code>: zapis, na katerem se sproži dejanje"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17983,6 +18038,7 @@ msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
 msgstr ""
+"<code>record</code>: zapis, na katerem se sproži postopek; lahko je nična"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17990,6 +18046,9 @@ msgid ""
 "<code>records</code>: recordset of all records on which\n"
 "                                            the action is triggered in multi mode"
 msgstr ""
+"<code>zapisi\n"
+"</code>: nabor vseh zapisov, na katerih se dejanje sproži v večnačinnem "
+"načinu"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17997,6 +18056,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
 msgstr ""
+"<code>records</code>: množica zapisov vseh zapisov, na katerih se sproži "
+"postopek v več-funkcijskem načinu; lahko je nična"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -18119,6 +18180,8 @@ msgid ""
 "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start the\n"
 "                        process...</span>"
 msgstr ""
+"<span class=\"o_form_label\" colspan=\"2\">Kliknite spodaj na Posodobi, da "
+"začnete postopek...</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
@@ -18208,6 +18271,11 @@ msgid ""
 "                                    <span colspan=\"2\">Month: %(month)s</span>\n"
 "                                    <span colspan=\"2\">Day: %(day)s</span>"
 msgstr ""
+"<span colspan=\"2\">Tekoče leto s stoletjem: %(year)s</span>\n"
+"                                <span colspan=\"2\">Tekoče leto brez "
+"stoletja: %(y)s</span>\n"
+"                                <span colspan=\"2\">Mesec: %(month)s</span>\n"
+"                                <span colspan=\"2\">Dan: %(day)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -18216,6 +18284,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">Dan v letu: %(doy)s</span>\n"
+"                                <span colspan=\"2\">Teden v letu: %(woy)s</"
+"span>\n"
+"                                <span colspan=\"2\">Dan v tednu "
+"(0:Ponedeljek): %(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -18225,6 +18298,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">Ura 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">Ura 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">Minuta: %(min)s</span>\n"
+"                                <span colspan=\"2\">Sekunda: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -18262,6 +18340,14 @@ msgid ""
 "                    <span invisible=\"reset_mode != 'hard'\">This view is not coming from a file.</span>\n"
 "                    <span invisible=\"reset_mode != 'other_view'\">You need two views to compare.</span>"
 msgstr ""
+"<span invisible=\"reset_mode != 'soft'\">Ta pogled nima prejšnje različice.</"
+"span>\n"
+"                        <span invisible=\"reset_mode != 'hard'\">Ta pogled "
+"ne prihaja iz datoteke.\n"
+"</span>\n"
+"                        <span invisible=\"reset_mode != 'other_view'\">Za "
+"primerjavo potrebujete dva pogleda.\n"
+"</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -18289,6 +18375,12 @@ msgid ""
 "<strong>Important:</strong> The key cannot be retrieved later and provides <b>full\n"
 "                        access</b> to your user account, it is very important to store it securely."
 msgstr ""
+"<strong>Pomembno:</strong>\n"
+"                            Ključa ni mogoče pozneje pridobiti in zagotavlja "
+"<b>poln dostop\n"
+"</b>\n"
+"                            v vaš uporabniški račun, je zelo pomembno, da ga "
+"varno shranite."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.res_users_identitycheck_view_form
@@ -18318,6 +18410,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>Ta operacija bo trajno izbrisala vse podatke, ki so trenutno "
+"shranjeni v modulih!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -21702,6 +21796,9 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_html_editor
 msgid "A Html Editor component and plugin system"
 msgstr ""
+"\n"
+"        Sistem komponent in vtičnikov za urejevalnik HTML\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_payment_dpo
@@ -21819,6 +21916,12 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Skupina je nabor funkcionalnih območij, ki bodo dodeljene uporabniku, da se "
+"jim omogoči dostop in pravice do specifičnih aplikacij in nalog v sistemu. "
+"Lahko ustvarite skupine po meri ali uredite tiste, ki veljajo privzeto, da "
+"si prilagodite prikaz menija, ki ga bodo uporabniki lahko videli. Ali lahko "
+"imajo pravice za dostop do branje, pisanje, ustvarjanje in brisanje, lahko "
+"upravljate od tukaj."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -22195,6 +22298,8 @@ msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
 "            application, create and manage appraisals for himself and the people he's manager of."
 msgstr ""
+"A Uporabnik brez pravic do ocenjevanja bo lahko videl aplikacijo, ustvarjal "
+"in upravljal ocene zase in za ljudi, ki jih vodi."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_wallet
@@ -27421,6 +27526,8 @@ msgid ""
 "Banks are the financial institutions at which you and your contacts have their\n"
 "                accounts."
 msgstr ""
+"Banke so finančne institucije, pri katerih imate vi in vaši stiki odprte "
+"račune."
 
 #. module: base
 #: model:res.country,name:base.bb
@@ -27627,6 +27734,11 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"Upoštevajte, da urejanje arhitekture standardnega pogleda ni priporočljivo, "
+"saj bodo spremembe med prihodnjimi posodobitvami modulov prepisane.\n"
+"<br/>\n"
+"                        Priporočamo, da spremembe standardnih pogledov "
+"uveljavite prek podedovanih pogledov ali prilagoditev z Odoo Studio."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -28321,7 +28433,7 @@ msgstr "Modul Bridge za pošiljanje obvestil udeležencem dogodkov"
 #. module: base
 #: model:ir.module.module,summary:base.module_website_event_track_live_quiz
 msgid "Bridge module to support quiz features during \"live\" tracks."
-msgstr ""
+msgstr "Modul Bridge za podporo kvizov med \"živimi\" posnetki. "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_account_move_template_purchase
@@ -29338,7 +29450,7 @@ msgstr "Spremeni geslo"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Spremenite način prikaza naslovov v poročilih"
 
 #. module: base
 #. odoo-python
@@ -29591,6 +29703,8 @@ msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
 msgstr ""
+"Izberi podogled partnerjev, ki vključujejo samo polja z naslovi, da "
+"spremeniš način kako lahko uporabniki vnašajo naslove."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -29838,7 +29952,7 @@ msgstr "Zbirajte plačila od svojih strank prek SEPA direktne obremenitve."
 #. module: base
 #: model:ir.module.module,summary:base.module_document
 msgid "Collect, organize and share documents."
-msgstr ""
+msgstr "Zbirajte, organizirajte in delite dokumente."
 
 #. module: base
 #: model:res.country,name:base.co
@@ -30222,6 +30336,9 @@ msgid ""
 "Computed fields are defined with the fields <strong>Dependencies</strong>\n"
 "                                    and <strong>Compute</strong>."
 msgstr ""
+"Izračunana polja so definirana s polji\n"
+"                                                <strong>Odvisnosti</strong> "
+"in<strong>Izračunaj</strong>."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__auth_user_client__platform_type__computer
@@ -30528,7 +30645,7 @@ msgstr "Stiki zahtevajo ime"
 msgid ""
 "Contains In-App\n"
 "                            Purchases"
-msgstr ""
+msgstr "Vsebuje nakupe v aplikaciji"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_enterprise
@@ -30936,6 +31053,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"Ustvarjanje in upravljanje družb, ki bodo upravljane v Odoo. Tu se lahko "
+"ustvarja in vzdržuje trgovine in filiale."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -30945,6 +31064,10 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Ustvarite in upravljajte uporabnike, ki bodo vstopali v sistem. Uporabniki "
+"so lahko de-aktivirani za čas, ko naj ne bi imeli dostopa do sistema. "
+"Dodelite jih lahko v skupine ter jim poverite specifične pravice dostopa do "
+"aplikacij, ki jih v sistemu potrebujejo."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -31613,6 +31736,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Prilagojeni pogledi se uporabljajo ko uporabnik reorganizira vsebino "
+"njegovega pogleda pregledne plošče (preko spletnega klienta)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -32187,6 +32312,8 @@ msgid ""
 "Demo data should only be used on test databases!\n"
 "                                Once they are loaded, they cannot be removed!"
 msgstr ""
+"Demo podatki naj se uporabljajo samo v testnih bazah podatkov!\n"
+"                             Ko jih naložite, jih ni mogoče odstraniti!"
 
 #. module: base
 #: model:ir.model,name:base.model_ir_demo_failure
@@ -33222,6 +33349,9 @@ msgstr "E-Računi, Offentlig Informacije Online Univerzalni poslovni jezik"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi
 msgid "E-Invoicing, Universal Business Language"
 msgstr ""
+"\n"
+"        E-računi, univerzalni poslovni jezik\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_tw_edi_ecpay
@@ -36140,7 +36270,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "Ste pozabili geslo?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -36420,9 +36550,9 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
+"G - TRGOVINA NA VELIKO IN DROBNO; POPRAVILA MOTORNIH VOZIL IN MOTOCIKLOV"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -37625,6 +37755,9 @@ msgid ""
 "Here is your new API key, use it instead of a password for RPC access.\n"
 "                        Your login is still necessary for interactive usage."
 msgstr ""
+"Tukaj je vaš novi API ključ, uporabite ga namesto gesla za dostop RPC.\n"
+"                            Za interaktivno uporabo je še vedno potrebna "
+"vaša prijava."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__denied_field_ids
@@ -38326,6 +38459,11 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"Če je ta pogled podedovan,\n"
+"* Če je označeno, pogled vedno razširi svoje nadrejene\n"
+"* Če ni označeno, pogled trenutno ne razširi svojega nadrejenega, vendar se "
+"lahko omogoči\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -39793,6 +39931,9 @@ msgid ""
 "                        will be the only way to\n"
 "                            identify the key once created</strong>."
 msgstr ""
+"Zelo pomembno je, da je ta opis jasen\n"
+"                        in popolen, <strong>To bo edini način za "
+"identifikacijo ključa, ko bo ustvarjen </strong>."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_it_intrastat
@@ -40976,7 +41117,7 @@ msgstr "Izberimo Point Relais® za vašo e-trgovino"
 #. module: base
 #: model:ir.module.module,summary:base.module_delivery_mondialrelay
 msgid "Let's choose a Point Relais® as shipping address"
-msgstr ""
+msgstr " Izberimo Point Relais® kot naslov za dostavo "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
@@ -42092,6 +42233,11 @@ msgid ""
 "            then delete it through the button that appeared. Items can be assigned to specific\n"
 "            groups in order to make them accessible to some users within the system."
 msgstr ""
+"Upravljanje in prilagajanje postavk razpoložljivih in prikazanih v Odoo "
+"sistemskem meniju. Postavko lahko izbrišete s klikom na okvirček na začetku "
+"vsake vrstice in uporabo gumba, ki se zatem pojavi. Postavke se lahko dodeli "
+"specifičnim skupinam, da tako postanejo dosegljive nekaterim sistemskim "
+"uporabnikom."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_slides
@@ -44358,6 +44504,10 @@ msgid ""
 "This here module is useful to validate that they're doing what they're\n"
 "supposed to do\n"
 msgstr ""
+"Pripomočki za netrivialno testiranje lahko zahtevajo modele in vse\n"
+"\n"
+"Ta modul je uporaben za potrditev, da počne to, kar\n"
+"naj bi moral narediti\n"
 
 #. module: base
 #: model:res.country,name:base.nf
@@ -45890,6 +46040,18 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"Uporabi se le, če ta pogled deduje od drugega (inherit_id ni odznačen/"
+"ničen).\n"
+"\n"
+"* če je razširitev (privzeto), se ob zahtevi po tem pogledu poišče "
+"najbližji\n"
+"primarni pogled (preko inherit_id) in se nato uporabijo vsi modeli,\n"
+"ki dedujejo od tega modela pogleda\n"
+"* če je primarni, se popolnoma razreši najbližji primarni pogled (tudi če "
+"uporablja\n"
+"drugačen model od tega), takrat se uporabi določitve dedovanja\n"
+"(<xpath/>) tega pogleda, rezultat pa se uporabi, kot, da je ta pogled\n"
+"dejanski 'lok'.\n"
 
 #. module: base
 #. odoo-python
@@ -50407,7 +50569,7 @@ msgstr "Restavracija"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "POS razširitve za restavracijo "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -51620,6 +51782,10 @@ msgid ""
 "                        Odoo will propose you to merge only those having\n"
 "                        all these fields in common. (not one of the fields)."
 msgstr ""
+"Izberi seznam polj za iskanje podvojenih\n"
+"                            zapisov. Če izberete več polj,\n"
+"                            bo Odoo predlagal spajanje le tistih, ki imajo\n"
+"                            ta polja skupna. (ne enega izmed polj)."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_model_fields__selectable
@@ -51634,6 +51800,12 @@ msgid ""
 "                            will be redirected to the destination contact.\n"
 "                            You can remove contacts from this list to avoid merging them."
 msgstr ""
+"Izbrani stiki bodo spojeni skupaj.\n"
+"                                Vsi dokumenti, povezani z enim od teh "
+"stikov,\n"
+"                                bodo preusmerjeni v ciljni stik.\n"
+"                                Stike iz tega seznama lahko odstraniš, da se "
+"izogneš spajanju."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_partner_merge__state__selection
@@ -52303,6 +52475,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_link_tracker
 msgid "Shorten URLs and use them to track clicks and UTMs"
 msgstr ""
+"\n"
+"Skrajšajte URL-je in jih uporabite za sledenje klikom in UTM-jem\n"
 
 #. module: base
 #: model:ir.model,name:base.model_res_users_apikeys_show
@@ -52430,7 +52604,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "Enostavni popusti v POS "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -53842,9 +54016,11 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
+"T - DEJAVNOSTI GOSPODINJSTEV KOT DELODAJALCEV; NEDIFERENCIRANE DEJAVNOSTI "
+"GOSPODINJSTEV, KI PROIZVAJAJO BLAGO IN STORITVE ZA LASTNO UPORABO"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -54825,6 +55001,9 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"Nastavitveni čarovniki se uporabljajo v pomoč pri nastavitvah nove instance "
+"Odoo. Zaženejo se med namestitvijo novih modulov, a iz tega menija lahko "
+"izberete ponovni zagon nekaterih čarovnikov."
 
 #. module: base
 #. odoo-python
@@ -54975,6 +55154,12 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"Polje <strong>Izračunaj</strong> vsebuje Python kodo za\n"
+"                                                izračun vrednosti polja na "
+"skupku zapisov. Vrednost\n"
+"                                                tega polja mora biti "
+"dodeljena vsakemu zapisu z nalogo\n"
+"                                                v obliki slovarja."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -56822,6 +57007,10 @@ msgid ""
 "                                        there is remaining tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count,\n"
 "                                        remaining=task_remaining_count)</code>"
 msgstr ""
+"Za obveščanje o napredku klica CRON in ponovni sprožitev klica, če so še "
+"preostale naloge, uporabite "
+"<code>env['ir.cron']._notify_progress(done=task_done_count, "
+"remaining=task_remaining_count)</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -58187,6 +58376,8 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"Uporabite skupine za organiziranje držav, ki so pogosto izbrane skupaj (npr. "
+"\"LATAM\", \"BeNeLux\", \"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -58792,6 +58983,8 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"Prikazi omogočajo prilagajanje kateregakoli prikaza v Odoo. Polja lahko "
+"dodajate, premikate, preimenujete ali izbrišete tista, ki jih ne potrebujete."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -59466,6 +59659,10 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"Ko se uporabijo podzaporedja na časovno obdobje, lahko spremenljivkam dodaš "
+"predpono 'range_' (razpon),\n"
+"                                da uporabiš začetek razpona namesto "
+"trenutnega datuma, npr. %(range_year)s namesto %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -60208,6 +60405,8 @@ msgid ""
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
 msgstr ""
+"Z urejanjem novo ustvarjenega uporabnika, boste lahko določili dodatne "
+"pravice dostopa v meniju Nastavitve / Uporabniki."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -60597,6 +60796,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"za zapis v sebe:\n"
+"        record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -60615,6 +60816,9 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"je bil uspešno nameščen.\n"
+"                            Uporabniki lahko v svojih nastavitvah izberejo "
+"svoj najljubši jezik."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -62277,24 +62481,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        A Html Editor component and plugin system\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Sistem komponent in vtičnikov za urejevalnik HTML\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        E-Invoicing, Universal Business Language\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        E-računi, univerzalni poslovni jezik\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Accounting Reports\n"
 #~ "==================\n"
 #~ msgstr ""
@@ -62328,15 +62514,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Advanced features for the PoS like better views \n"
-#~ "for IoT Box config.   \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Napredne funkcije za PoS, kot so boljši pogledi za konfiguracijo IoT "
-#~ "Box.   \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Allow clients to Schedule Appointments through the Portal\n"
 #~ msgstr ""
 #~ "\n"
@@ -62344,48 +62521,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Allows to display sale information in the SOL services apps\n"
-#~ "===========================================================\n"
-#~ "Additional information is displayed in the name of the SOL when it is used "
-#~ "in services apps (project and planning). \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Omogoča prikaz informacij o prodaji v aplikacijah SOL storitev\n"
-#~ "===========================================================\n"
-#~ "Dodatne informacije so prikazane v imenu SOL, ko se ta uporablja v servisnih "
-#~ "aplikacijah (projekti in načrtovanje). \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "App to upload and manage your documents.\n"
 #~ msgstr ""
 #~ "\n"
 #~ "Aplikacija za nalaganje in upravljanje dokumentov.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "With this module you can manually check consistencies and inconsistencies of "
-#~ "accounting module from menu Reporting/Accounting/Accounting Tests.\n"
-#~ "\n"
-#~ "You can write a query in order to create Consistency Test and you will get "
-#~ "the result of the test \n"
-#~ "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, "
-#~ "then select the test \n"
-#~ "and print the report from Print button in header area.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Preverbe računovodstva.\n"
-#~ "======================\n"
-#~ "S tem modulom lahko ročno preverjamo neskladja in skladja računovodskega "
-#~ "modula preko menija Poročanje/Računovodstvo/Računovodski testi.\n"
-#~ "\n"
-#~ "Zapišete lahko poizvedbo, da bi ustvarili test skladja in dobili rezultat "
-#~ "testa v  \n"
-#~ "PDF formatu, do katerega se dostopa preko menija Poročanje -> Računovodski "
-#~ "testi, kjer izberete test in \n"
-#~ "natisnete poročilo preko gumba Natisni v glavi zaslona.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -62423,15 +62562,6 @@ msgstr ""
 #~ msgstr ""
 #~ "\n"
 #~ "Premostitveni modul za project_enterprise in človeškimi viri\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Configure IoT devices to be used in certain \n"
-#~ "steps for taking measures, taking pictures, ...\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Konfigurirajte naprave \"interneta stvari - IoT\" za uporabo v določenih \n"
-#~ "koraki za sprejemanje ukrepov, fotografiranje, ...\n"
 
 #~ msgid ""
 #~ "\n"
@@ -62493,23 +62623,6 @@ msgstr ""
 #~ "modulov in ukrepov. Ko je nameščen, ta modul ustvarja preproste cilje za "
 #~ "pomoč novim uporabnikom, da odkrijejo eFirmo in nastavijo svoj uporabniški "
 #~ "profil.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "In a lot of countries, a debit note is used as an increase of the amounts of "
-#~ "an existing invoice \n"
-#~ "or in some specific cases to cancel a credit note. \n"
-#~ "It is like a regular invoice, but we need to keep track of the link with the "
-#~ "original invoice.  \n"
-#~ "The wizard used is similar as the one for the credit note.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "V mnogih državah se bremepis uporablja za povečanje zneskov obstoječega "
-#~ "računa. \n"
-#~ "ali v nekaterih posebnih primerih za preklic dobropisa. \n"
-#~ "Je kot navaden račun, vendar moramo spremljati povezavo z originalnim "
-#~ "računom.  \n"
-#~ "Uporabljeni čarovnik je podoben tistemu za dobropis.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -62731,13 +62844,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Shorten URLs and use them to track clicks and UTMs\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Skrajšajte URL-je in jih uporabite za sledenje klikom in UTM-jem\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Stock in Maintenance\n"
 #~ "====================\n"
 #~ "Open the record of the serial number from an equipment form\n"
@@ -62785,15 +62891,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module adds a new template to the Newsletter Block to allow \n"
-#~ "your visitors to subscribe with their phone number.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Ta modul doda novo predlogo v blok glasila, ki omogoča, \n"
-#~ "da se vaši obiskovalci naročijo s svojo telefonsko številko.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module adds required base code for a fully integrated customer portal.\n"
 #~ "It contains the base controller class and base templates. Business addons\n"
 #~ "will add their specific templates and controllers to extend the customer\n"
@@ -62824,18 +62921,6 @@ msgstr ""
 #~ "\n"
 #~ "Ta modul doda delovnemu procesu odobritev možnost ustvarjanja\n"
 #~ "Zahteva za ponudbo iz zahtevka za odobritev nakupa.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "This module allows you to easily add extra costs on manufacturing order \n"
-#~ "and decide the split of these costs among their stock moves in order to \n"
-#~ "take them into account in your stock valuation.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Ta modul vam omogoča enostavno dodajanje dodatnih stroškov k proizvodnemu "
-#~ "naročilu \n"
-#~ "in se odločitev o razdelitvi teh stroškov med svoje premike delnic, da bi \n"
-#~ "jih upoštevali pri vrednotenju delnic.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -62927,14 +63012,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module provides the link between quality steps and IoT devices. \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Ta modul zagotavlja povezavo med koraki kakovosti in napravami interneta "
-#~ "stvari. \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Track equipment and maintenance requests"
 #~ msgstr ""
 #~ "\n"
@@ -62974,9 +63051,6 @@ msgstr ""
 #~ "* Dodajte storitve, vrednosti števca kilometrov za vsa vozila\n"
 #~ "* Prikažite vse stroške, povezane z vozilom ali vrsto storitve\n"
 #~ "* Analitični graf za stroške\n"
-
-#~ msgid " Let's choose a Point Relais® as shipping address "
-#~ msgstr " Izberimo Point Relais® kot naslov za dostavo "
 
 #~ msgid "# Access Rights"
 #~ msgstr "Št. pravic dostopa"
@@ -63052,67 +63126,6 @@ msgstr ""
 #~ msgstr "- velikost ="
 
 #~ msgid ""
-#~ "<code>UserError</code>: exception class for raising user-facing warning "
-#~ "messages"
-#~ msgstr ""
-#~ "<code>Napaka uporabnika\n"
-#~ "</code>: razred izjem za prikaz opozorilnih sporočil, ki so obrnjena proti "
-#~ "uporabniku"
-
-#~ msgid ""
-#~ "<code>_logger.info(message)</code>: logger to emit messages in server logs"
-#~ msgstr ""
-#~ "<code>_logger.info(sporočilo)</code>: beležnik za oddajanje sporočil v "
-#~ "dnevnike strežnika"
-
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>: okolje, v katerem se dejanje sproži"
-
-#~ msgid ""
-#~ "<code>float_compare()</code>: utility function to compare floats based on a "
-#~ "specific precision"
-#~ msgstr ""
-#~ "<code>float_compare()</code>: uporabna funkcija za primerjavo števil s "
-#~ "plavajočo plovko na podlagi določene natančnosti"
-
-#~ msgid ""
-#~ "<code>log(message, level='info')</code>: logging function to record debug "
-#~ "information in <code>ir.logging</code> table"
-#~ msgstr ""
-#~ "<code>log(message, level='info')</code>: funkcija beleženja za beleženje "
-#~ "informacij o odpravljanju napak v <code>ir.logging</code> table"
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr ""
-#~ "<code>model</code>: model zapisa, na katerem se sproži dejanje; je "
-#~ "neveljaven nabor zapisov"
-
-#~ msgid "<code>record</code>: record on which the action is triggered"
-#~ msgstr "<code>record</code>: zapis, na katerem se sproži dejanje"
-
-#~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr ""
-#~ "<code>record</code>: zapis, na katerem se sproži postopek; lahko je nična"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode"
-#~ msgstr ""
-#~ "<code>zapisi\n"
-#~ "</code>: nabor vseh zapisov, na katerih se dejanje sproži v večnačinnem "
-#~ "načinu"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr ""
-#~ "<code>records</code>: množica zapisov vseh zapisov, na katerih se sproži "
-#~ "postopek v več-funkcijskem načinu; lahko je nična"
-
-#~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
@@ -63154,13 +63167,6 @@ msgstr ""
 #~ msgstr "<i class=\"fa fa-warning pe-2\" title=\"Warning\"/>"
 
 #~ msgid ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start "
-#~ "the process...</span>"
-#~ msgstr ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Kliknite spodaj na Posodobi, da "
-#~ "začnete postopek...</span>"
-
-#~ msgid ""
 #~ "<span class=\"o_form_label\">The selected modules have been updated/"
 #~ "installed!</span>"
 #~ msgstr ""
@@ -63175,67 +63181,11 @@ msgstr ""
 #~ "novih menijev (Ctrl + T nato CTRL + R).\"</span>"
 
 #~ msgid ""
-#~ "<span colspan=\"2\">Current Year with Century: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Current Year without "
-#~ "Century: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Month: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Day: %(day)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Tekoče leto s stoletjem: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Tekoče leto brez "
-#~ "stoletja: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Mesec: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Dan: %(day)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Dan v letu: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Teden v letu: %(woy)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Dan v tednu "
-#~ "(0:Ponedeljek): %(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Ura 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Ura 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minuta: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Sekunda: %(sec)s</span>"
-
-#~ msgid ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">by</span>"
 #~ msgstr ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">z</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"reset_mode != 'soft'\">This view has no previous version.</"
-#~ "span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">This view "
-#~ "is not coming from a file.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">You "
-#~ "need two views to compare.</span>"
-#~ msgstr ""
-#~ "<span invisible=\"reset_mode != 'soft'\">Ta pogled nima prejšnje različice.</"
-#~ "span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">Ta pogled "
-#~ "ne prihaja iz datoteke.\n"
-#~ "</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">Za "
-#~ "primerjavo potrebujete dva pogleda.\n"
-#~ "</span>"
 
 #~ msgid "<span>, </span>"
 #~ msgstr "<span>, </span>"
@@ -63273,20 +63223,6 @@ msgstr ""
 #~ msgid "<strong>Idx</strong>"
 #~ msgstr "<strong>Idx</strong>"
 
-#~ msgid ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            The key cannot be retrieved later and provides "
-#~ "<b>full access</b>\n"
-#~ "                            to your user account, it is very important to "
-#~ "store it securely."
-#~ msgstr ""
-#~ "<strong>Pomembno:</strong>\n"
-#~ "                            Ključa ni mogoče pozneje pridobiti in zagotavlja "
-#~ "<b>poln dostop\n"
-#~ "</b>\n"
-#~ "                            v vaš uporabniški račun, je zelo pomembno, da ga "
-#~ "varno shranite."
-
 #~ msgid "<strong>Inherited</strong>"
 #~ msgstr "<strong>Podedovani</strong>"
 
@@ -63314,13 +63250,6 @@ msgstr ""
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>Zaporedje</strong>"
 
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>Ta operacija bo trajno izbrisala vse podatke, ki so trenutno "
-#~ "shranjeni v modulih!</strong>"
-
 #~ msgid "<strong>Tr</strong>"
 #~ msgstr "<strong>Tr</strong>"
 
@@ -63342,30 +63271,8 @@ msgstr ""
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>Prikazi</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Skupina je nabor funkcionalnih območij, ki bodo dodeljene uporabniku, da se "
-#~ "jim omogoči dostop in pravice do specifičnih aplikacij in nalog v sistemu. "
-#~ "Lahko ustvarite skupine po meri ali uredite tiste, ki veljajo privzeto, da "
-#~ "si prilagodite prikaz menija, ki ga bodo uporabniki lahko videli. Ali lahko "
-#~ "imajo pravice za dostop do branje, pisanje, ustvarjanje in brisanje, lahko "
-#~ "upravljate od tukaj."
-
 #~ msgid "A module to generate exceptions."
 #~ msgstr "Modul za ustvarjanje izjem."
-
-#~ msgid ""
-#~ "A user without any rights on Appraisals will be able to see the application, "
-#~ "create and manage appraisals for himself and the people he's manager of."
-#~ msgstr ""
-#~ "A Uporabnik brez pravic do ocenjevanja bo lahko videl aplikacijo, ustvarjal "
-#~ "in upravljal ocene zase in za ljudi, ki jih vodi."
 
 #~ msgid "A valid email is required for find_or_create to work properly."
 #~ msgstr ""
@@ -63555,13 +63462,6 @@ msgstr ""
 #~ msgid "Bakery"
 #~ msgstr "Pekarna"
 
-#~ msgid ""
-#~ "Banks are the financial institutions at which you and your contacts have "
-#~ "their accounts."
-#~ msgstr ""
-#~ "Banke so finančne institucije, pri katerih imate vi in vaši stiki odprte "
-#~ "račune."
-
 #~ msgid "Bar & Pub"
 #~ msgstr "Bar in pub"
 
@@ -63573,18 +63473,6 @@ msgstr ""
 
 #~ msgid "Basic models and helpers to support Internet of Things."
 #~ msgstr "Osnovni modeli in pripomočki za podporo interneta stvari."
-
-#~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "Upoštevajte, da urejanje arhitekture standardnega pogleda ni priporočljivo, "
-#~ "saj bodo spremembe med prihodnjimi posodobitvami modulov prepisane.\n"
-#~ "<br/>\n"
-#~ "                        Priporočamo, da spremembe standardnih pogledov "
-#~ "uveljavite prek podedovanih pogledov ali prilagoditev z Odoo Studio."
 
 #~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
@@ -63633,9 +63521,6 @@ msgstr ""
 #~ msgid "Bridge module for project_enterprise and hr"
 #~ msgstr "Mostni modul za projekt_podjetje in ur"
 
-#~ msgid "Bridge module to support quiz features during \"live\" tracks. "
-#~ msgstr "Modul Bridge za podporo kvizov med \"živimi\" posnetki. "
-
 #~ msgid "By default the widget uses the field information"
 #~ msgstr "Privzeto, pripomoček uporablja podatke o poljih"
 
@@ -63659,9 +63544,6 @@ msgstr ""
 #~ msgid "Certificate-based authentication requires a TLS transport"
 #~ msgstr "Preverjanje pristnosti na podlagi potrdil zahteva prenos TLS"
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Spremenite način prikaza naslovov v poročilih"
-
 #~ msgid "Checksum/SHA1"
 #~ msgstr "Checksum/SHA1"
 
@@ -63671,13 +63553,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Podrejena strežniška dejanja, ki bodo izvedena. Zadnja vrnjena vrednost "
 #~ "dejanja bo uporabljena kot globalna povratna vrednost."
-
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr ""
-#~ "Izberi podogled partnerjev, ki vključujejo samo polja z naslovi, da "
-#~ "spremeniš način kako lahko uporabniki vnašajo naslove."
 
 #~ msgid ""
 #~ "Choose the connection encryption scheme:\n"
@@ -63710,9 +63585,6 @@ msgstr ""
 
 #~ msgid "Clothing Store"
 #~ msgstr "Trgovina z oblačili"
-
-#~ msgid "Collect, organize and share documents."
-#~ msgstr "Zbirajte, organizirajte in delite dokumente."
 
 #~ msgid ""
 #~ "Colleen Diaz works in IT sector <b>since 10 years</b>. He is known\n"
@@ -63762,15 +63634,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "Computed fields are defined with the fields\n"
-#~ "                                                <strong>Dependencies</"
-#~ "strong> and <strong>Compute</strong>."
-#~ msgstr ""
-#~ "Izračunana polja so definirana s polji\n"
-#~ "                                                <strong>Odvisnosti</strong> "
-#~ "in<strong>Izračunaj</strong>."
-
-#~ msgid ""
-#~ "Computed fields are defined with the fields\n"
 #~ "                                    <strong>Dependencies</strong> and "
 #~ "<strong>Compute</strong>."
 #~ msgstr ""
@@ -63816,9 +63679,6 @@ msgstr ""
 #~ msgid "Consulting Services"
 #~ msgstr "Svetovalne storitve"
 
-#~ msgid "Contains In-App Purchases"
-#~ msgstr "Vsebuje nakupe v aplikaciji"
-
 #~ msgid "Convert attachments to links for emails over"
 #~ msgstr "Pretvori priloge v povezave za e-poštna sporočila nad"
 
@@ -63841,24 +63701,6 @@ msgstr ""
 #~ msgid "Create a Customer"
 #~ msgstr "Ustvari stranko"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "Ustvarjanje in upravljanje družb, ki bodo upravljane v Odoo. Tu se lahko "
-#~ "ustvarja in vzdržuje trgovine in filiale."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Ustvarite in upravljajte uporabnike, ki bodo vstopali v sistem. Uporabniki "
-#~ "so lahko de-aktivirani za čas, ko naj ne bi imeli dostopa do sistema. "
-#~ "Dodelite jih lahko v skupine ter jim poverite specifične pravice dostopa do "
-#~ "aplikacij, ki jih v sistemu potrebujejo."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "Ustvarjanje in potrjevanje zahtev za odobritev"
 
@@ -63873,13 +63715,6 @@ msgstr ""
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "Upravljanje odnosov s strankami"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Prilagojeni pogledi se uporabljajo ko uporabnik reorganizira vsebino "
-#~ "njegovega pogleda pregledne plošče (preko spletnega klienta)"
 
 #~ msgid "Date format"
 #~ msgstr "Format datuma"
@@ -63919,13 +63754,6 @@ msgstr ""
 
 #~ msgid "Delete Access"
 #~ msgstr "Izbriši dostop"
-
-#~ msgid ""
-#~ "Demo data should only be used on test databases!\n"
-#~ "                             Once they are loaded, they cannot be removed!"
-#~ msgstr ""
-#~ "Demo podatki naj se uporabljajo samo v testnih bazah podatkov!\n"
-#~ "                             Ko jih naložite, jih ni mogoče odstraniti!"
 
 #~ msgid "Demo logo"
 #~ msgstr "Logotip predstavitve"
@@ -64162,9 +63990,6 @@ msgstr ""
 #~ "Iz varnostnih razlogov ne morete spojiti več kot 3 stike hkrati. Lahko pa ob "
 #~ "potrebi večkrat ponovno zaženete čarovnika."
 
-#~ msgid "Forgot password?"
-#~ msgstr "Ste pozabili geslo?"
-
 #~ msgid "Formatting: long, short, narrow (not used for digital)"
 #~ msgstr "Oblikovanje: dolgo, kratko, ozko (se ne uporablja za digitalno obliko)"
 
@@ -64176,11 +64001,6 @@ msgstr ""
 
 #~ msgid "Furniture Store"
 #~ msgstr "Trgovina s pohištvom"
-
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr ""
-#~ "G - TRGOVINA NA VELIKO IN DROBNO; POPRAVILA MOTORNIH VOZIL IN MOTOCIKLOV"
 
 #~ msgid "Gallery"
 #~ msgstr "Galerija"
@@ -64268,15 +64088,6 @@ msgstr ""
 #~ msgid "Height"
 #~ msgstr "Višina"
 
-#~ msgid ""
-#~ "Here is your new API key, use it instead of a password for RPC access.\n"
-#~ "                            Your login is still necessary for interactive "
-#~ "usage."
-#~ msgstr ""
-#~ "Tukaj je vaš novi API ključ, uporabite ga namesto gesla za dostop RPC.\n"
-#~ "                            Za interaktivno uporabo je še vedno potrebna "
-#~ "vaša prijava."
-
 #~ msgid "Hidden"
 #~ msgstr "Skrito"
 
@@ -64363,19 +64174,6 @@ msgstr ""
 
 #~ msgid "If set, action binding only applies for this user."
 #~ msgstr "Če je označeno, se dejanje nanaša le na tega uporabnika"
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "Če je ta pogled podedovan,\n"
-#~ "* Če je označeno, pogled vedno razširi svoje nadrejene\n"
-#~ "* Če ni označeno, pogled trenutno ne razširi svojega nadrejenega, vendar se "
-#~ "lahko omogoči\n"
-#~ "         "
 
 #~ msgid ""
 #~ "If user belongs to several groups, the results from step 2 are combined with "
@@ -64477,15 +64275,6 @@ msgstr ""
 #~ msgid "IoT"
 #~ msgstr "IoT"
 
-#~ msgid ""
-#~ "It is very important that this description be clear\n"
-#~ "                        and complete, <strong>it will be the only way to\n"
-#~ "                        identify the key once created</strong>."
-#~ msgstr ""
-#~ "Zelo pomembno je, da je ta opis jasen\n"
-#~ "                        in popolen, <strong>To bo edini način za "
-#~ "identifikacijo ključa, ko bo ustvarjen </strong>."
-
 #~ msgid "Latest Version"
 #~ msgstr "Zadnja različica"
 
@@ -64531,19 +64320,6 @@ msgstr ""
 
 #~ msgid "Manage accounting with fleets"
 #~ msgstr "Upravljajte računovodstvo z voznim parkom"
-
-#~ msgid ""
-#~ "Manage and customize the items available and displayed in your Odoo system "
-#~ "menu. You can delete an item by clicking on the box at the beginning of each "
-#~ "line and then delete it through the button that appeared. Items can be "
-#~ "assigned to specific groups in order to make them accessible to some users "
-#~ "within the system."
-#~ msgstr ""
-#~ "Upravljanje in prilagajanje postavk razpoložljivih in prikazanih v Odoo "
-#~ "sistemskem meniju. Postavko lahko izbrišete s klikom na okvirček na začetku "
-#~ "vsake vrstice in uporabo gumba, ki se zatem pojavi. Postavke se lahko dodeli "
-#~ "specifičnim skupinam, da tako postanejo dosegljive nekaterim sistemskim "
-#~ "uporabnikom."
 
 #~ msgid "Manage your fleet and track car costs"
 #~ msgstr "Upravljajte svoj vozni park in spremljajte stroške vozila"
@@ -64657,17 +64433,6 @@ msgstr ""
 #~ "Ni odgovora. Preverite naslov strežnika in številko vrat.\n"
 #~ " %s"
 
-#~ msgid ""
-#~ "Non-trivial testing utilities can require models & all\n"
-#~ "\n"
-#~ "This here module is useful to validate that they're doing what they're \n"
-#~ "supposed to do\n"
-#~ msgstr ""
-#~ "Pripomočki za netrivialno testiranje lahko zahtevajo modele in vse\n"
-#~ "\n"
-#~ "Ta modul je uporaben za potrditev, da počne to, kar\n"
-#~ "naj bi moral narediti\n"
-
 #~ msgid "None"
 #~ msgstr "Brez"
 
@@ -64705,32 +64470,6 @@ msgstr ""
 
 #~ msgid "Online Appointment"
 #~ msgstr "Spletni termin"
-
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "Uporabi se le, če ta pogled deduje od drugega (inherit_id ni odznačen/"
-#~ "ničen).\n"
-#~ "\n"
-#~ "* če je razširitev (privzeto), se ob zahtevi po tem pogledu poišče "
-#~ "najbližji\n"
-#~ "primarni pogled (preko inherit_id) in se nato uporabijo vsi modeli,\n"
-#~ "ki dedujejo od tega modela pogleda\n"
-#~ "* če je primarni, se popolnoma razreši najbližji primarni pogled (tudi če "
-#~ "uporablja\n"
-#~ "drugačen model od tega), takrat se uporabi določitve dedovanja\n"
-#~ "(<xpath/>) tega pogleda, rezultat pa se uporabi, kot, da je ta pogled\n"
-#~ "dejanski 'lok'.\n"
 
 #~ msgid "Open Sans"
 #~ msgstr "Odprto brez"
@@ -65069,9 +64808,6 @@ msgstr ""
 #~ "ne vsebuje atributov »data-oe-model« in »data-oe-id« kot dela elementa »div« "
 #~ "z imenom razreda »article«."
 
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "POS razširitve za restavracijo "
-
 #~ msgid "Rounding precision"
 #~ msgstr "Natančnost zaokroževanja"
 
@@ -65148,36 +64884,6 @@ msgstr ""
 #~ msgid "See lots used in maintenance"
 #~ msgstr "Oglejte si parcele, ki se uporabljajo pri vzdrževanju"
 
-#~ msgid ""
-#~ "Select the list of fields used to search for\n"
-#~ "                            duplicated records. If you select several "
-#~ "fields,\n"
-#~ "                            Odoo will propose you to merge only those "
-#~ "having\n"
-#~ "                            all these fields in common. (not one of the "
-#~ "fields)."
-#~ msgstr ""
-#~ "Izberi seznam polj za iskanje podvojenih\n"
-#~ "                            zapisov. Če izberete več polj,\n"
-#~ "                            bo Odoo predlagal spajanje le tistih, ki imajo\n"
-#~ "                            ta polja skupna. (ne enega izmed polj)."
-
-#~ msgid ""
-#~ "Selected contacts will be merged together.\n"
-#~ "                                All documents linked to one of these "
-#~ "contacts\n"
-#~ "                                will be redirected to the destination "
-#~ "contact.\n"
-#~ "                                You can remove contacts from this list to "
-#~ "avoid merging them."
-#~ msgstr ""
-#~ "Izbrani stiki bodo spojeni skupaj.\n"
-#~ "                                Vsi dokumenti, povezani z enim od teh "
-#~ "stikov,\n"
-#~ "                                bodo preusmerjeni v ciljni stik.\n"
-#~ "                                Stike iz tega seznama lahko odstraniš, da se "
-#~ "izogneš spajanju."
-
 #~ msgid "Self"
 #~ msgstr "Isti"
 
@@ -65210,9 +64916,6 @@ msgstr ""
 
 #~ msgid "Short"
 #~ msgstr "Kratek"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "Enostavni popusti v POS "
 
 #~ msgid "Slash"
 #~ msgstr "Poševnica"
@@ -65266,13 +64969,6 @@ msgstr ""
 
 #~ msgid "Surveying & Mapping"
 #~ msgstr "Geodetske in kartografske storitve"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr ""
-#~ "T - DEJAVNOSTI GOSPODINJSTEV KOT DELODAJALCEV; NEDIFERENCIRANE DEJAVNOSTI "
-#~ "GOSPODINJSTEV, KI PROIZVAJAJO BLAGO IN STORITVE ZA LASTNO UPORABO"
 
 #~ msgid "TLS (STARTTLS), encryption and validation"
 #~ msgstr "TLS (STARTTLS), šifriranje in preverjanje veljavnosti"
@@ -65336,30 +65032,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Podjetja %(company_name)sni mogoče arhivirati, ker se še vedno uporablja, "
 #~ "kot privzeto podjetje v%(active_users)s"
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "Nastavitveni čarovniki se uporabljajo v pomoč pri nastavitvah nove instance "
-#~ "Odoo. Zaženejo se med namestitvijo novih modulov, a iz tega menija lahko "
-#~ "izberete ponovni zagon nekaterih čarovnikov."
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "Polje <strong>Izračunaj</strong> vsebuje Python kodo za\n"
-#~ "                                                izračun vrednosti polja na "
-#~ "skupku zapisov. Vrednost\n"
-#~ "                                                tega polja mora biti "
-#~ "dodeljena vsakemu zapisu z nalogo\n"
-#~ "                                                v obliki slovarja."
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -65530,16 +65202,6 @@ msgstr ""
 #~ "Ta modul integrira Odoo s WhatsAppom za uporabo storitve sporočanja WhatsApp"
 
 #~ msgid ""
-#~ "To notify progress for CRON call and re-trigger a call if there is remaining "
-#~ "tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-#~ msgstr ""
-#~ "Za obveščanje o napredku klica CRON in ponovni sprožitev klica, če so še "
-#~ "preostale naloge, uporabite "
-#~ "<code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-
-#~ msgid ""
 #~ "Toni Rhodes works in IT sector <b>since 10 years</b>. He is known\n"
 #~ "                notably for selling mouse traps. With that trick he cut\n"
 #~ "                IT budget by almost half within the last 2 years.\n"
@@ -65634,13 +65296,6 @@ msgstr ""
 #~ msgstr "Uporabite robove CSS"
 
 #~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "Uporabite skupine za organiziranje držav, ki so pogosto izbrane skupaj (npr. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-
-#~ msgid ""
 #~ "Use the SMTP configuration set in the \"Command Line Interface\" arguments."
 #~ msgstr ""
 #~ "Uporabite konfiguracijo SMTP, nastavljeno v argumentih »Vmesnik ukazne "
@@ -65663,13 +65318,6 @@ msgstr ""
 
 #~ msgid "View in speedscope"
 #~ msgstr "Ogled v merilniku hitrosti"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "Prikazi omogočajo prilagajanje kateregakoli prikaza v Odoo. Polja lahko "
-#~ "dodajate, premikate, preimenujete ali izbrišete tista, ki jih ne potrebujete."
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -65721,17 +65369,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Ko ni zahteve po specifičnem poštnem strežniku, se uporabi tisti z najvišjo "
 #~ "prioriteto. Privzeta prioriteta je 10 (manjša številka=višja prioriteta)"
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "Ko se uporabijo podzaporedja na časovno obdobje, lahko spremenljivkam dodaš "
-#~ "predpono 'range_' (razpon),\n"
-#~ "                                da uporabiš začetek razpona namesto "
-#~ "trenutnega datuma, npr. %(range_year)s namesto %(year)s."
 
 #~ msgid "Whether this contact is an Employee."
 #~ msgstr "Ali je ta stik zaposleni."
@@ -65859,13 +65496,6 @@ msgstr ""
 #~ msgid "You should update this document to reflect your T&amp;C."
 #~ msgstr "Ta dokument morate posodobiti, da bo odražal vaše T&amp;C."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr ""
-#~ "Z urejanjem novo ustvarjenega uporabnika, boste lahko določili dodatne "
-#~ "pravice dostopa v meniju Nastavitve / Uporabniki."
-
 #~ msgid "Your conditions..."
 #~ msgstr "Vaši pogoji ..."
 
@@ -65913,24 +65543,8 @@ msgstr ""
 #~ msgid "float"
 #~ msgstr "decimalno število"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "za zapis v sebe:\n"
-#~ "        record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "obliki() mora biti dodeljen točno en %char določilnik oblike"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "je bil uspešno nameščen.\n"
-#~ "                            Uporabniki lahko v svojih nastavitvah izberejo "
-#~ "svoj najljubši jezik."
 
 #~ msgid "hour"
 #~ msgstr "ura"

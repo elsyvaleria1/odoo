@@ -110,6 +110,37 @@ class TestAccessLink(AccessLinkCase):
         self.assertNotEqual(fresh, first)
         self.assertNotEqual(fresh_token, token)
 
+    def test_a_link_handed_out_again_lasts_its_cause_s_lifetime_again(self):
+        self.doc.sudo().partner_id = self.customer
+        link, token = self._issue(partner=self.customer, cause="share")
+        doc = self.doc.with_user(self.owner)
+        Link = self.Link.with_user(self.owner)
+        issuers = {
+            "_issue": lambda: self._issue(partner=self.customer, cause="share")[1],
+            "_issue_many": lambda: Link._issue_many(doc, self.customer, cause="share")[
+                self.customer.id
+            ],
+            "_issue_each": lambda: Link._issue_each(
+                doc, partner_field="partner_id", cause="share"
+            )[doc.id],
+        }
+        for label, issue in issuers.items():
+            with self.subTest(label):
+                link.sudo().date_to = fields.Datetime.now() + timedelta(minutes=2)
+                self.assertEqual(issue(), token)
+                self.assertAlmostEqual(
+                    link.date_to,
+                    fields.Datetime.now() + timedelta(days=30),
+                    delta=timedelta(minutes=5),
+                )
+
+        hour = fields.Datetime.now() + timedelta(hours=1)
+        dated, dated_token = self._issue(partner=self.customer, date_to=hour)
+        self.assertEqual(
+            self._issue(partner=self.customer, date_to=hour), (dated, dated_token)
+        )
+        self.assertEqual(dated.date_to, hour)
+
     def test_a_link_anyone_can_use_expires_by_its_purpose(self):
         now = fields.Datetime.now()
         shared, _token = self._issue(cause="share")

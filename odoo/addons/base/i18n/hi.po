@@ -28726,6 +28726,10 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"उन सभी लोगों का रिकॉर्ड बनाएं और मैनेज करें जो इस सिस्टम का इस्तेमाल करेंगे. अगर कोई "
+"व्यक्ति कुछ समय के लिए सिस्टम का उपयोग नहीं करता है, तो आप उसे निष्क्रिय (डिएक्टिवेट) कर "
+"सकते हैं। आप उन्हें अलग-अलग ग्रुप में शामिल कर सकते हैं, ताकि वे सिस्टम में सिर्फ़ उन ऐप्लिकेशन "
+"का इस्तेमाल कर सकें जिनकी उन्हें ज़रूरत है।"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -34105,8 +34109,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -51285,8 +51288,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -59203,17 +59206,6 @@ msgstr ""
 
 #~ msgid "Create a Customer"
 #~ msgstr "ग्राहक बनाएं"
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "उन सभी लोगों का रिकॉर्ड बनाएं और मैनेज करें जो इस सिस्टम का इस्तेमाल करेंगे. अगर कोई "
-#~ "व्यक्ति कुछ समय के लिए सिस्टम का उपयोग नहीं करता है, तो आप उसे निष्क्रिय (डिएक्टिवेट) कर "
-#~ "सकते हैं। आप उन्हें अलग-अलग ग्रुप में शामिल कर सकते हैं, ताकि वे सिस्टम में सिर्फ़ उन ऐप्लिकेशन "
-#~ "का इस्तेमाल कर सकें जिनकी उन्हें ज़रूरत है।"
 
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "अप्रूवल से जुड़े अनुरोध बनाएं और पुष्टि करें"

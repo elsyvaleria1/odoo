@@ -33088,8 +33088,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -49974,8 +49973,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -56767,7 +56766,7 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:base.view_resource_schedule_exception_search
 #: model_terms:ir.ui.view,arch_db:base.view_resource_resource_search
 msgid "Group By"
-msgstr ""
+msgstr "ជា​ក្រុម​តាម"
 
 #. module: base
 #: model:ir.model.fields,help:base.field_uom_uom__factor_inv
@@ -57567,9 +57566,6 @@ msgstr ""
 
 #~ msgid "General"
 #~ msgstr "ទូទៅ"
-
-#~ msgid "Group By"
-#~ msgstr "ជា​ក្រុម​តាម"
 
 #~ msgid "Miscellaneous"
 #~ msgstr "ផ្សេងៗ"

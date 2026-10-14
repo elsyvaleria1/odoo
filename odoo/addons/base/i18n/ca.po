@@ -2801,6 +2801,9 @@ msgid ""
 "Advanced features for the PoS like better views\n"
 "for IoT Box config.\n"
 msgstr ""
+"\n"
+"Característiques avançades per al PoS com millors vistes\n"
+"per a la configuració de l'IoT Box.   \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_agro_partner_scoring
@@ -3379,6 +3382,17 @@ msgid ""
 "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, then select the test\n"
 "and print the report from Print button in header area.\n"
 msgstr ""
+"\n"
+"Asseveracions en comptabilitat.\n"
+"======================\n"
+"Amb aquest mòdul es poden comprovar manualment consistències i "
+"inconsistències del mòdul de comptabilitat des del menú Informes / "
+"Comptabilitat / Tests comptables.\n"
+"\n"
+"Pot escriure una consulta per crear un test de consistència i s'obtindrà el "
+"test en format PDF, que pot ser accedit des del menú Informes / "
+"Comptabilitat / Tests comptables, seleccionant el test i imprimint l'informe "
+"des del botó d'impressió en l'àrea de capçaleres.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_depreciation
@@ -13941,6 +13955,9 @@ msgid ""
 "\n"
 "This module provides the link between quality steps and IoT devices.\n"
 msgstr ""
+"\n"
+"Aquest mòdul proporciona l'enllaç entre els passos de qualitat i els "
+"dispositius IoT. \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_mobile
@@ -16960,14 +16977,14 @@ msgstr "<code>dateutil</code> (mòdul Python)"
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>: entorn en el qual es desencadena l'acció"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>: entorn en el qual es desencadena l'acció"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -16989,6 +17006,8 @@ msgid ""
 "<code>log(message, level='info')</code>: logging function to\n"
 "                                        record debug information in <code>ir.logging</code> table"
 msgstr ""
+"<code>log(message, level='info')</code>: funció de registre per enregistrar "
+"informació de depuració a la taula <code>ir.logging</code>."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -16996,6 +17015,8 @@ msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model del registre en el qual s'activa l'acció; és un "
+"conjunt de registres buit"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17003,6 +17024,8 @@ msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model del registre en el qual s'activa l'acció; és un "
+"conjunt de registres buit"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17017,6 +17040,8 @@ msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
 msgstr ""
+"<code>registre</code>: registre en el qual es desencadena l'acció; pot ser "
+"nul"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -17031,6 +17056,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
 msgstr ""
+"<code>records</code>: conjunt de tots els registres en els que es llença "
+"l'acció en mode múltiple. Pot estar buit."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -17151,6 +17178,8 @@ msgid ""
 "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start the\n"
 "                        process...</span>"
 msgstr ""
+"<span class=\"o_form_label\" colspan=\"2\">Feu clic a Actualitza per iniciar "
+"el procés...</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
@@ -17235,6 +17264,11 @@ msgid ""
 "                                    <span colspan=\"2\">Month: %(month)s</span>\n"
 "                                    <span colspan=\"2\">Day: %(day)s</span>"
 msgstr ""
+"<span colspan=\"2\">Any actual amb segle: %(year)s</span>\n"
+"                                <span colspan=\"2\">Any actual sense segle: %"
+"(y)s</span>\n"
+"                                <span colspan=\"2\">Mes: %(month)s</span>\n"
+"                                <span colspan=\"2\">Dia: %(day)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -17243,6 +17277,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">Dia de l'any: %(doy)s</span>\n"
+"                                <span colspan=\"2\">Setmana de l'any: %"
+"(woy)s</span>\n"
+"                                <span colspan=\"2\">Dia de la setmana "
+"(0:Monday): %(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -17252,6 +17291,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">Hora 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">Hora 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">Minut: %(min)s</span>\n"
+"                                <span colspan=\"2\">Segon: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -17316,6 +17360,11 @@ msgid ""
 "<strong>Important:</strong> The key cannot be retrieved later and provides <b>full\n"
 "                        access</b> to your user account, it is very important to store it securely."
 msgstr ""
+"<strong>Important:</strong>\n"
+"                            La clau no es pot recuperar més endavant i "
+"proporciona <b>accés complet</b>\n"
+"                           Per al teu compte d'usuari, és molt important "
+"emmagatzemar-lo de manera segura."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.res_users_identitycheck_view_form
@@ -17345,6 +17394,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>Aquesta operació esborrarà permanentment totes les dades actualment "
+"desades pels mòduls</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -20848,6 +20899,11 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Un grup és un conjunt d'àrees funcionals que s'assignaran a l'usuari per "
+"donar-li accés i drets a aplicacions específiques i tasques al sistema. "
+"Podeu crear grups personalitzats o modificar els existents per personalitzar "
+"la vista de menús que els usuaris podran veure. La gestió dels permisos de "
+"lectura, escriptura, creació i eliminació es fa des d'aquí."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -21225,6 +21281,9 @@ msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
 "            application, create and manage appraisals for himself and the people he's manager of."
 msgstr ""
+"Un usuari sense cap dret sobre Avaluacions podrà veure l'aplicació, crear i "
+"gestionar avaluacions per a ell i per a les persones de les quals és "
+"responsable."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_wallet
@@ -26457,6 +26516,8 @@ msgid ""
 "Banks are the financial institutions at which you and your contacts have their\n"
 "                accounts."
 msgstr ""
+"Els bancs són les institucions financeres en les quals vostè i els seus "
+"contactes tenen els seus comptes."
 
 #. module: base
 #: model:res.country,name:base.bb
@@ -26664,6 +26725,11 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"Tingueu en compte que no s'aconsella l'edició de l'arquitectura d'una vista "
+"estàndard, ja que els canvis se sobreescriuran durant les futures "
+"actualitzacions dels mòduls.<br/>\n"
+"                        Recomanem aplicar modificacions a les vistes "
+"estàndard mitjançant vistes heretades o personalització amb Odoo Studio."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -27358,6 +27424,8 @@ msgstr "Mòdul pont per notificacions push als assistents a l'esdeveniment"
 #: model:ir.module.module,summary:base.module_website_event_track_live_quiz
 msgid "Bridge module to support quiz features during \"live\" tracks."
 msgstr ""
+"Mòdul pont per donar suport a les funcions de qüestionari durant les pistes "
+"\"en directe\". "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_account_move_template_purchase
@@ -28377,7 +28445,7 @@ msgstr "Canvia contrasenya"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Canvia la manera de mostrar les adreces als informes"
 
 #. module: base
 #. odoo-python
@@ -28631,6 +28699,8 @@ msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
 msgstr ""
+"Trieu una subvista de contactes que només inclou camps d'adreça, per canviar "
+"la forma en què els usuaris poden introduir adreces."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -29260,6 +29330,9 @@ msgid ""
 "Computed fields are defined with the fields <strong>Dependencies</strong>\n"
 "                                    and <strong>Compute</strong>."
 msgstr ""
+"Els camps calculats són definits amb els camps\n"
+"                                                <strong>Dependències</"
+"strong> i <strong>Càlculs</strong>."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__auth_user_client__platform_type__computer
@@ -29562,7 +29635,7 @@ msgstr "Els contactes requereixen un nom"
 msgid ""
 "Contains In-App\n"
 "                            Purchases"
-msgstr ""
+msgstr "Conté compres dins de l'aplicació"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_enterprise
@@ -29972,6 +30045,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"Crea i gestiona les companyies que seran gestionades per Odoo aquí. Les "
+"botigues o subsidiaries també poden ser creades i mantingudes des d'aquí."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -29981,6 +30056,10 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Creeu i gestioneu els usuaris que accediran al sistema. Els usuaris poden "
+"ser desactivats si durant un període de temps no haurien d'accedir al "
+"sistema. Podeu assignar-los-hi grups per tal de que tinguin accés a les "
+"aplicacions que necessiten utilitzar en el sistema."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -30648,6 +30727,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Les vistes personalitzades s'utilitzen quan els usuaris reorganitzen el "
+"contingut de les seves vistes de tauler (mitjançant el client web)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -31220,6 +31301,9 @@ msgid ""
 "Demo data should only be used on test databases!\n"
 "                                Once they are loaded, they cannot be removed!"
 msgstr ""
+"Les dades de demostració només s'han d'utilitzar a les bases\n"
+"                              de dades de prova!\n"
+"Un cop carregats, no es poden treure!"
 
 #. module: base
 #: model:ir.model,name:base.model_ir_demo_failure
@@ -35161,7 +35245,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "Heu oblidat la vostra contrasenya?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -35442,9 +35526,10 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
+"G - COMERÇ A L'ENGROSIOR I AL DETENT; REPARACIÓ DE VEHICLES DE MOTOR I "
+"MOTOCICLETES"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -36635,6 +36720,10 @@ msgid ""
 "Here is your new API key, use it instead of a password for RPC access.\n"
 "                        Your login is still necessary for interactive usage."
 msgstr ""
+"Aquí teniu la vostra nova clau d'API, utilitzeu-la en lloc d'una contrasenya "
+"per accedir a RPC.\n"
+"                            El vostre inici de sessió encara és necessari "
+"per a l'ús interactiu."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__denied_field_ids
@@ -37337,6 +37426,10 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"Si aquesta vista és heretada,\n"
+"* si és cert, la vista sempre estén el seu pare\n"
+"* si és fals, la vista actualment no estén el seu pare, però es pot activar\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -38795,6 +38888,9 @@ msgid ""
 "                        will be the only way to\n"
 "                            identify the key once created</strong>."
 msgstr ""
+"És molt important que aquesta descripció sigui clara\n"
+"                        i completa, <strong>serà l'única manera de\n"
+"                       identifica la clau una vegada creada</strong>."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_it_intrastat
@@ -39979,7 +40075,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_delivery_mondialrelay
 msgid "Let's choose a Point Relais® as shipping address"
-msgstr ""
+msgstr " Triem un Point Relais® com a adreça d'enviament "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
@@ -41096,6 +41192,11 @@ msgid ""
 "            then delete it through the button that appeared. Items can be assigned to specific\n"
 "            groups in order to make them accessible to some users within the system."
 msgstr ""
+"Gestioni i personalitzi els elements disponibles i mostrats en el seu menú "
+"de sistema d'Odoo. Pot esborrar un element prement en la caixa a l'inici de "
+"cada línia i llavors esborrar-ho a través del botó que aparegui. Els "
+"elements poden ser assignats a grups específics per fer-ho accessibles només "
+"a alguns usuaris del sistema."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_slides
@@ -45062,6 +45163,16 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"Només s'aplica si aquesta vista heretada d'una altra (inherit_id no es False/"
+"Null).\n"
+"* Si té extensió (per defecte), quan aquesta vista és sol·licitada, es busca "
+"cap amunt la vista primària més propera (via inherit_id), llavors totes les "
+"vistes heretant d'elles amb el model d'aquesta vista, aplicarà aquests "
+"canvis.\n"
+"* Si la vista primària més propera és totalment resolta (inclús si utilitza "
+"un model diferent de la d'aquesta), llavors s'apliquen les especificacions "
+"d'herència (<xpath/>), i el resultat s'utilitza com si fos de la vista "
+"actual.\n"
 
 #. module: base
 #. odoo-python
@@ -49637,7 +49748,7 @@ msgstr "Restaurant"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "Extensió de restaurant per al Punt de Venda "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -50840,6 +50951,9 @@ msgid ""
 "                        Odoo will propose you to merge only those having\n"
 "                        all these fields in common. (not one of the fields)."
 msgstr ""
+"Seleccioni la llista de camps utilitzada per buscar registres duplicats. Si "
+"selecciona diversos camps, Odoo li proposarà unir només aquells registres "
+"que tinguin tots aquests camps en comú (no un dels camps)."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_model_fields__selectable
@@ -50854,6 +50968,10 @@ msgid ""
 "                            will be redirected to the destination contact.\n"
 "                            You can remove contacts from this list to avoid merging them."
 msgstr ""
+"Els contactes seleccionats seran fusionats.\n"
+"Tots els documents enllaçats en un d'aquests contactes seran redireccionats "
+"al contacte de destí.\n"
+"Pot eliminar els contactes d'aquesta llista per evitar fusionar-los."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_partner_merge__state__selection
@@ -51523,6 +51641,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_link_tracker
 msgid "Shorten URLs and use them to track clicks and UTMs"
 msgstr ""
+"\n"
+"Escurceu els URL i utilitzeu-los per fer un seguiment dels clics i dels UTM\n"
 
 #. module: base
 #: model:ir.model,name:base.model_res_users_apikeys_show
@@ -51650,7 +51770,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "Descomptes simples al punt de venda "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -53058,9 +53178,11 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
+"T - ACTIVITATS DE LES LLARS COM A EMPRESARIALS; ACTIVITATS INDIFERENCIADES "
+"DE PRODUCTES DE BEN I SERVEIS DE LLARS PER A ÚS PROPI"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -54036,6 +54158,9 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"Els assistents de configuració s'utilitzen per ajudar-lo a configurar una "
+"nova instància d'Odoo. Són llençats durant la instal·lació de nous mòduls, "
+"però pots escollir reiniciar algun d'ells manualment des de aquest menú."
 
 #. module: base
 #. odoo-python
@@ -54186,6 +54311,9 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"El camp <strong>Calcula</strong> és el codi Python per a calcular el valor "
+"del camp en un conjunt de registres. El valor del camp ha de ser assignat a "
+"cada registre amb un diccionari."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -55108,6 +55236,10 @@ msgid ""
 "file encoding, please be sure to view and edit\n"
 "                            using the same encoding."
 msgstr ""
+"El fitxer es va generar utilitzant la codificació de fitxer universal "
+"<strong>Unicode/UTF-8</strong>, si us plau, assegureu-vos de veure i "
+"modificar-lo\n"
+"                           utilitzant la mateixa codificació."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_actions_act_window__views
@@ -57331,6 +57463,8 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"Usar grups per a organitzar països que són sovint seleccionat junts (e.g "
+"\"LATAM\", \"Benelux\", \"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -57938,6 +58072,8 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"L'entrada 'Vistes' us permet personalitzar cada vista d'Odoo. Podeu afegir "
+"nous camps, moure'ls, canviar-los de nom o esborrar els que no necessiteu"
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -58612,6 +58748,10 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"Quan les subseqüències per rang de data són utilitzades, tu podràs prefixar "
+"les variables amb 'range_'\n"
+"per utilitzar l'inici del rang en lloc de la data actual, p.ex. %"
+"(range_year)s en lloc de %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -59346,6 +59486,8 @@ msgid ""
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
 msgstr ""
+"Podrà definir regles d'accés addicionals editant el recentment creat usuari "
+"sota el menú Configuració / Usuaris."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -59735,6 +59877,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"for record in self:\n"
+"        record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -59753,6 +59897,9 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"s'ha instal·lat correctament.\n"
+"                           Els usuaris poden triar el seu idioma preferit a "
+"les seves preferències."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -61457,40 +61604,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Advanced features for the PoS like better views \n"
-#~ "for IoT Box config.   \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Característiques avançades per al PoS com millors vistes\n"
-#~ "per a la configuració de l'IoT Box.   \n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "With this module you can manually check consistencies and inconsistencies of "
-#~ "accounting module from menu Reporting/Accounting/Accounting Tests.\n"
-#~ "\n"
-#~ "You can write a query in order to create Consistency Test and you will get "
-#~ "the result of the test \n"
-#~ "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, "
-#~ "then select the test \n"
-#~ "and print the report from Print button in header area.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Asseveracions en comptabilitat.\n"
-#~ "======================\n"
-#~ "Amb aquest mòdul es poden comprovar manualment consistències i "
-#~ "inconsistències del mòdul de comptabilitat des del menú Informes / "
-#~ "Comptabilitat / Tests comptables.\n"
-#~ "\n"
-#~ "Pot escriure una consulta per crear un test de consistència i s'obtindrà el "
-#~ "test en format PDF, que pot ser accedit des del menú Informes / "
-#~ "Comptabilitat / Tests comptables, seleccionant el test i imprimint l'informe "
-#~ "des del botó d'impressió en l'àrea de capçaleres.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Bridge module for mail and enterprise\n"
 #~ "=====================================\n"
 #~ "\n"
@@ -61629,13 +61742,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Shorten URLs and use them to track clicks and UTMs\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Escurceu els URL i utilitzeu-los per fer un seguiment dels clics i dels UTM\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module adds required base code for a fully integrated customer portal.\n"
 #~ "It contains the base controller class and base templates. Business addons\n"
 #~ "will add their specific templates and controllers to extend the customer\n"
@@ -61665,14 +61771,6 @@ msgstr ""
 #~ msgstr ""
 #~ "\n"
 #~ "Aquest mòdul proporciona la gestió dels vostres rètols IoT dins d'Odoo.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "This module provides the link between quality steps and IoT devices. \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Aquest mòdul proporciona l'enllaç entre els passos de qualitat i els "
-#~ "dispositius IoT. \n"
 
 #~ msgid ""
 #~ "\n"
@@ -61709,9 +61807,6 @@ msgstr ""
 #~ "* Afegeix serveis, valors de l'hodòmetre per a tots els vehicles\n"
 #~ "* Mostra tots els costos associats a un vehicle o a un tipus de servei\n"
 #~ "* Gràfic d'anàlisi de costos\n"
-
-#~ msgid " Let's choose a Point Relais® as shipping address "
-#~ msgstr " Triem un Point Relais® com a adreça d'enviament "
 
 #~ msgid "# Access Rights"
 #~ msgstr "# Drets d'accés"
@@ -61754,36 +61849,6 @@ msgstr ""
 #~ msgstr ""
 #~ "<a href=\"#\" class=\"btn btn-primary o_translate_inline\">Saber-ne més</a>"
 
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>: entorn en el qual es desencadena l'acció"
-
-#~ msgid ""
-#~ "<code>log(message, level='info')</code>: logging function to record debug "
-#~ "information in <code>ir.logging</code> table"
-#~ msgstr ""
-#~ "<code>log(message, level='info')</code>: funció de registre per enregistrar "
-#~ "informació de depuració a la taula <code>ir.logging</code>."
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr ""
-#~ "<code>model</code>: model del registre en el qual s'activa l'acció; és un "
-#~ "conjunt de registres buit"
-
-#~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr ""
-#~ "<code>registre</code>: registre en el qual es desencadena l'acció; pot ser "
-#~ "nul"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr ""
-#~ "<code>records</code>: conjunt de tots els registres en els que es llença "
-#~ "l'acció en mode múltiple. Pot estar buit."
-
 #~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
@@ -61817,57 +61882,11 @@ msgstr ""
 #~ "label=\"Info\" title=\"Info\"/>"
 
 #~ msgid ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start "
-#~ "the process...</span>"
-#~ msgstr ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Feu clic a Actualitza per iniciar "
-#~ "el procés...</span>"
-
-#~ msgid ""
 #~ "<span class=\"o_form_label\">We suggest to reload the menu tab to see the "
 #~ "new menus (Ctrl+T then Ctrl+R).\"</span>"
 #~ msgstr ""
 #~ "<span class=\"o_form_label\">Suggerim tornar a carregar la pestanya del menú "
 #~ "per veure els menús nous (Ctrl+T i Ctrl+R).\"</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Current Year with Century: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Current Year without "
-#~ "Century: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Month: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Day: %(day)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Any actual amb segle: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Any actual sense segle: %"
-#~ "(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Mes: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Dia: %(day)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Dia de l'any: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Setmana de l'any: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Dia de la setmana "
-#~ "(0:Monday): %(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Hora 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hora 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minut: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Segon: %(sec)s</span>"
 
 #~ msgid "<span>, </span>"
 #~ msgstr "<span>, </span>"
@@ -61908,19 +61927,6 @@ msgstr ""
 #~ msgid "<strong>Idx</strong>"
 #~ msgstr "<strong>Idx</strong>"
 
-#~ msgid ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            The key cannot be retrieved later and provides "
-#~ "<b>full access</b>\n"
-#~ "                            to your user account, it is very important to "
-#~ "store it securely."
-#~ msgstr ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            La clau no es pot recuperar més endavant i "
-#~ "proporciona <b>accés complet</b>\n"
-#~ "                           Per al teu compte d'usuari, és molt important "
-#~ "emmagatzemar-lo de manera segura."
-
 #~ msgid "<strong>Inherited</strong>"
 #~ msgstr "<strong>Heretat</strong>"
 
@@ -61947,13 +61953,6 @@ msgstr ""
 
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>Seq</strong>"
-
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>Aquesta operació esborrarà permanentment totes les dades actualment "
-#~ "desades pels mòduls</strong>"
 
 #~ msgid "<strong>Tr</strong>"
 #~ msgstr "<strong>Tr</strong>"
@@ -61982,20 +61981,6 @@ msgstr ""
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>Vistes</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Un grup és un conjunt d'àrees funcionals que s'assignaran a l'usuari per "
-#~ "donar-li accés i drets a aplicacions específiques i tasques al sistema. "
-#~ "Podeu crear grups personalitzats o modificar els existents per personalitzar "
-#~ "la vista de menús que els usuaris podran veure. La gestió dels permisos de "
-#~ "lectura, escriptura, creació i eliminació es fa des d'aquí."
-
 #~ msgid "A module to generate exceptions."
 #~ msgstr "Un mòdul per a generar excepcions."
 
@@ -62022,14 +62007,6 @@ msgstr ""
 #~ "Una organització educativa i científica internacional sense ànim de lucre, "
 #~ "que acull tres departaments (aeronàutica i aeroespacial, medi ambient i "
 #~ "dinàmica de fluids aplicada, i turbomàquines i propulsió)."
-
-#~ msgid ""
-#~ "A user without any rights on Appraisals will be able to see the application, "
-#~ "create and manage appraisals for himself and the people he's manager of."
-#~ msgstr ""
-#~ "Un usuari sense cap dret sobre Avaluacions podrà veure l'aplicació, crear i "
-#~ "gestionar avaluacions per a ell i per a les persones de les quals és "
-#~ "responsable."
 
 #~ msgid "A valid email is required for find_or_create to work properly."
 #~ msgstr ""
@@ -62202,13 +62179,6 @@ msgstr ""
 #~ msgid "Bakery"
 #~ msgstr "Pastisseria"
 
-#~ msgid ""
-#~ "Banks are the financial institutions at which you and your contacts have "
-#~ "their accounts."
-#~ msgstr ""
-#~ "Els bancs són les institucions financeres en les quals vostè i els seus "
-#~ "contactes tenen els seus comptes."
-
 #~ msgid "Bar & Pub"
 #~ msgstr "Bar i pub"
 
@@ -62220,18 +62190,6 @@ msgstr ""
 
 #~ msgid "Basic models and helpers to support Internet of Things."
 #~ msgstr "Models i assistents que donen suport a la Internet de les Coses."
-
-#~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "Tingueu en compte que no s'aconsella l'edició de l'arquitectura d'una vista "
-#~ "estàndard, ja que els canvis se sobreescriuran durant les futures "
-#~ "actualitzacions dels mòduls.<br/>\n"
-#~ "                        Recomanem aplicar modificacions a les vistes "
-#~ "estàndard mitjançant vistes heretades o personalització amb Odoo Studio."
 
 #~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
@@ -62276,11 +62234,6 @@ msgstr ""
 #~ msgid "Bridge module for project_enterprise and hr"
 #~ msgstr "Mòdul pont per a project_enterprise i hr"
 
-#~ msgid "Bridge module to support quiz features during \"live\" tracks. "
-#~ msgstr ""
-#~ "Mòdul pont per donar suport a les funcions de qüestionari durant les pistes "
-#~ "\"en directe\". "
-
 #~ msgid "By default the widget uses the field information"
 #~ msgstr "Per defecte, el giny utilitza la informació del camp"
 
@@ -62304,9 +62257,6 @@ msgstr ""
 #~ "Francisco) en la seva totalitat i no inclou cap cost relacionat amb la "
 #~ "legislació del país on es troba el client."
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Canvia la manera de mostrar les adreces als informes"
-
 #~ msgid "Checksum/SHA1"
 #~ msgstr "Suma verificació/SHA1"
 
@@ -62316,13 +62266,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Les accions de servidor filles que seran executades. Tingueu en compte que "
 #~ "l'últim valor tornat serà utilitzat com valor de retorn global."
-
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr ""
-#~ "Trieu una subvista de contactes que només inclou camps d'adreça, per canviar "
-#~ "la forma en què els usuaris poden introduir adreces."
 
 #~ msgid "Cleaning Services"
 #~ msgstr "Serveis de neteja"
@@ -62365,15 +62308,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "Computed fields are defined with the fields\n"
-#~ "                                                <strong>Dependencies</"
-#~ "strong> and <strong>Compute</strong>."
-#~ msgstr ""
-#~ "Els camps calculats són definits amb els camps\n"
-#~ "                                                <strong>Dependències</"
-#~ "strong> i <strong>Càlculs</strong>."
-
-#~ msgid ""
-#~ "Computed fields are defined with the fields\n"
 #~ "                                    <strong>Dependencies</strong> and "
 #~ "<strong>Compute</strong>."
 #~ msgstr ""
@@ -62412,9 +62346,6 @@ msgstr ""
 #~ msgid "Consulting Services"
 #~ msgstr "Serveis de consultoria"
 
-#~ msgid "Contains In-App Purchases"
-#~ msgstr "Conté compres dins de l'aplicació"
-
 #~ msgid "Corporate Gifts"
 #~ msgstr "Regals corporatius"
 
@@ -62434,24 +62365,6 @@ msgstr ""
 #~ msgid "Create a Customer"
 #~ msgstr "Crear un client"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "Crea i gestiona les companyies que seran gestionades per Odoo aquí. Les "
-#~ "botigues o subsidiaries també poden ser creades i mantingudes des d'aquí."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Creeu i gestioneu els usuaris que accediran al sistema. Els usuaris poden "
-#~ "ser desactivats si durant un període de temps no haurien d'accedir al "
-#~ "sistema. Podeu assignar-los-hi grups per tal de que tinguin accés a les "
-#~ "aplicacions que necessiten utilitzar en el sistema."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "Crea i valida sol·licituds d'aprovació"
 
@@ -62466,13 +62379,6 @@ msgstr ""
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "Gestió de les relacions amb el client"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Les vistes personalitzades s'utilitzen quan els usuaris reorganitzen el "
-#~ "contingut de les seves vistes de tauler (mitjançant el client web)"
 
 #~ msgid "Dash"
 #~ msgstr "Tauler"
@@ -62543,14 +62449,6 @@ msgstr ""
 
 #~ msgid "Delete Access"
 #~ msgstr "Suprimeix accés"
-
-#~ msgid ""
-#~ "Demo data should only be used on test databases!\n"
-#~ "                             Once they are loaded, they cannot be removed!"
-#~ msgstr ""
-#~ "Les dades de demostració només s'han d'utilitzar a les bases\n"
-#~ "                              de dades de prova!\n"
-#~ "Un cop carregats, no es poden treure!"
 
 #~ msgid "Desk Manufacturers"
 #~ msgstr "Fabricantes de escritorios"
@@ -62722,9 +62620,6 @@ msgstr ""
 #~ "Per raons de seguretat, no pots unir més de 3 contactes en un. Pot tornar a "
 #~ "obrir l'assistent totes les vegades que necessitis."
 
-#~ msgid "Forgot password?"
-#~ msgstr "Heu oblidat la vostra contrasenya?"
-
 #~ msgid "Formatting: long, short, narrow (not used for digital)"
 #~ msgstr "Format: llarg, curt, estret (no s'utilitza per a digital)"
 
@@ -62739,12 +62634,6 @@ msgstr ""
 
 #~ msgid "Furniture Store"
 #~ msgstr "Botiga de mobles"
-
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr ""
-#~ "G - COMERÇ A L'ENGROSIOR I AL DETENT; REPARACIÓ DE VEHICLES DE MOTOR I "
-#~ "MOTOCICLETES"
 
 #~ msgid "Gallery"
 #~ msgstr "Galeria"
@@ -62838,16 +62727,6 @@ msgstr ""
 #~ msgid "Height"
 #~ msgstr "Alçada"
 
-#~ msgid ""
-#~ "Here is your new API key, use it instead of a password for RPC access.\n"
-#~ "                            Your login is still necessary for interactive "
-#~ "usage."
-#~ msgstr ""
-#~ "Aquí teniu la vostra nova clau d'API, utilitzeu-la en lloc d'una contrasenya "
-#~ "per accedir a RPC.\n"
-#~ "                            El vostre inici de sessió encara és necessari "
-#~ "per a l'ús interactiu."
-
 #~ msgid "Hidden"
 #~ msgstr "Ocult"
 
@@ -62910,18 +62789,6 @@ msgstr ""
 #~ msgstr "Si s'estableix, l'acció enllaçada només s'aplica a aquest usuari."
 
 #~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "Si aquesta vista és heretada,\n"
-#~ "* si és cert, la vista sempre estén el seu pare\n"
-#~ "* si és fals, la vista actualment no estén el seu pare, però es pot activar\n"
-#~ "         "
-
-#~ msgid ""
 #~ "If user belongs to several groups, the results from step 2 are combined with "
 #~ "logical OR operator"
 #~ msgstr ""
@@ -62982,15 +62849,6 @@ msgstr ""
 
 #~ msgid "IoT"
 #~ msgstr "IoT"
-
-#~ msgid ""
-#~ "It is very important that this description be clear\n"
-#~ "                        and complete, <strong>it will be the only way to\n"
-#~ "                        identify the key once created</strong>."
-#~ msgstr ""
-#~ "És molt important que aquesta descripció sigui clara\n"
-#~ "                        i completa, <strong>serà l'única manera de\n"
-#~ "                       identifica la clau una vegada creada</strong>."
 
 #~ msgid ""
 #~ "It provides post-graduate education in fluid dynamics\n"
@@ -63087,19 +62945,6 @@ msgstr ""
 
 #~ msgid "Manage accounting with fleets"
 #~ msgstr "Gestionar la comptabilitat amb els parcs automobilístics"
-
-#~ msgid ""
-#~ "Manage and customize the items available and displayed in your Odoo system "
-#~ "menu. You can delete an item by clicking on the box at the beginning of each "
-#~ "line and then delete it through the button that appeared. Items can be "
-#~ "assigned to specific groups in order to make them accessible to some users "
-#~ "within the system."
-#~ msgstr ""
-#~ "Gestioni i personalitzi els elements disponibles i mostrats en el seu menú "
-#~ "de sistema d'Odoo. Pot esborrar un element prement en la caixa a l'inici de "
-#~ "cada línia i llavors esborrar-ho a través del botó que aparegui. Els "
-#~ "elements poden ser assignats a grups específics per fer-ho accessibles només "
-#~ "a alguns usuaris del sistema."
 
 #~ msgid "Manage your fleet and track car costs"
 #~ msgstr ""
@@ -63440,30 +63285,6 @@ msgstr ""
 
 #~ msgid "Online Appointment"
 #~ msgstr "Cita online"
-
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "Només s'aplica si aquesta vista heretada d'una altra (inherit_id no es False/"
-#~ "Null).\n"
-#~ "* Si té extensió (per defecte), quan aquesta vista és sol·licitada, es busca "
-#~ "cap amunt la vista primària més propera (via inherit_id), llavors totes les "
-#~ "vistes heretant d'elles amb el model d'aquesta vista, aplicarà aquests "
-#~ "canvis.\n"
-#~ "* Si la vista primària més propera és totalment resolta (inclús si utilitza "
-#~ "un model diferent de la d'aquesta), llavors s'apliquen les especificacions "
-#~ "d'herència (<xpath/>), i el resultat s'utilitza com si fos de la vista "
-#~ "actual.\n"
 
 #~ msgid "Open Sans"
 #~ msgstr "Obre Sans"
@@ -63816,9 +63637,6 @@ msgstr ""
 #~ msgid "Report Layout"
 #~ msgstr "Disseny de l'informe"
 
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "Extensió de restaurant per al Punt de Venda "
-
 #~ msgid "Roboto"
 #~ msgstr "Roboto"
 
@@ -63889,33 +63707,6 @@ msgstr ""
 #~ msgid "See http://openerp.com"
 #~ msgstr "Mireu http://openerp.com"
 
-#~ msgid ""
-#~ "Select the list of fields used to search for\n"
-#~ "                            duplicated records. If you select several "
-#~ "fields,\n"
-#~ "                            Odoo will propose you to merge only those "
-#~ "having\n"
-#~ "                            all these fields in common. (not one of the "
-#~ "fields)."
-#~ msgstr ""
-#~ "Seleccioni la llista de camps utilitzada per buscar registres duplicats. Si "
-#~ "selecciona diversos camps, Odoo li proposarà unir només aquells registres "
-#~ "que tinguin tots aquests camps en comú (no un dels camps)."
-
-#~ msgid ""
-#~ "Selected contacts will be merged together.\n"
-#~ "                                All documents linked to one of these "
-#~ "contacts\n"
-#~ "                                will be redirected to the destination "
-#~ "contact.\n"
-#~ "                                You can remove contacts from this list to "
-#~ "avoid merging them."
-#~ msgstr ""
-#~ "Els contactes seleccionats seran fusionats.\n"
-#~ "Tots els documents enllaçats en un d'aquests contactes seran redireccionats "
-#~ "al contacte de destí.\n"
-#~ "Pot eliminar els contactes d'aquesta llista per evitar fusionar-los."
-
 #~ msgid "Self"
 #~ msgstr "Si mateix"
 
@@ -63945,9 +63736,6 @@ msgstr ""
 
 #~ msgid "Short"
 #~ msgstr "Curt"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "Descomptes simples al punt de venda "
 
 #~ msgid "Slash"
 #~ msgstr "Slash"
@@ -63981,13 +63769,6 @@ msgstr ""
 
 #~ msgid "Surveying & Mapping"
 #~ msgstr "Topografia i cartografia"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr ""
-#~ "T - ACTIVITATS DE LES LLARS COM A EMPRESARIALS; ACTIVITATS INDIFERENCIADES "
-#~ "DE PRODUCTES DE BEN I SERVEIS DE LLARS PER A ÚS PROPI"
 
 #~ msgid "TOTPortal"
 #~ msgstr "TOTPortal"
@@ -64043,27 +63824,6 @@ msgstr ""
 #~ msgstr ""
 #~ "L'empresa %(company_name)s no es pot arxivar perquè encara s'utilitza com a "
 #~ "empresa per defecte dels usuaris de %(active_users)s."
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "Els assistents de configuració s'utilitzen per ajudar-lo a configurar una "
-#~ "nova instància d'Odoo. Són llençats durant la instal·lació de nous mòduls, "
-#~ "però pots escollir reiniciar algun d'ells manualment des de aquest menú."
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "El camp <strong>Calcula</strong> és el codi Python per a calcular el valor "
-#~ "del camp en un conjunt de registres. El valor del camp ha de ser assignat a "
-#~ "cada registre amb un diccionari."
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -64249,13 +64009,6 @@ msgstr ""
 #~ msgid "Use comma instead of the <br> tag to display the address"
 #~ msgstr "Utilitzeu comes en lloc de <br> etiqueta per mostrar l'adreça"
 
-#~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "Usar grups per a organitzar països que són sovint seleccionat junts (e.g "
-#~ "\"LATAM\", \"Benelux\", \"ASEAN\")."
-
 #~ msgid "Username"
 #~ msgstr "Nom d'usuari"
 
@@ -64267,13 +64020,6 @@ msgstr ""
 
 #~ msgid "View and create reports"
 #~ msgstr "Veure i crear informes"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "L'entrada 'Vistes' us permet personalitzar cada vista d'Odoo. Podeu afegir "
-#~ "nous camps, moure'ls, canviar-los de nom o esborrar els que no necessiteu"
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -64327,17 +64073,6 @@ msgstr ""
 #~ "Quan per un correu no s'especifica un servidor de correu en concret, "
 #~ "s'utilitza el de major prioritat. La prioritat per defecte és 10 (número més "
 #~ "petit = més prioritat)"
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "Quan les subseqüències per rang de data són utilitzades, tu podràs prefixar "
-#~ "les variables amb 'range_'\n"
-#~ "per utilitzar l'inici del rang en lloc de la data actual, p.ex. %"
-#~ "(range_year)s en lloc de %(year)s."
 
 #~ msgid "Whether this contact is an Employee."
 #~ msgstr "Si aquest contacte és un empleat."
@@ -64453,13 +64188,6 @@ msgstr ""
 #~ "Heu d'actualitzar aquest document per reflectir les vostres termes i "
 #~ "condicions."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr ""
-#~ "Podrà definir regles d'accés addicionals editant el recentment creat usuari "
-#~ "sota el menú Configuració / Usuaris."
-
 #~ msgid "Your conditions..."
 #~ msgstr "Les teves condicions..."
 
@@ -64516,24 +64244,8 @@ msgstr ""
 #~ msgid "float"
 #~ msgstr "nombre real"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "format() s'ha de donar exactament un especificador de format %char"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "s'ha instal·lat correctament.\n"
-#~ "                           Els usuaris poden triar el seu idioma preferit a "
-#~ "les seves preferències."
 
 #~ msgid "hour"
 #~ msgstr "hora"
@@ -67564,16 +67276,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Ja hi ha un filtre compartit per defecte per a %(model)s, elimina'l o "
 #~ "canvia'l abans de configurar un altre per defecte"
-
-#~ msgid ""
-#~ "This file was generated using the universal <strong>Unicode/UTF-8</"
-#~ "strong> file encoding, please be sure to view and edit\n"
-#~ "                           using the same encoding."
-#~ msgstr ""
-#~ "El fitxer es va generar utilitzant la codificació de fitxer universal "
-#~ "<strong>Unicode/UTF-8</strong>, si us plau, assegureu-vos de veure i "
-#~ "modificar-lo\n"
-#~ "                           utilitzant la mateixa codificació."
 
 #~ msgid "This model is used to make a bridge between Appraisal and Contract"
 #~ msgstr "Aquest model s'utilitza per fer un pont entre Avaluació i Contracte"

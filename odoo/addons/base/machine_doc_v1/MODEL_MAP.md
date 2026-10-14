@@ -521,7 +521,7 @@ counters are the server's.
 - `state` (Selection, computed and searchable: live, expired, revoked), `use_ids` (One2many → access.link.use)
 
 **Key Methods:**
-- `_issue(record, partner=, role=, audience=, date_to=, cause=, ...)`, `_issue_each`, `_issue_each_new`, `_issue_many` — a live link and its token, the same one again for the same person, role, audience and cause; a link that follows its record's date takes the expiry from the record (`_get_link_expiry`), never from the caller, and minting one rewrites the rows that hold that date (`_lock_record_dates`; `_get_link_date_records` names them where the date is another record's, as an attendee's is its meeting's), so a concurrent move of the date and the issue cannot both commit
+- `_issue(record, partner=, role=, audience=, date_to=, cause=, ...)`, `_issue_each`, `_issue_each_new`, `_issue_many` — a live link and its token, the same one again for the same person, role, audience and cause; a link that follows its record's date takes the expiry from the record (`_get_link_expiry`), never from the caller, and minting one rewrites the rows that hold that date (`_lock_record_dates`; `_get_link_date_records` names them where the date is another record's, as an attendee's is its meeting's), so a concurrent move of the date and the issue cannot both commit; a link handed out again by any of them lasts its cause's lifetime from that moment (`_update_reissued_expiry`), unless it follows its record's date, was asked for at a given date, or has its expiry waived
 - `_get_latest_date_to(cause)` — the expiry of a link issued now for `cause` that follows no date of its record
 - `_sync_record_expiries(*recordsets)` — the live links that follow those records' date move to it, earlier or later: called where a module writes the date (calendar, sign, survey, planning, hr_contract_salary)
 - `_resolve(token, model=, res_id=, role=, action=)` — the one door: hash, indexed lookup, record, revocation, expiry, role, the record's own refusal (`_record_refusal`, a model whose setting closes a record to links, read on every presentation) and audience; every refusal is `LinkRefused`, a link for signed-in people met by a visitor `LinkLoginRequired`; records the use
@@ -551,8 +551,9 @@ reviewers; never the person the item is about, the access administrators
 when nobody else is left), a `date_deadline` and `on_deadline` (revoke for
 eligibilities, links and exceptions; keep and escalate otherwise).
 `action_start()` creates the items; the daily cron `_cron_close_due()`
-starts planned drafts, closes due reviews applying `on_deadline`, and a
-review with `recurrence_months` plans its next one. Three drafts ship
+starts planned drafts, closes due reviews applying `on_deadline` (a decision
+of the deadline, taken whoever closes the review, the subject of an item
+included), and a review with `recurrence_months` plans its next one. Three drafts ship
 (administrators, links issued by hand, exceptions ending soon) and start only
 when someone plans them. A closed break-glass session is an item of the
 running break-glass review (`_review_break_glass`), its target the
@@ -1511,7 +1512,9 @@ inherited grants stop, and the (field, value) a node matches to hold children.
 nearest boundary and the node itself. `access_role` is the role the current
 user holds: its search and its compute read the reach table (below), so nothing
 about grants is read when the domain is built. `_access_graph_sources()` lists
-every grant and owner that reaches a record. An adopter composes its own terms
+every grant and owner that reaches a record, and `_access_graph_group_ranks(group)`
+the role one group's grants give, both counting what a node above holds only where
+that node is a container, as the reach does. An adopter composes its own terms
 with `_access_graph_domain(role, groups=, exclude_groups=, partner=, owner=)`,
 the records reached at the role or above, and `_access_graph_reach(role,
 **options)` adds the label cap. A search for adjacent bands of `access_role`
@@ -1989,10 +1992,10 @@ User accounts — inherits all partner fields.
 - `SELF_WRITEABLE_FIELDS` — Fields writable by user on own record
 
 **Key Methods:**
-- `_login(db, credential, user_agent_env)` — Authenticate user
+- `_login(credential, user_agent_env)` — Authenticate user: the login is looked up among active accounts whatever the caller's context
 - `_login_unknown(credential, user_agent_env)` — hook: sign in a login no active account carries (LDAP), run inside the cooldown and never at a keys-only door
 - `_authenticate_credentials(credential, env)` — Verify credentials
-- `authenticate(db, credential, user_agent_env)` — Full auth flow
+- `authenticate(credential, user_agent_env)` — Full auth flow; `@api.private`: the HTTP session and the `common` RPC service call it, no RPC door does
 - `check_identity(fn)` — Decorator requiring password re-verification
 - `_is_admin()`, `_is_system()`, `_is_superuser()` — Access level checks
 - `has_group(group_ext_id)` — Check if user belongs to group
@@ -2048,7 +2051,7 @@ API key management with custom SQL table (encrypted key storage).
 
 **Key Methods:**
 - `_match_key(scope, key)` — `(user_id, expiration)` of a live key at the door of `scope`
-- `_authenticate_credentials(*, scope, key)` — the key's user at that door, or None
+- `_get_user_id_for_key(*, scope, key)` — the key's user at that door, or None
 - `_generate(scope, name, expiration_date)` — Generate and store key; the scope is required, declared and active (the key wizard defaults it to `rpc`)
 - `_gc_user_apikeys()` — Autovacuum expired keys
 
@@ -2382,7 +2385,7 @@ unclassified until a fresh login. `session_generation` revokes prior bindings.
 
 **Key Methods:**
 - `_bind_session()` — mandatory binding during completed login
-- `_is_session_valid()` — fresh primary validation of client/user generations and association
+- `_is_session_valid()` — fresh primary validation of client/user generations and association; a service principal's session is never valid
 - `_observe()` — optional activity summaries; cannot create bindings or reactivate clients
 - `_end_sessions()` — increment generation, end associations and attempt store cleanup
 - `revoke()` / `_revoke()` — end sessions and invoke credential-forgetting extensions
@@ -2708,7 +2711,7 @@ source records onto the destination, then absorb the source values.
 
 Contract for anything that publishes a KPI summary.
 
-**Key Methods:** `get_kpi_summary()` — Override to return this provider's KPIs
+**Key Methods:** `get_kpi_summary()` — Override to return this provider's KPIs; answered to a system administrator (or the superuser) alone, since a provider counts across every company, and refused with `AccessError` before any override runs
 
 ---
 

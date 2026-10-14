@@ -542,6 +542,13 @@ class AccessLink(models.Model):
         )
         if token:
             _debug.logic("link.reused", link=reusable.id, model=record._name)
+            if not waive_expiry:
+                self.with_privilege(
+                    "base.privilege_manage_links",
+                    reason=f"hand a link to {record._name} out again",
+                ).browse(reusable.ids)._update_reissued_expiry(
+                    date_to or self._get_latest_date_to(cause)
+                )
             return reusable, token
         partner = partner or self.env["res.partner"]
         if self._is_dated_by_record(record, cause):
@@ -608,6 +615,7 @@ class AccessLink(models.Model):
         if found:
             shown = found._tokens()
             partner_of = {record.id: record[partner_field].id for record in records}
+            reused = issuer.browse()
             for link in found:
                 if (
                     link.res_id not in tokens
@@ -615,6 +623,8 @@ class AccessLink(models.Model):
                     and (token := shown.get(link.id))
                 ):
                     tokens[link.res_id] = token
+                    reused |= link
+            reused._update_reissued_expiry(self._get_latest_date_to(cause))
         missing = records.filtered(lambda record: record.id not in tokens)
         tokens.update(
             issuer._create_each(
@@ -722,9 +732,12 @@ class AccessLink(models.Model):
             order="id desc",
         )
         shown = found._tokens()
+        reused = issuer.browse()
         for link in found:
             if link.partner_id.id not in tokens and (token := shown.get(link.id)):
                 tokens[link.partner_id.id] = token
+                reused |= link
+        reused._update_reissued_expiry(date_to)
         vals_list = []
         company = self._record_company(record)
         for partner in partners.filtered(lambda p: p.id not in tokens):
@@ -754,6 +767,17 @@ class AccessLink(models.Model):
                 "link.issued_many", model=record._name, count=len(vals_list)
             )
         return tokens
+
+    def _update_reissued_expiry(self, date_to: datetime) -> None:
+        stale = self.filtered(
+            lambda link: (
+                not (link.dated_by_record or link.expiry_waived)
+                and link.date_to
+                and link.date_to < date_to
+            )
+        )
+        if stale:
+            stale.write({"date_to": date_to})
 
     @api.model
     def _record_companies(self, records: models.BaseModel) -> dict[int, int]:

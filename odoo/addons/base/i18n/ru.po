@@ -2530,6 +2530,18 @@ msgid ""
 "        - Operations through electronic interfaces (IED)\n"
 "        - Invoices done with KSef\n"
 msgstr ""
+"\n"
+"Бухгалтерские отчеты для Польши\n"
+"\n"
+"        Этот модуль также предоставляет возможность генерировать JPK_VAT в "
+"формате XML для Польши.\n"
+"\n"
+"        На данный момент не отображаются конкретные значения для:\n"
+"        - Кассового метода для записей с входным налогом (MK)\n"
+"        - Операций на основе маржи (MR_T/MR_UZ)\n"
+"        - Счетов для сельскохозяйственной продукции (VAT_RR)\n"
+"        - Операций через электронные интерфейсы (IED)\n"
+"        - Счетов-фактур, оформленных через KSef \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pt_reports
@@ -3331,6 +3343,9 @@ msgid ""
 "Advanced features for the PoS like better views\n"
 "for IoT Box config.\n"
 msgstr ""
+"\n"
+"Расширенные функции для POS, такие как улучшенные представления\n"
+"для настройки IoT Box.   \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_agro_partner_scoring
@@ -3616,6 +3631,11 @@ msgid ""
 "===========================================================\n"
 "Additional information is displayed in the name of the SOL when it is used in services apps (project and planning).\n"
 msgstr ""
+"\n"
+"Разрешить отображать информацию о продажах в приложениях SOL services\n"
+"===========================================================\n"
+"Дополнительная информация отображается в названии SOL при использовании в "
+"приложениях услуг (проект и планирование). \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_purchase_edi_ubl_bis3
@@ -3989,6 +4009,18 @@ msgid ""
 "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, then select the test\n"
 "and print the report from Print button in header area.\n"
 msgstr ""
+"\n"
+"Проверка бухгалтерского учета.\n"
+"======================\n"
+"С помощью этого модуля вы можете вручную проверять согласованность и "
+"несогласованность модуля учета через меню Отчетность/Бухгалтерия/Тесты "
+"учета.\n"
+"\n"
+"Вы можете написать запрос для создания теста на согласованность и получить "
+"результат теста\n"
+"в формате PDF, доступ к которому можно получить через меню Отчетность -> "
+"Тесты учета, затем выбрать тест\n"
+"и распечатать отчет с помощью кнопки Print в области заголовка.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_depreciation
@@ -5825,6 +5857,9 @@ msgid ""
 "Configure IoT devices to be used in certain\n"
 "steps for taking measures, taking pictures, ...\n"
 msgstr ""
+"\n"
+"Настройка IoT-устройств для использования на определенных\n"
+"этапах для измерений, фотографирования и т.д.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_databases
@@ -9595,6 +9630,13 @@ msgid ""
 "It is like a regular invoice, but we need to keep track of the link with the original invoice.\n"
 "The wizard used is similar as the one for the credit note.\n"
 msgstr ""
+"\n"
+"Во многих странах дебетовая нота используется для увеличения суммы "
+"существующего счёта-фактуры\n"
+"или в некоторых особых случаях для аннулирования кредитной ноты.\n"
+"Она похожа на обычный счёт-фактуру, но необходимо отслеживать связь с "
+"исходным счётом-фактурой.\n"
+"Используемый мастер аналогичен мастеру для кредитной ноты.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_dk_nemhandel_response
@@ -9978,6 +10020,17 @@ msgid ""
 "case the sale orders should be\n"
 "split per delivery.\n"
 msgstr ""
+"\n"
+"Управление запасами для Avatax\n"
+"=======================================\n"
+"Этот модуль позволяет использовать адреса на уровне строк при получении "
+"налогов из Avatax.\n"
+"\n"
+"Текущим ограничением является одна строка заказа с несколькими перемещениями "
+"запасов (например, 10 единиц\n"
+"продукта A, 2 отправлены со склада №1 и 8 со склада №2). В этом случае "
+"заказы на продажу необходимо\n"
+"разделять по доставкам.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account
@@ -13013,6 +13066,22 @@ msgid ""
 "For more information about RIBA standards, refer to the guidelines issued by "
 "the Italian Bankers Association (CBI).\n"
 msgstr ""
+"\n"
+"Экспорт Ri.Ba. для пакетных платежей\n"
+"================================\n"
+"\n"
+"Этот модуль позволяет генерировать файлы Ri.Ba. (Ricevute Bancarie) из "
+"пакетных платежей в Odoo.\n"
+"Он обеспечивает соответствие итальянским банковским стандартам для "
+"управления дебиторской задолженностью.\n"
+"\n"
+"- Группировка нескольких дебиторских задолженностей в один пакет для "
+"упрощения управления и сверки.\n"
+"- Экспорт пакетных платежей в формате, совместимом с RIBA, для отправки в "
+"интернет-банкинг на обработку.\n"
+"\n"
+"Для получения дополнительной информации о стандартах RIBA обратитесь к "
+"руководствам, выпущенным Ассоциацией итальянских банкиров (CBI).\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ro_intrastat
@@ -15803,6 +15872,9 @@ msgid ""
 "This module adds a new template to the Newsletter Block to allow\n"
 "your visitors to subscribe with their phone number.\n"
 msgstr ""
+"\n"
+"Этот модуль добавляет новый шаблон в блок \"Рассылка\", позволяющий\n"
+"посетителям подписываться, указав свой номер телефона.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_renting_crm
@@ -16351,6 +16423,11 @@ msgid ""
 "and decide the split of these costs among their stock moves in order to\n"
 "take them into account in your stock valuation.\n"
 msgstr ""
+"\n"
+"Этот модуль позволяет легко добавлять дополнительные затраты к "
+"производственным заказам\n"
+"и определять распределение этих затрат между движениями запасов для учёта\n"
+"при оценке ваших запасов.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_us_direct_deposit
@@ -16541,6 +16618,11 @@ msgid ""
 "Install this if you are using the Point of Sale app in Chile.\n"
 "\n"
 msgstr ""
+"\n"
+"Этот модуль обеспечивает выполнение технических требований чилийского "
+"законодательства.\n"
+"Установите его, если вы используете приложение \"Точка продаж\" в Чили.    \n"
+"\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pe_pos
@@ -17605,6 +17687,9 @@ msgid ""
 "\n"
 "This module provides the link between quality steps and IoT devices.\n"
 msgstr ""
+"\n"
+"Этот модуль обеспечивает связь между этапами контроля качества и "
+"устройствами IoT. \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_mobile
@@ -18280,6 +18365,40 @@ msgid ""
 "countries,\n"
 "only the country code will be validated.\n"
 msgstr ""
+"\n"
+"Проверка НДС для номеров НДС партнёров\n"
+"=========================================\n"
+"\n"
+"После установки этого модуля значения, введённые в поле НДС партнёров,\n"
+"будут проверяться для всех поддерживаемых стран. Страна определяется по\n"
+"двухбуквенному коду страны, предшествующему номеру НДС, например, "
+"``BE0477472701``\n"
+"проверяется по бельгийским правилам.\n"
+"\n"
+"Существует два уровня проверки номера НДС:\n"
+"--------------------------------------------------------\n"
+"    * По умолчанию выполняется простая офлайн-проверка с использованием "
+"известных правил\n"
+"      для страны, обычно это проверка контрольной цифры. Это быстро и\n"
+"      всегда доступно, но допускает номера, которые, возможно, не выделены\n"
+"      или уже недействительны.\n"
+"\n"
+"    * Если включена опция \"Проверка VAT VIES\" (в настройках компании "
+"пользователя),\n"
+"      номера НДС будут отправляться в онлайн-базу EU VIES,\n"
+"      которая действительно подтвердит, что номер действителен и в данный "
+"момент\n"
+"      принадлежит компании из ЕС. Это немного медленнее, чем простая\n"
+"      офлайн-проверка, требует подключения к интернету и может быть не "
+"всегда\n"
+"      доступно. Если сервис недоступен или не поддерживает\n"
+"      запрашиваемую страну (например, страны вне ЕС), будет выполнена "
+"простая проверка.\n"
+"\n"
+"Поддерживаемые страны включают страны ЕС и некоторые страны вне ЕС,\n"
+"такие как Чили, Колумбия, Мексика, Норвегия или Россия. Для неподдерживаемых "
+"стран\n"
+"проверяется только код страны.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_industry_fsm_stock
@@ -20831,6 +20950,8 @@ msgid ""
 "<code>UserError</code>: exception class for raising\n"
 "                                        user-facing warning messages"
 msgstr ""
+"<code>UserError</code>: класс исключений для вывода предупреждающих "
+"сообщений пользователю"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20838,6 +20959,8 @@ msgid ""
 "<code>_logger.info(message)</code>: logger to emit messages\n"
 "                                        in server logs"
 msgstr ""
+"<code>_logger.info(message)</code>: логгер для отправки сообщений в журналы "
+"сервера"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -20854,14 +20977,14 @@ msgstr "<code>dateutil</code> (модуль Python)"
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>: среда, в которой запускается действие"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>: среда, в которой запускается действие"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20869,6 +20992,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to\n"
 "                                            compare floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: служебная функция для сравнения чисел с "
+"плавающей точкой с заданной точностью"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20876,6 +21001,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to compare\n"
 "                                        floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: служебная функция для сравнения чисел с "
+"плавающей точкой с заданной точностью"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20883,6 +21010,8 @@ msgid ""
 "<code>log(message, level='info')</code>: logging function to\n"
 "                                        record debug information in <code>ir.logging</code> table"
 msgstr ""
+"<code>log(message, level='info')</code>: функция логирования для записи "
+"отладочной информации в таблицу <code>ir.logging</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20890,6 +21019,8 @@ msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
 msgstr ""
+"<code>модель</code>: модель записи, на которой срабатывает действие; "
+"представляет собой пустой набор записей"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20897,13 +21028,15 @@ msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
 msgstr ""
+"<code>модель</code>: модель записи, на которой срабатывает действие; "
+"представляет собой пустой набор записей"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>запись</code>: запись, на которой срабатывает действие"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20911,6 +21044,8 @@ msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
 msgstr ""
+"<code>запись</code>: запись, на которой срабатывает действие; может быть "
+"пустой"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20918,6 +21053,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which\n"
 "                                            the action is triggered in multi mode"
 msgstr ""
+"<code>записи</code>: набор всех записей, на которые срабатывает действие в "
+"многократном режиме"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20925,6 +21062,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
 msgstr ""
+"<code>записи</code>: набор всех записей, на которые срабатывает действие в "
+"многократном режиме; может быть пустым"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -21045,6 +21184,8 @@ msgid ""
 "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start the\n"
 "                        process...</span>"
 msgstr ""
+"<span class=\"o_form_label\" colspan=\"2\">Нажмите \"Обновить\" ниже, чтобы "
+"начать процесс...</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
@@ -21130,6 +21271,11 @@ msgid ""
 "                                    <span colspan=\"2\">Month: %(month)s</span>\n"
 "                                    <span colspan=\"2\">Day: %(day)s</span>"
 msgstr ""
+"<span colspan=\"2\">Текущий год с веком: %(year)s</span>\n"
+"                                <span colspan=\"2\">Текущий год без века: %"
+"(y)s</span>\n"
+"                                <span colspan=\"2\">Месяц: %(month)s</span>\n"
+"                                <span colspan=\"2\">День: %(day)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -21138,6 +21284,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">День года: %(doy)s</span>\n"
+"                                <span colspan=\"2\">Неделя года: %(woy)s</"
+"span>\n"
+"                                <span colspan=\"2\">День недели "
+"(0:понедельник): %(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -21147,6 +21298,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">Час 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">Час 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">Минута: %(min)s</span>\n"
+"                                <span colspan=\"2\">Секунда: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -21184,6 +21340,12 @@ msgid ""
 "                    <span invisible=\"reset_mode != 'hard'\">This view is not coming from a file.</span>\n"
 "                    <span invisible=\"reset_mode != 'other_view'\">You need two views to compare.</span>"
 msgstr ""
+"<span invisible=\"reset_mode != 'soft'\">У этого представления нет "
+"предыдущей версии.</span>\n"
+"                        <span invisible=\"reset_mode != 'hard'\">Это "
+"представление не взято из файла.</span>\n"
+"                        <span invisible=\"reset_mode != 'other_view'\">Для "
+"сравнения нужны два представления.</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -21212,6 +21374,11 @@ msgid ""
 "<strong>Important:</strong> The key cannot be retrieved later and provides <b>full\n"
 "                        access</b> to your user account, it is very important to store it securely."
 msgstr ""
+"<strong>Важно:</strong>\n"
+"                            Ключ нельзя будет восстановить позже, он "
+"предоставляет <b>полный доступ</b>\n"
+"                            к вашей учётной записи пользователя, поэтому "
+"крайне важно хранить его в безопасности."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.res_users_identitycheck_view_form
@@ -21241,6 +21408,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>Эта операция навсегда удалит все данные, которые в данный момент "
+"хранятся в модулях!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -24625,6 +24794,9 @@ msgstr "Французский платёжный провайдер, охват
 #: model:ir.module.module,summary:base.module_html_editor
 msgid "A Html Editor component and plugin system"
 msgstr ""
+"\n"
+"        Компонент HTML-редактора и система плагинов\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_payment_dpo
@@ -24743,6 +24915,12 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Группа — это набор функциональных областей, которые назначаются пользователю "
+"для предоставления доступа и прав к определённым приложениям и задачам в "
+"системе. Вы можете создавать собственные группы или редактировать "
+"существующие по умолчанию, чтобы настроить вид меню, доступный "
+"пользователям. Права на чтение, запись, создание и удаление также можно "
+"управлять отсюда."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -25119,6 +25297,8 @@ msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
 "            application, create and manage appraisals for himself and the people he's manager of."
 msgstr ""
+"Пользователь без прав на оценки сможет видеть приложение, создавать и "
+"управлять оценками для себя и сотрудников, которыми он руководит."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_wallet
@@ -25778,11 +25958,17 @@ msgstr "Бухгалтерские отчёты для Бразилии"
 #: model:ir.module.module,summary:base.module_l10n_ph_reports
 msgid "Accounting reports for the Philippines"
 msgstr ""
+"\n"
+"Бухгалтерские отчеты для Филиппин\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_vn_reports
 msgid "Accounting reports for the Vietnam"
 msgstr ""
+"\n"
+"Бухгалтерские отчеты для Вьетнама\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_automation_account
@@ -30379,6 +30565,8 @@ msgid ""
 "Banks are the financial institutions at which you and your contacts have their\n"
 "                accounts."
 msgstr ""
+"Банки — это финансовые учреждения, в которых у вас и ваших контактов открыты "
+"счета."
 
 #. module: base
 #: model:res.country,name:base.bb
@@ -30585,6 +30773,12 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"Имейте в виду, что редактирование архитектуры стандартного представления не "
+"рекомендуется, так как изменения будут перезаписаны при будущих обновлениях "
+"модуля.<br/>\n"
+"                        Мы советуем вносить изменения в стандартные "
+"представления через унаследованные представления или с помощью настройки в "
+"Odoo Studio."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -31278,6 +31472,7 @@ msgstr "Модуль интеграции для отправки уведомл
 #: model:ir.module.module,summary:base.module_website_event_track_live_quiz
 msgid "Bridge module to support quiz features during \"live\" tracks."
 msgstr ""
+"Модуль интеграции для поддержки функций викторины во время \"живых\" треков "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_account_move_template_purchase
@@ -32303,7 +32498,7 @@ msgstr "Сменить пароль"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Изменить способ отображения адресов в отчётах"
 
 #. module: base
 #. odoo-python
@@ -32557,6 +32752,8 @@ msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
 msgstr ""
+"Выберите подпросмотр партнёров, включающий только поля адреса, чтобы "
+"изменить способ ввода адресов пользователями."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -32804,7 +33001,7 @@ msgstr "Собирайте платежи от клиентов через пр�
 #. module: base
 #: model:ir.module.module,summary:base.module_document
 msgid "Collect, organize and share documents."
-msgstr ""
+msgstr "Собирайте, организуйте и делитесь документами."
 
 #. module: base
 #: model:res.country,name:base.co
@@ -33188,6 +33385,9 @@ msgid ""
 "Computed fields are defined with the fields <strong>Dependencies</strong>\n"
 "                                    and <strong>Compute</strong>."
 msgstr ""
+"Вычисляемые поля определяются с помощью полей\n"
+"                                                <strong>Зависимости</strong> "
+"и <strong>Вычисление</strong>."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__auth_user_client__platform_type__computer
@@ -33494,7 +33694,7 @@ msgstr "Для контактов требуется имя"
 msgid ""
 "Contains In-App\n"
 "                            Purchases"
-msgstr ""
+msgstr "Содержит встроенные покупки"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_enterprise
@@ -33906,6 +34106,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"Создавайте и управляйте компаниями, которые будут управляться через Odoo, "
+"отсюда. Магазины или дочерние компании можно создавать и поддерживать здесь."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -33915,6 +34117,11 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Создавайте и управляйте пользователями, которые будут подключаться к "
+"системе. Пользователей можно деактивировать, если в течение определённого "
+"времени они не будут или не должны подключаться к системе. Вы можете "
+"назначать им группы, чтобы предоставить определённый доступ к приложениям, "
+"необходимым для работы в системе."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -34585,6 +34792,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Пользовательские представления используются, когда пользователи изменяют "
+"содержимое своих панелей управления (через веб-клиент)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -35163,6 +35372,8 @@ msgid ""
 "Demo data should only be used on test databases!\n"
 "                                Once they are loaded, they cannot be removed!"
 msgstr ""
+"Демо-данные следует использовать только в тестовых базах данных!\n"
+"                             После загрузки их невозможно удалить!"
 
 #. module: base
 #: model:ir.model,name:base.model_ir_demo_failure
@@ -36468,6 +36679,10 @@ msgstr "Электронные счета Египта"
 #: model:ir.module.module,summary:base.module_l10n_eg_edi_eta
 msgid "Egypt Tax Authority Invoice Integration"
 msgstr ""
+"\n"
+"            Интеграция с системой выставления счетов налоговой службы "
+"Египта\n"
+"        "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__eire
@@ -39100,7 +39315,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "Забыли пароль?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -39384,9 +39599,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
-msgstr ""
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
+msgstr "G - ОПТОВАЯ И РОЗНИЧНАЯ ТОРГОВЛЯ; РЕМОНТ АВТОМОБИЛЕЙ И МОТОЦИКЛОВ"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -40582,6 +40796,9 @@ msgid ""
 "Here is your new API key, use it instead of a password for RPC access.\n"
 "                        Your login is still necessary for interactive usage."
 msgstr ""
+"Вот ваш новый ключ API, используйте его вместо пароля для доступа к RPC.\n"
+"                            Ваш логин все еще необходим для интерактивного "
+"использования."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__denied_field_ids
@@ -41288,6 +41505,11 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"Если это представление наследуется,\n"
+"* если True, представление всегда расширяет родительское\n"
+"* если False, представление сейчас не расширяет родительское, но может быть "
+"включено\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -42754,6 +42976,9 @@ msgid ""
 "                        will be the only way to\n"
 "                            identify the key once created</strong>."
 msgstr ""
+"Очень важно, чтобы это описание было четким\n"
+"                        и полным, <strong>это будет единственным способом\n"
+"                        идентифицировать ключ после его создания</strong>."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_it_intrastat
@@ -43145,16 +43370,25 @@ msgstr "Кения — Интеграция EDI с устройством Tremol
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu
 msgid "Kenya eTIMS Device EDI Integration"
 msgstr ""
+"\n"
+"            Интеграция устройства Kenya eTIMS с EDI\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_mrp
 msgid "Kenya eTIMS Device EDI Manufacturing Integration"
 msgstr ""
+"\n"
+"        Интеграция устройства Kenya eTIMS с производством через EDI\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_stock
 msgid "Kenya eTIMS Device EDI Stock Integration"
 msgstr ""
+"\n"
+"            Интеграция устройства Kenya eTIMS с EDI для управления запасами\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_ke_edi_oscu
@@ -43938,7 +44172,7 @@ msgstr "Выберите Point Relais® для вашей электронной
 #. module: base
 #: model:ir.module.module,summary:base.module_delivery_mondialrelay
 msgid "Let's choose a Point Relais® as shipping address"
-msgstr ""
+msgstr " Давайте выберем Point Relais® в качестве адреса доставки "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
@@ -45058,6 +45292,11 @@ msgid ""
 "            then delete it through the button that appeared. Items can be assigned to specific\n"
 "            groups in order to make them accessible to some users within the system."
 msgstr ""
+"Управляйте и настраивайте элементы, доступные и отображаемые в меню вашей "
+"системы Odoo. Вы можете удалить элемент, нажав на поле в начале каждой "
+"строки, а затем удалить его с помощью появившейся кнопки. Элементы можно "
+"назначить определенным группам, чтобы сделать их доступными для некоторых "
+"пользователей в системе."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_slides
@@ -47413,6 +47652,10 @@ msgid ""
 "This here module is useful to validate that they're doing what they're\n"
 "supposed to do\n"
 msgstr ""
+"Нетривиальные утилиты тестирования могут требовать модели и все остальное\n"
+"\n"
+"Этот модуль полезен для проверки того, что они выполняют свои функции\n"
+"как положено\n"
 
 #. module: base
 #: model:res.country,name:base.nf
@@ -49931,6 +50174,20 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"Применяется только в том случае, если это представление наследуется от "
+"другого (inherit_id не равно False/Null).\n"
+"\n"
+"* Если используется расширение (по умолчанию), при запросе этого "
+"представления\n"
+"находится ближайшее основное представление (через inherit_id), затем "
+"применяются все представления,\n"
+"наследующие от него с моделью этого представления.\n"
+"* Если используется основное представление, ближайшее основное представление "
+"полностью разрешается (даже если оно использует\n"
+"другую модель, чем это), затем применяются спецификации наследования этого "
+"представления\n"
+"(<xpath/>), и результат используется так, как если бы это было\n"
+"фактической архитектурой этого представления.\n"
 
 #. module: base
 #. odoo-python
@@ -54657,7 +54914,7 @@ msgstr "Ресторан"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "Расширения для ресторана в точке продажи "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -55873,6 +56130,12 @@ msgid ""
 "                        Odoo will propose you to merge only those having\n"
 "                        all these fields in common. (not one of the fields)."
 msgstr ""
+"Выберите список полей, используемых для поиска\n"
+"                            дублирующихся записей. Если вы выберете "
+"несколько полей,\n"
+"                            Odoo предложит объединить только те записи, у "
+"которых\n"
+"                            все эти поля совпадают (а не одно из полей)."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_model_fields__selectable
@@ -55887,6 +56150,12 @@ msgid ""
 "                            will be redirected to the destination contact.\n"
 "                            You can remove contacts from this list to avoid merging them."
 msgstr ""
+"Выбранные контакты будут объединены.\n"
+"                                Все документы, связанные с одним из этих "
+"контактов,\n"
+"                                будут перенаправлены на целевой контакт.\n"
+"                                Вы можете удалить контакты из этого списка, "
+"чтобы избежать их объединения."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_partner_merge__state__selection
@@ -56556,6 +56825,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_link_tracker
 msgid "Shorten URLs and use them to track clicks and UTMs"
 msgstr ""
+"\n"
+"Сокращайте URL-адреса и используйте их для отслеживания кликов и UTM-меток\n"
 
 #. module: base
 #: model:ir.model,name:base.model_res_users_apikeys_show
@@ -56683,7 +56954,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "Простые скидки в точке продаж "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -58095,9 +58366,12 @@ msgstr "Sénégal - Accounting Reports"
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
+"T - ДЕЯТЕЛЬНОСТЬ ДОМАШНИХ ХОЗЯЙСТВ КАК РАБОТОДАТЕЛЕЙ; НЕДИФФЕРЕНЦИРОВАННАЯ "
+"ДЕЯТЕЛЬНОСТЬ ДОМАШНИХ ХОЗЯЙСТВ ПО ПРОИЗВОДСТВУ ТОВАРОВ И УСЛУГ ДЛЯ "
+"СОБСТВЕННОГО ИСПОЛЬЗОВАНИЯ"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -59083,6 +59357,9 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"Мастера настройки помогают настроить новый экземпляр Odoo. Они запускаются "
+"при установке новых модулей, но вы можете вручную перезапустить некоторые "
+"мастера из этого меню."
 
 #. module: base
 #. odoo-python
@@ -59233,6 +59510,12 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"Поле <strong>Вычислить</strong> — это код Python для\n"
+"                                                вычисления значения поля в "
+"наборе записей. Значение поля\n"
+"                                                должно быть присвоено каждой "
+"записи с помощью присваивания,\n"
+"                                                подобного словарю."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -60169,6 +60452,10 @@ msgid ""
 "file encoding, please be sure to view and edit\n"
 "                            using the same encoding."
 msgstr ""
+"Этот файл был создан с использованием универсальной кодировки "
+"<strong>Unicode/UTF-8</strong>, пожалуйста, убедитесь, что просмотр и "
+"редактирование\n"
+"                           используя ту же кодировку."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_actions_act_window__views
@@ -61090,6 +61377,10 @@ msgid ""
 "                                        there is remaining tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count,\n"
 "                                        remaining=task_remaining_count)</code>"
 msgstr ""
+"Чтобы уведомить о прогрессе вызова CRON и повторно запустить вызов, если "
+"остались задачи,\n"
+"используйте <code>env['ir.cron']._notify_progress(done=task_done_count, "
+"remaining=task_remaining_count)</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -62463,6 +62754,8 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"Используйте группы для организации стран, которые часто выбираются вместе "
+"(например, \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -63071,6 +63364,9 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"Представления позволяют вам персонализировать каждое представление в Odoo. "
+"Вы можете добавлять новые поля, перемещать их, переименовывать или удалять "
+"те, которые вам не нужны."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -63745,6 +64041,10 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"Когда используются подпоследовательности для диапазона дат, вы можете "
+"добавлять префикс 'range_' к переменным,\n"
+"                                чтобы использовать начало диапазона вместо "
+"текущей даты, например, %(range_year)s вместо %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -64494,6 +64794,8 @@ msgid ""
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
 msgstr ""
+"Вы сможете определить дополнительные права доступа, отредактировав вновь "
+"созданного пользователя в меню Настройки / Пользователи."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -64505,6 +64807,9 @@ msgstr "Юань"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi_pos
 msgid "ZATCA E-Invoicing, support for PoS"
 msgstr ""
+"\n"
+"        Электронное выставление счетов ZATCA, поддержка для PoS\n"
+"    "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_company_form
@@ -64883,6 +65188,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"для записи в self:\n"
+"        record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -64901,6 +65208,9 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"успешно установлен.\n"
+"                            Пользователи могут выбрать предпочитаемый язык в "
+"своих настройках."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -65035,6 +65345,8 @@ msgid ""
 "partner_name = record.name + '_code' env['res.partner'].create({'name': "
 "partner_name})"
 msgstr ""
+"имя_партнера = record.name + '_code'\n"
+"env['res.partner'].create({'name': partner_name})"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.UYW
@@ -66673,66 +66985,11 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "            Egypt Tax Authority Invoice Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Интеграция с системой выставления счетов налоговой службы "
-#~ "Египта\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Интеграция устройства Kenya eTIMS с EDI\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Stock Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Интеграция устройства Kenya eTIMS с EDI для управления запасами\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "        A Html Editor component and plugin system\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Компонент HTML-редактора и система плагинов\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "        E-Invoicing, Universal Business Language\n"
 #~ "    "
 #~ msgstr ""
 #~ "\n"
 #~ "        Электронные счета, универсальный язык бизнеса\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Kenya eTIMS Device EDI Manufacturing Integration\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Интеграция устройства Kenya eTIMS с производством через EDI\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        ZATCA E-Invoicing, support for PoS\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Электронное выставление счетов ZATCA, поддержка для PoS\n"
 #~ "    "
 
 #~ msgid ""
@@ -66743,51 +67000,6 @@ msgstr ""
 #~ "\n"
 #~ "Бухгалтерские отчеты\n"
 #~ "==================\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Poland\n"
-#~ "\n"
-#~ "        This module also provides the possibility to generate the JPK_VAT in "
-#~ "xml, for Poland.\n"
-#~ "\n"
-#~ "        Currently, does not report specific values for :\n"
-#~ "        - Cash basis for entries with input tax (MK)\n"
-#~ "        - Margin-based operations (MR_T/MR_UZ)\n"
-#~ "        - Bills for agricultural products (VAT_RR)\n"
-#~ "        - Operations through electronic interfaces (IED)\n"
-#~ "        - Invoices done with KSef \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Бухгалтерские отчеты для Польши\n"
-#~ "\n"
-#~ "        Этот модуль также предоставляет возможность генерировать JPK_VAT в "
-#~ "формате XML для Польши.\n"
-#~ "\n"
-#~ "        На данный момент не отображаются конкретные значения для:\n"
-#~ "        - Кассового метода для записей с входным налогом (MK)\n"
-#~ "        - Операций на основе маржи (MR_T/MR_UZ)\n"
-#~ "        - Счетов для сельскохозяйственной продукции (VAT_RR)\n"
-#~ "        - Операций через электронные интерфейсы (IED)\n"
-#~ "        - Счетов-фактур, оформленных через KSef \n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Philippines\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Бухгалтерские отчеты для Филиппин\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Vietnam\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Бухгалтерские отчеты для Вьетнама\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -66845,15 +67057,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Advanced features for the PoS like better views \n"
-#~ "for IoT Box config.   \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Расширенные функции для POS, такие как улучшенные представления\n"
-#~ "для настройки IoT Box.   \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Allow clients to Schedule Appointments through the Portal\n"
 #~ msgstr ""
 #~ "\n"
@@ -66861,49 +67064,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Allows to display sale information in the SOL services apps\n"
-#~ "===========================================================\n"
-#~ "Additional information is displayed in the name of the SOL when it is used "
-#~ "in services apps (project and planning). \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Разрешить отображать информацию о продажах в приложениях SOL services\n"
-#~ "===========================================================\n"
-#~ "Дополнительная информация отображается в названии SOL при использовании в "
-#~ "приложениях услуг (проект и планирование). \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "App to upload and manage your documents.\n"
 #~ msgstr ""
 #~ "\n"
 #~ "Приложение для загрузки и управления вашими документами.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "With this module you can manually check consistencies and inconsistencies of "
-#~ "accounting module from menu Reporting/Accounting/Accounting Tests.\n"
-#~ "\n"
-#~ "You can write a query in order to create Consistency Test and you will get "
-#~ "the result of the test \n"
-#~ "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, "
-#~ "then select the test \n"
-#~ "and print the report from Print button in header area.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Проверка бухгалтерского учета.\n"
-#~ "======================\n"
-#~ "С помощью этого модуля вы можете вручную проверять согласованность и "
-#~ "несогласованность модуля учета через меню Отчетность/Бухгалтерия/Тесты "
-#~ "учета.\n"
-#~ "\n"
-#~ "Вы можете написать запрос для создания теста на согласованность и получить "
-#~ "результат теста\n"
-#~ "в формате PDF, доступ к которому можно получить через меню Отчетность -> "
-#~ "Тесты учета, затем выбрать тест\n"
-#~ "и распечатать отчет с помощью кнопки Print в области заголовка.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -66941,15 +67105,6 @@ msgstr ""
 #~ msgstr ""
 #~ "\n"
 #~ "Связующий модуль для project_enterprise и hr.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Configure IoT devices to be used in certain \n"
-#~ "steps for taking measures, taking pictures, ...\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Настройка IoT-устройств для использования на определенных\n"
-#~ "этапах для измерений, фотографирования и т.д.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -67011,47 +67166,6 @@ msgstr ""
 #~ "Цели и значки гибкие и могут быть адаптированы к широкому спектру модулей и "
 #~ "действий. При установке модуль создаёт простые цели, чтобы помочь новым "
 #~ "пользователям познакомиться с Odoo и настроить свой профиль.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "In a lot of countries, a debit note is used as an increase of the amounts of "
-#~ "an existing invoice \n"
-#~ "or in some specific cases to cancel a credit note. \n"
-#~ "It is like a regular invoice, but we need to keep track of the link with the "
-#~ "original invoice.  \n"
-#~ "The wizard used is similar as the one for the credit note.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Во многих странах дебетовая нота используется для увеличения суммы "
-#~ "существующего счёта-фактуры\n"
-#~ "или в некоторых особых случаях для аннулирования кредитной ноты.\n"
-#~ "Она похожа на обычный счёт-фактуру, но необходимо отслеживать связь с "
-#~ "исходным счётом-фактурой.\n"
-#~ "Используемый мастер аналогичен мастеру для кредитной ноты.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Inventory management for Avatax\n"
-#~ "=======================================\n"
-#~ "This module allows for line-level addresses when getting taxes from avatax.\n"
-#~ "\n"
-#~ "A current limitation is a single order line with more than one stock move "
-#~ "(i.e. 10 units of \n"
-#~ "product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this "
-#~ "case the sale orders should be\n"
-#~ "split per delivery.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Управление запасами для Avatax\n"
-#~ "=======================================\n"
-#~ "Этот модуль позволяет использовать адреса на уровне строк при получении "
-#~ "налогов из Avatax.\n"
-#~ "\n"
-#~ "Текущим ограничением является одна строка заказа с несколькими перемещениями "
-#~ "запасов (например, 10 единиц\n"
-#~ "продукта A, 2 отправлены со склада №1 и 8 со склада №2). В этом случае "
-#~ "заказы на продажу необходимо\n"
-#~ "разделять по доставкам.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -67322,48 +67436,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Ri.Ba. Export for Batch Payment\n"
-#~ "================================\n"
-#~ "\n"
-#~ "This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
-#~ "batch payments in Odoo.  \n"
-#~ "It facilitates compliance with the Italian banking standard for managing "
-#~ "receivables.\n"
-#~ "\n"
-#~ "- Group multiple receivables into a single batch for streamlined management "
-#~ "and reconciliation.\n"
-#~ "- Export batch payments as RIBA-compliant files to be submitted to your "
-#~ "homebanking for processing.\n"
-#~ "\n"
-#~ "For more information about RIBA standards, refer to the guidelines issued by "
-#~ "the Italian Bankers Association (CBI).\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Экспорт Ri.Ba. для пакетных платежей\n"
-#~ "================================\n"
-#~ "\n"
-#~ "Этот модуль позволяет генерировать файлы Ri.Ba. (Ricevute Bancarie) из "
-#~ "пакетных платежей в Odoo.\n"
-#~ "Он обеспечивает соответствие итальянским банковским стандартам для "
-#~ "управления дебиторской задолженностью.\n"
-#~ "\n"
-#~ "- Группировка нескольких дебиторских задолженностей в один пакет для "
-#~ "упрощения управления и сверки.\n"
-#~ "- Экспорт пакетных платежей в формате, совместимом с RIBA, для отправки в "
-#~ "интернет-банкинг на обработку.\n"
-#~ "\n"
-#~ "Для получения дополнительной информации о стандартах RIBA обратитесь к "
-#~ "руководствам, выпущенным Ассоциацией итальянских банкиров (CBI).\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Shorten URLs and use them to track clicks and UTMs\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Сокращайте URL-адреса и используйте их для отслеживания кликов и UTM-меток\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "The purpose of this module is to implement \"sparse\" fields, i.e., fields\n"
 #~ "that are mostly null. This implementation circumvents the PostgreSQL\n"
 #~ "limitation on the number of columns in a table. The values of all sparse\n"
@@ -67401,15 +67473,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module adds a new template to the Newsletter Block to allow \n"
-#~ "your visitors to subscribe with their phone number.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Этот модуль добавляет новый шаблон в блок \"Рассылка\", позволяющий\n"
-#~ "посетителям подписываться, указав свой номер телефона.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module adds required base code for a fully integrated customer portal.\n"
 #~ "It contains the base controller class and base templates. Business addons\n"
 #~ "will add their specific templates and controllers to extend the customer\n"
@@ -67443,18 +67506,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module allows you to easily add extra costs on manufacturing order \n"
-#~ "and decide the split of these costs among their stock moves in order to \n"
-#~ "take them into account in your stock valuation.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Этот модуль позволяет легко добавлять дополнительные затраты к "
-#~ "производственным заказам\n"
-#~ "и определять распределение этих затрат между движениями запасов для учёта\n"
-#~ "при оценке ваших запасов.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module assigns an hourly wage to employees to be used by other "
 #~ "modules.\n"
 #~ "============================================================================\n"
@@ -67464,18 +67515,6 @@ msgstr ""
 #~ "Этот модуль назначает сотрудникам почасовую ставку, используемую другими "
 #~ "модулями.\n"
 #~ "============================================================================\n"
-#~ "\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "This module brings the technical requirement for the Chilean regulation.\n"
-#~ "Install this if you are using the Point of Sale app in Chile.    \n"
-#~ "\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Этот модуль обеспечивает выполнение технических требований чилийского "
-#~ "законодательства.\n"
-#~ "Установите его, если вы используете приложение \"Точка продаж\" в Чили.    \n"
 #~ "\n"
 
 #~ msgid ""
@@ -67573,94 +67612,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module provides the link between quality steps and IoT devices. \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Этот модуль обеспечивает связь между этапами контроля качества и "
-#~ "устройствами IoT. \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Track equipment and maintenance requests"
 #~ msgstr ""
 #~ "\n"
 #~ "Отслеживайте оборудование и запросы на техническое обслуживание"
-
-#~ msgid ""
-#~ "\n"
-#~ "VAT validation for Partner's VAT numbers.\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ "After installing this module, values entered in the VAT field of Partners "
-#~ "will\n"
-#~ "be validated for all supported countries. The country is inferred from the\n"
-#~ "2-letter country code that prefixes the VAT number, e.g. ``BE0477472701``\n"
-#~ "will be validated using the Belgian rules.\n"
-#~ "\n"
-#~ "There are two different levels of VAT number validation:\n"
-#~ "--------------------------------------------------------\n"
-#~ "    * By default, a simple off-line check is performed using the known "
-#~ "validation\n"
-#~ "      rules for the country, usually a simple check digit. This is quick "
-#~ "and \n"
-#~ "      always available, but allows numbers that are perhaps not truly "
-#~ "allocated,\n"
-#~ "      or not valid anymore.\n"
-#~ "\n"
-#~ "    * When the \"VAT VIES Check\" option is enabled (in the configuration of "
-#~ "the user's\n"
-#~ "      Company), VAT numbers will be instead submitted to the online EU VIES\n"
-#~ "      database, which will truly verify that the number is valid and "
-#~ "currently\n"
-#~ "      allocated to a EU company. This is a little bit slower than the "
-#~ "simple\n"
-#~ "      off-line check, requires an Internet connection, and may not be "
-#~ "available\n"
-#~ "      all the time. If the service is not available or does not support the\n"
-#~ "      requested country (e.g. for non-EU countries), a simple check will be "
-#~ "performed\n"
-#~ "      instead.\n"
-#~ "\n"
-#~ "Supported countries currently include EU countries, and a few non-EU "
-#~ "countries\n"
-#~ "such as Chile, Colombia, Mexico, Norway or Russia. For unsupported "
-#~ "countries,\n"
-#~ "only the country code will be validated.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Проверка НДС для номеров НДС партнёров\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ "После установки этого модуля значения, введённые в поле НДС партнёров,\n"
-#~ "будут проверяться для всех поддерживаемых стран. Страна определяется по\n"
-#~ "двухбуквенному коду страны, предшествующему номеру НДС, например, "
-#~ "``BE0477472701``\n"
-#~ "проверяется по бельгийским правилам.\n"
-#~ "\n"
-#~ "Существует два уровня проверки номера НДС:\n"
-#~ "--------------------------------------------------------\n"
-#~ "    * По умолчанию выполняется простая офлайн-проверка с использованием "
-#~ "известных правил\n"
-#~ "      для страны, обычно это проверка контрольной цифры. Это быстро и\n"
-#~ "      всегда доступно, но допускает номера, которые, возможно, не выделены\n"
-#~ "      или уже недействительны.\n"
-#~ "\n"
-#~ "    * Если включена опция \"Проверка VAT VIES\" (в настройках компании "
-#~ "пользователя),\n"
-#~ "      номера НДС будут отправляться в онлайн-базу EU VIES,\n"
-#~ "      которая действительно подтвердит, что номер действителен и в данный "
-#~ "момент\n"
-#~ "      принадлежит компании из ЕС. Это немного медленнее, чем простая\n"
-#~ "      офлайн-проверка, требует подключения к интернету и может быть не "
-#~ "всегда\n"
-#~ "      доступно. Если сервис недоступен или не поддерживает\n"
-#~ "      запрашиваемую страну (например, страны вне ЕС), будет выполнена "
-#~ "простая проверка.\n"
-#~ "\n"
-#~ "Поддерживаемые страны включают страны ЕС и некоторые страны вне ЕС,\n"
-#~ "такие как Чили, Колумбия, Мексика, Норвегия или Россия. Для неподдерживаемых "
-#~ "стран\n"
-#~ "проверяется только код страны.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -67698,9 +67653,6 @@ msgstr ""
 #~ "* Отображение всех затрат, связанных с транспортным средством или типом "
 #~ "услуг\n"
 #~ "* График анализа затрат\n"
-
-#~ msgid " Let's choose a Point Relais® as shipping address "
-#~ msgstr " Давайте выберем Point Relais® в качестве адреса доставки "
 
 #~ msgid "# Access Rights"
 #~ msgstr "# Права доступа"
@@ -67776,66 +67728,6 @@ msgstr ""
 #~ msgstr "- размер ="
 
 #~ msgid ""
-#~ "<code>UserError</code>: exception class for raising user-facing warning "
-#~ "messages"
-#~ msgstr ""
-#~ "<code>UserError</code>: класс исключений для вывода предупреждающих "
-#~ "сообщений пользователю"
-
-#~ msgid ""
-#~ "<code>_logger.info(message)</code>: logger to emit messages in server logs"
-#~ msgstr ""
-#~ "<code>_logger.info(message)</code>: логгер для отправки сообщений в журналы "
-#~ "сервера"
-
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>: среда, в которой запускается действие"
-
-#~ msgid ""
-#~ "<code>float_compare()</code>: utility function to compare floats based on a "
-#~ "specific precision"
-#~ msgstr ""
-#~ "<code>float_compare()</code>: служебная функция для сравнения чисел с "
-#~ "плавающей точкой с заданной точностью"
-
-#~ msgid ""
-#~ "<code>log(message, level='info')</code>: logging function to record debug "
-#~ "information in <code>ir.logging</code> table"
-#~ msgstr ""
-#~ "<code>log(message, level='info')</code>: функция логирования для записи "
-#~ "отладочной информации в таблицу <code>ir.logging</code>"
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr ""
-#~ "<code>модель</code>: модель записи, на которой срабатывает действие; "
-#~ "представляет собой пустой набор записей"
-
-#~ msgid "<code>record</code>: record on which the action is triggered"
-#~ msgstr "<code>запись</code>: запись, на которой срабатывает действие"
-
-#~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr ""
-#~ "<code>запись</code>: запись, на которой срабатывает действие; может быть "
-#~ "пустой"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode"
-#~ msgstr ""
-#~ "<code>записи</code>: набор всех записей, на которые срабатывает действие в "
-#~ "многократном режиме"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr ""
-#~ "<code>записи</code>: набор всех записей, на которые срабатывает действие в "
-#~ "многократном режиме; может быть пустым"
-
-#~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
@@ -67873,13 +67765,6 @@ msgstr ""
 #~ "<i class=\"fa fa-info fa-3x text-info float-start\" role=\"img\" aria-"
 #~ "label=\"Информация\" title=\"Информация\"/>"
 
-#~ msgid ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start "
-#~ "the process...</span>"
-#~ msgstr ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Нажмите \"Обновить\" ниже, чтобы "
-#~ "начать процесс...</span>"
-
 #~ msgid "<span class=\"o_form_label\">MB</span>"
 #~ msgstr "<span class=\"o_form_label\">МБ</span>"
 
@@ -67898,65 +67783,11 @@ msgstr ""
 #~ "увидеть новые пункты (Ctrl+T, затем Ctrl+R).</span>"
 
 #~ msgid ""
-#~ "<span colspan=\"2\">Current Year with Century: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Current Year without "
-#~ "Century: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Month: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Day: %(day)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Текущий год с веком: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Текущий год без века: %"
-#~ "(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Месяц: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">День: %(day)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">День года: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Неделя года: %(woy)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">День недели "
-#~ "(0:понедельник): %(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Час 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Час 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Минута: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Секунда: %(sec)s</span>"
-
-#~ msgid ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">by</span>"
 #~ msgstr ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">от</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"reset_mode != 'soft'\">This view has no previous version.</"
-#~ "span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">This view "
-#~ "is not coming from a file.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">You "
-#~ "need two views to compare.</span>"
-#~ msgstr ""
-#~ "<span invisible=\"reset_mode != 'soft'\">У этого представления нет "
-#~ "предыдущей версии.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">Это "
-#~ "представление не взято из файла.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">Для "
-#~ "сравнения нужны два представления.</span>"
 
 #~ msgid "<span>, </span>"
 #~ msgstr "<span>, </span>"
@@ -67997,19 +67828,6 @@ msgstr ""
 #~ msgid "<strong>Idx</strong>"
 #~ msgstr "<strong>Idx</strong>"
 
-#~ msgid ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            The key cannot be retrieved later and provides "
-#~ "<b>full access</b>\n"
-#~ "                            to your user account, it is very important to "
-#~ "store it securely."
-#~ msgstr ""
-#~ "<strong>Важно:</strong>\n"
-#~ "                            Ключ нельзя будет восстановить позже, он "
-#~ "предоставляет <b>полный доступ</b>\n"
-#~ "                            к вашей учётной записи пользователя, поэтому "
-#~ "крайне важно хранить его в безопасности."
-
 #~ msgid "<strong>Inherited</strong>"
 #~ msgstr "<strong>Наследуемые</strong>"
 
@@ -68036,13 +67854,6 @@ msgstr ""
 
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>Seq</strong>"
-
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>Эта операция навсегда удалит все данные, которые в данный момент "
-#~ "хранятся в модулях!</strong>"
 
 #~ msgid "<strong>Tr</strong>"
 #~ msgstr "<strong>Tr</strong>"
@@ -68071,21 +67882,6 @@ msgstr ""
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>Представления</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Группа — это набор функциональных областей, которые назначаются пользователю "
-#~ "для предоставления доступа и прав к определённым приложениям и задачам в "
-#~ "системе. Вы можете создавать собственные группы или редактировать "
-#~ "существующие по умолчанию, чтобы настроить вид меню, доступный "
-#~ "пользователям. Права на чтение, запись, создание и удаление также можно "
-#~ "управлять отсюда."
-
 #~ msgid "A module to generate exceptions."
 #~ msgstr "Модуль для генерации исключений."
 
@@ -68111,13 +67907,6 @@ msgstr ""
 #~ "Международная некоммерческая образовательная и научная организация, "
 #~ "включающая три направления: авиация и аэрокосмическая техника, экология и "
 #~ "прикладная гидродинамика, турбомашины и двигательные системы."
-
-#~ msgid ""
-#~ "A user without any rights on Appraisals will be able to see the application, "
-#~ "create and manage appraisals for himself and the people he's manager of."
-#~ msgstr ""
-#~ "Пользователь без прав на оценки сможет видеть приложение, создавать и "
-#~ "управлять оценками для себя и сотрудников, которыми он руководит."
 
 #~ msgid "A valid email is required for find_or_create to work properly."
 #~ msgstr ""
@@ -68318,13 +68107,6 @@ msgstr ""
 #~ msgid "Bakery"
 #~ msgstr "Пекарня"
 
-#~ msgid ""
-#~ "Banks are the financial institutions at which you and your contacts have "
-#~ "their accounts."
-#~ msgstr ""
-#~ "Банки — это финансовые учреждения, в которых у вас и ваших контактов открыты "
-#~ "счета."
-
 #~ msgid "Bar & Pub"
 #~ msgstr "Бар и Паб"
 
@@ -68336,19 +68118,6 @@ msgstr ""
 
 #~ msgid "Basic models and helpers to support Internet of Things."
 #~ msgstr "Базовые модели и помощники для поддержки Интернета вещей."
-
-#~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "Имейте в виду, что редактирование архитектуры стандартного представления не "
-#~ "рекомендуется, так как изменения будут перезаписаны при будущих обновлениях "
-#~ "модуля.<br/>\n"
-#~ "                        Мы советуем вносить изменения в стандартные "
-#~ "представления через унаследованные представления или с помощью настройки в "
-#~ "Odoo Studio."
 
 #~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
@@ -68401,10 +68170,6 @@ msgstr ""
 #~ msgid "Bridge module for project_enterprise and hr"
 #~ msgstr "Модуль интеграции между project_enterprise и HR"
 
-#~ msgid "Bridge module to support quiz features during \"live\" tracks. "
-#~ msgstr ""
-#~ "Модуль интеграции для поддержки функций викторины во время \"живых\" треков "
-
 #~ msgid "By default the widget uses the field information"
 #~ msgstr "По умолчанию виджет использует информацию поля"
 
@@ -68441,9 +68206,6 @@ msgstr ""
 #~ msgid "Certificate-based authentication requires a TLS transport"
 #~ msgstr "Аутентификация на основе сертификата требует транспорт TLS"
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Изменить способ отображения адресов в отчётах"
-
 #~ msgid "Checksum/SHA1"
 #~ msgstr "Контрольная сумма/SHA1"
 
@@ -68455,13 +68217,6 @@ msgstr ""
 #~ "последнее возвращённое значение действия будет использовано как глобальное "
 #~ "возвращаемое значение."
 
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr ""
-#~ "Выберите подпросмотр партнёров, включающий только поля адреса, чтобы "
-#~ "изменить способ ввода адресов пользователями."
-
 #~ msgid "Cleaning Services"
 #~ msgstr "Услуги по уборке"
 
@@ -68470,9 +68225,6 @@ msgstr ""
 
 #~ msgid "Clothing Store"
 #~ msgstr "Магазин одежды"
-
-#~ msgid "Collect, organize and share documents."
-#~ msgstr "Собирайте, организуйте и делитесь документами."
 
 #~ msgid ""
 #~ "Colleen Diaz works in IT sector <b>since 10 years</b>. He is known\n"
@@ -68526,15 +68278,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "Computed fields are defined with the fields\n"
-#~ "                                                <strong>Dependencies</"
-#~ "strong> and <strong>Compute</strong>."
-#~ msgstr ""
-#~ "Вычисляемые поля определяются с помощью полей\n"
-#~ "                                                <strong>Зависимости</strong> "
-#~ "и <strong>Вычисление</strong>."
-
-#~ msgid ""
-#~ "Computed fields are defined with the fields\n"
 #~ "                                    <strong>Dependencies</strong> and "
 #~ "<strong>Compute</strong>."
 #~ msgstr ""
@@ -68584,9 +68327,6 @@ msgstr ""
 #~ msgid "Consulting Services"
 #~ msgstr "Консалтинговые услуги"
 
-#~ msgid "Contains In-App Purchases"
-#~ msgstr "Содержит встроенные покупки"
-
 #~ msgid "Convert attachments to links for emails over"
 #~ msgstr "Преобразование вложений в ссылки для писем свыше"
 
@@ -68615,25 +68355,6 @@ msgstr ""
 #~ msgid "Create a Customer"
 #~ msgstr "Создать клиента"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "Создавайте и управляйте компаниями, которые будут управляться через Odoo, "
-#~ "отсюда. Магазины или дочерние компании можно создавать и поддерживать здесь."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Создавайте и управляйте пользователями, которые будут подключаться к "
-#~ "системе. Пользователей можно деактивировать, если в течение определённого "
-#~ "времени они не будут или не должны подключаться к системе. Вы можете "
-#~ "назначать им группы, чтобы предоставить определённый доступ к приложениям, "
-#~ "необходимым для работы в системе."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "Создание и утверждение запросов на согласование"
 
@@ -68648,13 +68369,6 @@ msgstr ""
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "Управление отношениями с клиентами"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Пользовательские представления используются, когда пользователи изменяют "
-#~ "содержимое своих панелей управления (через веб-клиент)"
 
 #~ msgid "DIY Workshops"
 #~ msgstr "DIY мастер-классы"
@@ -68731,13 +68445,6 @@ msgstr ""
 
 #~ msgid "Delete Access"
 #~ msgstr "Доступ на удаление"
-
-#~ msgid ""
-#~ "Demo data should only be used on test databases!\n"
-#~ "                             Once they are loaded, they cannot be removed!"
-#~ msgstr ""
-#~ "Демо-данные следует использовать только в тестовых базах данных!\n"
-#~ "                             После загрузки их невозможно удалить!"
 
 #~ msgid "Demo logo"
 #~ msgstr "Демо логотип"
@@ -68984,9 +68691,6 @@ msgstr ""
 #~ "Из соображений безопасности нельзя объединять более 3 контактов. При "
 #~ "необходимости мастер можно открыть несколько раз."
 
-#~ msgid "Forgot password?"
-#~ msgstr "Забыли пароль?"
-
 #~ msgid "Formatting: long, short, narrow (not used for digital)"
 #~ msgstr "Форматирование: длинное, короткое, узкое (не для цифровых данных)"
 
@@ -69001,10 +68705,6 @@ msgstr ""
 
 #~ msgid "Furniture Store"
 #~ msgstr "Мебельный магазин"
-
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr "G - ОПТОВАЯ И РОЗНИЧНАЯ ТОРГОВЛЯ; РЕМОНТ АВТОМОБИЛЕЙ И МОТОЦИКЛОВ"
 
 #~ msgid "Gallery"
 #~ msgstr "Галерея"
@@ -69102,15 +68802,6 @@ msgstr ""
 #~ msgid "Height"
 #~ msgstr "Высота"
 
-#~ msgid ""
-#~ "Here is your new API key, use it instead of a password for RPC access.\n"
-#~ "                            Your login is still necessary for interactive "
-#~ "usage."
-#~ msgstr ""
-#~ "Вот ваш новый ключ API, используйте его вместо пароля для доступа к RPC.\n"
-#~ "                            Ваш логин все еще необходим для интерактивного "
-#~ "использования."
-
 #~ msgid "Hidden"
 #~ msgstr "Скрытый"
 
@@ -69198,19 +68889,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Если установлено, привязка действия применяется только для этого "
 #~ "пользователя."
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "Если это представление наследуется,\n"
-#~ "* если True, представление всегда расширяет родительское\n"
-#~ "* если False, представление сейчас не расширяет родительское, но может быть "
-#~ "включено\n"
-#~ "         "
 
 #~ msgid ""
 #~ "If user belongs to several groups, the results from step 2 are combined with "
@@ -69315,15 +68993,6 @@ msgstr ""
 #~ msgstr "IoT"
 
 #~ msgid ""
-#~ "It is very important that this description be clear\n"
-#~ "                        and complete, <strong>it will be the only way to\n"
-#~ "                        identify the key once created</strong>."
-#~ msgstr ""
-#~ "Очень важно, чтобы это описание было четким\n"
-#~ "                        и полным, <strong>это будет единственным способом\n"
-#~ "                        идентифицировать ключ после его создания</strong>."
-
-#~ msgid ""
 #~ "It provides post-graduate education in fluid dynamics\n"
 #~ "                    (research master in fluid dynamics, former \"Diploma\n"
 #~ "                    Course\", doctoral program, stagiaire program and "
@@ -69423,19 +69092,6 @@ msgstr ""
 
 #~ msgid "Manage accounting with fleets"
 #~ msgstr "Управление бухгалтерией с автопарками"
-
-#~ msgid ""
-#~ "Manage and customize the items available and displayed in your Odoo system "
-#~ "menu. You can delete an item by clicking on the box at the beginning of each "
-#~ "line and then delete it through the button that appeared. Items can be "
-#~ "assigned to specific groups in order to make them accessible to some users "
-#~ "within the system."
-#~ msgstr ""
-#~ "Управляйте и настраивайте элементы, доступные и отображаемые в меню вашей "
-#~ "системы Odoo. Вы можете удалить элемент, нажав на поле в начале каждой "
-#~ "строки, а затем удалить его с помощью появившейся кнопки. Элементы можно "
-#~ "назначить определенным группам, чтобы сделать их доступными для некоторых "
-#~ "пользователей в системе."
 
 #~ msgid "Manage your fleet and track car costs"
 #~ msgstr "Управление автопарком и отслеживание затрат на автомобили"
@@ -69562,17 +69218,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Ответ не получен. Проверьте адрес сервера и номер порта.\n"
 #~ " %s"
-
-#~ msgid ""
-#~ "Non-trivial testing utilities can require models & all\n"
-#~ "\n"
-#~ "This here module is useful to validate that they're doing what they're \n"
-#~ "supposed to do\n"
-#~ msgstr ""
-#~ "Нетривиальные утилиты тестирования могут требовать модели и все остальное\n"
-#~ "\n"
-#~ "Этот модуль полезен для проверки того, что они выполняют свои функции\n"
-#~ "как положено\n"
 
 #~ msgid "None"
 #~ msgstr "Нет"
@@ -69836,34 +69481,6 @@ msgstr ""
 
 #~ msgid "Online Appointment"
 #~ msgstr "Онлайн-запись"
-
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "Применяется только в том случае, если это представление наследуется от "
-#~ "другого (inherit_id не равно False/Null).\n"
-#~ "\n"
-#~ "* Если используется расширение (по умолчанию), при запросе этого "
-#~ "представления\n"
-#~ "находится ближайшее основное представление (через inherit_id), затем "
-#~ "применяются все представления,\n"
-#~ "наследующие от него с моделью этого представления.\n"
-#~ "* Если используется основное представление, ближайшее основное представление "
-#~ "полностью разрешается (даже если оно использует\n"
-#~ "другую модель, чем это), затем применяются спецификации наследования этого "
-#~ "представления\n"
-#~ "(<xpath/>), и результат используется так, как если бы это было\n"
-#~ "фактической архитектурой этого представления.\n"
 
 #~ msgid "Open Sans"
 #~ msgstr "Open Sans"
@@ -70236,9 +69853,6 @@ msgstr ""
 #~ "отчета не содержит атрибуты 'data-oe-model' и 'data-oe-id' в составе div с "
 #~ "классом 'article'."
 
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "Расширения для ресторана в точке продажи "
-
 #~ msgid "Roboto"
 #~ msgstr "Roboto"
 
@@ -70311,38 +69925,6 @@ msgstr ""
 #~ msgid "See http://openerp.com"
 #~ msgstr "См. http://openerp.com"
 
-#~ msgid ""
-#~ "Select the list of fields used to search for\n"
-#~ "                            duplicated records. If you select several "
-#~ "fields,\n"
-#~ "                            Odoo will propose you to merge only those "
-#~ "having\n"
-#~ "                            all these fields in common. (not one of the "
-#~ "fields)."
-#~ msgstr ""
-#~ "Выберите список полей, используемых для поиска\n"
-#~ "                            дублирующихся записей. Если вы выберете "
-#~ "несколько полей,\n"
-#~ "                            Odoo предложит объединить только те записи, у "
-#~ "которых\n"
-#~ "                            все эти поля совпадают (а не одно из полей)."
-
-#~ msgid ""
-#~ "Selected contacts will be merged together.\n"
-#~ "                                All documents linked to one of these "
-#~ "contacts\n"
-#~ "                                will be redirected to the destination "
-#~ "contact.\n"
-#~ "                                You can remove contacts from this list to "
-#~ "avoid merging them."
-#~ msgstr ""
-#~ "Выбранные контакты будут объединены.\n"
-#~ "                                Все документы, связанные с одним из этих "
-#~ "контактов,\n"
-#~ "                                будут перенаправлены на целевой контакт.\n"
-#~ "                                Вы можете удалить контакты из этого списка, "
-#~ "чтобы избежать их объединения."
-
 #~ msgid "Self"
 #~ msgstr "Сам"
 
@@ -70377,9 +69959,6 @@ msgstr ""
 
 #~ msgid "Short"
 #~ msgstr "Короткий"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "Простые скидки в точке продаж "
 
 #~ msgid "Slash"
 #~ msgstr "Слэш"
@@ -70429,14 +70008,6 @@ msgstr ""
 
 #~ msgid "Surveying & Mapping"
 #~ msgstr "Геодезия и картография"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr ""
-#~ "T - ДЕЯТЕЛЬНОСТЬ ДОМАШНИХ ХОЗЯЙСТВ КАК РАБОТОДАТЕЛЕЙ; НЕДИФФЕРЕНЦИРОВАННАЯ "
-#~ "ДЕЯТЕЛЬНОСТЬ ДОМАШНИХ ХОЗЯЙСТВ ПО ПРОИЗВОДСТВУ ТОВАРОВ И УСЛУГ ДЛЯ "
-#~ "СОБСТВЕННОГО ИСПОЛЬЗОВАНИЯ"
 
 #~ msgid "TOTPortal"
 #~ msgstr "TOTPortal"
@@ -70510,30 +70081,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Компания %(company_name)s не может быть заархивирована, так как она всё ещё "
 #~ "используется как компания по умолчанию для %(active_users)s пользователей."
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "Мастера настройки помогают настроить новый экземпляр Odoo. Они запускаются "
-#~ "при установке новых модулей, но вы можете вручную перезапустить некоторые "
-#~ "мастера из этого меню."
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "Поле <strong>Вычислить</strong> — это код Python для\n"
-#~ "                                                вычисления значения поля в "
-#~ "наборе записей. Значение поля\n"
-#~ "                                                должно быть присвоено каждой "
-#~ "записи с помощью присваивания,\n"
-#~ "                                                подобного словарю."
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -70701,16 +70248,6 @@ msgstr ""
 #~ msgstr "Комиссионный магазин"
 
 #~ msgid ""
-#~ "To notify progress for CRON call and re-trigger a call if there is remaining "
-#~ "tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-#~ msgstr ""
-#~ "Чтобы уведомить о прогрессе вызова CRON и повторно запустить вызов, если "
-#~ "остались задачи,\n"
-#~ "используйте <code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-
-#~ msgid ""
 #~ "Toni Rhodes works in IT sector <b>since 10 years</b>. He is known\n"
 #~ "                notably for selling mouse traps. With that trick he cut\n"
 #~ "                IT budget by almost half within the last 2 years.\n"
@@ -70801,13 +70338,6 @@ msgstr ""
 #~ msgstr "Использовать CSS-отступы"
 
 #~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "Используйте группы для организации стран, которые часто выбираются вместе "
-#~ "(например, \"LATAM\", \"BeNeLux\", \"ASEAN\")."
-
-#~ msgid ""
 #~ "Use the SMTP configuration set in the \"Command Line Interface\" arguments."
 #~ msgstr ""
 #~ "Используйте конфигурацию SMTP, заданную в аргументах \"Интерфейса командной "
@@ -70830,14 +70360,6 @@ msgstr ""
 
 #~ msgid "View and create reports"
 #~ msgstr "Просмотр и создание отчетов"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "Представления позволяют вам персонализировать каждое представление в Odoo. "
-#~ "Вы можете добавлять новые поля, перемещать их, переименовывать или удалять "
-#~ "те, которые вам не нужны."
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -70891,17 +70413,6 @@ msgstr ""
 #~ "Если для письма не указан конкретный почтовый сервер, используется сервер с "
 #~ "наивысшим приоритетом. Приоритет по умолчанию — 10 (меньшее число = более "
 #~ "высокий приоритет)."
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "Когда используются подпоследовательности для диапазона дат, вы можете "
-#~ "добавлять префикс 'range_' к переменным,\n"
-#~ "                                чтобы использовать начало диапазона вместо "
-#~ "текущей даты, например, %(range_year)s вместо %(year)s."
 
 #~ msgid "Whether this contact is an Employee."
 #~ msgstr "Является ли этот контакт сотрудником."
@@ -71035,13 +70546,6 @@ msgstr ""
 #~ msgid "You should update this document to reflect your T&amp;C."
 #~ msgstr "Вам следует обновить этот документ в соответствии с вашими Т&amp;С."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr ""
-#~ "Вы сможете определить дополнительные права доступа, отредактировав вновь "
-#~ "созданного пользователя в меню Настройки / Пользователи."
-
 #~ msgid "Your conditions..."
 #~ msgstr "Ваши условия..."
 
@@ -71101,24 +70605,8 @@ msgstr ""
 #~ msgid "float"
 #~ msgstr "float"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "для записи в self:\n"
-#~ "        record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "format() должен содержать ровно один спецификатор формата %char"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "успешно установлен.\n"
-#~ "                            Пользователи могут выбрать предпочитаемый язык в "
-#~ "своих настройках."
 
 #~ msgid "hour"
 #~ msgstr "час"
@@ -71152,13 +70640,6 @@ msgstr ""
 
 #~ msgid "one2many"
 #~ msgstr "one2many"
-
-#~ msgid ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
-#~ msgstr ""
-#~ "имя_партнера = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
 
 #~ msgid "payroll"
 #~ msgstr "зарплата"
@@ -76401,16 +75882,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Для %(model)s уже есть общий фильтр, установленный по умолчанию, удалите "
 #~ "или измените его, прежде чем устанавливать новый фильтр по умолчанию"
-
-#~ msgid ""
-#~ "This file was generated using the universal <strong>Unicode/UTF-8</"
-#~ "strong> file encoding, please be sure to view and edit\n"
-#~ "                           using the same encoding."
-#~ msgstr ""
-#~ "Этот файл был создан с использованием универсальной кодировки "
-#~ "<strong>Unicode/UTF-8</strong>, пожалуйста, убедитесь, что просмотр и "
-#~ "редактирование\n"
-#~ "                           используя ту же кодировку."
 
 #~ msgid ""
 #~ "This is the base module to manage chart of accounts and localization for "

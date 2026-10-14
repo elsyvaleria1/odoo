@@ -1219,6 +1219,10 @@ msgid ""
 "Accounting Data for Belgian Payroll Rules.\n"
 "==========================================\n"
 msgstr ""
+"\n"
+"داده‌های حسابداری برای قوانین حقوق و دستمزد بلژیک.\n"
+"==========================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_eg_hr_payroll_account
@@ -1493,6 +1497,9 @@ msgid ""
 "\n"
 "Accounting reports for Belgium\n"
 msgstr ""
+"\n"
+"        گزارشهای حسابداری برای بلژیک\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_bj_reports
@@ -1543,6 +1550,9 @@ msgid ""
 "\n"
 "Accounting reports for Chile\n"
 msgstr ""
+"\n"
+"        گزارشهای حسابداری برای شیلی\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_cn_reports
@@ -1559,6 +1569,10 @@ msgid ""
 "Accounting reports for Colombia\n"
 "================================\n"
 msgstr ""
+"\n"
+"گزارشهای حسابداری برای کلمبیا\n"
+"================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_km_reports
@@ -1625,6 +1639,10 @@ msgid ""
 "Accounting reports for Denmark\n"
 "=================================\n"
 msgstr ""
+"\n"
+"گزارش‌های حسابداری برای دانمارک\n"
+"=================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_do_reports
@@ -1669,6 +1687,11 @@ msgid ""
 "================================\n"
 "\n"
 msgstr ""
+"\n"
+"گزارش‌های حسابداری برای فنلاند\n"
+"================================\n"
+"\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_fr_reports
@@ -1760,6 +1783,9 @@ msgid ""
 "Accounting reports for India\n"
 "================================\n"
 msgstr ""
+"\n"
+"گزارشهای حسابداری برای هند\n"
+"================================"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_il_reports
@@ -1946,6 +1972,9 @@ msgid ""
 "\n"
 "Accounting reports for Romania\n"
 msgstr ""
+"\n"
+"        گزارش‌های حسابداری برای رومانی\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_rw_reports
@@ -2011,6 +2040,9 @@ msgid ""
 "\n"
 "Accounting reports for Spain\n"
 msgstr ""
+"\n"
+"        گزارش‌های حسابداری برای اسپانیا\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_lk_reports
@@ -2025,6 +2057,9 @@ msgid ""
 "\n"
 "Accounting reports for Sweden\n"
 msgstr ""
+"\n"
+"        گزارش‌های حسابداری برای سوئد\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ch_reports
@@ -2032,6 +2067,9 @@ msgid ""
 "\n"
 "Accounting reports for Switzerland\n"
 msgstr ""
+"\n"
+"        گزارش‌های حسابداری برای سوئیس\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_sn_reports
@@ -2118,6 +2156,9 @@ msgid ""
 "\n"
 "Accounting reports for US\n"
 msgstr ""
+"\n"
+"        گزارش‌های حسابداری برای ایالات متحده\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ug_reports
@@ -2193,6 +2234,9 @@ msgid ""
 "\n"
 "Add a dynamic report about recruitment.\n"
 msgstr ""
+"\n"
+"یک گزارش پویا در مورد استخدام اضافه کنید.\n"
+"   "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_latam_base
@@ -2390,6 +2434,8 @@ msgid ""
 "\n"
 "Adds Quality Control to workorders with IoT.\n"
 msgstr ""
+"\n"
+"    کنترل کیفی با استفاده از IoT یه سفارش کار اضافه می‌کند.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_quality_mrp_workorder
@@ -2397,6 +2443,8 @@ msgid ""
 "\n"
 "Adds Quality Control to workorders.\n"
 msgstr ""
+"\n"
+"    کنترل کیفی به سفارش کاری اضافه می کند.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_product_margin
@@ -2511,6 +2559,8 @@ msgid ""
 "\n"
 "Adds workcenters to Quality Control\n"
 msgstr ""
+"\n"
+"    مراکز کار به کنترل کیفیت اضافه می‌کند\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_enterprise
@@ -2664,6 +2714,10 @@ msgid ""
 "Allow users to sign up and reset their password\n"
 "===============================================\n"
 msgstr ""
+"\n"
+"به کاربران اجازه ثبت نام و بازنشانی گذرواژه را می‌دهد\n"
+"===============================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_website_sale_mass_mailing
@@ -3039,6 +3093,9 @@ msgid ""
 "\n"
 "Ask questions, get answers, no distractions\n"
 msgstr ""
+"\n"
+"سوال بپرسید، جواب بگیرید، بدون ابهام\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_test
@@ -3064,6 +3121,13 @@ msgid ""
 "Keeps track of depreciations, and creates corresponding journal entries.\n"
 "\n"
 msgstr ""
+"\n"
+"مدیریت دارایی‌ها\n"
+"=================\n"
+"دارایی‌های یک شرکت یا شخص را مدیریت کنید.\n"
+"حساب استهلاک را دارد و ورودی‌های مربوطه روزنامه را ایجاد می‌کند.\n"
+"\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_attachment_indexation
@@ -3140,6 +3204,9 @@ msgid ""
 "\n"
 "Auto-complete partner companies' data\n"
 msgstr ""
+"\n"
+"       پر کردن خودکار داده شرکت همکار\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_be_hr_payroll_dimona
@@ -4078,6 +4145,10 @@ msgid ""
 "Cash Basis for Accounting Reports\n"
 "=================================\n"
 msgstr ""
+"\n"
+"مبنای نقد برای گزارش‌های حسابداری\n"
+"=================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_hr_skills_survey
@@ -4190,6 +4261,12 @@ msgid ""
 "\n"
 "Thai accounting chart and localization.\n"
 msgstr ""
+"\n"
+"نمودار حسابها برای تایلند.\n"
+"===============================\n"
+"\n"
+"نمودار حسابداری و محلی‌سازی تایلند.\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_si
@@ -4981,6 +5058,9 @@ msgid ""
 "\n"
 "Design gorgeous mails\n"
 msgstr ""
+"\n"
+"نامه‌های زیبا طراحی کنید\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_de
@@ -7577,6 +7657,12 @@ msgid ""
 "\n"
 "Allows users to create custom dashboard.\n"
 msgstr ""
+"\n"
+"امکان ایجاد داشبورد سفارشی به کاربر می‌دهد.\n"
+"========================================\n"
+"\n"
+"به کاربرها اجازه می‌دهد داشبورد سفارشی ایجاد کنند.\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_lt_hr_payroll
@@ -8475,6 +8561,10 @@ msgid ""
 "\n"
 "Module linking the attendance module to the timesheet app.\n"
 msgstr ""
+"\n"
+"    ماجولی که بین ماجول حضور و غیاب و برنامه برگه زمانی لینک ایجاد "
+"می‌کند.\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_followup
@@ -9866,6 +9956,9 @@ msgid ""
 "\n"
 "Schedule your teams and employees with shift.\n"
 msgstr ""
+"\n"
+"    با شیف بندی تیم ها و کارمندان خود را مدیریت کن.\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_planning_hr_skills
@@ -12895,6 +12988,9 @@ msgid ""
 "\n"
 "This module provides the core of the Odoo Mobile App.\n"
 msgstr ""
+"\n"
+"        این ماجول هسته برنامه موبایل اودو را فراهم می‌کند.\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pl_reports_pos_jpk
@@ -15883,14 +15979,14 @@ msgstr ""
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>: محیطی که در آن اکشن اجرا می‌شود"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>: محیطی که در آن اکشن اجرا می‌شود"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -15919,6 +16015,8 @@ msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
 msgstr ""
+"<code>مدل</code>: مدلی از رکورد که بر روی آن عملیات فعال می‌شود؛ یک مجموعه "
+"رکورد خالی است"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -15926,6 +16024,8 @@ msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
 msgstr ""
+"<code>مدل</code>: مدلی از رکورد که بر روی آن عملیات فعال می‌شود؛ یک مجموعه "
+"رکورد خالی است"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -16166,6 +16266,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">روز از سال: %(doy)s</span>\n"
+"                                <span colspan=\"2\">هفته از سال: %(woy)s</"
+"span>\n"
+"                                <span colspan=\"2\">روز از هفته (0:دوشنبه): %"
+"(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -16175,6 +16280,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">ساعت 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">ساعت 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">دقیقه: %(min)s</span>\n"
+"                                <span colspan=\"2\">ثانیه: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -16267,6 +16377,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>این عمل داده‌های ذخیره شده توسط این ماژول‌ها را برای همیشه حذف خواهد "
+"کرد!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -19764,6 +19876,12 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"یک گروه مجموعه ای از مناطق کاربردی است که به کاربر اختصاص داده می شود تا به "
+"آنها دسترسی و حقوقی برای برنامه ها و وظایف خاص در سیستم بدهد. می‌توانید "
+"گروه‌های سفارشی ایجاد کنید یا گروه‌های موجود را به‌طور پیش‌فرض ویرایش کنید تا "
+"نمای منویی را که کاربران می‌توانند ببینند سفارشی کنید. اینکه آیا آنها می "
+"توانند حق دسترسی خواندن، نوشتن، ایجاد و حذف داشته باشند را می توان از اینجا "
+"مدیریت کرد."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -24762,6 +24880,9 @@ msgstr "نصب خودکار مورد نیاز است"
 #: model:ir.module.module,summary:base.module_partner_autocomplete
 msgid "Auto-complete partner companies' data"
 msgstr ""
+"\n"
+"       پر کردن خودکار داده شرکت همکار\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_hr_payroll_sale_commission
@@ -25426,6 +25547,10 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"توجه داشته باشید که ویرایش معماری نمای استاندارد توصیه نمی شود، زیرا تغییرات "
+"در طول به روز رسانی‌های بعدی ماژول بازنویسی می‌شوند.<br/>\n"
+"توصیه می‌کنیم از طریق نماهای ارثی یا سفارشی‌سازی با Odoo Studio تغییراتی را در "
+"نماهای استاندارد اعمال کنید."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -28696,6 +28821,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"شرکت هایی را که توسط Odoo مدیریت می شوند از اینجا ایجاد و مدیریت کنید. "
+"فروشگاه ها یا شرکت های تابعه می توانند از اینجا ایجاد و نگهداری شوند."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -28705,6 +28832,10 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"کاربرانی را ایجاد و مدیریت کنید که به سیستم متصل می شوند. کاربران می توانند "
+"غیرفعال شوند، در صورتی که دوره ای وجود داشته باشد که در طی آن به سیستم متصل "
+"نشده باشند. می‌توانید گروه‌هایی را به آنها اختصاص دهید تا به آنها دسترسی خاصی "
+"به برنامه‌هایی که باید در سیستم استفاده کنند، بدهید."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -29372,6 +29503,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"نماهای سفارشی زمانی استفاده می شود که کاربران محتوای نماهای داشبورد خود را "
+"سازماندهی مجدد می کنند (از طریق سرویس گیرنده وب)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -33813,7 +33946,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "گذرواژه فراموش شده؟"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -34089,8 +34222,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -35967,6 +36099,11 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"اگر این نما به ارث برده شده است،  \n"
+"* اگر درست باشد، نما همیشه والد خود را گسترش می‌دهد  \n"
+"* اگر نادرست باشد، نما در حال حاضر والد خود را گسترش نمی‌دهد اما می‌تواند فعال "
+"شود\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -43393,6 +43530,15 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"فقط در صورتی اعمال می‌شود که این نما از یک نمای دیگر به ارث برده باشد "
+"(inherit_id نادرست/Null نباشد).\n"
+"\n"
+"* در صورت توسعه (پیش‌فرض)، اگر این نما درخواست شود، نزدیک‌ترین نمای اولیه "
+"جستجو می‌شود (از طریق inherit_id)، سپس همه نماهایی که از آن با مدل این نما به "
+"ارث برده‌اند اعمال می‌شوند\n"
+"* در صورت اولیه بودن، نزدیک‌ترین نمای اولیه به‌طور کامل حل می‌شود (حتی اگر از "
+"مدلی متفاوت با این استفاده کند)، سپس مشخصات ارثی این نما (<xpath/>) اعمال "
+"می‌شود و نتیجه به‌عنوان ساختار واقعی این نما استفاده می‌شود.\n"
 
 #. module: base
 #. odoo-python
@@ -47878,7 +48024,7 @@ msgstr "رستوران"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "قابلیت های اضافه برای رستوران در پایانه فروش. "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -49882,7 +50028,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "تخفیف ساده در پایانه فروش "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -51286,8 +51432,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -51577,6 +51723,9 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_product_matrix
 msgid "Technical module: Matrix Implementation"
 msgstr ""
+"\n"
+"       ماژول تکنیکال: پیاده سازی متریس\n"
+"    "
 
 #. module: base
 #: model:ir.module.category,name:base.module_category_theme_technology
@@ -52261,6 +52410,9 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"ویزاردهای پیکربندی برای کمک به پیکربندی نمونه جدیدی از Odoo استفاده می شود. "
+"آنها در حین نصب ماژول های جدید راه اندازی می شوند، اما می توانید انتخاب کنید "
+"که برخی از ویزارد را به صورت دستی از این منو راه اندازی مجدد کنید."
 
 #. module: base
 #. odoo-python
@@ -52411,6 +52563,9 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"فیلد <strong>Compute</strong> یک کد پایتون \n"
+"برای محاسیه مقدار فیلد روی مجموعه ای از رکوردها است. مقدار\n"
+"این فیلد باید به هر رکورد با وظیفه ای dictionary-like اختصاص داده شود"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -53331,6 +53486,8 @@ msgid ""
 "file encoding, please be sure to view and edit\n"
 "                            using the same encoding."
 msgstr ""
+"این فایل توسط انکودینگ <strong>Unicode/UTF-8</strong> ساخته شده است؛ لطفا "
+"توجه نمایید با همین انکودینگ ویرایش‌ و ذخیره نمایید."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_ir_actions_act_window__views
@@ -55583,6 +55740,8 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"از گروه‌ها برای تشکیل دادن کشورهایی استفاده کنید که اغلب با هم انتخاب می‌شوند "
+"(مانند \"LATAM\"، \"BeNeLux\"، \"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -56188,6 +56347,9 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"Views به شما امکان می دهد تا هر نمای Odoo را شخصی کنید. می توانید فیلدهای "
+"جدید اضافه کنید، فیلدها را جابجا کنید، نام آنها را تغییر دهید یا مواردی را "
+"که نیاز ندارید حذف کنید."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -56859,6 +57021,10 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"هنگامی که از دنباله های بعدی در محدوده تاریخ استفاده می شود، می توانید "
+"متغیرها را با 'range_' پیشوند کنید.\n"
+"                                 برای استفاده از ابتدای محدوده به جای تاریخ "
+"فعلی، به عنوان مثال. %(range_year)s به جای %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -57596,6 +57762,8 @@ msgid ""
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
 msgstr ""
+"شما قادر خواهید بود حق دسترسی‌های اضافی با ویرایش کاربران جدیدا ایجاد شده در "
+"منوی تنظیمات/کاربران تعریف کنید."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -57985,6 +58153,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"for record in self:\n"
+"record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -58003,6 +58173,8 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"با موفقیت نصب شد.\n"
+"کاربران می توانند زبان مورد علاقه خود را در اولویت های خود انتخاب کنند."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -58135,6 +58307,8 @@ msgid ""
 "partner_name = record.name + '_code' env['res.partner'].create({'name': "
 "partner_name})"
 msgstr ""
+"partner_name = record.name + '_code'\n"
+"env['res.partner'].create({'name': partner_name})"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.UYW
@@ -59406,48 +59580,12 @@ msgstr ""
 #~ msgid "- size ="
 #~ msgstr "- اندازه ="
 
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>: محیطی که در آن اکشن اجرا می‌شود"
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr ""
-#~ "<code>مدل</code>: مدلی از رکورد که بر روی آن عملیات فعال می‌شود؛ یک مجموعه "
-#~ "رکورد خالی است"
-
 #~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
 #~ "<code>time</code>، <code>datetime</code>، <code>dateutil</code>، "
 #~ "<code>timezone</code>: کتابخانه‌های کاربردی پایتون"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">روز از سال: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">هفته از سال: %(woy)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">روز از هفته (0:دوشنبه): %"
-#~ "(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">ساعت 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">ساعت 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">دقیقه: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">ثانیه: %(sec)s</span>"
 
 #~ msgid "<span>Name</span>"
 #~ msgstr "<span> نام</span>"
@@ -59467,13 +59605,6 @@ msgstr ""
 #~ msgid "<strong>Name</strong>"
 #~ msgstr "<strong>نام</strong>"
 
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>این عمل داده‌های ذخیره شده توسط این ماژول‌ها را برای همیشه حذف خواهد "
-#~ "کرد!</strong>"
-
 #~ msgid "<strong>Type</strong>"
 #~ msgstr "<strong>نوع</strong>"
 
@@ -59485,21 +59616,6 @@ msgstr ""
 
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>نماها</strong></u>"
-
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "یک گروه مجموعه ای از مناطق کاربردی است که به کاربر اختصاص داده می شود تا به "
-#~ "آنها دسترسی و حقوقی برای برنامه ها و وظایف خاص در سیستم بدهد. می‌توانید "
-#~ "گروه‌های سفارشی ایجاد کنید یا گروه‌های موجود را به‌طور پیش‌فرض ویرایش کنید تا "
-#~ "نمای منویی را که کاربران می‌توانند ببینند سفارشی کنید. اینکه آیا آنها می "
-#~ "توانند حق دسترسی خواندن، نوشتن، ایجاد و حذف داشته باشند را می توان از اینجا "
-#~ "مدیریت کرد."
 
 #~ msgid "Access Controls"
 #~ msgstr "کنترل‌های دسترسی"
@@ -59555,17 +59671,6 @@ msgstr ""
 #~ msgstr "نوع بارکد, به عبارتی: UPCA, EAN13, Code128"
 
 #~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "توجه داشته باشید که ویرایش معماری نمای استاندارد توصیه نمی شود، زیرا تغییرات "
-#~ "در طول به روز رسانی‌های بعدی ماژول بازنویسی می‌شوند.<br/>\n"
-#~ "توصیه می‌کنیم از طریق نماهای ارثی یا سفارشی‌سازی با Odoo Studio تغییراتی را در "
-#~ "نماهای استاندارد اعمال کنید."
-
-#~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
 #~ "responsibility."
 #~ msgstr "متن زیر یک پیشنهاد است و مسئولیتی برای شرکت اودوو ایجاد نمی‌کند."
@@ -59603,24 +59708,6 @@ msgstr ""
 #~ msgid "Create a Customer"
 #~ msgstr "ایجاد مشتری"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "شرکت هایی را که توسط Odoo مدیریت می شوند از اینجا ایجاد و مدیریت کنید. "
-#~ "فروشگاه ها یا شرکت های تابعه می توانند از اینجا ایجاد و نگهداری شوند."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "کاربرانی را ایجاد و مدیریت کنید که به سیستم متصل می شوند. کاربران می توانند "
-#~ "غیرفعال شوند، در صورتی که دوره ای وجود داشته باشد که در طی آن به سیستم متصل "
-#~ "نشده باشند. می‌توانید گروه‌هایی را به آنها اختصاص دهید تا به آنها دسترسی خاصی "
-#~ "به برنامه‌هایی که باید در سیستم استفاده کنند، بدهید."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "درخواست های تأیید را ایجاد و تأیید کنید"
 
@@ -59632,13 +59719,6 @@ msgstr ""
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "مدیریت ارتباط با مشتری"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "نماهای سفارشی زمانی استفاده می شود که کاربران محتوای نماهای داشبورد خود را "
-#~ "سازماندهی مجدد می کنند (از طریق سرویس گیرنده وب)"
 
 #~ msgid "Date format"
 #~ msgstr "فرمت تاریخ"
@@ -59676,9 +59756,6 @@ msgstr ""
 #~ msgid "Font"
 #~ msgstr "فونت"
 
-#~ msgid "Forgot password?"
-#~ msgstr "گذرواژه فراموش شده؟"
-
 #~ msgid "Full Access"
 #~ msgstr "دسترسی کامل"
 
@@ -59705,19 +59782,6 @@ msgstr ""
 
 #~ msgid "ID used for employee identification."
 #~ msgstr "شناسه مورد استفاده برای شناسایی کارمند."
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "اگر این نما به ارث برده شده است،  \n"
-#~ "* اگر درست باشد، نما همیشه والد خود را گسترش می‌دهد  \n"
-#~ "* اگر نادرست باشد، نما در حال حاضر والد خود را گسترش نمی‌دهد اما می‌تواند فعال "
-#~ "شود\n"
-#~ "         "
 
 #~ msgid "Initial Setup Tools"
 #~ msgstr "ابزار تنظیمات اولیه"
@@ -59792,29 +59856,6 @@ msgstr ""
 #~ msgid "Online Appointment"
 #~ msgstr "ملاقات آنلاین"
 
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "فقط در صورتی اعمال می‌شود که این نما از یک نمای دیگر به ارث برده باشد "
-#~ "(inherit_id نادرست/Null نباشد).\n"
-#~ "\n"
-#~ "* در صورت توسعه (پیش‌فرض)، اگر این نما درخواست شود، نزدیک‌ترین نمای اولیه "
-#~ "جستجو می‌شود (از طریق inherit_id)، سپس همه نماهایی که از آن با مدل این نما به "
-#~ "ارث برده‌اند اعمال می‌شوند\n"
-#~ "* در صورت اولیه بودن، نزدیک‌ترین نمای اولیه به‌طور کامل حل می‌شود (حتی اگر از "
-#~ "مدلی متفاوت با این استفاده کند)، سپس مشخصات ارثی این نما (<xpath/>) اعمال "
-#~ "می‌شود و نتیجه به‌عنوان ساختار واقعی این نما استفاده می‌شود.\n"
-
 #~ msgid "Outgoing Mail Server"
 #~ msgstr "سرور ایمیل Outgoing"
 
@@ -59853,9 +59894,6 @@ msgstr ""
 
 #~ msgid "Report Layout"
 #~ msgstr "طرح گزارش"
-
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "قابلیت های اضافه برای رستوران در پایانه فروش. "
 
 #~ msgid "SMTP Port"
 #~ msgstr "پورت SMTP"
@@ -59897,9 +59935,6 @@ msgstr ""
 #~ msgstr ""
 #~ "سرور با استثنای زیر پاسخ داد:\n"
 #~ " %s"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "تخفیف ساده در پایانه فروش "
 
 #~ msgid "Space"
 #~ msgstr "فضا"
@@ -59954,27 +59989,6 @@ msgstr ""
 #~ msgstr ""
 #~ "شرکت %(company_name)s را نمی توان بایگانی کرد زیرا هنوز به عنوان شرکت %"
 #~ "(active_users)s پیش فرض کاربران استفاده می شود."
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "ویزاردهای پیکربندی برای کمک به پیکربندی نمونه جدیدی از Odoo استفاده می شود. "
-#~ "آنها در حین نصب ماژول های جدید راه اندازی می شوند، اما می توانید انتخاب کنید "
-#~ "که برخی از ویزارد را به صورت دستی از این منو راه اندازی مجدد کنید."
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "فیلد <strong>Compute</strong> یک کد پایتون \n"
-#~ "برای محاسیه مقدار فیلد روی مجموعه ای از رکوردها است. مقدار\n"
-#~ "این فیلد باید به هر رکورد با وظیفه ای dictionary-like اختصاص داده شود"
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -60160,13 +60174,6 @@ msgstr ""
 #~ msgstr "برای نمایش آدرس به جای تگ <br> از کاما استفاده کنید"
 
 #~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "از گروه‌ها برای تشکیل دادن کشورهایی استفاده کنید که اغلب با هم انتخاب می‌شوند "
-#~ "(مانند \"LATAM\"، \"BeNeLux\"، \"ASEAN\")."
-
-#~ msgid ""
 #~ "Use the SMTP configuration set in the \"Command Line Interface\" arguments."
 #~ msgstr ""
 #~ "از پیکربندی SMTP در آرگومان های \"Command Line Interface\" استفاده کنید."
@@ -60185,14 +60192,6 @@ msgstr ""
 
 #~ msgid "View and create reports"
 #~ msgstr "نمایش و ایجاد گزارش‌ها"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "Views به شما امکان می دهد تا هر نمای Odoo را شخصی کنید. می توانید فیلدهای "
-#~ "جدید اضافه کنید، فیلدها را جابجا کنید، نام آنها را تغییر دهید یا مواردی را "
-#~ "که نیاز ندارید حذف کنید."
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -60242,17 +60241,6 @@ msgstr ""
 #~ msgstr ""
 #~ "هنگامی که هیچ سرور ایمیل خاصی برای ایمیل درخواست نمی شود، از بالاترین اولویت "
 #~ "استفاده می شود. اولویت پیش فرض 10 است (تعداد کوچکتر = اولویت بیشتر)"
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "هنگامی که از دنباله های بعدی در محدوده تاریخ استفاده می شود، می توانید "
-#~ "متغیرها را با 'range_' پیشوند کنید.\n"
-#~ "                                 برای استفاده از ابتدای محدوده به جای تاریخ "
-#~ "فعلی، به عنوان مثال. %(range_year)s به جای %(year)s."
 
 #~ msgid "Width"
 #~ msgstr "عرض"
@@ -60362,13 +60350,6 @@ msgstr ""
 #~ msgid "You should update this document to reflect your T&amp;C."
 #~ msgstr "شما باید این سند را به‌روزرسانی کنید تا T&C شما را منعکس کند."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr ""
-#~ "شما قادر خواهید بود حق دسترسی‌های اضافی با ویرایش کاربران جدیدا ایجاد شده در "
-#~ "منوی تنظیمات/کاربران تعریف کنید."
-
 #~ msgid "Your conditions..."
 #~ msgstr "شرایط شما..."
 
@@ -60425,23 +60406,8 @@ msgstr ""
 #~ msgid "float"
 #~ msgstr "عدد اعشاری"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "for record in self:\n"
-#~ "record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "فرمت() باید به عنوان یک مشخص کننده فرمت har داده شود%c"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "با موفقیت نصب شد.\n"
-#~ "کاربران می توانند زبان مورد علاقه خود را در اولویت های خود انتخاب کنند."
 
 #~ msgid "hour"
 #~ msgstr "ساعت"
@@ -60475,13 +60441,6 @@ msgstr ""
 
 #~ msgid "one2many"
 #~ msgstr "one2many"
-
-#~ msgid ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
-#~ msgstr ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
 
 #~ msgid "payroll"
 #~ msgstr "حقوق و دستمزد"
@@ -60527,24 +60486,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        Accounting reports for Belgium\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارشهای حسابداری برای بلژیک\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Chile\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارشهای حسابداری برای شیلی\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "        Accounting reports for Netherlands\n"
 #~ "    "
 #~ msgstr ""
@@ -60559,51 +60500,6 @@ msgstr ""
 #~ msgstr ""
 #~ "\n"
 #~ "        گزارش‌های حسابداری برای پاکستان\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Romania\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارش‌های حسابداری برای رومانی\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Spain\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارش‌های حسابداری برای اسپانیا\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Sweden\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارش‌های حسابداری برای سوئد\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Switzerland\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارش‌های حسابداری برای سوئیس\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for US\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        گزارش‌های حسابداری برای ایالات متحده\n"
 #~ "    "
 
 #~ msgid ""
@@ -60638,88 +60534,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        This module provides the core of the Odoo Mobile App.\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "        این ماجول هسته برنامه موبایل اودو را فراهم می‌کند.\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "       Auto-complete partner companies' data\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "       پر کردن خودکار داده شرکت همکار\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "       Technical module: Matrix Implementation\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "       ماژول تکنیکال: پیاده سازی متریس\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "    Adds Quality Control to workorders with IoT.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "    کنترل کیفی با استفاده از IoT یه سفارش کار اضافه می‌کند.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "    Adds Quality Control to workorders.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "    کنترل کیفی به سفارش کاری اضافه می کند.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "    Adds workcenters to Quality Control\n"
-#~ msgstr ""
-#~ "\n"
-#~ "    مراکز کار به کنترل کیفیت اضافه می‌کند\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "    Module linking the attendance module to the timesheet app.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "    ماجولی که بین ماجول حضور و غیاب و برنامه برگه زمانی لینک ایجاد "
-#~ "می‌کند.\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "    Schedule your teams and employees with shift.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "    با شیف بندی تیم ها و کارمندان خود را مدیریت کن.\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "  Publish your products on eBay"
 #~ msgstr ""
 #~ "\n"
 #~ "  محصول خود را روی ایfd lkjav ;kdn"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting Data for Belgian Payroll Rules.\n"
-#~ "==========================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "داده‌های حسابداری برای قوانین حقوق و دستمزد بلژیک.\n"
-#~ "==========================================\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -60730,41 +60548,6 @@ msgstr ""
 #~ "\n"
 #~ "گزارشهای حسابداری\n"
 #~ "==================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Colombia\n"
-#~ "================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "گزارشهای حسابداری برای کلمبیا\n"
-#~ "================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Denmark\n"
-#~ "=================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "گزارش‌های حسابداری برای دانمارک\n"
-#~ "=================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Finland\n"
-#~ "================================\n"
-#~ "\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "گزارش‌های حسابداری برای فنلاند\n"
-#~ "================================\n"
-#~ "\n"
 #~ "    "
 
 #~ msgid ""
@@ -60782,31 +60565,12 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Accounting reports for India\n"
-#~ "================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "گزارشهای حسابداری برای هند\n"
-#~ "================================"
-
-#~ msgid ""
-#~ "\n"
 #~ "Add a dynamic report about contracts and employees.\n"
 #~ "    "
 #~ msgstr ""
 #~ "\n"
 #~ "یک گزارش پویا در مورد قراردادها و کارکنان اضافه کنید.\n"
 #~ "  "
-
-#~ msgid ""
-#~ "\n"
-#~ "Add a dynamic report about recruitment.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "یک گزارش پویا در مورد استخدام اضافه کنید.\n"
-#~ "   "
 
 #~ msgid ""
 #~ "\n"
@@ -60817,74 +60581,11 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Allow users to sign up and reset their password\n"
-#~ "===============================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "به کاربران اجازه ثبت نام و بازنشانی گذرواژه را می‌دهد\n"
-#~ "===============================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Ask questions, get answers, no distractions\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "سوال بپرسید، جواب بگیرید، بدون ابهام\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "Assets management\n"
-#~ "=================\n"
-#~ "Manage assets owned by a company or a person.\n"
-#~ "Keeps track of depreciations, and creates corresponding journal entries.\n"
-#~ "\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "مدیریت دارایی‌ها\n"
-#~ "=================\n"
-#~ "دارایی‌های یک شرکت یا شخص را مدیریت کنید.\n"
-#~ "حساب استهلاک را دارد و ورودی‌های مربوطه روزنامه را ایجاد می‌کند.\n"
-#~ "\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Bridge module for project and enterprise\n"
 #~ "    "
 #~ msgstr ""
 #~ "\n"
 #~ "بسته نرم افزاری رابط بین پروژه و سازمانی\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Cash Basis for Accounting Reports\n"
-#~ "=================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "مبنای نقد برای گزارش‌های حسابداری\n"
-#~ "=================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Chart of Accounts for Thailand.\n"
-#~ "===============================\n"
-#~ "\n"
-#~ "Thai accounting chart and localization.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "نمودار حسابها برای تایلند.\n"
-#~ "===============================\n"
-#~ "\n"
-#~ "نمودار حسابداری و محلی‌سازی تایلند.\n"
 #~ "    "
 
 #~ msgid ""
@@ -60907,15 +60608,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Design gorgeous mails\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "نامه‌های زیبا طراحی کنید\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "General Chart of Accounts.\n"
 #~ "==========================\n"
 #~ "\n"
@@ -60928,21 +60620,6 @@ msgstr ""
 #~ "\n"
 #~ "نمودار حسابها و مالیاتها برای اروگوئه را فراهم می‌کند.\n"
 #~ "\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Lets the user create a custom dashboard.\n"
-#~ "========================================\n"
-#~ "\n"
-#~ "Allows users to create custom dashboard.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "امکان ایجاد داشبورد سفارشی به کاربر می‌دهد.\n"
-#~ "========================================\n"
-#~ "\n"
-#~ "به کاربرها اجازه می‌دهد داشبورد سفارشی ایجاد کنند.\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -61599,14 +61276,6 @@ msgstr ""
 #~ msgstr ""
 #~ "قبلاً یک فیلتر مشترک به‌عنوان پیش‌فرض برای %(model)s تنظیم شده است، قبل از "
 #~ "تنظیم یک پیش‌فرض جدید آن را حذف یا تغییر دهید."
-
-#~ msgid ""
-#~ "This file was generated using the universal <strong>Unicode/UTF-8</"
-#~ "strong> file encoding, please be sure to view and edit\n"
-#~ "                           using the same encoding."
-#~ msgstr ""
-#~ "این فایل توسط انکودینگ <strong>Unicode/UTF-8</strong> ساخته شده است؛ لطفا "
-#~ "توجه نمایید با همین انکودینگ ویرایش‌ و ذخیره نمایید."
 
 #~ msgid ""
 #~ "This restriction is due to the following rules:\n"

@@ -272,8 +272,8 @@ ir.actions.report._render_qweb_pdf(docids, data)
 
 ### Tag Strategy
 
-- **34% of test files have no `@tagged` decorator** — they run in all phases by default
-- **66% use `@tagged`** — typically `@tagged('post_install', '-at_install', 'feature_tag')`
+- **35% of test files have no `@tagged` decorator** — they run in all phases by default
+- **65% use `@tagged`** — typically `@tagged('post_install', '-at_install', 'feature_tag')`
 - `post_install` always travels with `-at_install`; 439 classes carry it
 - The three figures above are derived by `factcheck.sh` from `_test_inventory.py`
 

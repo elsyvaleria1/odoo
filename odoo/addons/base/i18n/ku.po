@@ -16211,6 +16211,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>ئەم کارە بۆ هەمیشە هەموو ئەو زانیاریانە دەسڕێتەوە کە لە ئێستادا "
+"لەلایەن مۆدێلەکانەوە هەڵگیراون!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -28652,6 +28654,11 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"دروستکردن و بەڕێوەبردنی بەکارهێنەر کە پەیوەندی بە سیستەمەکەوە دەکات. "
+"بەکارهێنەران دەتوانرێت ناچالاک بکرێن ئەگەر ماوەیەک هەبێت کە لەو ماوەیەدا "
+"پەیوەندی بە سیستەمەکەوە بکەن/نابێت. دەتوانیت گروپیان بۆ دیاری بکەیت بۆ ئەوەی "
+"دەستڕاگەیشتنێکی تایبەتیان پێ بدەیت بەو بەرنامانەی کە پێویستە لە سیستەمەکەدا "
+"بەکاریان بهێنن."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -30903,6 +30910,9 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_l10n_sa_edi
 msgid "E-Invoicing, Universal Business Language"
 msgstr ""
+"\n"
+"        فاکتورەی ئەلیکترۆنی، زمانی بازرگانی گشتگیر\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_tw_edi_ecpay
@@ -34031,8 +34041,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -51215,8 +51224,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -59056,15 +59065,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        E-Invoicing, Universal Business Language\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        فاکتورەی ئەلیکترۆنی، زمانی بازرگانی گشتگیر\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Adds approvals data to documents\n"
 #~ msgstr ""
 #~ "\n"
@@ -59122,13 +59122,6 @@ msgstr ""
 
 #~ msgid "<strong>Reports:</strong>"
 #~ msgstr "<strong>ڕاپۆرتەکان:</strong>"
-
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>ئەم کارە بۆ هەمیشە هەموو ئەو زانیاریانە دەسڕێتەوە کە لە ئێستادا "
-#~ "لەلایەن مۆدێلەکانەوە هەڵگیراون!</strong>"
 
 #~ msgid "<strong>Type</strong>"
 #~ msgstr "<strong>جۆر</strong>"
@@ -59212,18 +59205,6 @@ msgstr ""
 
 #~ msgid "Create Date"
 #~ msgstr "بەرواری دروستکردن"
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "دروستکردن و بەڕێوەبردنی بەکارهێنەر کە پەیوەندی بە سیستەمەکەوە دەکات. "
-#~ "بەکارهێنەران دەتوانرێت ناچالاک بکرێن ئەگەر ماوەیەک هەبێت کە لەو ماوەیەدا "
-#~ "پەیوەندی بە سیستەمەکەوە بکەن/نابێت. دەتوانیت گروپیان بۆ دیاری بکەیت بۆ ئەوەی "
-#~ "دەستڕاگەیشتنێکی تایبەتیان پێ بدەیت بەو بەرنامانەی کە پێویستە لە سیستەمەکەدا "
-#~ "بەکاریان بهێنن."
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "بەڕێوەبردنی پەیوەندی کڕیار"

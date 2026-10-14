@@ -841,6 +841,41 @@ class TestAccessGraph(TransactionCase):
         )
         self.assertIn(grant, [s["grant"] for s in sources])
 
+    def test_the_sources_and_group_ranks_name_nothing_a_leaf_holds_above_it(self):
+        group = self.env["res.groups"].create({"name": "Graph: leaf holders"})
+        folder = self.Node.create({"name": "F"})
+        leaf = self.Node.create(
+            {
+                "name": "L",
+                "parent_id": folder.id,
+                "is_container": False,
+                "owner_id": self.alice.id,
+            }
+        )
+        child = self.Node.create(
+            {"name": "C", "parent_id": leaf.id, "is_container": False}
+        )
+        self.Grant.create(
+            [
+                {
+                    "node_id": leaf.id,
+                    "partner_id": self.carol.partner_id.id,
+                    "role": "edit",
+                },
+                {"node_id": leaf.id, "group_id": group.id, "role": "edit"},
+            ]
+        )
+
+        self.assertFalse(child.with_user(self.carol).sudo().access_role)
+        self.assertFalse(child.with_user(self.alice).sudo().access_role)
+        self.assertEqual(child._access_graph_sources(), [])
+        self.assertEqual(child._access_graph_group_ranks(group.id), {})
+        self.assertEqual(
+            {(s["node"], s["role"]) for s in leaf._access_graph_sources()},
+            {(leaf, "edit"), (leaf, "manage")},
+        )
+        self.assertEqual(leaf._access_graph_group_ranks(group.id), {leaf.id: 2})
+
     def test_the_mixin_without_a_graph_answers_every_field(self):
         mixin = self.env["mixin.access.graph"]
         description = mixin.fields_get(["access_role", "access_scope_path"])

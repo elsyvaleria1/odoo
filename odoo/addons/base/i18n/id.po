@@ -2527,6 +2527,18 @@ msgid ""
 "        - Operations through electronic interfaces (IED)\n"
 "        - Invoices done with KSef\n"
 msgstr ""
+"\n"
+"Accounting reports for Poland\n"
+"\n"
+"        This module also provides the possibility to generate the JPK_VAT in "
+"xml, for Poland.\n"
+"\n"
+"        Currently, does not report specific values for :\n"
+"        - Cash basis for entries with input tax (MK)\n"
+"        - Margin-based operations (MR_T/MR_UZ)\n"
+"        - Bills for agricultural products (VAT_RR)\n"
+"        - Operations through electronic interfaces (IED)\n"
+"        - Invoices done with KSef \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pt_reports
@@ -3313,6 +3325,9 @@ msgid ""
 "Advanced features for the PoS like better views\n"
 "for IoT Box config.\n"
 msgstr ""
+"\n"
+"Fitur advanced untuk POS seperti tampilan lebih baik\n"
+"untuk konfigurasi IoT Box.   \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_agro_partner_scoring
@@ -3600,6 +3615,11 @@ msgid ""
 "===========================================================\n"
 "Additional information is displayed in the name of the SOL when it is used in services apps (project and planning).\n"
 msgstr ""
+"\n"
+"Izinkan untuk menampilkan informasi sale di aplikasi layanan SOL\n"
+"===========================================================\n"
+"Informasi tambahan ditampilkan atas nama SOL saat digunakan di aplikasi "
+"layanan (project dan planning). \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_purchase_edi_ubl_bis3
@@ -3975,6 +3995,18 @@ msgid ""
 "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, then select the test\n"
 "and print the report from Print button in header area.\n"
 msgstr ""
+"\n"
+"Asserts on accounting.\n"
+"======================\n"
+"Dengan modul ini Anda dapat secara manual memeriksa konsistensi dan "
+"ketidaksamaan untuk modul akuntansi dari menu Laporan/Akuntansi/Tes "
+"Akuntansi.\n"
+"\n"
+"Anda dapat menulis query untuk membuat Tes Konsistensi dan Anda akan "
+"mendapatkan hasil test\n"
+"dalam format PDF yang dapat diakses dari Menu Laporan -> Tes Akuntansi, lalu "
+"pilih tes \n"
+"dan cetak laporan dengan tombol Cetak di bagian header.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_depreciation
@@ -5694,6 +5726,9 @@ msgid ""
 "Configure IoT devices to be used in certain\n"
 "steps for taking measures, taking pictures, ...\n"
 msgstr ""
+"\n"
+"Konfigurasikan perangkat IoT untuk digunakan di langkah-langkah\n"
+"tertentu untuk mengambil tindakan, mengambil gambar, ...\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_databases
@@ -9334,6 +9369,12 @@ msgid ""
 "It is like a regular invoice, but we need to keep track of the link with the original invoice.\n"
 "The wizard used is similar as the one for the credit note.\n"
 msgstr ""
+"\n"
+"Di banyak negara, nota debit digunakan sebagai peningkatan jumlah faktur "
+"yang tersedia\n"
+"atau dalam beberapa kasus tertentu untuk membatalkan nota kredit \n"
+"Seperti faktur biasa, kita harus tetap melacak link dengan faktur original.\n"
+"Wizard yang digunakan mirip dengan yang digunakan untuk nota kredit.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_dk_nemhandel_response
@@ -9718,6 +9759,17 @@ msgid ""
 "case the sale orders should be\n"
 "split per delivery.\n"
 msgstr ""
+"\n"
+"Manajemen inventaris untuk Avatax\n"
+"=======================================\n"
+"Modul ini memungkinkan line-level addresses saat mengambil pajak dari "
+"avatax.\n"
+"\n"
+"Batasan saat ini adalah single order line dengan lebih dari satu pergerakkan "
+"stok (misal 10 unit \n"
+"produk A, 2 dikirim dari gudang #1 dan 8 dari gudang #2). Pada kasus ini "
+"sale order harus dipisah\n"
+"untuk setiap pengiriman.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account
@@ -12774,6 +12826,22 @@ msgid ""
 "For more information about RIBA standards, refer to the guidelines issued by "
 "the Italian Bankers Association (CBI).\n"
 msgstr ""
+"\n"
+"Ri.Ba. Export for Batch Payment\n"
+"================================\n"
+"\n"
+"This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
+"batch payments in Odoo.  \n"
+"It facilitates compliance with the Italian banking standard for managing "
+"receivables.\n"
+"\n"
+"- Group multiple receivables into a single batch for streamlined management "
+"and reconciliation.\n"
+"- Export batch payments as RIBA-compliant files to be submitted to your "
+"homebanking for processing.\n"
+"\n"
+"For more information about RIBA standards, refer to the guidelines issued by "
+"the Italian Bankers Association (CBI).\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ro_intrastat
@@ -15533,6 +15601,9 @@ msgid ""
 "This module adds a new template to the Newsletter Block to allow\n"
 "your visitors to subscribe with their phone number.\n"
 msgstr ""
+"\n"
+"Modul ini menambahkan templat baru ke Newsletter Block untuk memungkinkan\n"
+"pengunjung Anda untuk berlangganan menggunakan nomor telepon mereka.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_renting_crm
@@ -16082,6 +16153,11 @@ msgid ""
 "and decide the split of these costs among their stock moves in order to\n"
 "take them into account in your stock valuation.\n"
 msgstr ""
+"\n"
+"Modul ini memungkinkan Anda untuk dengan mudah menambahkan biaya tambahan "
+"pada manufacturing order \n"
+"dan menentukan pemisahan biaya ini di antara pergerakkan stok untuk\n"
+"mempertimbangkan mereka di valuasi stok Anda.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_us_direct_deposit
@@ -16284,6 +16360,10 @@ msgid ""
 "Install this if you are using the Point of Sale app in Chile.\n"
 "\n"
 msgstr ""
+"\n"
+"This module brings the technical requirement for the Chilean regulation.\n"
+"Install this if you are using the Point of Sale app in Chile.    \n"
+"\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pe_pos
@@ -17340,6 +17420,9 @@ msgid ""
 "\n"
 "This module provides the link between quality steps and IoT devices.\n"
 msgstr ""
+"\n"
+"Modul ini menyediakan link di antara langkah-langkah kualitas dan perangkat "
+"IoT. \n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_pos_mobile
@@ -18005,6 +18088,45 @@ msgid ""
 "countries,\n"
 "only the country code will be validated.\n"
 msgstr ""
+"\n"
+"Validasi PPN untuk nomor PPN Mitra.\n"
+"=========================================\n"
+"\n"
+"Setelah menginstal modul ini, nilai yang dimasukkan di field PPN untuk Mitra "
+"akan\n"
+"divalidasi untuk semua negara yang didukung. Negara akan ditentukan "
+"berdasarkan\n"
+"kode negara 2-huruf yang di depan nomor PPN, contohnya ``BE0477472701``\n"
+"yang akan divalidasi berdasarkan peraturan Belgia.\n"
+"\n"
+"Ada dua tingkat berbeda untuk validasi nomor PPN:\n"
+"--------------------------------------------------------\n"
+"    * Secara default, pemeriksaan sederhana off-line dilakukan menggunakan "
+"peraturan validasi\n"
+"      yang diketahui untuk negara tersebut, biasanya menggunakan pemeriksaan "
+"nomor sederhana. Ini cepat dan\n"
+"      selalu tersedia, tapi memungkinkan nomor yang mungkin tidak "
+"dialokasikan dengan benar,\n"
+"      atau sudah tidak valid lagi.\n"
+"\n"
+"    * Saat opsi \"VAT VIES Check\" diaktifkan (di konfigurasi Perusahaan\n"
+"      User), nomor PPN akan sebaliknya digunakan untuk database EU\n"
+"      VIES, yang akan sebetulnya memeriksa bahwa nomor valid dan saat ini\n"
+"      dialokasikan ke perusahaan EU. Ini sedikit lebih lambat dari "
+"pemeriksaan\n"
+"      sederhana off-line, membutuhkan koneksi internet, dan mungkin tidak "
+"selalu\n"
+"      tersedia. Bila layanan tidak tersedia atau tidak didukung "
+"penggunaannya di\n"
+"      negara yang diminta (contohnya untuk negara non-EU), pemeriksaan "
+"sederhana akan sebaliknya\n"
+"      dilakukan.\n"
+"\n"
+"Negara yang didukung saat ini termasuk negara-negara EU, dan beberapa negara "
+"non-EU\n"
+"seperti Chili, Kolombia, Meksiko, Norwegia atau Rusia. Untuk negara yang "
+"tidak didukung,\n"
+"hanya kode negara akan divalidasi.\n"
 
 #. module: base
 #: model:ir.module.module,description:base.module_industry_fsm_stock
@@ -20555,6 +20677,8 @@ msgid ""
 "<code>UserError</code>: exception class for raising\n"
 "                                        user-facing warning messages"
 msgstr ""
+"<code>UserError</code>: exception class untuk menampilkan pesan peringatan "
+"kepada user"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20562,6 +20686,7 @@ msgid ""
 "<code>_logger.info(message)</code>: logger to emit messages\n"
 "                                        in server logs"
 msgstr ""
+"<code>_logger.info(message)</code>: log untuk menulis pesan di log server"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -20578,14 +20703,14 @@ msgstr "<code>dateutil</code> (Python module)"
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>env</code>: environment di mana action dipicu"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>env</code>: environment on which the action is\n"
 "                                        triggered"
-msgstr ""
+msgstr "<code>env</code>: environment di mana action dipicu"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20593,6 +20718,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to\n"
 "                                            compare floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: fungsi utility untuk membandingkan nilai float "
+"berdasarkan presisi spesifik"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20600,6 +20727,8 @@ msgid ""
 "<code>float_compare()</code>: utility function to compare\n"
 "                                        floats based on a specific precision"
 msgstr ""
+"<code>float_compare()</code>: fungsi utility untuk membandingkan nilai float "
+"berdasarkan presisi spesifik"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20607,6 +20736,8 @@ msgid ""
 "<code>log(message, level='info')</code>: logging function to\n"
 "                                        record debug information in <code>ir.logging</code> table"
 msgstr ""
+"<code>log(message, level='info')</code>: fungsi log untuk mencacat informasi "
+"debug di tabel <code>ir.logging</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20614,6 +20745,8 @@ msgid ""
 "<code>model</code>: model of the record on which the\n"
 "                                            action is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model dari record pada mana action dipicu; adalah void "
+"recordset"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20621,20 +20754,22 @@ msgid ""
 "<code>model</code>: model of the record on which the action\n"
 "                                        is triggered; is a void recordset"
 msgstr ""
+"<code>model</code>: model dari record pada mana action dipicu; adalah void "
+"recordset"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                            triggered"
-msgstr ""
+msgstr "<code>record</code>: record pada mana action dipicu"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
-msgstr ""
+msgstr "<code>record</code>: record pada mana action dipicu; may be be void"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20642,6 +20777,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which\n"
 "                                            the action is triggered in multi mode"
 msgstr ""
+"<code>records</code>: recordset dari semua record pada mana action dipicu di "
+"mode multi"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20649,6 +20786,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
 msgstr ""
+"<code>records</code>: recordset dari semua catatan pada mana action dipicu "
+"di mode multi; may be void"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -20769,6 +20908,8 @@ msgid ""
 "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start the\n"
 "                        process...</span>"
 msgstr ""
+"<span class=\"o_form_label\" colspan=\"2\">Klik pada Update di bawah untuk "
+"memulai proses...</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_users_form
@@ -20854,6 +20995,11 @@ msgid ""
 "                                    <span colspan=\"2\">Month: %(month)s</span>\n"
 "                                    <span colspan=\"2\">Day: %(day)s</span>"
 msgstr ""
+"<span colspan=\"2\">Tahun Saat Ini Dengan Abad: %(year)s</span>\n"
+"                                <span colspan=\"2\">Tahun Saat Ini tanpa "
+"Abad: %(y)s</span>\n"
+"                                <span colspan=\"2\">Bulan: %(month)s</span>\n"
+"                                <span colspan=\"2\">Hari: %(day)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20862,6 +21008,11 @@ msgid ""
 "                                    <span colspan=\"2\">Week of the Year: %(woy)s</span>\n"
 "                                    <span colspan=\"2\">Day of the Week (0:Monday): %(weekday)s</span>"
 msgstr ""
+"<span colspan=\"2\">Hari di Tahun: %(doy)s</span>\n"
+"                                <span colspan=\"2\">Minggu di Tahun: %"
+"(woy)s</span>\n"
+"                                <span colspan=\"2\">Hari di Minggu "
+"(0:Senin): %(weekday)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20871,6 +21022,11 @@ msgid ""
 "                                    <span colspan=\"2\">Minute: %(min)s</span>\n"
 "                                    <span colspan=\"2\">Second: %(sec)s</span>"
 msgstr ""
+"<span colspan=\"2\">Jam 00-&gt;24: %(h24)s</span>\n"
+"                                <span colspan=\"2\">Jam 00-&gt;12: %(h12)s</"
+"span>\n"
+"                                <span colspan=\"2\">Menit: %(min)s</span>\n"
+"                                <span colspan=\"2\">Detik: %(sec)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.sequence_view
@@ -20879,6 +21035,11 @@ msgid ""
 "                                    <span colspan=\"2\">ISO 8601 Week Year without Century: %(isoy)s</span>\n"
 "                                    <span colspan=\"2\">ISO 8601 Week Number: %(isoweek)s</span>"
 msgstr ""
+"<span colspan=\"2\">ISO 8601 Minggu Tahun dengan Abad: %(isoyear)s</span>\n"
+"                                <span colspan=\"2\">ISO 8601 Minggu Tahun "
+"tanpa Abad: %(isoy)s</span>\n"
+"                                <span colspan=\"2\">ISO 8601 Minggu Angka: %"
+"(isoweek)s</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20908,6 +21069,12 @@ msgid ""
 "                    <span invisible=\"reset_mode != 'hard'\">This view is not coming from a file.</span>\n"
 "                    <span invisible=\"reset_mode != 'other_view'\">You need two views to compare.</span>"
 msgstr ""
+"<span invisible=\"reset_mode != 'soft'\">Tampilan ini tidak memiliki versi "
+"lama.</span>\n"
+"                        <span invisible=\"reset_mode != 'hard'\">Tampilan "
+"ini tidak datang dari file.</span>\n"
+"                        <span invisible=\"reset_mode != 'other_view'\">Anda "
+"harus memiliki dua view untuk dibandingkan.</span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -20918,6 +21085,12 @@ msgid ""
 "                                to this Python expression:\n"
 "                            </span>"
 msgstr ""
+"<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
+"class=\"o_actions_server_set_a_value text-muted\">Tetapkan value...</span>\n"
+"                                <span invisible=\"evaluation_type != "
+"'equation'\">\n"
+"                                    ke expression Python ini:\n"
+"                                </span>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -20935,6 +21108,11 @@ msgid ""
 "<strong>Important:</strong> The key cannot be retrieved later and provides <b>full\n"
 "                        access</b> to your user account, it is very important to store it securely."
 msgstr ""
+"<strong>Penting:</strong>\n"
+"                            Kunci tidak dapat disediakan lagi nanti dan "
+"menyediakan <b>akses penuh</b>\n"
+"                            ke akun user Anda, sangat penting untuk "
+"menyimpannya dengan aman."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.res_users_identitycheck_view_form
@@ -20963,6 +21141,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>Operasi ini akan secara permanen menghapus semua data yang saat ini "
+"disimpan oleh modul!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -24347,6 +24527,9 @@ msgstr "Penyedia pembayaran Prancis yang mencakup beberapa negara Eropa."
 #: model:ir.module.module,summary:base.module_html_editor
 msgid "A Html Editor component and plugin system"
 msgstr ""
+"\n"
+"        Komponen editor Html dan sistem plugin\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_payment_dpo
@@ -24465,6 +24648,12 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Kelompok adalah set area fungsional yang akan ditetapkan ke user untuk "
+"memberikan mereka akses dan hak ke aplikasi dan task tertentu di sistem. "
+"Anda dapat membuat kelompok kustom atau mengedit yang tersedia secara "
+"default untuk mengustomisasi tampilan menu yang user akan dapat lihat. "
+"Apakah mereka dapat melihat, menulis, membuat dan menghapus hak akses dapat "
+"dikelola dari sini."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -24669,6 +24858,9 @@ msgid ""
 "A powerful suite of AI tools and agents integrated directly into your Odoo "
 "environment."
 msgstr ""
+"\n"
+"        Rangkaian alat dan aget AI yang kuat\n"
+"        terintegrasi langsung ke lingkungan Odoo Anda."
 
 #. module: base
 #: model:ir.model.constraint,message:base.constraint_ir_access_predicate_template_or_method
@@ -24842,6 +25034,9 @@ msgid ""
 "A user without any rights on Appraisals will be able to see the\n"
 "            application, create and manage appraisals for himself and the people he's manager of."
 msgstr ""
+"User tanpa hak apapun pada Appraisal akan dapat melihat aplikasi, membuat "
+"dan mengelola appraisal untuk diri sendiri dan orang yang merupakan "
+"bawahannya."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_asset_wallet
@@ -25500,11 +25695,17 @@ msgstr "Laporan akuntansi untuk Brasil"
 #: model:ir.module.module,summary:base.module_l10n_ph_reports
 msgid "Accounting reports for the Philippines"
 msgstr ""
+"\n"
+"Accounting reports for the Philippines\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_vn_reports
 msgid "Accounting reports for the Vietnam"
 msgstr ""
+"\n"
+"Accounting reports for the Vietnam\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_automation_account
@@ -29375,6 +29576,9 @@ msgstr "Laporan Audit"
 #: model:ir.module.module,summary:base.module_ai_livechat
 msgid "Augment Livechat with AI Agents."
 msgstr ""
+"\n"
+"        Augmen Livechat dengan Agen AI.\n"
+"    "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__mixin_recurrence_anchored__repeat_month__8
@@ -30096,6 +30300,7 @@ msgid ""
 "Banks are the financial institutions at which you and your contacts have their\n"
 "                accounts."
 msgstr ""
+"Bank adalah lembaga keuangan pada mana Anda dan kontak Anda memiliki akun."
 
 #. module: base
 #: model:res.country,name:base.bb
@@ -30302,6 +30507,10 @@ msgid ""
 "                        modifications to standard views through inherited views or customization\n"
 "                        with Odoo Studio."
 msgstr ""
+"Mohon ingat bahwa mengedit arsitektur tampilan standar tidak disarankan, "
+"karena perubahannya akan dapat ditimpa pada update modul masa depan.<br/>\n"
+"                        Kami menyarankan menerapkan modifikasi ke tampilan "
+"standar melalui tampilan inherited atau kustomisasi dengan Odoo Studio."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_beauty
@@ -30996,7 +31205,7 @@ msgstr "Modul bridge untuk push notification ke peserta acara"
 #. module: base
 #: model:ir.module.module,summary:base.module_website_event_track_live_quiz
 msgid "Bridge module to support quiz features during \"live\" tracks."
-msgstr ""
+msgstr "Modul bridge untuk mendukung fitur kuis selama acara \"live\". "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_account_move_template_purchase
@@ -32014,7 +32223,7 @@ msgstr "Ubah sandi"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Ubah cara alamat ditampilkan di laporan"
 
 #. module: base
 #. odoo-python
@@ -32266,6 +32475,8 @@ msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
 msgstr ""
+"Pilih sub-tampilan mitra yang mengikutsertakan hanya field alamat, untuk "
+"merubah cara user memasukkan alamat."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -32512,7 +32723,7 @@ msgstr "Kumpulkan pembayaran dari pelanggan Anda melalui SEPA direct debit."
 #. module: base
 #: model:ir.module.module,summary:base.module_document
 msgid "Collect, organize and share documents."
-msgstr ""
+msgstr "Kumpulkan, atur dan bagi dokumen."
 
 #. module: base
 #: model:res.country,name:base.co
@@ -32896,6 +33107,9 @@ msgid ""
 "Computed fields are defined with the fields <strong>Dependencies</strong>\n"
 "                                    and <strong>Compute</strong>."
 msgstr ""
+"Field yang dicompute didefinisikan dengan field\n"
+"                                                <strong>Ketergantungan</"
+"strong> dan <strong>Compute</strong>."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__auth_user_client__platform_type__computer
@@ -33202,7 +33416,7 @@ msgstr "Kontak membutuhkan nama"
 msgid ""
 "Contains In-App\n"
 "                            Purchases"
-msgstr ""
+msgstr "Memiliki IAP"
 
 #. module: base
 #: model:ir.module.module,description:base.module_sale_enterprise
@@ -33611,6 +33825,8 @@ msgid ""
 "Create and manage the companies that will be managed by Odoo from here. Shops or\n"
 "                subsidiaries can be created and maintained from here."
 msgstr ""
+"Buat dan kelola perusahaan yang akan dikelola oleh Odoo dari sini. Toko atau "
+"cabang akan dibuat dan ditangani dari sini."
 
 #. module: base
 #: model_terms:ir.actions.act_window,help:base.action_res_users
@@ -33620,6 +33836,11 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Membuat dan mengelola pengguna yang akan terhubungkan ke sistem. Pengguna "
+"dapat dinonaktifkan bila ada periode waktu di mana mereka tidak boleh "
+"terhubung ke sistem. Anda dapat menetapkan kelompok mereka untuk memberikan "
+"mereka akses khusus untuk aplikasi yang mereka butuhkan untuk digunakan "
+"dalam sistem."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -34289,6 +34510,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Tampilan custom digunakan saat user mengatur ulang konten dari tampilan "
+"dashboard mereka (melalui web client)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -34865,6 +35088,8 @@ msgid ""
 "Demo data should only be used on test databases!\n"
 "                                Once they are loaded, they cannot be removed!"
 msgstr ""
+"Data demo harusnya hanya digunakan pada test database!\n"
+"                             Setelah dimuat, mereka tidak dapat dihapus!"
 
 #. module: base
 #: model:ir.model,name:base.model_ir_demo_failure
@@ -35909,6 +36134,9 @@ msgstr "E-Invoicing, Offentlig Information Online Universal Business Language"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi
 msgid "E-Invoicing, Universal Business Language"
 msgstr ""
+"\n"
+"        E-Faktur, Universal Business Language\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_tw_edi_ecpay
@@ -36179,6 +36407,9 @@ msgstr "Egypt E-Invoicing"
 #: model:ir.module.module,summary:base.module_l10n_eg_edi_eta
 msgid "Egypt Tax Authority Invoice Integration"
 msgstr ""
+"\n"
+"            Integrasi Faktur Otoritas Pajak Mesir\n"
+"        "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__eire
@@ -38834,7 +39065,7 @@ msgstr ""
 msgid ""
 "Forgot\n"
 "                            password?"
-msgstr ""
+msgstr "Lupa password?"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.HUF
@@ -39115,9 +39346,10 @@ msgstr "Furniture, Toys, Games, Kids, Boys, Girls, Stores"
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
+"G - PERDAGANGAN GROSIR DAN ECERAN; PERBAIKAN KENDARAAN BERMOTOR DAN SEPEDA "
+"MOTOR"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__res_partner__tz__gb
@@ -40298,6 +40530,10 @@ msgid ""
 "            User : Access to referral, share job, gain points, buy rewards\n"
 "            Administrator : edit rewards and more"
 msgstr ""
+"Membantu Anda menangani referral\n"
+"                User : Akses untuk referral, membagikan lowongan kerja, "
+"mendapatkan poin, beli hadiah\n"
+"                Administrator : edit hadiah dan lebih banyak lagi"
 
 #. module: base
 #: model:ir.module.category,description:base.module_category_sales_sign
@@ -40316,6 +40552,10 @@ msgid ""
 "Here is your new API key, use it instead of a password for RPC access.\n"
 "                        Your login is still necessary for interactive usage."
 msgstr ""
+"Berikut adalah API key baru Anda, gunakan mereka alih-alih password untuk "
+"akses RPC.\n"
+"                            Login masih diperlukan untuk penggunaan "
+"interaktif."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_res_users_apikeys_scope_line__denied_field_ids
@@ -41021,6 +41261,11 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"Bila view ini diwariskan,\n"
+"* jika TRUE, view akan selalu di-extend ke induk\n"
+"* jika FALSE, view saat ini tidak akan di-extend ke induk tapi dapat "
+"diaktifkan\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -42490,6 +42735,10 @@ msgid ""
 "                        will be the only way to\n"
 "                            identify the key once created</strong>."
 msgstr ""
+"Kejelasan dan kelengkapan deskripsi ini\n"
+"                        sangat penting, <strong>karena ini merupakan satu-"
+"satunya cara\n"
+"                        mengidentifikasi kunci setelah dibuat</strong>."
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_it_intrastat
@@ -42879,16 +43128,25 @@ msgstr "Kenya Tremol Device EDI Integration"
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu
 msgid "Kenya eTIMS Device EDI Integration"
 msgstr ""
+"\n"
+"            Kenya eTIMS Device EDI Integration\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_mrp
 msgid "Kenya eTIMS Device EDI Manufacturing Integration"
 msgstr ""
+"\n"
+"        Kenya eTIMS Device EDI Manufacturing Integration\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_ke_edi_oscu_stock
 msgid "Kenya eTIMS Device EDI Stock Integration"
 msgstr ""
+"\n"
+"            Kenya eTIMS Device EDI Stock Integration\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_l10n_ke_edi_oscu
@@ -43671,7 +43929,7 @@ msgstr "Ayo pilih Point Relais® pada ecommerce Anda"
 #. module: base
 #: model:ir.module.module,summary:base.module_delivery_mondialrelay
 msgid "Let's choose a Point Relais® as shipping address"
-msgstr ""
+msgstr " Ayo pilih Point Relais® sebagai alamat pengiriman "
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__report_paperformat__format__letter
@@ -44785,6 +45043,11 @@ msgid ""
 "            then delete it through the button that appeared. Items can be assigned to specific\n"
 "            groups in order to make them accessible to some users within the system."
 msgstr ""
+"Mengelola dan menyesuaikan item-item yang tersedia dan ditampilkan di menu "
+"sistem Odoo Anda. Anda dapat menghapus sebuah item dengan mengeklik kotak "
+"yang ada di awal tiap garis kemudian menghapusnya melalui tombol yang "
+"muncul. Item-item dapat diperuntukkan kepada kelompok-kelompok spesifik agar "
+"mereka tampak oleh beberapa pengguna sistem saja."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_website_slides
@@ -47137,6 +47400,11 @@ msgid ""
 "This here module is useful to validate that they're doing what they're\n"
 "supposed to do\n"
 msgstr ""
+"Utilities non-trivial dapat memerlukan model & semua\n"
+"    \n"
+"Ini adalah modul yang berguna untuk memvalidasi bahwa mereka melakukan apa "
+"yang mereka\n"
+"seharusnya lakukan\n"
 
 #. module: base
 #: model:res.country,name:base.nf
@@ -49640,6 +49908,21 @@ msgid ""
 "* if extension (default), if this view is requested the closest primary view is looked up (via inherit_id), then all views inheriting from it with this view's model are applied\n"
 "* if primary, the closest primary view is fully resolved (even if it uses a different model than this one), then this view's inheritance specs (<xpath/>) are applied, and the result is used as if it were this view's actual arch."
 msgstr ""
+"Hanya berlaku bila tampilan ini diwariskan dari tampilan ini (inherit_id "
+"tidak False/Null).\n"
+"\n"
+"* bila extension (default), bila tampilan ini diminta maka tampilan primary "
+"terdekat\n"
+"akan dicari (via inherit_id), dan semua tampilan yang mendapatkan warisan "
+"dari tampilan itu dengan\n"
+"model tampilan ini akan diaplikasikan\n"
+"* bila primary, tampilan primary terdekat akan di resolve sepenuhnya (bahkan "
+"bila menggunakan\n"
+"model yang berbeda dari yang saat ini), lalu spesifikasi pewarisan tampilan "
+"ini\n"
+"(<xpath/>) akan berlaku, dan hasil akan digunakan seolah-olah adalah "
+"tampilan arch\n"
+"yang sebetulnya.\n"
 
 #. module: base
 #. odoo-python
@@ -54349,7 +54632,7 @@ msgstr "Restoran"
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_restaurant
 msgid "Restaurant extensions for the Point of Sale"
-msgstr ""
+msgstr "Extension restoran untuk POS "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.server_action_history_wizard_view
@@ -55561,6 +55844,13 @@ msgid ""
 "                        Odoo will propose you to merge only those having\n"
 "                        all these fields in common. (not one of the fields)."
 msgstr ""
+"Pilih daftar bidang yang digunakan untuk mencari catatan duplikat. Jika "
+"Anda\n"
+"                            memilih beberapa bidang, Odoo akan mengusulkan "
+"Anda\n"
+"                            untuk menggabungkan hanya mereka yang memiliki "
+"semua\n"
+"                            bidang yang sama. (bukan salah satu bidang)."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_model_fields__selectable
@@ -55575,6 +55865,12 @@ msgid ""
 "                            will be redirected to the destination contact.\n"
 "                            You can remove contacts from this list to avoid merging them."
 msgstr ""
+"Kontak yang dipilih akan digabungkan.\n"
+"                                Semua dokumen terkait ke salah satu kontak "
+"ini\n"
+"                                akan diarahkan ke tujuan kontak.\n"
+"                                Anda dapat menghapus kontak dari daftar ini "
+"untuk menghindari menggabungkannya."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_partner_merge__state__selection
@@ -56249,6 +56545,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_link_tracker
 msgid "Shorten URLs and use them to track clicks and UTMs"
 msgstr ""
+"\n"
+"Persingkat URL dan gunakan mereka untuk melacak klik dan UTM\n"
 
 #. module: base
 #: model:ir.model,name:base.model_res_users_apikeys_show
@@ -56376,7 +56674,7 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_discount
 msgid "Simple Discounts in the Point of Sale"
-msgstr ""
+msgstr "Diskon Sederhana di POS "
 
 #. module: base
 #: model:res.currency,currency_subunit_label:base.MOP
@@ -57527,7 +57825,7 @@ msgstr "Langganan"
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_sale_subscription_partnership
 msgid "Subscriptions of membership / partnership"
-msgstr ""
+msgstr "Langganan membership / partnership "
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_sequence__date_range_ids
@@ -57791,9 +58089,11 @@ msgstr "Sénégal - Accounting Reports"
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
+"T - KEGIATAN RUMAH TANGGA SEBAGAI MAJIKAN; KEGIATAN PENGHASILAN BARANG DAN "
+"LAYANAN YANG TIDAK DIBEDAKAN DALAM RUMAH TANGGA UNTUK PENGGUNAAN SENDIRI"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__format__tgz
@@ -58780,6 +59080,9 @@ msgid ""
 "            Odoo. They are launched during the installation of new modules, but you can choose to\n"
 "            restart some wizards manually from this menu."
 msgstr ""
+"Wizard konfigurasi akan digunakan untuk membantu Anda mengonfigurasi "
+"instance baru Odoo. Mereka akan diluncurkan pada instalasi modul baru, tapi "
+"Anda dapat memilih untuk restart beberapa wizard secara manual dari menu ini."
 
 #. module: base
 #. odoo-python
@@ -58932,6 +59235,12 @@ msgid ""
 "                                    field must be assigned to each record with a dictionary-like\n"
 "                                    assignment."
 msgstr ""
+"Field <strong>Compute</strong> adalah kode Python untuk\n"
+"                                                menghitung nilai dari field "
+"pada satu set record. Nilai dari\n"
+"                                                field harus diterapkan ke "
+"setiap record dengan satu dictionary-like\n"
+"                                                assignment."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -60805,6 +61114,10 @@ msgid ""
 "                                        there is remaining tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count,\n"
 "                                        remaining=task_remaining_count)</code>"
 msgstr ""
+"Untuk menotifikasi progress CRON call dan memicu ulang call bila ada task "
+"yang tersisa, gunakan "
+"<code>env['ir.cron']._notify_progress(done=task_done_count, "
+"remaining=task_remaining_count)</code>"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -61052,7 +61365,7 @@ msgstr "Transportasi/Logistik"
 #. module: base
 #: model:ir.module.module,summary:base.module_theme_aviato
 msgid "Travel, Excursion, Plane, Tour, Agency"
-msgstr ""
+msgstr "Travel, Excursion, Plane, Tour, Agency "
 
 #. module: base
 #: model:ir.module.module,shortdesc:base.module_theme_treehouse
@@ -62177,6 +62490,8 @@ msgid ""
 "Use groups to organize countries that are frequently selected together (e.g.\n"
 "                \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 msgstr ""
+"Gunakan pengelompokkan untuk mengatur negara yang sering dipilih bersama "
+"(misalnya \"LATAM\", \"BeNeLux\", \"ASEAN\")."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_tax_python
@@ -62792,6 +63107,9 @@ msgid ""
 "Views allows you to personalize each view of Odoo. You can add new fields,\n"
 "            move fields, rename them or delete the ones that you do not need."
 msgstr ""
+"Tampilan memungkinka Anda untuk mempersonalisasikan masing-masing tampilan "
+"Odoo. Anda dapat menambahkan field baru, menggerakkan field, menamakan ulang "
+"atau menghapus yang tidak Anda butuhkan."
 
 #. module: base
 #: model:ir.model.fields,field_description:base.field_ir_ui_view__inherit_children_ids
@@ -63466,6 +63784,10 @@ msgid ""
 "                                    to use the beginning of the range instead of the current date,\n"
 "                                    e.g. %(range_year)s instead of %(year)s."
 msgstr ""
+"Saat sub-sequence per date range digunakan, Anda dapat memulai variabel "
+"dengan 'range_'\n"
+"                                untuk menggunakan awal range alih-alih "
+"tanggal saat ini, contoh %(range_year)s alih-alih %(year)s."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_document_physical
@@ -64219,6 +64541,8 @@ msgid ""
 "                            access rights by editing the newly created user under the Settings /\n"
 "                            Users menu."
 msgstr ""
+"Anda akan dapat memberikan akses tambahan dengan mengubah akun pengguna baru "
+"tersebut di menu Pengaturan / Pengguna."
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.CNH
@@ -64230,6 +64554,9 @@ msgstr "Yuan"
 #: model:ir.module.module,summary:base.module_l10n_sa_edi_pos
 msgid "ZATCA E-Invoicing, support for PoS"
 msgstr ""
+"\n"
+"        ZATCA E-Invoicing, support for PoS\n"
+"    "
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_company_form
@@ -64608,6 +64935,8 @@ msgid ""
 "for record in self:\n"
 "    record['size'] = len(record.name)"
 msgstr ""
+"for record in self:\n"
+"        record['size'] = len(record.name)"
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__wizard_res_lang_export_translation__state__get
@@ -64626,6 +64955,9 @@ msgid ""
 "has been successfully installed.\n"
 "                        Users can choose their favorite language in their preferences."
 msgstr ""
+"telah sukses diinstal.\n"
+"                            User dapat memilih bahasa favorit mereka di "
+"preferensi mereka."
 
 #. module: base
 #: model:ir.model.fields.selection,name:base.selection__ir_actions_server__value_field_to_show__html_value
@@ -64760,6 +65092,8 @@ msgid ""
 "partner_name = record.name + '_code' env['res.partner'].create({'name': "
 "partner_name})"
 msgstr ""
+"partner_name = record.name + '_code'\n"
+"env['res.partner'].create({'name': partner_name})"
 
 #. module: base
 #: model:res.currency,currency_unit_label:base.UYW
@@ -66336,138 +66670,12 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "            Egypt Tax Authority Invoice Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Integrasi Faktur Otoritas Pajak Mesir\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Integration\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Stock Integration\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "            Kenya eTIMS Device EDI Stock Integration\n"
-#~ "        "
-
-#~ msgid ""
-#~ "\n"
-#~ "        A Html Editor component and plugin system\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Komponen editor Html dan sistem plugin\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        A powerful suite of AI tools and agents\n"
-#~ "        integrated directly into your Odoo environment."
-#~ msgstr ""
-#~ "\n"
-#~ "        Rangkaian alat dan aget AI yang kuat\n"
-#~ "        terintegrasi langsung ke lingkungan Odoo Anda."
-
-#~ msgid ""
-#~ "\n"
-#~ "        Augment Livechat with AI Agents.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Augmen Livechat dengan Agen AI.\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        E-Invoicing, Universal Business Language\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        E-Faktur, Universal Business Language\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Kenya eTIMS Device EDI Manufacturing Integration\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Kenya eTIMS Device EDI Manufacturing Integration\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        ZATCA E-Invoicing, support for PoS\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        ZATCA E-Invoicing, support for PoS\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Accounting Reports\n"
 #~ "==================\n"
 #~ msgstr ""
 #~ "\n"
 #~ "Laporan Akuntansi\n"
 #~ "==================\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for Poland\n"
-#~ "\n"
-#~ "        This module also provides the possibility to generate the JPK_VAT in "
-#~ "xml, for Poland.\n"
-#~ "\n"
-#~ "        Currently, does not report specific values for :\n"
-#~ "        - Cash basis for entries with input tax (MK)\n"
-#~ "        - Margin-based operations (MR_T/MR_UZ)\n"
-#~ "        - Bills for agricultural products (VAT_RR)\n"
-#~ "        - Operations through electronic interfaces (IED)\n"
-#~ "        - Invoices done with KSef \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Accounting reports for Poland\n"
-#~ "\n"
-#~ "        This module also provides the possibility to generate the JPK_VAT in "
-#~ "xml, for Poland.\n"
-#~ "\n"
-#~ "        Currently, does not report specific values for :\n"
-#~ "        - Cash basis for entries with input tax (MK)\n"
-#~ "        - Margin-based operations (MR_T/MR_UZ)\n"
-#~ "        - Bills for agricultural products (VAT_RR)\n"
-#~ "        - Operations through electronic interfaces (IED)\n"
-#~ "        - Invoices done with KSef \n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Philippines\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Accounting reports for the Philippines\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for the Vietnam\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Accounting reports for the Vietnam\n"
-#~ "    "
 
 #~ msgid ""
 #~ "\n"
@@ -66494,15 +66702,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Advanced features for the PoS like better views \n"
-#~ "for IoT Box config.   \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Fitur advanced untuk POS seperti tampilan lebih baik\n"
-#~ "untuk konfigurasi IoT Box.   \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Allow clients to Schedule Appointments through the Portal\n"
 #~ msgstr ""
 #~ "\n"
@@ -66510,49 +66709,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Allows to display sale information in the SOL services apps\n"
-#~ "===========================================================\n"
-#~ "Additional information is displayed in the name of the SOL when it is used "
-#~ "in services apps (project and planning). \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Izinkan untuk menampilkan informasi sale di aplikasi layanan SOL\n"
-#~ "===========================================================\n"
-#~ "Informasi tambahan ditampilkan atas nama SOL saat digunakan di aplikasi "
-#~ "layanan (project dan planning). \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "App to upload and manage your documents.\n"
 #~ msgstr ""
 #~ "\n"
 #~ "Aplikasi untuk mengunggah dan mengatur dokumen Anda.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "With this module you can manually check consistencies and inconsistencies of "
-#~ "accounting module from menu Reporting/Accounting/Accounting Tests.\n"
-#~ "\n"
-#~ "You can write a query in order to create Consistency Test and you will get "
-#~ "the result of the test \n"
-#~ "in PDF format which can be accessed by Menu Reporting -> Accounting Tests, "
-#~ "then select the test \n"
-#~ "and print the report from Print button in header area.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Asserts on accounting.\n"
-#~ "======================\n"
-#~ "Dengan modul ini Anda dapat secara manual memeriksa konsistensi dan "
-#~ "ketidaksamaan untuk modul akuntansi dari menu Laporan/Akuntansi/Tes "
-#~ "Akuntansi.\n"
-#~ "\n"
-#~ "Anda dapat menulis query untuk membuat Tes Konsistensi dan Anda akan "
-#~ "mendapatkan hasil test\n"
-#~ "dalam format PDF yang dapat diakses dari Menu Laporan -> Tes Akuntansi, lalu "
-#~ "pilih tes \n"
-#~ "dan cetak laporan dengan tombol Cetak di bagian header.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -66598,15 +66758,6 @@ msgstr ""
 #~ msgstr ""
 #~ "\n"
 #~ "Modul bridge untuk project_enterprise dan hr\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Configure IoT devices to be used in certain \n"
-#~ "steps for taking measures, taking pictures, ...\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Konfigurasikan perangkat IoT untuk digunakan di langkah-langkah\n"
-#~ "tertentu untuk mengambil tindakan, mengambil gambar, ...\n"
 
 #~ msgid ""
 #~ "\n"
@@ -66670,46 +66821,6 @@ msgstr ""
 #~ "rentang modul dan action yang lebar. Saat diinstal, modul ini membuat goal "
 #~ "gampang dipenuhi untuk membantu user baru mempelajari Odoo dan "
 #~ "mengonfigurasi profil user mereka.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "In a lot of countries, a debit note is used as an increase of the amounts of "
-#~ "an existing invoice \n"
-#~ "or in some specific cases to cancel a credit note. \n"
-#~ "It is like a regular invoice, but we need to keep track of the link with the "
-#~ "original invoice.  \n"
-#~ "The wizard used is similar as the one for the credit note.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Di banyak negara, nota debit digunakan sebagai peningkatan jumlah faktur "
-#~ "yang tersedia\n"
-#~ "atau dalam beberapa kasus tertentu untuk membatalkan nota kredit \n"
-#~ "Seperti faktur biasa, kita harus tetap melacak link dengan faktur original.\n"
-#~ "Wizard yang digunakan mirip dengan yang digunakan untuk nota kredit.\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Inventory management for Avatax\n"
-#~ "=======================================\n"
-#~ "This module allows for line-level addresses when getting taxes from avatax.\n"
-#~ "\n"
-#~ "A current limitation is a single order line with more than one stock move "
-#~ "(i.e. 10 units of \n"
-#~ "product A, 2 shipped from warehouse #1 and 8 from warehouse #2). In this "
-#~ "case the sale orders should be\n"
-#~ "split per delivery.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Manajemen inventaris untuk Avatax\n"
-#~ "=======================================\n"
-#~ "Modul ini memungkinkan line-level addresses saat mengambil pajak dari "
-#~ "avatax.\n"
-#~ "\n"
-#~ "Batasan saat ini adalah single order line dengan lebih dari satu pergerakkan "
-#~ "stok (misal 10 unit \n"
-#~ "produk A, 2 dikirim dari gudang #1 dan 8 dari gudang #2). Pada kasus ini "
-#~ "sale order harus dipisah\n"
-#~ "untuk setiap pengiriman.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -66994,48 +67105,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Ri.Ba. Export for Batch Payment\n"
-#~ "================================\n"
-#~ "\n"
-#~ "This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
-#~ "batch payments in Odoo.  \n"
-#~ "It facilitates compliance with the Italian banking standard for managing "
-#~ "receivables.\n"
-#~ "\n"
-#~ "- Group multiple receivables into a single batch for streamlined management "
-#~ "and reconciliation.\n"
-#~ "- Export batch payments as RIBA-compliant files to be submitted to your "
-#~ "homebanking for processing.\n"
-#~ "\n"
-#~ "For more information about RIBA standards, refer to the guidelines issued by "
-#~ "the Italian Bankers Association (CBI).\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Ri.Ba. Export for Batch Payment\n"
-#~ "================================\n"
-#~ "\n"
-#~ "This module enables the generation of Ri.Ba. (Ricevute Bancarie) files from "
-#~ "batch payments in Odoo.  \n"
-#~ "It facilitates compliance with the Italian banking standard for managing "
-#~ "receivables.\n"
-#~ "\n"
-#~ "- Group multiple receivables into a single batch for streamlined management "
-#~ "and reconciliation.\n"
-#~ "- Export batch payments as RIBA-compliant files to be submitted to your "
-#~ "homebanking for processing.\n"
-#~ "\n"
-#~ "For more information about RIBA standards, refer to the guidelines issued by "
-#~ "the Italian Bankers Association (CBI).\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "Shorten URLs and use them to track clicks and UTMs\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Persingkat URL dan gunakan mereka untuk melacak klik dan UTM\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Stock in Maintenance\n"
 #~ "====================\n"
 #~ "Open the record of the serial number from an equipment form\n"
@@ -67084,15 +67153,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module adds a new template to the Newsletter Block to allow \n"
-#~ "your visitors to subscribe with their phone number.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Modul ini menambahkan templat baru ke Newsletter Block untuk memungkinkan\n"
-#~ "pengunjung Anda untuk berlangganan menggunakan nomor telepon mereka.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module adds required base code for a fully integrated customer portal.\n"
 #~ "It contains the base controller class and base templates. Business addons\n"
 #~ "will add their specific templates and controllers to extend the customer\n"
@@ -67126,18 +67186,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module allows you to easily add extra costs on manufacturing order \n"
-#~ "and decide the split of these costs among their stock moves in order to \n"
-#~ "take them into account in your stock valuation.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Modul ini memungkinkan Anda untuk dengan mudah menambahkan biaya tambahan "
-#~ "pada manufacturing order \n"
-#~ "dan menentukan pemisahan biaya ini di antara pergerakkan stok untuk\n"
-#~ "mempertimbangkan mereka di valuasi stok Anda.\n"
-
-#~ msgid ""
-#~ "\n"
 #~ "This module assigns an hourly wage to employees to be used by other "
 #~ "modules.\n"
 #~ "============================================================================\n"
@@ -67147,17 +67195,6 @@ msgstr ""
 #~ "Module ini menetapkan gaji per jam ke karyawan untuk digunakan pada modul-"
 #~ "modul lainnya.\n"
 #~ "============================================================================\n"
-#~ "\n"
-
-#~ msgid ""
-#~ "\n"
-#~ "This module brings the technical requirement for the Chilean regulation.\n"
-#~ "Install this if you are using the Point of Sale app in Chile.    \n"
-#~ "\n"
-#~ msgstr ""
-#~ "\n"
-#~ "This module brings the technical requirement for the Chilean regulation.\n"
-#~ "Install this if you are using the Point of Sale app in Chile.    \n"
 #~ "\n"
 
 #~ msgid ""
@@ -67255,99 +67292,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "This module provides the link between quality steps and IoT devices. \n"
-#~ msgstr ""
-#~ "\n"
-#~ "Modul ini menyediakan link di antara langkah-langkah kualitas dan perangkat "
-#~ "IoT. \n"
-
-#~ msgid ""
-#~ "\n"
 #~ "Track equipment and maintenance requests"
 #~ msgstr ""
 #~ "\n"
 #~ "Lacak permintaan peralatan dan maintenance"
-
-#~ msgid ""
-#~ "\n"
-#~ "VAT validation for Partner's VAT numbers.\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ "After installing this module, values entered in the VAT field of Partners "
-#~ "will\n"
-#~ "be validated for all supported countries. The country is inferred from the\n"
-#~ "2-letter country code that prefixes the VAT number, e.g. ``BE0477472701``\n"
-#~ "will be validated using the Belgian rules.\n"
-#~ "\n"
-#~ "There are two different levels of VAT number validation:\n"
-#~ "--------------------------------------------------------\n"
-#~ "    * By default, a simple off-line check is performed using the known "
-#~ "validation\n"
-#~ "      rules for the country, usually a simple check digit. This is quick "
-#~ "and \n"
-#~ "      always available, but allows numbers that are perhaps not truly "
-#~ "allocated,\n"
-#~ "      or not valid anymore.\n"
-#~ "\n"
-#~ "    * When the \"VAT VIES Check\" option is enabled (in the configuration of "
-#~ "the user's\n"
-#~ "      Company), VAT numbers will be instead submitted to the online EU VIES\n"
-#~ "      database, which will truly verify that the number is valid and "
-#~ "currently\n"
-#~ "      allocated to a EU company. This is a little bit slower than the "
-#~ "simple\n"
-#~ "      off-line check, requires an Internet connection, and may not be "
-#~ "available\n"
-#~ "      all the time. If the service is not available or does not support the\n"
-#~ "      requested country (e.g. for non-EU countries), a simple check will be "
-#~ "performed\n"
-#~ "      instead.\n"
-#~ "\n"
-#~ "Supported countries currently include EU countries, and a few non-EU "
-#~ "countries\n"
-#~ "such as Chile, Colombia, Mexico, Norway or Russia. For unsupported "
-#~ "countries,\n"
-#~ "only the country code will be validated.\n"
-#~ msgstr ""
-#~ "\n"
-#~ "Validasi PPN untuk nomor PPN Mitra.\n"
-#~ "=========================================\n"
-#~ "\n"
-#~ "Setelah menginstal modul ini, nilai yang dimasukkan di field PPN untuk Mitra "
-#~ "akan\n"
-#~ "divalidasi untuk semua negara yang didukung. Negara akan ditentukan "
-#~ "berdasarkan\n"
-#~ "kode negara 2-huruf yang di depan nomor PPN, contohnya ``BE0477472701``\n"
-#~ "yang akan divalidasi berdasarkan peraturan Belgia.\n"
-#~ "\n"
-#~ "Ada dua tingkat berbeda untuk validasi nomor PPN:\n"
-#~ "--------------------------------------------------------\n"
-#~ "    * Secara default, pemeriksaan sederhana off-line dilakukan menggunakan "
-#~ "peraturan validasi\n"
-#~ "      yang diketahui untuk negara tersebut, biasanya menggunakan pemeriksaan "
-#~ "nomor sederhana. Ini cepat dan\n"
-#~ "      selalu tersedia, tapi memungkinkan nomor yang mungkin tidak "
-#~ "dialokasikan dengan benar,\n"
-#~ "      atau sudah tidak valid lagi.\n"
-#~ "\n"
-#~ "    * Saat opsi \"VAT VIES Check\" diaktifkan (di konfigurasi Perusahaan\n"
-#~ "      User), nomor PPN akan sebaliknya digunakan untuk database EU\n"
-#~ "      VIES, yang akan sebetulnya memeriksa bahwa nomor valid dan saat ini\n"
-#~ "      dialokasikan ke perusahaan EU. Ini sedikit lebih lambat dari "
-#~ "pemeriksaan\n"
-#~ "      sederhana off-line, membutuhkan koneksi internet, dan mungkin tidak "
-#~ "selalu\n"
-#~ "      tersedia. Bila layanan tidak tersedia atau tidak didukung "
-#~ "penggunaannya di\n"
-#~ "      negara yang diminta (contohnya untuk negara non-EU), pemeriksaan "
-#~ "sederhana akan sebaliknya\n"
-#~ "      dilakukan.\n"
-#~ "\n"
-#~ "Negara yang didukung saat ini termasuk negara-negara EU, dan beberapa negara "
-#~ "non-EU\n"
-#~ "seperti Chili, Kolombia, Meksiko, Norwegia atau Rusia. Untuk negara yang "
-#~ "tidak didukung,\n"
-#~ "hanya kode negara akan divalidasi.\n"
 
 #~ msgid ""
 #~ "\n"
@@ -67384,9 +67332,6 @@ msgstr ""
 #~ "* Tambahkan layanan, nilai odometer untuk semua kendaraan\n"
 #~ "* Tunjukkan semua biaya terkait kendaraan atau tipe layanan\n"
 #~ "* Grafik analisis untuk biaya\n"
-
-#~ msgid " Let's choose a Point Relais® as shipping address "
-#~ msgstr " Ayo pilih Point Relais® sebagai alamat pengiriman "
 
 #~ msgid "# Access Rights"
 #~ msgstr "# Hak Akses"
@@ -67470,63 +67415,6 @@ msgstr ""
 #~ "<a href=\"#\" class=\"btn btn-primary o_translate_inline\">Discover more</a>"
 
 #~ msgid ""
-#~ "<code>UserError</code>: exception class for raising user-facing warning "
-#~ "messages"
-#~ msgstr ""
-#~ "<code>UserError</code>: exception class untuk menampilkan pesan peringatan "
-#~ "kepada user"
-
-#~ msgid ""
-#~ "<code>_logger.info(message)</code>: logger to emit messages in server logs"
-#~ msgstr ""
-#~ "<code>_logger.info(message)</code>: log untuk menulis pesan di log server"
-
-#~ msgid "<code>env</code>: environment on which the action is triggered"
-#~ msgstr "<code>env</code>: environment di mana action dipicu"
-
-#~ msgid ""
-#~ "<code>float_compare()</code>: utility function to compare floats based on a "
-#~ "specific precision"
-#~ msgstr ""
-#~ "<code>float_compare()</code>: fungsi utility untuk membandingkan nilai float "
-#~ "berdasarkan presisi spesifik"
-
-#~ msgid ""
-#~ "<code>log(message, level='info')</code>: logging function to record debug "
-#~ "information in <code>ir.logging</code> table"
-#~ msgstr ""
-#~ "<code>log(message, level='info')</code>: fungsi log untuk mencacat informasi "
-#~ "debug di tabel <code>ir.logging</code>"
-
-#~ msgid ""
-#~ "<code>model</code>: model of the record on which the action is triggered; is "
-#~ "a void recordset"
-#~ msgstr ""
-#~ "<code>model</code>: model dari record pada mana action dipicu; adalah void "
-#~ "recordset"
-
-#~ msgid "<code>record</code>: record on which the action is triggered"
-#~ msgstr "<code>record</code>: record pada mana action dipicu"
-
-#~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr "<code>record</code>: record pada mana action dipicu; may be be void"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode"
-#~ msgstr ""
-#~ "<code>records</code>: recordset dari semua record pada mana action dipicu di "
-#~ "mode multi"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr ""
-#~ "<code>records</code>: recordset dari semua catatan pada mana action dipicu "
-#~ "di mode multi; may be void"
-
-#~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
@@ -67586,13 +67474,6 @@ msgstr ""
 #~ msgid "<i class=\"fa fa-warning pe-2\" title=\"Warning\"/>"
 #~ msgstr "<i class=\"fa fa-warning pe-2\" title=\"Peringatan\"/>"
 
-#~ msgid ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Click on Update below to start "
-#~ "the process...</span>"
-#~ msgstr ""
-#~ "<span class=\"o_form_label\" colspan=\"2\">Klik pada Update di bawah untuk "
-#~ "memulai proses...</span>"
-
 #~ msgid "<span class=\"o_form_label\">MB</span>"
 #~ msgstr "<span class=\"o_form_label\">MB</span>"
 
@@ -67611,58 +67492,6 @@ msgstr ""
 #~ "untuk melihat menu-menu baru (Ctrl+T lalu Ctrl+R).\"</span>"
 
 #~ msgid ""
-#~ "<span colspan=\"2\">Current Year with Century: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Current Year without "
-#~ "Century: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Month: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Day: %(day)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Tahun Saat Ini Dengan Abad: %(year)s</span>\n"
-#~ "                                <span colspan=\"2\">Tahun Saat Ini tanpa "
-#~ "Abad: %(y)s</span>\n"
-#~ "                                <span colspan=\"2\">Bulan: %(month)s</span>\n"
-#~ "                                <span colspan=\"2\">Hari: %(day)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Day of the Year: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Week of the Year: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Day of the Week "
-#~ "(0:Monday): %(weekday)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Hari di Tahun: %(doy)s</span>\n"
-#~ "                                <span colspan=\"2\">Minggu di Tahun: %"
-#~ "(woy)s</span>\n"
-#~ "                                <span colspan=\"2\">Hari di Minggu "
-#~ "(0:Senin): %(weekday)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">Hour 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Hour 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Minute: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Second: %(sec)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">Jam 00-&gt;24: %(h24)s</span>\n"
-#~ "                                <span colspan=\"2\">Jam 00-&gt;12: %(h12)s</"
-#~ "span>\n"
-#~ "                                <span colspan=\"2\">Menit: %(min)s</span>\n"
-#~ "                                <span colspan=\"2\">Detik: %(sec)s</span>"
-
-#~ msgid ""
-#~ "<span colspan=\"2\">ISO 8601 Week Year with Century: %(isoyear)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Week Year "
-#~ "without Century: %(isoy)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Week Number: %"
-#~ "(isoweek)s</span>"
-#~ msgstr ""
-#~ "<span colspan=\"2\">ISO 8601 Minggu Tahun dengan Abad: %(isoyear)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Minggu Tahun "
-#~ "tanpa Abad: %(isoy)s</span>\n"
-#~ "                                <span colspan=\"2\">ISO 8601 Minggu Angka: %"
-#~ "(isoweek)s</span>"
-
-#~ msgid ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type in "
 #~ "['one2many', 'many2many']\">to</span>\n"
 #~ "                                <span invisible=\"evaluation_type != "
@@ -67679,36 +67508,6 @@ msgstr ""
 #~ msgstr ""
 #~ "<span invisible=\"evaluation_type != 'value' or update_field_type not in "
 #~ "['one2many', 'many2many']\">by</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"reset_mode != 'soft'\">This view has no previous version.</"
-#~ "span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">This view "
-#~ "is not coming from a file.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">You "
-#~ "need two views to compare.</span>"
-#~ msgstr ""
-#~ "<span invisible=\"reset_mode != 'soft'\">Tampilan ini tidak memiliki versi "
-#~ "lama.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'hard'\">Tampilan "
-#~ "ini tidak datang dari file.</span>\n"
-#~ "                        <span invisible=\"reset_mode != 'other_view'\">Anda "
-#~ "harus memiliki dua view untuk dibandingkan.</span>"
-
-#~ msgid ""
-#~ "<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
-#~ "class=\"o_actions_server_set_a_value text-muted\">Set a value...</span>\n"
-#~ "                                <span invisible=\"evaluation_type != "
-#~ "'equation'\">\n"
-#~ "                                    to this Python expression:\n"
-#~ "                                </span>"
-#~ msgstr ""
-#~ "<span invisible=\"update_field_id != False or evaluation_type != 'value'\" "
-#~ "class=\"o_actions_server_set_a_value text-muted\">Tetapkan value...</span>\n"
-#~ "                                <span invisible=\"evaluation_type != "
-#~ "'equation'\">\n"
-#~ "                                    ke expression Python ini:\n"
-#~ "                                </span>"
 
 #~ msgid "<span>, </span>"
 #~ msgstr "<span>, </span>"
@@ -67749,19 +67548,6 @@ msgstr ""
 #~ msgid "<strong>Idx</strong>"
 #~ msgstr "<strong>Idx</strong>"
 
-#~ msgid ""
-#~ "<strong>Important:</strong>\n"
-#~ "                            The key cannot be retrieved later and provides "
-#~ "<b>full access</b>\n"
-#~ "                            to your user account, it is very important to "
-#~ "store it securely."
-#~ msgstr ""
-#~ "<strong>Penting:</strong>\n"
-#~ "                            Kunci tidak dapat disediakan lagi nanti dan "
-#~ "menyediakan <b>akses penuh</b>\n"
-#~ "                            ke akun user Anda, sangat penting untuk "
-#~ "menyimpannya dengan aman."
-
 #~ msgid "<strong>Inherited</strong>"
 #~ msgstr "<strong>Inherited</strong>"
 
@@ -67788,13 +67574,6 @@ msgstr ""
 
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>Seq</strong>"
-
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>Operasi ini akan secara permanen menghapus semua data yang saat ini "
-#~ "disimpan oleh modul!</strong>"
 
 #~ msgid "<strong>Tr</strong>"
 #~ msgstr "<strong>Tr</strong>"
@@ -67823,21 +67602,6 @@ msgstr ""
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u>Tampilan</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Kelompok adalah set area fungsional yang akan ditetapkan ke user untuk "
-#~ "memberikan mereka akses dan hak ke aplikasi dan task tertentu di sistem. "
-#~ "Anda dapat membuat kelompok kustom atau mengedit yang tersedia secara "
-#~ "default untuk mengustomisasi tampilan menu yang user akan dapat lihat. "
-#~ "Apakah mereka dapat melihat, menulis, membuat dan menghapus hak akses dapat "
-#~ "dikelola dari sini."
-
 #~ msgid "A module to generate exceptions."
 #~ msgstr "Sebuah modul untuk menghasilkan pengecualian."
 
@@ -67863,14 +67627,6 @@ msgstr ""
 #~ "Organisasi pendidikan dan ilmiah nirlaba internasional, dengan tiga "
 #~ "departemen (aeronautics dan aerospace, environmental dan applied fluid "
 #~ "dynamics, dan turbomachinery dan propulsion)."
-
-#~ msgid ""
-#~ "A user without any rights on Appraisals will be able to see the application, "
-#~ "create and manage appraisals for himself and the people he's manager of."
-#~ msgstr ""
-#~ "User tanpa hak apapun pada Appraisal akan dapat melihat aplikasi, membuat "
-#~ "dan mengelola appraisal untuk diri sendiri dan orang yang merupakan "
-#~ "bawahannya."
 
 #~ msgid "A valid email is required for find_or_create to work properly."
 #~ msgstr ""
@@ -68067,12 +67823,6 @@ msgstr ""
 #~ msgid "Bakery"
 #~ msgstr "Bakery"
 
-#~ msgid ""
-#~ "Banks are the financial institutions at which you and your contacts have "
-#~ "their accounts."
-#~ msgstr ""
-#~ "Bank adalah lembaga keuangan pada mana Anda dan kontak Anda memiliki akun."
-
 #~ msgid "Bar & Pub"
 #~ msgstr "Bar & Pub"
 
@@ -68084,17 +67834,6 @@ msgstr ""
 
 #~ msgid "Basic models and helpers to support Internet of Things."
 #~ msgstr "model dasar dan bantuan untuk menunjang Internet of Things."
-
-#~ msgid ""
-#~ "Be aware that editing the architecture of a standard view is not advised, "
-#~ "since the changes will be overwritten during future module updates.<br/>\n"
-#~ "                        We recommend applying modifications to standard "
-#~ "views through inherited views or customization with Odoo Studio."
-#~ msgstr ""
-#~ "Mohon ingat bahwa mengedit arsitektur tampilan standar tidak disarankan, "
-#~ "karena perubahannya akan dapat ditimpa pada update modul masa depan.<br/>\n"
-#~ "                        Kami menyarankan menerapkan modifikasi ke tampilan "
-#~ "standar melalui tampilan inherited atau kustomisasi dengan Odoo Studio."
 
 #~ msgid ""
 #~ "Below text serves as a suggestion and doesn’t engage Odoo S.A. "
@@ -68149,9 +67888,6 @@ msgstr ""
 #~ msgid "Bridge module for project_enterprise and hr"
 #~ msgstr "Modul bridge untuk project_enterprise dan hr"
 
-#~ msgid "Bridge module to support quiz features during \"live\" tracks. "
-#~ msgstr "Modul bridge untuk mendukung fitur kuis selama acara \"live\". "
-
 #~ msgid "By default the widget uses the field information"
 #~ msgstr "Secara default widget menggunakan informasi field"
 
@@ -68187,9 +67923,6 @@ msgstr ""
 #~ msgid "Certificate-based authentication requires a TLS transport"
 #~ msgstr "Autentikasi berdasarkan sertifikat membutuhkan TLS transport"
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Ubah cara alamat ditampilkan di laporan"
-
 #~ msgid "Checksum/SHA1"
 #~ msgstr "Checksum/SHA1"
 
@@ -68199,13 +67932,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Child server action yang akan dilakukan. Catat bahwa pengembalian terakhir "
 #~ "returned action value akan digunakan sebagai global return value."
-
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr ""
-#~ "Pilih sub-tampilan mitra yang mengikutsertakan hanya field alamat, untuk "
-#~ "merubah cara user memasukkan alamat."
 
 #~ msgid ""
 #~ "Choose the connection encryption scheme:\n"
@@ -68239,9 +67965,6 @@ msgstr ""
 
 #~ msgid "Clothing Store"
 #~ msgstr "Toko Baju"
-
-#~ msgid "Collect, organize and share documents."
-#~ msgstr "Kumpulkan, atur dan bagi dokumen."
 
 #~ msgid ""
 #~ "Colleen Diaz works in IT sector <b>since 10 years</b>. He is known\n"
@@ -68294,15 +68017,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "Computed fields are defined with the fields\n"
-#~ "                                                <strong>Dependencies</"
-#~ "strong> and <strong>Compute</strong>."
-#~ msgstr ""
-#~ "Field yang dicompute didefinisikan dengan field\n"
-#~ "                                                <strong>Ketergantungan</"
-#~ "strong> dan <strong>Compute</strong>."
-
-#~ msgid ""
-#~ "Computed fields are defined with the fields\n"
 #~ "                                    <strong>Dependencies</strong> and "
 #~ "<strong>Compute</strong>."
 #~ msgstr ""
@@ -68351,9 +68065,6 @@ msgstr ""
 #~ msgid "Consulting Services"
 #~ msgstr "Layanan Konsultasi"
 
-#~ msgid "Contains In-App Purchases"
-#~ msgstr "Memiliki IAP"
-
 #~ msgid "Convert attachments to links for emails over"
 #~ msgstr "Konversikan lampiran menjadi link untuk email"
 
@@ -68382,25 +68093,6 @@ msgstr ""
 #~ msgid "Create a Customer"
 #~ msgstr "Buat Pelanggan"
 
-#~ msgid ""
-#~ "Create and manage the companies that will be managed by Odoo from here. "
-#~ "Shops or subsidiaries can be created and maintained from here."
-#~ msgstr ""
-#~ "Buat dan kelola perusahaan yang akan dikelola oleh Odoo dari sini. Toko atau "
-#~ "cabang akan dibuat dan ditangani dari sini."
-
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Membuat dan mengelola pengguna yang akan terhubungkan ke sistem. Pengguna "
-#~ "dapat dinonaktifkan bila ada periode waktu di mana mereka tidak boleh "
-#~ "terhubung ke sistem. Anda dapat menetapkan kelompok mereka untuk memberikan "
-#~ "mereka akses khusus untuk aplikasi yang mereka butuhkan untuk digunakan "
-#~ "dalam sistem."
-
 #~ msgid "Create and validate approvals requests"
 #~ msgstr "Buat dan validasikan permintaan approval"
 
@@ -68415,13 +68107,6 @@ msgstr ""
 
 #~ msgid "Customer Relationship Management"
 #~ msgstr "Manajemen Hubungan Pelanggan"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Tampilan custom digunakan saat user mengatur ulang konten dari tampilan "
-#~ "dashboard mereka (melalui web client)"
 
 #~ msgid "DIY Workshops"
 #~ msgstr "Loka Karya DIY"
@@ -68499,13 +68184,6 @@ msgstr ""
 
 #~ msgid "Delete Access"
 #~ msgstr "Hapus Akses"
-
-#~ msgid ""
-#~ "Demo data should only be used on test databases!\n"
-#~ "                             Once they are loaded, they cannot be removed!"
-#~ msgstr ""
-#~ "Data demo harusnya hanya digunakan pada test database!\n"
-#~ "                             Setelah dimuat, mereka tidak dapat dihapus!"
 
 #~ msgid "Demo logo"
 #~ msgstr "Logo demo"
@@ -68761,9 +68439,6 @@ msgstr ""
 #~ "Untuk alasan keamanan, Anda tidak dapat menggabungkan lebih dari 3 kontak. "
 #~ "Anda dapat membuka kembali wisaya beberapa kali jika diperlukan."
 
-#~ msgid "Forgot password?"
-#~ msgstr "Lupa password?"
-
 #~ msgid "Formatting: long, short, narrow (not used for digital)"
 #~ msgstr "Formatting: panjang, pendek, sempit (tidak digunakan untuk digital)"
 
@@ -68778,12 +68453,6 @@ msgstr ""
 
 #~ msgid "Furniture Store"
 #~ msgstr "Toko Furnitur"
-
-#~ msgid ""
-#~ "G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
-#~ msgstr ""
-#~ "G - PERDAGANGAN GROSIR DAN ECERAN; PERBAIKAN KENDARAAN BERMOTOR DAN SEPEDA "
-#~ "MOTOR"
 
 #~ msgid "Gallery"
 #~ msgstr "Galeri"
@@ -68881,27 +68550,6 @@ msgstr ""
 #~ msgid "Height"
 #~ msgstr "Tinggi"
 
-#~ msgid ""
-#~ "Helps you manage referrals\n"
-#~ "                User : Access to referral, share job, gain points, buy "
-#~ "rewards\n"
-#~ "                Administrator : edit rewards and more"
-#~ msgstr ""
-#~ "Membantu Anda menangani referral\n"
-#~ "                User : Akses untuk referral, membagikan lowongan kerja, "
-#~ "mendapatkan poin, beli hadiah\n"
-#~ "                Administrator : edit hadiah dan lebih banyak lagi"
-
-#~ msgid ""
-#~ "Here is your new API key, use it instead of a password for RPC access.\n"
-#~ "                            Your login is still necessary for interactive "
-#~ "usage."
-#~ msgstr ""
-#~ "Berikut adalah API key baru Anda, gunakan mereka alih-alih password untuk "
-#~ "akses RPC.\n"
-#~ "                            Login masih diperlukan untuk penggunaan "
-#~ "interaktif."
-
 #~ msgid "Hidden"
 #~ msgstr "Tersembunyi"
 
@@ -68994,19 +68642,6 @@ msgstr ""
 
 #~ msgid "If set, action binding only applies for this user."
 #~ msgstr "Bila ditetapkan, action binding hanya diterapkan untuk user ini."
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "Bila view ini diwariskan,\n"
-#~ "* jika TRUE, view akan selalu di-extend ke induk\n"
-#~ "* jika FALSE, view saat ini tidak akan di-extend ke induk tapi dapat "
-#~ "diaktifkan\n"
-#~ "         "
 
 #~ msgid ""
 #~ "If user belongs to several groups, the results from step 2 are combined with "
@@ -69114,16 +68749,6 @@ msgstr ""
 #~ msgstr "IoT Base"
 
 #~ msgid ""
-#~ "It is very important that this description be clear\n"
-#~ "                        and complete, <strong>it will be the only way to\n"
-#~ "                        identify the key once created</strong>."
-#~ msgstr ""
-#~ "Kejelasan dan kelengkapan deskripsi ini\n"
-#~ "                        sangat penting, <strong>karena ini merupakan satu-"
-#~ "satunya cara\n"
-#~ "                        mengidentifikasi kunci setelah dibuat</strong>."
-
-#~ msgid ""
 #~ "It provides post-graduate education in fluid dynamics\n"
 #~ "                    (research master in fluid dynamics, former \"Diploma\n"
 #~ "                    Course\", doctoral program, stagiaire program and "
@@ -69220,19 +68845,6 @@ msgstr ""
 
 #~ msgid "Manage accounting with fleets"
 #~ msgstr "Kelola akuntansi dengan armada"
-
-#~ msgid ""
-#~ "Manage and customize the items available and displayed in your Odoo system "
-#~ "menu. You can delete an item by clicking on the box at the beginning of each "
-#~ "line and then delete it through the button that appeared. Items can be "
-#~ "assigned to specific groups in order to make them accessible to some users "
-#~ "within the system."
-#~ msgstr ""
-#~ "Mengelola dan menyesuaikan item-item yang tersedia dan ditampilkan di menu "
-#~ "sistem Odoo Anda. Anda dapat menghapus sebuah item dengan mengeklik kotak "
-#~ "yang ada di awal tiap garis kemudian menghapusnya melalui tombol yang "
-#~ "muncul. Item-item dapat diperuntukkan kepada kelompok-kelompok spesifik agar "
-#~ "mereka tampak oleh beberapa pengguna sistem saja."
 
 #~ msgid "Manage your fleet and track car costs"
 #~ msgstr "Kelola armada Anda dan pantau biaya kendaraan"
@@ -69359,18 +68971,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Tidak ada tanggapan yang diterima. Periksa alamat server dan port number.\n"
 #~ " %s"
-
-#~ msgid ""
-#~ "Non-trivial testing utilities can require models & all\n"
-#~ "\n"
-#~ "This here module is useful to validate that they're doing what they're \n"
-#~ "supposed to do\n"
-#~ msgstr ""
-#~ "Utilities non-trivial dapat memerlukan model & semua\n"
-#~ "    \n"
-#~ "Ini adalah modul yang berguna untuk memvalidasi bahwa mereka melakukan apa "
-#~ "yang mereka\n"
-#~ "seharusnya lakukan\n"
 
 #~ msgid "None"
 #~ msgstr "Tidak Ada"
@@ -69634,35 +69234,6 @@ msgstr ""
 
 #~ msgid "Online Appointment"
 #~ msgstr "Janji temu secara Daring"
-
-#~ msgid ""
-#~ "Only applies if this view inherits from an other one (inherit_id is not "
-#~ "False/Null).\n"
-#~ "\n"
-#~ "* if extension (default), if this view is requested the closest primary "
-#~ "view\n"
-#~ "is looked up (via inherit_id), then all views inheriting from it with this\n"
-#~ "view's model are applied\n"
-#~ "* if primary, the closest primary view is fully resolved (even if it uses a\n"
-#~ "different model than this one), then this view's inheritance specs\n"
-#~ "(<xpath/>) are applied, and the result is used as if it were this view's\n"
-#~ "actual arch.\n"
-#~ msgstr ""
-#~ "Hanya berlaku bila tampilan ini diwariskan dari tampilan ini (inherit_id "
-#~ "tidak False/Null).\n"
-#~ "\n"
-#~ "* bila extension (default), bila tampilan ini diminta maka tampilan primary "
-#~ "terdekat\n"
-#~ "akan dicari (via inherit_id), dan semua tampilan yang mendapatkan warisan "
-#~ "dari tampilan itu dengan\n"
-#~ "model tampilan ini akan diaplikasikan\n"
-#~ "* bila primary, tampilan primary terdekat akan di resolve sepenuhnya (bahkan "
-#~ "bila menggunakan\n"
-#~ "model yang berbeda dari yang saat ini), lalu spesifikasi pewarisan tampilan "
-#~ "ini\n"
-#~ "(<xpath/>) akan berlaku, dan hasil akan digunakan seolah-olah adalah "
-#~ "tampilan arch\n"
-#~ "yang sebetulnya.\n"
 
 #~ msgid "Open Sans"
 #~ msgstr "Buka Sans"
@@ -70032,9 +69603,6 @@ msgstr ""
 #~ "laporan tidak memiliki atribut 'data-oe-model' dan 'data-oe-id' sebagai "
 #~ "bagian dari div dengan classname 'article'."
 
-#~ msgid "Restaurant extensions for the Point of Sale "
-#~ msgstr "Extension restoran untuk POS "
-
 #~ msgid "Roboto"
 #~ msgstr "Roboto"
 
@@ -70116,39 +69684,6 @@ msgstr ""
 #~ msgid "See lots used in maintenance"
 #~ msgstr "Lihat lot yang digunakan dalam maintenance"
 
-#~ msgid ""
-#~ "Select the list of fields used to search for\n"
-#~ "                            duplicated records. If you select several "
-#~ "fields,\n"
-#~ "                            Odoo will propose you to merge only those "
-#~ "having\n"
-#~ "                            all these fields in common. (not one of the "
-#~ "fields)."
-#~ msgstr ""
-#~ "Pilih daftar bidang yang digunakan untuk mencari catatan duplikat. Jika "
-#~ "Anda\n"
-#~ "                            memilih beberapa bidang, Odoo akan mengusulkan "
-#~ "Anda\n"
-#~ "                            untuk menggabungkan hanya mereka yang memiliki "
-#~ "semua\n"
-#~ "                            bidang yang sama. (bukan salah satu bidang)."
-
-#~ msgid ""
-#~ "Selected contacts will be merged together.\n"
-#~ "                                All documents linked to one of these "
-#~ "contacts\n"
-#~ "                                will be redirected to the destination "
-#~ "contact.\n"
-#~ "                                You can remove contacts from this list to "
-#~ "avoid merging them."
-#~ msgstr ""
-#~ "Kontak yang dipilih akan digabungkan.\n"
-#~ "                                Semua dokumen terkait ke salah satu kontak "
-#~ "ini\n"
-#~ "                                akan diarahkan ke tujuan kontak.\n"
-#~ "                                Anda dapat menghapus kontak dari daftar ini "
-#~ "untuk menghindari menggabungkannya."
-
 #~ msgid "Self"
 #~ msgstr "Diri sendiri"
 
@@ -70183,9 +69718,6 @@ msgstr ""
 
 #~ msgid "Short"
 #~ msgstr "Pendek"
-
-#~ msgid "Simple Discounts in the Point of Sale "
-#~ msgstr "Diskon Sederhana di POS "
 
 #~ msgid "Slash"
 #~ msgstr "Gari"
@@ -70246,21 +69778,11 @@ msgstr ""
 #~ msgid "Student Organization"
 #~ msgstr "Organisasi Murid"
 
-#~ msgid "Subscriptions of membership / partnership "
-#~ msgstr "Langganan membership / partnership "
-
 #~ msgid "Summer Camps"
 #~ msgstr "Summer Camps"
 
 #~ msgid "Surveying & Mapping"
 #~ msgstr "Survey & Pemetaan"
-
-#~ msgid ""
-#~ "T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
-#~ "SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
-#~ msgstr ""
-#~ "T - KEGIATAN RUMAH TANGGA SEBAGAI MAJIKAN; KEGIATAN PENGHASILAN BARANG DAN "
-#~ "LAYANAN YANG TIDAK DIBEDAKAN DALAM RUMAH TANGGA UNTUK PENGGUNAAN SENDIRI"
 
 #~ msgid "TLS (STARTTLS), encryption and validation"
 #~ msgstr "TLS (STARTTLS), enkripsi dan validasi"
@@ -70349,30 +69871,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Perusahaan %(company_name)s tidak dapat diarsip karena masih digunakan "
 #~ "sebagai perusahaan default untuk %(active_users)s user."
-
-#~ msgid ""
-#~ "The configuration wizards are used to help you configure a new instance of "
-#~ "Odoo. They are launched during the installation of new modules, but you can "
-#~ "choose to restart some wizards manually from this menu."
-#~ msgstr ""
-#~ "Wizard konfigurasi akan digunakan untuk membantu Anda mengonfigurasi "
-#~ "instance baru Odoo. Mereka akan diluncurkan pada instalasi modul baru, tapi "
-#~ "Anda dapat memilih untuk restart beberapa wizard secara manual dari menu ini."
-
-#~ msgid ""
-#~ "The field <strong>Compute</strong> is the Python code to\n"
-#~ "                                                compute the value of the "
-#~ "field on a set of records. The value of\n"
-#~ "                                                the field must be assigned "
-#~ "to each record with a dictionary-like\n"
-#~ "                                                assignment."
-#~ msgstr ""
-#~ "Field <strong>Compute</strong> adalah kode Python untuk\n"
-#~ "                                                menghitung nilai dari field "
-#~ "pada satu set record. Nilai dari\n"
-#~ "                                                field harus diterapkan ke "
-#~ "setiap record dengan satu dictionary-like\n"
-#~ "                                                assignment."
 
 #~ msgid ""
 #~ "The field <strong>Compute</strong> is the Python code to\n"
@@ -70549,16 +70047,6 @@ msgstr ""
 #~ msgstr "Toko Thrift"
 
 #~ msgid ""
-#~ "To notify progress for CRON call and re-trigger a call if there is remaining "
-#~ "tasks, use <code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-#~ msgstr ""
-#~ "Untuk menotifikasi progress CRON call dan memicu ulang call bila ada task "
-#~ "yang tersisa, gunakan "
-#~ "<code>env['ir.cron']._notify_progress(done=task_done_count, "
-#~ "remaining=task_remaining_count)</code>"
-
-#~ msgid ""
 #~ "Toni Rhodes works in IT sector <b>since 10 years</b>. He is known\n"
 #~ "                notably for selling mouse traps. With that trick he cut\n"
 #~ "                IT budget by almost half within the last 2 years.\n"
@@ -70579,9 +70067,6 @@ msgstr ""
 
 #~ msgid "Transient: True"
 #~ msgstr "Transien: True"
-
-#~ msgid "Travel, Excursion, Plane, Tour, Agency "
-#~ msgstr "Travel, Excursion, Plane, Tour, Agency "
 
 #~ msgid "Tried to convert multiple documents in wkhtmltopdf using unpatched QT"
 #~ msgstr ""
@@ -70654,13 +70139,6 @@ msgstr ""
 #~ msgstr "Gunakan margin css"
 
 #~ msgid ""
-#~ "Use groups to organize countries that are frequently selected together (e.g. "
-#~ "\"LATAM\", \"BeNeLux\", \"ASEAN\")."
-#~ msgstr ""
-#~ "Gunakan pengelompokkan untuk mengatur negara yang sering dipilih bersama "
-#~ "(misalnya \"LATAM\", \"BeNeLux\", \"ASEAN\")."
-
-#~ msgid ""
 #~ "Use the SMTP configuration set in the \"Command Line Interface\" arguments."
 #~ msgstr ""
 #~ "Gunakan konfigurasi SMTP yang ditetapkan di argument \"Command Line "
@@ -70686,14 +70164,6 @@ msgstr ""
 
 #~ msgid "View in speedscope"
 #~ msgstr "Lihat di speedscope"
-
-#~ msgid ""
-#~ "Views allows you to personalize each view of Odoo. You can add new fields, "
-#~ "move fields, rename them or delete the ones that you do not need."
-#~ msgstr ""
-#~ "Tampilan memungkinka Anda untuk mempersonalisasikan masing-masing tampilan "
-#~ "Odoo. Anda dapat menambahkan field baru, menggerakkan field, menamakan ulang "
-#~ "atau menghapus yang tidak Anda butuhkan."
 
 #~ msgid ""
 #~ "We are a technology consulting & strategic advisory firm that creates value "
@@ -70747,17 +70217,6 @@ msgstr ""
 #~ "Bila tidak ada server email spesifik yang diminta untuk email, prioritas "
 #~ "tertinggi akan digunakan. Prioritas default adalah 10 (nomor lebih kecil = "
 #~ "prioritas lebih tinggi)"
-
-#~ msgid ""
-#~ "When subsequences per date range are used, you can prefix variables with "
-#~ "'range_'\n"
-#~ "                                to use the beginning of the range instead of "
-#~ "the current date, e.g. %(range_year)s instead of %(year)s."
-#~ msgstr ""
-#~ "Saat sub-sequence per date range digunakan, Anda dapat memulai variabel "
-#~ "dengan 'range_'\n"
-#~ "                                untuk menggunakan awal range alih-alih "
-#~ "tanggal saat ini, contoh %(range_year)s alih-alih %(year)s."
 
 #~ msgid "Whether this contact is an Employee."
 #~ msgstr "Apakah kontak ini adalah Karyawan."
@@ -70892,13 +70351,6 @@ msgstr ""
 #~ "Anda harus mengupdate dokumen ini agar sesuai dengan Syarat&amp;Ketentuan "
 #~ "Anda."
 
-#~ msgid ""
-#~ "You will be able to define additional access rights by editing the newly "
-#~ "created user under the Settings / Users menu."
-#~ msgstr ""
-#~ "Anda akan dapat memberikan akses tambahan dengan mengubah akun pengguna baru "
-#~ "tersebut di menu Pengaturan / Pengguna."
-
 #~ msgid "Your conditions..."
 #~ msgstr "Kondisi-kondisi Anda..."
 
@@ -70956,24 +70408,8 @@ msgstr ""
 #~ msgid "float"
 #~ msgstr "float"
 
-#~ msgid ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-#~ msgstr ""
-#~ "for record in self:\n"
-#~ "        record['size'] = len(record.name)"
-
 #~ msgid "format() must be given exactly one %char format specifier"
 #~ msgstr "format() must be given exactly one %char format specifier"
-
-#~ msgid ""
-#~ "has been successfully installed.\n"
-#~ "                            Users can choose their favorite language in "
-#~ "their preferences."
-#~ msgstr ""
-#~ "telah sukses diinstal.\n"
-#~ "                            User dapat memilih bahasa favorit mereka di "
-#~ "preferensi mereka."
 
 #~ msgid "hour"
 #~ msgstr "jam"
@@ -71013,13 +70449,6 @@ msgstr ""
 
 #~ msgid "parent_id"
 #~ msgstr "parent_id"
-
-#~ msgid ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
-#~ msgstr ""
-#~ "partner_name = record.name + '_code'\n"
-#~ "env['res.partner'].create({'name': partner_name})"
 
 #~ msgid "payroll"
 #~ msgstr "payroll"

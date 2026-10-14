@@ -406,7 +406,9 @@ class AccessReviewCampaign(models.Model):
         self.check_singleton()
         pending = self.item_ids.filtered(lambda item: item.decision == "pending")
         if self.on_deadline == "revoke":
-            pending._decide("revoked", self.env._("Not certified by the deadline"))
+            pending._update_decision(
+                "revoked", self.env._("Not certified by the deadline")
+            )
         else:
             with _marked(_DECIDING):
                 pending.write({"escalated": True})
@@ -551,19 +553,23 @@ class AccessReviewItem(models.Model):
             return
         if self.env.uid in pending.subject_user_id.ids:
             raise UserError(self.env._("Nobody reviews their own access."))
-        now = self.env.cr.now()
+        pending._update_decision(decision, note)
+
+    def _update_decision(self, decision: str, note: str | None) -> None:
+        if not self:
+            return
         with _marked(_DECIDING):
-            pending.write(
+            self.write(
                 {
                     "decision": decision,
                     "decided_by_id": self.env.uid,
-                    "decided_at": now,
+                    "decided_at": self.env.cr.now(),
                     "note": note or False,
                 }
             )
             if decision == "revoked":
-                pending._apply()
-        pending._log(
+                self._apply()
+        self._log(
             "review_revoked" if decision == "revoked" else "review_certified", note
         )
 

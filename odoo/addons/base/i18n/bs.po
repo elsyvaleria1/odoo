@@ -1456,6 +1456,8 @@ msgid ""
 "\n"
 "Accounting reports for Belgium\n"
 msgstr ""
+"\n"
+"Računovodstveni izvještaji za Belgiju"
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_bj_reports
@@ -15878,7 +15880,7 @@ msgstr ""
 msgid ""
 "<code>record</code>: record on which the action is\n"
 "                                        triggered; may be be void"
-msgstr ""
+msgstr "<code>record</code>: zapis na kojem je akcija okinuta; može biti void"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -15893,6 +15895,8 @@ msgid ""
 "<code>records</code>: recordset of all records on which the\n"
 "                                        action is triggered in multi mode; may be void"
 msgstr ""
+"<code>records</code>: rekordset svih zapisa na kojima će akcija biti okinuta "
+"u multi modu; može biti void"
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_model_fields_form
@@ -16206,6 +16210,8 @@ msgid ""
 "<strong>This operation will permanently erase all data currently stored by\n"
 "                        the modules!</strong>"
 msgstr ""
+"<strong>Ova operacija će trajno obrisati sve podatke trenutno skladištene u "
+"ovom modulu!</strong>"
 
 #. module: base
 #: model:ir.module.module,description:base.module_marin
@@ -19703,6 +19709,11 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"Grupa je skup funkcionalnih područja koja će biti dodijeljena korisniku kako "
+"bi imli prava pristupa na posebne programe i zadatke u sistemu. Možete "
+"stvoriti prilagođene grupe ili izmijeniti one postojeće kako bi prilagodili "
+"menije i polja na formama koje će korisnici moći vidjeti. Ovdje možete "
+"upravljati pravima čitanja, pisanja, kreiranja i brisanja zapisa po grupama."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -27059,7 +27070,7 @@ msgstr "Promijeni šifru"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Promjeni način na koji je adresa prikazana u izvještajima"
 
 #. module: base
 #. odoo-python
@@ -27312,6 +27323,8 @@ msgid ""
 "Choose a subview of partners that includes\n"
 "                                only address fields, to change the way users can input addresses."
 msgstr ""
+"Odaberite pod pogled partnera koji uključuju samo polje adresa, da "
+"promjenite način na koji korisnici mogu unositi adrese."
 
 #. module: base
 #: model_terms:ir.ui.view,arch_db:base.view_server_action_form
@@ -28649,6 +28662,11 @@ msgid ""
 "            to the system. You can assign them groups in order to give them specific access to the\n"
 "            applications they need to use in the system."
 msgstr ""
+"Kreirajte i upravljajte korisnicima koji će se spajati na sistem. Korisnici "
+"mogu biti deaktivirani ako postoji potreba da u određenom vremenu trebaju "
+"ili ne trebaju biti prijavljeni na sistem. Možete im dodjeliti grupe da bi "
+"ste im dali specifična prava pristupa aplikacijama koje trebaju da koriste u "
+"sistemu."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_approval
@@ -29316,6 +29334,8 @@ msgid ""
 "Customized views are used when users reorganize the content of their dashboard views\n"
 "                (via web client)"
 msgstr ""
+"Prilagođeni pogledi se koriste kada korisnik reorganizira sadržaj kontrolnih "
+"ploča (putem web klijent)"
 
 #. module: base
 #: model:res.country,name:base.cy
@@ -34052,8 +34072,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -51261,8 +51280,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -59147,17 +59166,6 @@ msgstr ""
 #~ msgstr "- valičina ="
 
 #~ msgid ""
-#~ "<code>record</code>: record on which the action is triggered; may be be void"
-#~ msgstr "<code>record</code>: zapis na kojem je akcija okinuta; može biti void"
-
-#~ msgid ""
-#~ "<code>records</code>: recordset of all records on which the action is "
-#~ "triggered in multi mode; may be void"
-#~ msgstr ""
-#~ "<code>records</code>: rekordset svih zapisa na kojima će akcija biti okinuta "
-#~ "u multi modu; može biti void"
-
-#~ msgid ""
 #~ "<code>time</code>, <code>datetime</code>, <code>dateutil</code>, "
 #~ "<code>timezone</code>: useful Python libraries"
 #~ msgstr ""
@@ -59194,13 +59202,6 @@ msgstr ""
 #~ msgid "<strong>Seq</strong>"
 #~ msgstr "<strong>Seq</strong>"
 
-#~ msgid ""
-#~ "<strong>This operation will permanently erase all data currently stored by "
-#~ "the modules!</strong>"
-#~ msgstr ""
-#~ "<strong>Ova operacija će trajno obrisati sve podatke trenutno skladištene u "
-#~ "ovom modulu!</strong>"
-
 #~ msgid "<strong>Type</strong>"
 #~ msgstr "<strong>Tip</strong>"
 
@@ -59215,20 +59216,6 @@ msgstr ""
 
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>Pogledi</strong></u>"
-
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "Grupa je skup funkcionalnih područja koja će biti dodijeljena korisniku kako "
-#~ "bi imli prava pristupa na posebne programe i zadatke u sistemu. Možete "
-#~ "stvoriti prilagođene grupe ili izmijeniti one postojeće kako bi prilagodili "
-#~ "menije i polja na formama koje će korisnici moći vidjeti. Ovdje možete "
-#~ "upravljati pravima čitanja, pisanja, kreiranja i brisanja zapisa po grupama."
 
 #~ msgid "Access Controls"
 #~ msgstr "Kontrole pristupa"
@@ -59270,22 +59257,12 @@ msgstr ""
 #~ msgid "Bad file format: %s"
 #~ msgstr "Loš format datoteke: %s"
 
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Promjeni način na koji je adresa prikazana u izvještajima"
-
 #~ msgid ""
 #~ "Child server actions that will be executed. Note that the last return "
 #~ "returned action value will be used as global return value."
 #~ msgstr ""
 #~ "Podređena serverska akcija koja će biti izvršena. Zapamtite da će zadnja "
 #~ "vraćena vrijednost akcije biti korišćena kao globalna vraćena vrijednost."
-
-#~ msgid ""
-#~ "Choose a subview of partners that includes only address fields, to change "
-#~ "the way users can input addresses."
-#~ msgstr ""
-#~ "Odaberite pod pogled partnera koji uključuju samo polje adresa, da "
-#~ "promjenite način na koji korisnici mogu unositi adrese."
 
 #~ msgid "Comma"
 #~ msgstr "Zarez"
@@ -59308,30 +59285,11 @@ msgstr ""
 #~ msgid "Create Date"
 #~ msgstr "Kreiraj datum"
 
-#~ msgid ""
-#~ "Create and manage users that will connect to the system. Users can be "
-#~ "deactivated should there be a period of time during which they will/should "
-#~ "not connect to the system. You can assign them groups in order to give them "
-#~ "specific access to the applications they need to use in the system."
-#~ msgstr ""
-#~ "Kreirajte i upravljajte korisnicima koji će se spajati na sistem. Korisnici "
-#~ "mogu biti deaktivirani ako postoji potreba da u određenom vremenu trebaju "
-#~ "ili ne trebaju biti prijavljeni na sistem. Možete im dodjeliti grupe da bi "
-#~ "ste im dali specifična prava pristupa aplikacijama koje trebaju da koriste u "
-#~ "sistemu."
-
 #~ msgid "Custom Shortcuts"
 #~ msgstr "Prilagođene prečice"
 
 #~ msgid "Customer Portal"
 #~ msgstr "Javni portal"
-
-#~ msgid ""
-#~ "Customized views are used when users reorganize the content of their "
-#~ "dashboard views (via web client)"
-#~ msgstr ""
-#~ "Prilagođeni pogledi se koriste kada korisnik reorganizira sadržaj kontrolnih "
-#~ "ploča (putem web klijent)"
 
 #~ msgid "Debugging"
 #~ msgstr "Otklanjanje grešaka"
@@ -59564,14 +59522,6 @@ msgstr ""
 #~ "\n"
 #~ "\n"
 #~ "Ovaj dodatak je već instaliran na vašem sistemu"
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Belgium\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Računovodstveni izvještaji za Belgiju"
 
 #~ msgid "%B - Full month name.\""
 #~ msgstr "%B - Puno ime mjeseca.\""

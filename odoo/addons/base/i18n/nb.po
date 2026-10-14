@@ -1464,6 +1464,9 @@ msgid ""
 "\n"
 "Accounting reports for Belgium\n"
 msgstr ""
+"\n"
+"        Regnskapsrapporter for Belgia\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_bj_reports
@@ -1514,6 +1517,9 @@ msgid ""
 "\n"
 "Accounting reports for Chile\n"
 msgstr ""
+"\n"
+"        Regnskapsrapporter for Chile\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_cn_reports
@@ -1530,6 +1536,10 @@ msgid ""
 "Accounting reports for Colombia\n"
 "================================\n"
 msgstr ""
+"\n"
+"Regnskapsrapporter for Colombia\n"
+"================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_km_reports
@@ -1731,6 +1741,10 @@ msgid ""
 "Accounting reports for India\n"
 "================================\n"
 msgstr ""
+"\n"
+"Regnskapsrapporter for India\n"
+"================================\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_il_reports
@@ -1982,6 +1996,9 @@ msgid ""
 "\n"
 "Accounting reports for Spain\n"
 msgstr ""
+"\n"
+"        Regnskapsrapporter for Spania\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_lk_reports
@@ -2003,6 +2020,9 @@ msgid ""
 "\n"
 "Accounting reports for Switzerland\n"
 msgstr ""
+"\n"
+"        Regnskapsrapporter for Sveits\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_sn_reports
@@ -2089,6 +2109,9 @@ msgid ""
 "\n"
 "Accounting reports for US\n"
 msgstr ""
+"\n"
+"        Regnskapsrapporter for USA\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_ug_reports
@@ -2625,6 +2648,9 @@ msgid ""
 "Allow users to sign up and reset their password\n"
 "===============================================\n"
 msgstr ""
+"\n"
+"La brukere registrere seg og nullstille eget passord\n"
+"==============================================="
 
 #. module: base
 #: model:ir.module.module,description:base.module_website_sale_mass_mailing
@@ -2995,6 +3021,8 @@ msgid ""
 "\n"
 "Ask questions, get answers, no distractions\n"
 msgstr ""
+"\n"
+"Still spørsmål, få svar, uten distraksjoner"
 
 #. module: base
 #: model:ir.module.module,description:base.module_account_test
@@ -4937,6 +4965,9 @@ msgid ""
 "\n"
 "Design gorgeous mails\n"
 msgstr ""
+"\n"
+"Design flotte e-postmeldinger\n"
+"    "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_de
@@ -7535,6 +7566,11 @@ msgid ""
 "\n"
 "Allows users to create custom dashboard.\n"
 msgstr ""
+"\n"
+"Lar brukeren lage et tilpasset dashbord.\n"
+"=======================================\n"
+"\n"
+"Lar brukere lage tilpassede dashbord."
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_lt_hr_payroll
@@ -12849,6 +12885,9 @@ msgid ""
 "\n"
 "This module provides the core of the Odoo Mobile App.\n"
 msgstr ""
+"\n"
+"        Denne modulen er kjernen i Odoos mobilapp.\n"
+"        "
 
 #. module: base
 #: model:ir.module.module,description:base.module_l10n_pl_reports_pos_jpk
@@ -19718,6 +19757,11 @@ msgid ""
 "            the view of the menu that users will be able to see. Whether they can have a read,\n"
 "            write, create and delete access right can be managed from here."
 msgstr ""
+"En gruppe er et sett med funksjonelle områder som blir tilegnet brukeren for "
+"å gi dem tilgang og rettigheter til spesifikke applikasjoner og oppgaver i "
+"systemet. Du kan lage egne grupper, eller redigere allerede eksisterende "
+"grupper for å tilpasse menyen brukerene vil se. Les, skriv, opprett og slett-"
+"tilganger kan også bli håndtert herifra."
 
 #. module: base
 #: model:ir.model.fields,help:base.field_res_groups__is_privilege
@@ -27071,7 +27115,7 @@ msgstr "Endre passord"
 msgid ""
 "Change the way\n"
 "                                addresses are displayed in reports"
-msgstr ""
+msgstr "Endre hvordan adresser vises i rapporter"
 
 #. module: base
 #. odoo-python
@@ -34047,8 +34091,7 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_G
 msgid ""
-"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND\n"
-"            MOTORCYCLES"
+"G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES"
 msgstr ""
 
 #. module: base
@@ -35923,6 +35966,11 @@ msgid ""
 "* if True, the view always extends its parent\n"
 "* if False, the view currently does not extend its parent but can be enabled"
 msgstr ""
+"Hvis denne visningen er arvet,\n"
+"* hvis Sann, vil visningen alltid utvide sin overordnede visning\n"
+"* hvis Usann, vil visningen ikke utvide sin overordnede visning, men kan "
+"skrus på\n"
+"         "
 
 #. module: base
 #: model:ir.model.fields,help:base.field_wizard_res_lang_install__overwrite
@@ -51251,8 +51299,8 @@ msgstr ""
 #. module: base
 #: model:res.partner.industry,full_name:base.res_partner_industry_T
 msgid ""
-"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND\n"
-"            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
+"T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND "
+"SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE"
 msgstr ""
 
 #. module: base
@@ -53760,6 +53808,8 @@ msgstr ""
 #: model:ir.module.module,summary:base.module_account_online_synchronization
 msgid "This module is used for Online bank synchronization."
 msgstr ""
+"\n"
+"        Denne modulen brukes til synkronisering med nettbank."
 
 #. module: base
 #: model:ir.module.module,summary:base.module_l10n_dk_nemhandel
@@ -59185,20 +59235,6 @@ msgstr ""
 #~ msgid "<u><strong>Views</strong></u>"
 #~ msgstr "<u><strong>Visninger</strong></u>"
 
-#~ msgid ""
-#~ "A group is a set of functional areas that will be assigned to the user in "
-#~ "order to give them access and rights to specific applications and tasks in "
-#~ "the system. You can create custom groups or edit the ones existing by "
-#~ "default in order to customize the view of the menu that users will be able "
-#~ "to see. Whether they can have a read, write, create and delete access right "
-#~ "can be managed from here."
-#~ msgstr ""
-#~ "En gruppe er et sett med funksjonelle områder som blir tilegnet brukeren for "
-#~ "å gi dem tilgang og rettigheter til spesifikke applikasjoner og oppgaver i "
-#~ "systemet. Du kan lage egne grupper, eller redigere allerede eksisterende "
-#~ "grupper for å tilpasse menyen brukerene vil se. Les, skriv, opprett og slett-"
-#~ "tilganger kan også bli håndtert herifra."
-
 #~ msgid "Access Controls"
 #~ msgstr "Tilgangskontroller"
 
@@ -59249,9 +59285,6 @@ msgstr ""
 #~ msgstr ""
 #~ "Nedenstående tekst fungerer som et forslag og medfører ikke Odoo S.A.s "
 #~ "ansvar."
-
-#~ msgid "Change the way addresses are displayed in reports"
-#~ msgstr "Endre hvordan adresser vises i rapporter"
 
 #~ msgid "Checksum/SHA1"
 #~ msgstr "Sjekksum/SHA1"
@@ -59374,19 +59407,6 @@ msgstr ""
 
 #~ msgid "If set, action binding only applies for this company"
 #~ msgstr "Hvis satt, gjelder handlingsbindingen kun for dette firmaet"
-
-#~ msgid ""
-#~ "If this view is inherited,\n"
-#~ "* if True, the view always extends its parent\n"
-#~ "* if False, the view currently does not extend its parent but can be "
-#~ "enabled\n"
-#~ "         "
-#~ msgstr ""
-#~ "Hvis denne visningen er arvet,\n"
-#~ "* hvis Sann, vil visningen alltid utvide sin overordnede visning\n"
-#~ "* hvis Usann, vil visningen ikke utvide sin overordnede visning, men kan "
-#~ "skrus på\n"
-#~ "         "
 
 #~ msgid "Initial Setup Tools"
 #~ msgstr "Verktøy for grunnleggende oppsett"
@@ -59683,24 +59703,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        Accounting reports for Belgium\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Regnskapsrapporter for Belgia\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Chile\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Regnskapsrapporter for Chile\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "        Accounting reports for Netherlands\n"
 #~ "    "
 #~ msgstr ""
@@ -59710,53 +59712,10 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "        Accounting reports for Spain\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Regnskapsrapporter for Spania\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for Switzerland\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Regnskapsrapporter for Sveits\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "        Accounting reports for US\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "        Regnskapsrapporter for USA\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "        Bridge between HR and Maintenance."
 #~ msgstr ""
 #~ "\n"
 #~ "        Bro mellom HR og Vedlikehold."
-
-#~ msgid ""
-#~ "\n"
-#~ "        This module is used for Online bank synchronization."
-#~ msgstr ""
-#~ "\n"
-#~ "        Denne modulen brukes til synkronisering med nettbank."
-
-#~ msgid ""
-#~ "\n"
-#~ "        This module provides the core of the Odoo Mobile App.\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "        Denne modulen er kjernen i Odoos mobilapp.\n"
-#~ "        "
 
 #~ msgid ""
 #~ "\n"
@@ -59778,17 +59737,6 @@ msgstr ""
 
 #~ msgid ""
 #~ "\n"
-#~ "Accounting reports for Colombia\n"
-#~ "================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Regnskapsrapporter for Colombia\n"
-#~ "================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
 #~ "Accounting reports for France\n"
 #~ "================================\n"
 #~ "\n"
@@ -59799,58 +59747,6 @@ msgstr ""
 #~ "================================\n"
 #~ "\n"
 #~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Accounting reports for India\n"
-#~ "================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Regnskapsrapporter for India\n"
-#~ "================================\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Allow users to sign up and reset their password\n"
-#~ "===============================================\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "La brukere registrere seg og nullstille eget passord\n"
-#~ "==============================================="
-
-#~ msgid ""
-#~ "\n"
-#~ "Ask questions, get answers, no distractions\n"
-#~ "        "
-#~ msgstr ""
-#~ "\n"
-#~ "Still spørsmål, få svar, uten distraksjoner"
-
-#~ msgid ""
-#~ "\n"
-#~ "Design gorgeous mails\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Design flotte e-postmeldinger\n"
-#~ "    "
-
-#~ msgid ""
-#~ "\n"
-#~ "Lets the user create a custom dashboard.\n"
-#~ "========================================\n"
-#~ "\n"
-#~ "Allows users to create custom dashboard.\n"
-#~ "    "
-#~ msgstr ""
-#~ "\n"
-#~ "Lar brukeren lage et tilpasset dashbord.\n"
-#~ "=======================================\n"
-#~ "\n"
-#~ "Lar brukere lage tilpassede dashbord."
 
 #~ msgid ""
 #~ "\n"

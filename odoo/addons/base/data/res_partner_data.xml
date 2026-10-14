@@ -69,8 +69,7 @@
     <record id="res_partner_industry_G" model="res.partner.industry">
         <field name="name">Wholesale/Retail</field>
         <field
-            name="full_name">G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND
-            MOTORCYCLES</field>
+            name="full_name">G - WHOLESALE AND RETAIL TRADE; REPAIR OF MOTOR VEHICLES AND MOTORCYCLES</field>
     </record>
 
     <record id="res_partner_industry_H" model="res.partner.industry">
@@ -139,8 +138,7 @@
     <record id="res_partner_industry_T" model="res.partner.industry">
         <field name="name">Households</field>
         <field
-            name="full_name">T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND
-            SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE</field>
+            name="full_name">T - ACTIVITIES OF HOUSEHOLDS AS EMPLOYERS; UNDIFFERENTIATED GOODS- AND SERVICES-PRODUCING ACTIVITIES OF HOUSEHOLDS FOR OWN USE</field>
     </record>
 
     <record id="res_partner_industry_U" model="res.partner.industry">
