@@ -22,5 +22,5 @@ class IrWebsocket(models.AbstractModel):
     def _is_live_model(self, model: str) -> bool:
         registry = self.env.registry
         return model in registry and issubclass(
-            registry[model], registry["mixin.media.live"]
+            registry[model], registry["mixin.speech.live"]
         )

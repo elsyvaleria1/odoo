@@ -15,8 +15,8 @@ LIVE_CHUNK_PRIORITY = 1
 LIVE_NOTIFICATION = "speech.live"
 
 
-class MixinMediaLive(models.AbstractModel):
-    _name = "mixin.media.live"
+class MixinSpeechLive(models.AbstractModel):
+    _name = "mixin.speech.live"
     _inherit = ["mixin.media.timeline"]
     _description = "Live capture onto a media timeline"
 

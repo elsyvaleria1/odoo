@@ -1,6 +1,6 @@
 {
     "name": "Speech Processing Infrastructure",
-    "version": "19.0.1.8.0",
+    "version": "19.0.1.9.0",
     "oldest_upgradable_version": "19.0.1.6.0",
     "category": "Hidden",
     "sequence": 10,

@@ -63,8 +63,8 @@ msgstr "Creado el"
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__display_name
 #: model:ir.model.fields,field_description:speech.field_ir_websocket__display_name
 #: model:ir.model.fields,field_description:speech.field_media_segment__display_name
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__display_name
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_speaker__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_vocabulary__display_name
@@ -81,8 +81,8 @@ msgstr "Palabra en inglés"
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__id
 #: model:ir.model.fields,field_description:speech.field_ir_websocket__id
 #: model:ir.model.fields,field_description:speech.field_media_segment__id
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__id
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__id
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__id
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__id
 #: model:ir.model.fields,field_description:speech.field_speech_speaker__id
 #: model:ir.model.fields,field_description:speech.field_speech_vocabulary__id

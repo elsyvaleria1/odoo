@@ -32,7 +32,7 @@ MAX_NOTICE_CHARS = 200
 
 class ConversationConversation(models.Model):
     _name = "conversation.conversation"
-    _inherit = ["mixin.media.live", "conversation.conversation"]
+    _inherit = ["mixin.speech.live", "conversation.conversation"]
 
     calendar_event_id = fields.Many2one(comodel_name="calendar.event")
     minute_attachment_id = fields.Many2one(

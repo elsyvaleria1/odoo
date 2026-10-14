@@ -128,8 +128,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__display_name
 #: model:ir.model.fields,field_description:speech.field_ir_websocket__display_name
 #: model:ir.model.fields,field_description:speech.field_media_segment__display_name
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__display_name
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__display_name
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_speaker__display_name
 #: model:ir.model.fields,field_description:speech.field_speech_vocabulary__display_name
@@ -150,8 +150,8 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__failed
-#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__failed
+#: model:ir.model.fields.selection,name:speech.selection__mixin_speech_live__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__failed
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__failed
 msgid "Failed"
@@ -163,7 +163,7 @@ msgid "First spoke at (s)"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__has_media
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__has_media
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__has_media
 msgid "Has Media"
 msgstr ""
@@ -184,8 +184,8 @@ msgstr ""
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__id
 #: model:ir.model.fields,field_description:speech.field_ir_websocket__id
 #: model:ir.model.fields,field_description:speech.field_media_segment__id
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__id
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__id
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__id
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__id
 #: model:ir.model.fields,field_description:speech.field_speech_speaker__id
 #: model:ir.model.fields,field_description:speech.field_speech_vocabulary__id
@@ -238,36 +238,36 @@ msgid "Live"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__live_chunk_count
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__live_chunk_count
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__live_chunk_count
 msgid "Live Chunk Count"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__is_live
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__is_live
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__is_live
 msgid "Live capture in progress"
 msgstr ""
 
 #. module: speech
-#: model:ir.model,name:speech.model_mixin_media_live
+#: model:ir.model,name:speech.model_mixin_speech_live
 msgid "Live capture onto a media timeline"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__live_elapsed_s
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__live_elapsed_s
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__live_elapsed_s
 msgid "Live elapsed (s)"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__segment_ids
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__segment_ids
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__segment_ids
 msgid "Media"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__media_duration_ms
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__media_duration_ms
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__media_duration_ms
 msgid "Media Duration Ms"
 msgstr ""
@@ -290,7 +290,7 @@ msgstr ""
 
 #. module: speech
 #. odoo-python
-#: code:addons/speech/models/mixin_media_live.py:0
+#: code:addons/speech/models/mixin_speech_live.py:0
 msgid "No live session is running here."
 msgstr ""
 
@@ -302,7 +302,7 @@ msgstr ""
 
 #. module: speech
 #. odoo-python
-#: code:addons/speech/models/mixin_media_live.py:0
+#: code:addons/speech/models/mixin_speech_live.py:0
 msgid ""
 "No speech engine may hear this: the data policy of %(company)s allows no "
 "vendor, and no local engine is installed."
@@ -323,8 +323,8 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__none
-#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__none
+#: model:ir.model.fields.selection,name:speech.selection__mixin_speech_live__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__none
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__none
 msgid "Not transcribed"
@@ -372,8 +372,8 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__queued
-#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__queued
+#: model:ir.model.fields.selection,name:speech.selection__mixin_speech_live__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__queued
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__queued
 msgid "Queued"
@@ -406,8 +406,8 @@ msgstr ""
 
 #. module: speech
 #: model:ir.model.fields,field_description:speech.field_ir_attachment__speaker_ids
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_speaker_ids
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_speaker_ids
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__timeline_speaker_ids
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_speaker_ids
 msgid "Speakers"
 msgstr ""
@@ -446,13 +446,13 @@ msgstr ""
 
 #. module: speech
 #. odoo-python
-#: code:addons/speech/models/mixin_media_live.py:0
+#: code:addons/speech/models/mixin_speech_live.py:0
 msgid "The audio is not valid base64."
 msgstr ""
 
 #. module: speech
 #. odoo-python
-#: code:addons/speech/models/mixin_media_live.py:0
+#: code:addons/speech/models/mixin_speech_live.py:0
 msgid "The chunk holds no audio."
 msgstr ""
 
@@ -475,15 +475,15 @@ msgid "There is nothing to read aloud."
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_transcript
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_transcript
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__timeline_transcript
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_transcript
 msgid "Timeline Transcript"
 msgstr ""
 
 #. module: speech
-#: model:ir.model.fields,field_description:speech.field_mixin_media_live__timeline_transcript_state
 #: model:ir.model.fields,field_description:speech.field_mixin_media_timeline__timeline_transcript_state
+#: model:ir.model.fields,field_description:speech.field_mixin_speech_live__timeline_transcript_state
 #: model:ir.model.fields,field_description:speech.field_speech_dictation__timeline_transcript_state
 msgid "Timeline Transcript State"
 msgstr ""
@@ -496,8 +496,8 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__done
-#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__done
+#: model:ir.model.fields.selection,name:speech.selection__mixin_speech_live__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__done
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__done
 msgid "Transcribed"
@@ -506,8 +506,8 @@ msgstr ""
 #. module: speech
 #: model:ir.model.fields.selection,name:speech.selection__discuss_call_history__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__ir_attachment__transcript_state__running
-#: model:ir.model.fields.selection,name:speech.selection__mixin_media_live__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__mixin_media_timeline__timeline_transcript_state__running
+#: model:ir.model.fields.selection,name:speech.selection__mixin_speech_live__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__phone_call__timeline_transcript_state__running
 #: model:ir.model.fields.selection,name:speech.selection__speech_dictation__timeline_transcript_state__running
 msgid "Transcribing"

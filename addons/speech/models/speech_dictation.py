@@ -11,7 +11,7 @@ DICTATION_RETENTION_DAYS = 7
 
 class SpeechDictation(models.Model):
     _name = "speech.dictation"
-    _inherit = ["mixin.media.live"]
+    _inherit = ["mixin.speech.live"]
     _description = "Dictation"
     _order = "id desc"
     _access_anchors = frozendict(
