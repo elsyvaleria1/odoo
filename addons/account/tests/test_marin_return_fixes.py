@@ -7,6 +7,7 @@ from freezegun import freeze_time
 
 from odoo import Command
 from odoo.exceptions import UserError
+from odoo.modules.module import get_module_path, load_script
 from odoo.tests import tagged
 
 from odoo.addons.account.models.account_return_type import MONTHS_PER_PERIOD
@@ -1953,3 +1954,133 @@ class TestMarinReturnFixes(TestAccountReportsCommon):
         with self.assertRaisesRegex(UserError, "close those tax lines twice"):
             domestic_return.action_validate(bypass_failing_tests=True)
         self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+
+    def _run_the_1_52_migration(self):
+        script = load_script(
+            f"{get_module_path('account')}/migrations/1.52/post-10-return_sync_markers.py",
+            "odoo.addons.account.migrations.post_10_return_sync_markers_1_52",
+        )
+        self.env.flush_all()
+        script.migrate(self.env.cr, "1.51")
+        self.env.invalidate_all()
+
+    def test_the_1_52_migration_marks_the_check_activities_the_sync_scheduled(self):
+        self.env["res.lang"]._activate_lang("es_MX")
+        belgium = self.env.ref("base.be")
+        self._post_a_domestic_and_a_belgian_sale()
+        january_returns = self._january_returns_of_the_countryless_type()
+        domestic_return, belgian_return = (
+            january_returns.filtered(lambda r, code=code: r.country_id.code == code)
+            for code in ("US", "BE")
+        )
+        february_return = self._returns_of_the_countryless_type(
+            country_id=belgium.id, date_from="2024-02-01"
+        )
+        template = self._create_check_template_with_an_activity()
+        todo = self.env.ref("mail.mail_activity_data_todo")
+        call = self.env.ref("mail.mail_activity_data_call")
+        (domestic_return | belgian_return).with_context(lang="es_MX").refresh_checks()
+        self.assertFalse(february_return.check_ids.template_id)
+        schedule = [
+            (belgian_return, todo, "Review the ledger"),
+            (belgian_return, todo, "Review the ledger"),
+            (belgian_return, call, "Review the ledger"),
+            (belgian_return, todo, "Ask for the Belgian statement"),
+            (february_return, todo, "Review the ledger"),
+        ]
+        english, done, other_type, other_summary, unchecked = (
+            account_return.activity_schedule(
+                activity_type_id=activity_type.id, summary=summary
+            )
+            for account_return, activity_type, summary in schedule
+        )
+        done.action_done()
+        Activity = self.env["mail.activity"].with_context(active_test=False)
+        spanish = Activity.search(
+            [
+                ("res_model", "=", "account.return"),
+                ("res_id", "=", belgian_return.id),
+                ("summary", "=", "Revisar el libro"),
+            ]
+        )
+        self.assertEqual(spanish.account_return_check_template_id, template)
+        self.env.cr.execute(
+            "UPDATE mail_activity SET account_return_check_template_id = NULL "
+            "WHERE res_model = 'account.return'"
+        )
+        self.env.invalidate_all()
+        self.assertEqual(
+            domestic_return._get_returns_holding_user_work(), domestic_return
+        )
+
+        self._run_the_1_52_migration()
+
+        for activity, expected in (
+            (spanish, template),
+            (english, template),
+            (done, template),
+            (other_type, self.env["account.return.check.template"]),
+            (other_summary, self.env["account.return.check.template"]),
+            (unchecked, self.env["account.return.check.template"]),
+        ):
+            with self.subTest(activity=activity.summary, id=activity.id):
+                self.assertEqual(activity.account_return_check_template_id, expected)
+        self.assertEqual(
+            domestic_return.activity_ids.account_return_check_template_id, template
+        )
+        self.assertFalse(domestic_return._get_returns_holding_user_work())
+
+        belgian_return.with_context(lang="en_US").refresh_checks()
+        template_activities = belgian_return.activity_ids.filtered(
+            lambda activity: activity.account_return_check_template_id == template
+        )
+        self.assertEqual(template_activities.mapped("summary"), ["Review the ledger"])
+        self.assertTrue(other_type.exists() and other_summary.exists())
+
+    def test_the_1_52_migration_marks_the_returns_kept_before_is_superseded(self):
+        domestic_tax, belgian_tax, _accounts = (
+            self._post_a_domestic_and_a_belgian_sale()
+        )
+        january_returns = self._january_returns_of_the_countryless_type()
+        domestic_return, belgian_return = (
+            january_returns.filtered(lambda r, code=code: r.country_id.code == code)
+            for code in ("US", "BE")
+        )
+        for account_return in january_returns:
+            account_return.message_post(
+                body="Asked the accountant", message_type="comment"
+            )
+        self.root_company.account_config_id.account_return_periodicity = "trimester"
+        self._sync_returns()
+        self.assertTrue(all(january_returns.mapped("is_superseded")))
+        belgian_return._resume_generation()
+        manual_return = self.env["account.return"].create(
+            {
+                "name": "Manual VAT January",
+                "type_id": self.return_type.id,
+                "company_id": self.root_company.id,
+                "date_from": "2024-01-01",
+                "date_to": "2024-01-31",
+                "manually_created": True,
+            }
+        )
+        manual_return.message_post(
+            body="Filed by hand: no longer generated", message_type="comment"
+        )
+        self.env.cr.execute("UPDATE account_return SET is_superseded = FALSE")
+        self.env.invalidate_all()
+
+        self._run_the_1_52_migration()
+
+        self.assertRecordValues(
+            domestic_return | belgian_return | manual_return,
+            [
+                {"is_superseded": True, "manually_created": True},
+                {"is_superseded": False, "manually_created": False},
+                {"is_superseded": False, "manually_created": True},
+            ],
+        )
+        manual_return.unlink()
+        refusals = self._validate_the_january_returns()
+        self._assert_each_tax_line_closed_once(domestic_tax + belgian_tax)
+        self._assert_kept_returns_refused(domestic_return, refusals)
