@@ -6,7 +6,7 @@ from odoo.tests.common import TransactionCase
 
 from odoo.addons.integration_machine_learning.tests.common import credential_for
 from odoo.addons.integration_machine_learning.tools.router import MlRouter
-from odoo.addons.speech_ml.tools.writers import AiSpeech
+from odoo.addons.speech_ml.tools.writers import MlSpeech
 
 
 @tagged("post_install", "-at_install")
@@ -29,7 +29,7 @@ class TestWriterSelection(TransactionCase):
         return next(
             writer
             for writer in get_writers(mimetype, TEXT)
-            if isinstance(writer, AiSpeech)
+            if isinstance(writer, MlSpeech)
         )
 
     def _spoken_by(self, mimetype, **options):

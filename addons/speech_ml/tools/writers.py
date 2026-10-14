@@ -38,14 +38,14 @@ def _vendors(env: Any) -> frozenset[str]:
     return frozenset(_speech_operations(env).mapped("service_id.code"))
 
 
-class AiSpeech(BaseWriter):
-    name = "ai_speech"
+class MlSpeech(BaseWriter):
+    name = "ml_speech"
     mimetype = ""
     consumes = TEXT
     module = "speech_ml"
 
     def __init__(self, mimetype: str) -> None:
-        self.name = f"ai_speech_{mimetype.rsplit('/', 1)[-1]}"
+        self.name = f"ml_speech_{mimetype.rsplit('/', 1)[-1]}"
         self.mimetype = mimetype
 
     def available(self, options: Mapping[str, Any]) -> bool:
@@ -113,4 +113,4 @@ class AiSpeech(BaseWriter):
 
 
 for _mimetype in sorted(SPEECH_MIMETYPES):
-    register_writer(AiSpeech(_mimetype))
+    register_writer(MlSpeech(_mimetype))

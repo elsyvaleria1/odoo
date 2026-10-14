@@ -2,7 +2,7 @@ from odoo.libs.documents import TEXT, get_writers
 from odoo.tests import tagged
 from odoo.tests.common import TransactionCase
 
-from odoo.addons.speech_ml.tools.writers import AiSpeech, written_by
+from odoo.addons.speech_ml.tools.writers import MlSpeech, written_by
 
 
 @tagged("post_install", "-at_install")
@@ -13,7 +13,7 @@ class TestEngineRegistration(TransactionCase):
             engines += [
                 writer
                 for writer in get_writers(mimetype, TEXT)
-                if isinstance(writer, AiSpeech)
+                if isinstance(writer, MlSpeech)
             ]
         return engines
 
@@ -36,7 +36,7 @@ class TestEngineRegistration(TransactionCase):
     def test_a_format_no_vendor_speaks_has_no_engine_at_all(self):
         self.assertEqual(written_by(self.env, "openai") & {"audio/x-aiff"}, frozenset())
         self.assertEqual(
-            [w for w in get_writers("audio/x-aiff", TEXT) if isinstance(w, AiSpeech)],
+            [w for w in get_writers("audio/x-aiff", TEXT) if isinstance(w, MlSpeech)],
             [],
         )
 
@@ -44,7 +44,7 @@ class TestEngineRegistration(TransactionCase):
         self.assertIn("audio/flac", written_by(self.env, "deepgram"))
         self.assertNotIn("audio/flac", written_by(self.env, "openai"))
         self.assertTrue(
-            [w for w in get_writers("audio/flac", TEXT) if isinstance(w, AiSpeech)]
+            [w for w in get_writers("audio/flac", TEXT) if isinstance(w, MlSpeech)]
         )
 
     def test_the_formats_openai_declares_are_the_ones_it_is_asked_for(self):

@@ -36,8 +36,8 @@ def _cue_of(span: dict) -> Cue:
     )
 
 
-class AiTranscription(BaseReader):
-    name = "ai_transcription"
+class MlTranscription(BaseReader):
+    name = "ml_transcription"
     mimetypes = RECORDING_MIMETYPES
     yields = (CUES,)
     cost = METERED
@@ -108,7 +108,7 @@ def _pick_timed_model(env: Any, company_id: int, purpose: str) -> Any:
     )
 
 
-register_reader(AiTranscription())
+register_reader(MlTranscription())
 
 
 def _heard(document: Any) -> tuple[bytes, str]:

@@ -1,6 +1,6 @@
 {
     "name": "Speech - Model Gateway Engines",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Hidden",
     "sequence": 10,
     "summary": "Route transcription and synthesis through configured model-gateway services",

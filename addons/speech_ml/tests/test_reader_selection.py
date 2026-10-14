@@ -9,7 +9,7 @@ from odoo.tools import mute_logger
 
 from odoo.addons.integration_machine_learning.tools.router import MlRouter
 from odoo.addons.speech_ml.tools.purposes import TRANSCRIPTION_PURPOSE
-from odoo.addons.speech_ml.tools.readers import AiTranscription, _pick_timed_model
+from odoo.addons.speech_ml.tools.readers import MlTranscription, _pick_timed_model
 
 _OGG = b"OggS" + b"\x00" * 64
 
@@ -41,7 +41,7 @@ class TestReaderSelection(TransactionCase):
     def _read(self, **options):
         client = Mock(transcribe_cues=Mock(return_value=[{"text": "hola", "end": 1}]))
         with patch.object(MlRouter, "_get_client", return_value=client):
-            cues = AiTranscription().read(
+            cues = MlTranscription().read(
                 Document(_OGG, "audio/ogg", "a.ogg", env=self.env, **options)
             )
         return cues, client
@@ -49,7 +49,7 @@ class TestReaderSelection(TransactionCase):
     def test_availability_and_the_read_pick_the_model_once(self):
         self._allow(self.openai)
         document = Document(_OGG, "audio/ogg", "a.ogg", env=self.env)
-        reader = AiTranscription()
+        reader = MlTranscription()
         client = Mock(transcribe_cues=Mock(return_value=[{"text": "hola", "end": 1}]))
         with (
             patch.object(MlRouter, "_get_client", return_value=client),
@@ -76,7 +76,7 @@ class TestReaderSelection(TransactionCase):
 
     def test_without_a_policy_no_vendor_hears_a_recording(self):
         self.assertFalse(self._pick())
-        self.assertFalse(AiTranscription().available({"env": self.env}))
+        self.assertFalse(MlTranscription().available({"env": self.env}))
 
         cues, client = self._read()
 
@@ -89,7 +89,7 @@ class TestReaderSelection(TransactionCase):
 
     def test_a_policy_naming_the_vendor_lets_the_reader_transcribe(self):
         self._allow(self.openai)
-        self.assertTrue(AiTranscription().available({"env": self.env}))
+        self.assertTrue(MlTranscription().available({"env": self.env}))
 
         cues, client = self._read()
 
@@ -132,7 +132,7 @@ class TestReaderSelection(TransactionCase):
         ]
         client = Mock(transcribe_cues=Mock(return_value=spans))
         with patch.object(MlRouter, "_get_client", return_value=client):
-            cues = AiTranscription().read(
+            cues = MlTranscription().read(
                 Document(_OGG, "audio/ogg", "a.ogg", env=self.env)
             )
         self.assertEqual([cue.speaker for cue in cues], ["SPEAKER_2", ""])
