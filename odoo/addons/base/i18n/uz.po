@@ -16597,19 +16597,6 @@ msgstr ""
 "modullarini o‘z ichiga oladi."
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-#, fuzzy
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-"Bu modul sun'iy intellekt modulini shartli ravishda avtomatik o‘rnatish "
-"uchun zarur. U pgvector kengaytmasi serverda mavjudligini tekshiradi va "
-"faqat shundan keyingina AI moduli avtomatik o‘rnatiladi."
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 #, fuzzy
 msgid ""
@@ -24493,12 +24480,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-#, fuzzy
-msgid "AI Auto Install"
-msgstr "AI avtomatik o‘rnatish"
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 #, fuzzy
 msgid "AI Documents"
@@ -29884,12 +29865,6 @@ msgstr ""
 #, fuzzy
 msgid "Auto Install Required"
 msgstr "Avtomatik o‘rnatish talab qilinadi"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-#, fuzzy
-msgid "Auto install AI module if pgvector is available"
-msgstr "Agar pgvector mavjud bo‘lsa, AI modulini avtomatik o‘rnatish"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

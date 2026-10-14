@@ -16024,15 +16024,6 @@ msgstr ""
 "en el backend. Notablemente también incluye módulos de enlace de compras dentro de la aplicación para probar el impacto que tienen. "
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 msgid ""
 "\n"
@@ -23740,11 +23731,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "AI Auto Install"
-msgstr "Instalación automática de IA"
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 msgid "AI Documents"
 msgstr "Documentos con IA"
@@ -28416,11 +28402,6 @@ msgstr "Registro de autorizaciones"
 #: model:ir.model.fields,field_description:base.field_ir_module_module_dependency__auto_install_required
 msgid "Auto Install Required"
 msgstr "Instalación automática requerida"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid "Auto install AI module if pgvector is available"
-msgstr ""
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

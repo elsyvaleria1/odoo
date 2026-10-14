@@ -16690,15 +16690,6 @@ msgstr ""
 "後台。它主要包括 IAP 橋接模塊，以測試其影響。 "
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 msgid ""
 "\n"
@@ -24445,11 +24436,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "AI Auto Install"
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 msgid "AI Documents"
 msgstr ""
@@ -29057,11 +29043,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_module_module_dependency__auto_install_required
 msgid "Auto Install Required"
 msgstr "需要自動安裝"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid "Auto install AI module if pgvector is available"
-msgstr ""
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

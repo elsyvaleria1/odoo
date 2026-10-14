@@ -17546,19 +17546,6 @@ msgstr ""
 "kiểm tra tác động của chúng. "
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-"\n"
-"Phân hệ này dùng để tự động cài đặt phân hệ AI khi đủ điều kiện.\n"
-"Nó kiểm tra xem máy chủ có hỗ trợ tiện ích mở rộng pgvector hay không,\n"
-"và chỉ khi có thì phân hệ AI mới được tự động cài đặt.\n"
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 msgid ""
 "\n"
@@ -25384,11 +25371,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "AI Auto Install"
-msgstr "Cài đặt tự động bằng AI"
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 msgid "AI Documents"
 msgstr "Tài liệu AI"
@@ -30078,11 +30060,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_module_module_dependency__auto_install_required
 msgid "Auto Install Required"
 msgstr "Yêu cầu Cài đặt Tự động"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid "Auto install AI module if pgvector is available"
-msgstr "Tự động cài đặt phân hệ AI nếu pgvector có sẵn"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

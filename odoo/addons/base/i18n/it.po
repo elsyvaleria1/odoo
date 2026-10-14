@@ -17699,20 +17699,6 @@ msgstr ""
 "backend. Include ovviamente anche i moduli ponte IAP per testarne l'impatto. "
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-"\n"
-"Questo modulo è necessario per l'installazione automatica condizionata del "
-"modulo AI.\n"
-"Controlla se l'estensione pgvector è disponibile nel server e\n"
-"solo allora il modulo AI viene autoinstallato.\n"
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 msgid ""
 "\n"
@@ -25534,11 +25520,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "AI Auto Install"
-msgstr "Installazione automatica AI"
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 msgid "AI Documents"
 msgstr "Documenti AI"
@@ -30262,11 +30243,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_module_module_dependency__auto_install_required
 msgid "Auto Install Required"
 msgstr "Richiesta installazione automatica"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid "Auto install AI module if pgvector is available"
-msgstr "Installazione automatica del modulo AI se pgvector è disponibile"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

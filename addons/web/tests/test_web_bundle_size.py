@@ -5,9 +5,6 @@ import unittest
 from datetime import date
 from pathlib import Path
 
-import psycopg
-
-from odoo.db.schema import ensure_extension
 from odoo.libs.json import dumps as json_dumps
 from odoo.libs.json import loads as json_loads
 from odoo.tests.common import TransactionCase, tagged
@@ -87,18 +84,7 @@ class TestWebBundleSize(TransactionCase):
         for root in cls.CALIBRATION_ROOTS:
             add(root)
         grow()
-        if "ai_auto_install" in closure and "ai" in modules and cls._pgvector_offered():
-            add("ai")
-            grow()
         return closure
-
-    @classmethod
-    def _pgvector_offered(cls):
-        try:
-            ensure_extension(cls.env.cr, "vector")
-        except psycopg.Error:
-            return False
-        return True
 
     @classmethod
     def setUpClass(cls):

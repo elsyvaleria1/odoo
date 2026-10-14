@@ -17613,19 +17613,6 @@ msgstr ""
 "inverkan. "
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"\n"
-"This module is needed to conditionally auto install the AI module.\n"
-"It checks if the pgvector extension is available in the server and\n"
-"only then the AI module is auto-installed.\n"
-msgstr ""
-"\n"
-"Denna modul behövs för att villkorligt automatiskt installera AI-modulen.\n"
-"Den kontrollerar om pgvector-tillägget är tillgängligt på servern och\n"
-"först då installeras AI-modulen automatiskt.\n"
-
-#. module: base
 #: model:ir.module.module,description:base.module_hr_appraisal_skills
 msgid ""
 "\n"
@@ -25439,11 +25426,6 @@ msgid "AI - Tool Approval"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "AI Auto Install"
-msgstr "AI Auto Install"
-
-#. module: base
 #: model:ir.module.module,shortdesc:base.module_ai_document
 msgid "AI Documents"
 msgstr "AI-dokument"
@@ -30145,11 +30127,6 @@ msgstr ""
 #: model:ir.model.fields,field_description:base.field_ir_module_module_dependency__auto_install_required
 msgid "Auto Install Required"
 msgstr "Automatisk installation krävs"
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid "Auto install AI module if pgvector is available"
-msgstr "Automatisk installation av AI-modul om pgvector är tillgänglig"
 
 #. module: base
 #: model:ir.module.module,summary:base.module_partner_autocomplete

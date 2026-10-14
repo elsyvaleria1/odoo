@@ -16879,11 +16879,6 @@ msgid "Condition"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,shortdesc:base.module_ai_auto_install
-msgid "Conditional AI Installation"
-msgstr ""
-
-#. module: base
 #: model:ir.model.fields,field_description:base.field_res_partner_identifier_type__confidential
 msgid "Confidential"
 msgstr ""
@@ -46645,15 +46640,6 @@ msgid "Running"
 msgstr ""
 
 #. module: base
-#: model:ir.module.module,description:base.module_ai_auto_install
-msgid ""
-"Runs a post-install hook that checks pgvector availability and requests "
-"installation of an uninstalled AI module. Availability errors stop this hook"
-" without installing AI; the addon does not continuously monitor PostgreSQL "
-"or provide AI features itself."
-msgstr ""
-
-#. module: base
 #: model:ir.module.module,description:base.module_marin_data
 msgid ""
 "Runs installation loaders for the deployment’s bundled master data and "
@@ -47233,13 +47219,6 @@ msgstr ""
 #. module: base
 #: model:ir.module.module,summary:base.module_pos_hr_mobile
 msgid "Scan employee badges through the mobile POS client"
-msgstr ""
-
-#. module: base
-#: model:ir.module.module,summary:base.module_ai_auto_install
-msgid ""
-"Schedule AI installation at setup when the pgvector availability check "
-"succeeds"
 msgstr ""
 
 #. module: base
