@@ -219,3 +219,38 @@ class TestPackageLifecycle(TransactionCase):
         self.assertFalse(first.move_line_ids.result_package_id.package_dest_id)
         self.assertEqual(second.move_line_ids.result_package_id.package_dest_id, pallet)
         self.assertEqual(second.move_line_ids.location_dest_id, rack)
+
+    def test_part_of_a_pallet_can_leave_with_a_backorder(self):
+        first, second = self._product("Pallet A"), self._product("Pallet B")
+        pallet = self.env["stock.package"].create({"name": "PALLET-BO"})
+        boxes = self.env["stock.package"].create(
+            [
+                {"name": name, "parent_package_id": pallet.id}
+                for name in ("BOX-BO-1", "BOX-BO-2")
+            ]
+        )
+        Quant = self.env["stock.quant"].with_context(inventory_mode=True)
+        for product, box in zip((first, second), boxes, strict=True):
+            Quant._update_available_quantity(product, self.stock, 5, package_id=box)
+        delivery = self._transfer(
+            self.warehouse.out_type_id,
+            self.stock,
+            self.customer,
+            [(first, 5), (second, 5)],
+        )
+        delivery.action_assign()
+        delivery.move_ids.filtered(lambda m: m.product_id == first).picked = True
+
+        action = delivery.button_validate()
+        self.env[action["res_model"]].with_context(action["context"]).create(
+            {}
+        ).process()
+
+        self.assertEqual(delivery.state, "done")
+        self.assertEqual(boxes[0].location_id, self.customer)
+        self.assertFalse(boxes[0].parent_package_id, "the box left the pallet")
+        self.assertEqual(boxes[1].parent_package_id, pallet)
+        backorder = delivery.backorder_ids
+        backorder.move_ids.picked = True
+        backorder.button_validate()
+        self.assertEqual(pallet.location_id, self.customer)

@@ -31,6 +31,34 @@ class TestReorderingRule(TransactionCase):
         cls.product_01 = product_form.save()
         cls.product_01.route_ids = cls.buy_route
 
+    def test_searching_the_effective_route_finds_a_warehouse_buy_route(self):
+        product = self.env["product.product"].create(
+            {
+                "name": "Warehouse bought",
+                "is_storable": True,
+                "seller_ids": [(0, 0, {"partner_id": self.partner.id})],
+            }
+        )
+        warehouse = self.env.ref("stock.warehouse0")
+        orderpoint = self.env["stock.warehouse.orderpoint"].create(
+            {
+                "product_id": product.id,
+                "location_id": warehouse.lot_stock_id.id,
+                "warehouse_id": warehouse.id,
+            }
+        )
+        self.assertEqual(orderpoint.effective_route_id, self.buy_route)
+        self.assertFalse(product.route_ids)
+        self.assertEqual(
+            self.env["stock.warehouse.orderpoint"].search(
+                [
+                    ("effective_route_id", "in", self.buy_route.ids),
+                    ("id", "=", orderpoint.id),
+                ]
+            ),
+            orderpoint,
+        )
+
     def test_reordering_rule_1(self):
         warehouse_1 = self.env["stock.warehouse"].search(
             [("company_id", "=", self.env.user.id)], limit=1

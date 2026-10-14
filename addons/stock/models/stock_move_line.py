@@ -785,6 +785,7 @@ class StockMoveLine(models.Model):
         mls_todo._update_quants_done()
 
         if not self.env.context.get("ignore_dest_packages"):
+            mls_todo.result_package_id._drop_partial_container_plans()
             mls_todo.result_package_id._update_parent_packages_from_dest(
                 moved_packages=mls_todo.package_id
             )

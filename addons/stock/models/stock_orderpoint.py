@@ -666,15 +666,6 @@ class StockWarehouseOrderpoint(models.Model):
             {"qty_to_order_manual_set": False, "qty_to_order_manual": 0},
         )
 
-    def _get_domain_unset_route_candidate(self, routes, match_unset):
-        domain = Domain("route_id", "=", False)
-        if match_unset or not routes:
-            return domain
-        return domain & (
-            Domain("product_id.route_ids", "in", routes.ids)
-            | Domain("product_id.categ_id.total_route_ids", "in", routes.ids)
-        )
-
     def _search_effective_route_id(self, operator, value):
         if operator in Domain.NEGATIVE_OPERATORS:
             return NotImplemented
@@ -691,7 +682,7 @@ class StockWarehouseOrderpoint(models.Model):
         else:
             routes = Route.search([("display_name", operator, value)])
         unset_orderpoints = self.env["stock.warehouse.orderpoint"].search(
-            self._get_domain_unset_route_candidate(routes, match_unset),
+            [("route_id", "=", False)]
         )
         default_routes = unset_orderpoints._get_default_route_map()
         empty_route = Route

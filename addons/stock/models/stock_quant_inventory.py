@@ -524,7 +524,10 @@ class StockQuantInventory(models.Model):
         if date:
             moves.date = date
         moves._trigger_assign()
-        self.location_id.sudo().write({"last_inventory_date": fields.Date.today()})
+        today = fields.Date.today()
+        self.location_id.filtered(
+            lambda location: location.last_inventory_date != today
+        ).sudo().write({"last_inventory_date": today})
         self._update_next_inventory_date()
         self.action_clear_inventory_quantity()
 

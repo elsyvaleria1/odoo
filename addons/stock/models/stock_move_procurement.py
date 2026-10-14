@@ -650,9 +650,12 @@ class StockMoveProcurement(models.Model):
 
     def _break_mto_link(self, parent_move) -> None:
         _debug.logic("mto_link_broken", moves=self, parent=parent_move.id)
-        self.move_orig_ids = [Command.unlink(parent_move.id)]
-        self.procure_method = "make_to_stock"
-        self._recompute_state()
+        self.write(
+            {
+                "move_orig_ids": [Command.unlink(parent_move.id)],
+                "procure_method": "make_to_stock",
+            }
+        )
 
     @_debug.perf.timed
     def _push_and_assign_downstream(self) -> None:

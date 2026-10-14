@@ -434,6 +434,30 @@ class StockPackageContent(models.Model):
                 processed_package_ids, moved_packages
             )
 
+    def _drop_partial_container_plans(self) -> None:
+        moved = self
+        level = self
+        while level:
+            containers = level.package_dest_id
+            partial = containers.filtered(
+                lambda c, moved=moved: c.child_package_ids - moved
+            )
+            dropped = level.filtered(
+                lambda p, partial=partial: (
+                    p.package_dest_id in partial
+                    and p.package_dest_id == p.parent_package_id
+                )
+            )
+            if dropped:
+                _debug.logic(
+                    "partial_container_plan_dropped",
+                    packages=dropped,
+                    containers=dropped.package_dest_id,
+                )
+                dropped.package_dest_id = False
+            moved |= containers - partial
+            level = containers - partial
+
     def _update_package_dest_for_entire_packs(self, allowed_package_ids=None) -> None:
         for container, packages in self.grouped("parent_package_id").items():
             if (
