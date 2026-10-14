@@ -1401,6 +1401,7 @@ class StockMove(models.Model):
                 vals,
                 location_id=reserved_quant.location_id.id,
                 trace_id=reserved_quant.trace_id.id or False,
+                reservation_trace_id=reserved_quant.trace_id.id or False,
                 package_id=package.id or False,
                 owner_id=reserved_quant.owner_id.id or False,
             )

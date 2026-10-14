@@ -1016,29 +1016,22 @@ class TestMoveLineUntrackedCompensation(TestStockCommon):
 
 @tagged("post_install", "-at_install")
 class TestReservationKeyHasOneDefinition(MoveLineCase):
-    def test_overrides_replace_only_the_named_fields(self):
+    def test_the_key_names_the_quant_that_holds_the_reservation(self):
         product = self._product("Key Product")
-        self._stock(product, self.src, 10.0)
-        picking = self._outgoing(product, 2.0)
-        line = picking.move_line_ids
-
-        stored = line._get_reservation_key()
-        moved = line._get_reservation_key({"location_id": self.customer})
-
-        self.assertEqual(len(stored), len(RESERVATION_KEY_FIELDS))
-        self.assertEqual(stored[0], moved[0], "product must be untouched")
-        self.assertEqual(moved[1], self.customer)
-        self.assertEqual(stored[2:], moved[2:], "lot/package/owner untouched")
-
-    def test_an_unrelated_override_key_is_ignored(self):
-        product = self._product("Key Product Two")
         self._stock(product, self.src, 10.0)
         line = self._outgoing(product, 2.0).move_line_ids
 
         self.assertEqual(
             line._get_reservation_key(),
-            line._get_reservation_key({"location_dest_id": self.customer}),
+            (
+                line.product_id,
+                line.location_id,
+                line.reservation_trace_id,
+                line.package_id,
+                line.owner_id,
+            ),
         )
+        self.assertEqual(len(line._get_reservation_key()), len(RESERVATION_KEY_FIELDS))
 
     def test_rendered_keys_tracks_logged_relations(self):
         for _field, rendered in LOGGED_RELATIONS:

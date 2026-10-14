@@ -51,12 +51,16 @@ class StockMoveLineQuant(models.Model):
             reverse=reverse,
             release=release_reserved,
         )
+        release = release_reserved and not reverse
+        if release and self.reservation_trace_id != self.trace_id:
+            self._release_reservation_key(qty)
+            release = False
         available_qty, in_date = self._update_quant_at_location(
             -qty,
             from_loc,
             package=from_package,
             in_date=in_date,
-            reserved_delta=-qty if release_reserved and not reverse else None,
+            reserved_delta=-qty if release else None,
         )
         self._update_quant_at_location(
             qty,
@@ -66,6 +70,28 @@ class StockMoveLineQuant(models.Model):
         )
         _debug.logic("update_quants_available", line=self.id, available=available_qty)
         return available_qty, in_date
+
+    def _release_reservation_key(self, quantity) -> None:
+        self.check_singleton()
+        if not self.product_id.is_storable or self._is_reservation_bypass_required(
+            self.location_id
+        ):
+            return
+        _debug.logic(
+            "reservation_released_at_key",
+            line=self.id,
+            lot=self.trace_id.id,
+            reserved_on=self.reservation_trace_id.id,
+            quantity=quantity,
+        )
+        self.env["stock.quant"]._update_reserved_quantity(
+            self.product_id,
+            self.location_id,
+            -quantity,
+            trace_id=self.reservation_trace_id,
+            package_id=self.package_id,
+            owner_id=self.owner_id,
+        )
 
     def _get_lines_to_requant(self, vals, updates) -> tuple:
         restock_ids = OrderedSet()
@@ -180,10 +206,77 @@ class StockMoveLineQuant(models.Model):
                 for document, lines in freed_notes.items():
                     notes[document].extend(lines)
 
-    def _get_reservation_key(self, overrides=None):
+    def _get_reservation_key(self):
         self.check_singleton()
-        overrides = overrides or {}
-        return tuple(overrides.get(name, self[name]) for name in RESERVATION_KEY_FIELDS)
+        return (
+            self.product_id,
+            self.location_id,
+            self.reservation_trace_id,
+            self.package_id,
+            self.owner_id,
+        )
+
+    @api.model
+    def _get_free_quantity_at_key(
+        self, product, location, lot, package, owner
+    ) -> float:
+        quants = (
+            self.env["stock.quant"]
+            ._gather(
+                product,
+                location,
+                trace_id=lot or None,
+                package_id=package or None,
+                owner_id=owner or None,
+                strict=True,
+            )
+            .filtered(lambda quant: quant.trace_id == lot)
+        )
+        return sum(quants.mapped("quantity")) - sum(quants.mapped("reserved_quantity"))
+
+    @api.model
+    def _choose_reservation_trace(
+        self, product, location, lot, package, owner, quantity, freed=None
+    ):
+        if not lot:
+            return lot
+        freed = freed or {}
+        for candidate in (lot, lot.browse()):
+            free = self._get_free_quantity_at_key(
+                product, location, candidate, package, owner
+            ) + freed.get(candidate.id, 0.0)
+            if product.uom_id._compare_aggregate(free, quantity) >= 0:
+                _debug.logic(
+                    "reservation_trace_chosen",
+                    product=product.id,
+                    location=location.id,
+                    lot=lot.id,
+                    chosen=candidate.id,
+                    free=free,
+                    quantity=quantity,
+                )
+                return candidate
+        return lot
+
+    def _assign_reservation_traces(self) -> None:
+        chosen = defaultdict(self.browse)
+        holding = self.filtered(
+            lambda line: line.state != "done"
+        )._filtered_holding_reservation()
+        for line in self:
+            target = line.trace_id
+            if line in holding:
+                target = self._choose_reservation_trace(
+                    line.product_id,
+                    line.location_id,
+                    line.trace_id,
+                    line.package_id,
+                    line.owner_id,
+                    line.quantity_product_uom,
+                )
+            chosen[target] |= line
+        for target, lines in chosen.items():
+            lines.write({"reservation_trace_id": target.id})
 
     @api.model
     def _get_domain_outstanding_reservation(self, include_picked=False):
@@ -399,15 +492,21 @@ class StockMoveLineQuant(models.Model):
             | to_reserve.move_id.filtered(lambda move: move.state != "draft")
         )._recompute_state()
 
-    def _sync_quant_reservation(self, vals, updates):
+    def _sync_quant_reservation(self, vals, updates) -> tuple:
         moves_to_recompute_state = self.env["stock.move"]
+        reservation_traces = {}
         if not (
             (set(updates) - {"result_package_id", "location_dest_id"})
             or "quantity" in vals
         ):
-            return moves_to_recompute_state
+            return moves_to_recompute_state, reservation_traces
+        rekeyed = bool(
+            {"trace_id", "location_id", "package_id", "owner_id"} & set(updates)
+        )
         deltas = defaultdict(float)
         for ml in self:
+            if rekeyed:
+                reservation_traces[ml.id] = updates.get("trace_id", ml.trace_id)
             if not ml.product_id.is_storable or ml.state == "done":
                 continue
             if "quantity" in vals or "product_uom_id" in vals:
@@ -417,14 +516,42 @@ class StockMoveLineQuant(models.Model):
             else:
                 new_reserved_qty = ml.quantity_product_uom
 
-            if not ml.product_uom_id._is_zero_stored(
+            old_key = ml._get_reservation_key()
+            held = not ml.product_uom_id._is_zero_stored(
                 ml.quantity_product_uom, ml.product_id.uom_id
-            ) and not ml._is_reservation_bypass_required(ml.location_id):
-                deltas[ml._get_reservation_key()] -= ml.quantity_product_uom
+            ) and not ml._is_reservation_bypass_required(ml.location_id)
+            if held:
+                deltas[old_key] -= ml.quantity_product_uom
 
             new_location = updates.get("location_id", ml.location_id)
-            if not ml._is_reservation_bypass_required(new_location):
-                deltas[ml._get_reservation_key(updates)] += new_reserved_qty
+            if ml._is_reservation_bypass_required(new_location):
+                continue
+            new_key = old_key
+            if rekeyed:
+                new_package = updates.get("package_id", ml.package_id)
+                new_owner = updates.get("owner_id", ml.owner_id)
+                same_place = (new_location, new_package, new_owner) == (
+                    ml.location_id,
+                    ml.package_id,
+                    ml.owner_id,
+                )
+                freed = (
+                    {ml.reservation_trace_id.id: ml.quantity_product_uom}
+                    if held and same_place
+                    else {}
+                )
+                target = self._choose_reservation_trace(
+                    ml.product_id,
+                    new_location,
+                    reservation_traces[ml.id],
+                    new_package,
+                    new_owner,
+                    new_reserved_qty,
+                    freed=freed,
+                )
+                reservation_traces[ml.id] = target
+                new_key = (ml.product_id, new_location, target, new_package, new_owner)
+            deltas[new_key] += new_reserved_qty
 
             if (
                 "quantity" in vals
@@ -437,9 +564,17 @@ class StockMoveLineQuant(models.Model):
             move_lines=self,
             deltas=len(deltas),
             recompute=moves_to_recompute_state,
+            reservation_traces=reservation_traces,
         )
         self._update_quant_reservations(deltas)
-        return moves_to_recompute_state
+        return moves_to_recompute_state, reservation_traces
+
+    def _write_reservation_traces(self, reservation_traces) -> None:
+        by_trace = defaultdict(list)
+        for line_id, trace in reservation_traces.items():
+            by_trace[trace.id].append(line_id)
+        for trace_id, line_ids in by_trace.items():
+            self.browse(line_ids).exists().write({"reservation_trace_id": trace_id})
 
     def _update_quant_at_location(
         self,

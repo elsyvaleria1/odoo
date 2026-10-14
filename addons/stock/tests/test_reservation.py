@@ -1,8 +1,10 @@
 import inspect
+from collections import defaultdict
 from datetime import datetime
 from unittest.mock import patch
 
 from odoo.exceptions import UserError
+from odoo.fields import Domain
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.base.models.ir_model_common import MODULE_UNINSTALL_FLAG
@@ -144,6 +146,68 @@ class TestReservationQuantConsistency(TransactionCase):
         self.assertFalse(untracked.trace_id)
         self.assertEqual(untracked.reserved_quantity, 5.0)
         return move, untracked
+
+    def _assert_reservations_balance(self, product):
+        lines = self.env["stock.move.line"].search(
+            self.env["stock.move.line"]._get_domain_outstanding_reservation(
+                include_picked=True
+            )
+            & Domain("product_id", "=", product.id)
+        )
+        held = defaultdict(float)
+        for line in lines:
+            held[line._get_reservation_key()] += line.quantity_product_uom
+        for quant in self._quants(product, self.stock):
+            key = (
+                quant.product_id,
+                quant.location_id,
+                quant.trace_id,
+                quant.package_id,
+                quant.owner_id,
+            )
+            self.assertAlmostEqual(
+                quant.reserved_quantity,
+                held.pop(key, 0.0),
+                msg=f"{quant.trace_id.name or 'untracked'} holds what its lines hold",
+            )
+            self.assertLessEqual(quant.reserved_quantity, max(quant.quantity, 0.0))
+        self.assertFalse(
+            [quantity for quantity in held.values() if quantity],
+            "every reserved line is backed by a quant",
+        )
+
+    def test_a_lot_set_on_untracked_reservation_releases_where_it_was_taken(self):
+        product = self._product(tracking="lot")
+        lot = self._lot(product, "L1")
+        self.Quant._update_available_quantity(product, self.stock, 10.0)
+        first = self._moves(product, [5.0])
+        first._action_assign()
+        first.move_line_ids.trace_id = lot
+        self.assertFalse(first.move_line_ids.reservation_trace_id)
+        self.Quant._update_available_quantity(product, self.stock, 10.0, trace_id=lot)
+        second = self._moves(product, [3.0])
+        second._action_assign()
+        self._assert_reservations_balance(product)
+
+        first._unreserve()
+        self._assert_reservations_balance(product)
+
+        third = self._moves(product, [10.0])
+        third._action_assign()
+        self._assert_reservations_balance(product)
+        self.assertEqual(third.quantity, 10.0)
+
+    def test_a_lot_with_free_stock_takes_over_the_reservation(self):
+        product = self._product(tracking="lot")
+        lot = self._lot(product, "L2")
+        self.Quant._update_available_quantity(product, self.stock, 5.0)
+        move = self._moves(product, [5.0])
+        move._action_assign()
+        line = move.move_line_ids
+        self.Quant._update_available_quantity(product, self.stock, 5.0, trace_id=lot)
+        line.trace_id = lot
+        self.assertEqual(line.reservation_trace_id, lot)
+        self._assert_reservations_balance(product)
 
     def test_shipping_a_lot_reserved_on_untracked_stock_takes_the_lot(self):
         product = self._product()

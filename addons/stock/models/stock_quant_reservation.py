@@ -762,9 +762,10 @@ class StockQuantReservation(models.Model):
                         or q.trace_id
                     ),
                 )
-        reserved_quants = gathered if reserved_quantity < 0 else quants
+        reserved_lot = trace_id or self.env["product.trace"]
+        reserved_quants = gathered.filtered(lambda q: q.trace_id == reserved_lot)
 
-        if location_id.is_reservation_bypass_required():
+        if not quantity or location_id.is_reservation_bypass_required():
             incoming_dates = []
         else:
             incoming_dates = [
@@ -945,16 +946,10 @@ class StockQuantReservation(models.Model):
     @api.model
     def _sync_reserved_quantities(self, products=None, locations=None) -> None:
         quant_domain = Domain("reserved_quantity", "!=", 0)
-        move_line_domain = Domain(
-            [
-                (
-                    "state",
-                    "in",
-                    ["assigned", "partially_available", "waiting", "confirmed"],
-                ),
-                ("quantity_product_uom", "!=", 0),
-                ("product_id.is_storable", "=", True),
-            ],
+        move_line_domain = self.env[
+            "stock.move.line"
+        ]._get_domain_outstanding_reservation(include_picked=True) & Domain(
+            "product_id.is_storable", "=", True
         )
         if self._ids:
             quants = self.exists()
@@ -974,7 +969,13 @@ class StockQuantReservation(models.Model):
         )
         reserved_move_lines = self.env["stock.move.line"]._read_group(
             move_line_domain,
-            ["product_id", "location_id", "trace_id", "package_id", "owner_id"],
+            [
+                "product_id",
+                "location_id",
+                "reservation_trace_id",
+                "package_id",
+                "owner_id",
+            ],
             ["quantity_product_uom:sum"],
         )
         reserved_move_lines = {
@@ -1006,14 +1007,23 @@ class StockQuantReservation(models.Model):
                     quants=quants,
                 )
                 quants._update_reserved_delta(-reserved_quantity)
-            elif product.uom_id._compare_aggregate(reserved_quantity, ml_reserved_qty):
+            elif not product.is_storable:
                 _debug.logic(
-                    "sync_mismatch",
+                    "sync_release_not_storable",
                     product=product.id,
                     location=location.id,
-                    quant_reserved=reserved_quantity,
-                    line_reserved=ml_reserved_qty,
-                    quants=quants,
+                    reserved=reserved_quantity,
+                )
+                quants._update_reserved_delta(-reserved_quantity)
+            elif product.uom_id._compare_aggregate(reserved_quantity, ml_reserved_qty):
+                _logger.warning(
+                    "Reserved quantity of %s at %s (lot %s) was %s on its quants but %s"
+                    " on its move lines; the quants now follow the lines.",
+                    product.display_name,
+                    location.display_name,
+                    lot.display_name or "-",
+                    reserved_quantity,
+                    ml_reserved_qty,
                 )
                 quants._update_reserved_delta(ml_reserved_qty - reserved_quantity)
             if ml_reserved_qty:

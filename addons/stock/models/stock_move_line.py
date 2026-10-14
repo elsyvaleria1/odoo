@@ -60,6 +60,7 @@ class WritePlan(NamedTuple):
     reverted_in_dates: dict[int, Any]
     deltas: dict[int, float]
     progressed: models.BaseModel
+    reservation_traces: dict[int, models.BaseModel]
 
 
 class StockMoveLine(models.Model):
@@ -253,6 +254,14 @@ class StockMoveLine(models.Model):
         check_company=True,
     )
     lot_name = fields.Char(string="Lot/Serial Number Name")
+    reservation_trace_id = fields.Many2one(
+        comodel_name="product.trace",
+        string="Reserved On Lot",
+        readonly=True,
+        help="Technical: the lot whose quant holds this line's reservation. It differs "
+        "from the lot of the line when the line was given its lot after being "
+        "reserved on untracked stock, which then still backs it.",
+    )
     result_package_id = fields.Many2one(
         comodel_name="stock.package",
         string="Destination Package",
@@ -340,9 +349,16 @@ class StockMoveLine(models.Model):
                 keys=sorted({key for vals in vals_list for key in vals}),
             )
         vals_list = self._prepare_create_vals(vals_list)
+        keyed = [
+            vals.get("trace_id") and "reservation_trace_id" not in vals
+            for vals in vals_list
+        ]
 
         mls = super().create(vals_list)
         _debug.lifecycle("created", move_lines=mls)
+        mls.browse(
+            line.id for line, to_key in zip(mls, keyed, strict=True) if to_key
+        )._assign_reservation_traces()
 
         created_moves = mls._link_or_create_moves()
         if _debug.pipeline.enabled and created_moves:
@@ -395,7 +411,9 @@ class StockMoveLine(models.Model):
             packages_to_check = self._get_package_dests()
 
         updates = self._get_write_field_updates(vals)
-        moves_to_recompute_state = self._sync_quant_reservation(vals, updates)
+        moves_to_recompute_state, reservation_traces = self._sync_quant_reservation(
+            vals, updates
+        )
         reservation_touched = bool(updates) or "quantity" in vals
 
         to_restock, to_adjust = (
@@ -441,9 +459,12 @@ class StockMoveLine(models.Model):
             reverted_in_dates=reverted_in_dates,
             deltas=deltas,
             progressed=progressed,
+            reservation_traces=reservation_traces,
         )
 
     def _apply_write_plan(self, plan) -> None:
+        if plan.reservation_traces:
+            self._write_reservation_traces(plan.reservation_traces)
         if plan.progressed:
             plan.progressed.date = fields.Datetime.now()
         plan.to_restock._update_quants_again(plan.reverted_in_dates)

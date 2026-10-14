@@ -833,6 +833,7 @@ class StockMoveReservation(models.Model):
             if not line.result_package_id
             and not line.picked
             and line.product_id.tracking != "serial"
+            and line.reservation_trace_id == line.trace_id
         }
 
     def _group_quants_by_place(self, quants):
