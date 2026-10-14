@@ -185,20 +185,20 @@ class ProductProductQuantity(models.Model):
                 ]
         if not vals_list:
             return
-        self._net_out_stock_held_elsewhere(vals_list)
+        vals_list = self._get_changed_inventory_vals_net_of_elsewhere(vals_list)
+        if not vals_list:
+            return
         _debug.pipeline(
             "inventory_qty_update",
             quants=len(vals_list),
             location=scoped_location.id if scoped_location else None,
         )
         quants = (
-            self.env["stock.quant"]
-            .with_context(inventory_mode=True, from_inverse_qty=True)
-            .create(vals_list)
+            self.env["stock.quant"].with_context(inventory_mode=True).create(vals_list)
         )
         quants._apply_inventory()
 
-    def _net_out_stock_held_elsewhere(self, vals_list) -> None:
+    def _get_changed_inventory_vals_net_of_elsewhere(self, vals_list) -> list:
         products = self.browse([vals["product_id"] for vals in vals_list])
         displayed = products._prepare_quantities_vals(
             QuantityFilters.from_context(self.env),
@@ -219,6 +219,7 @@ class ProductProductQuantity(models.Model):
                 ["quantity:sum"],
             )
         }
+        changed = []
         for vals in vals_list:
             product = self.browse(vals["product_id"])
             held_elsewhere = displayed[product.id][
@@ -239,14 +240,20 @@ class ProductProductQuantity(models.Model):
                     ),
                 )
             vals["inventory_quantity"] = requested - held_elsewhere
+            if not product.uom_id._compare_aggregate(
+                vals["inventory_quantity"],
+                counted_quant_qty.get((product.id, vals["location_id"]), 0.0),
+            ):
+                continue
+            changed.append(vals)
         if _debug.logic.enabled:
             _debug.logic(
                 "net_out_stock_held_elsewhere",
                 quantities=[
-                    (vals["product_id"], vals["inventory_quantity"])
-                    for vals in vals_list
+                    (vals["product_id"], vals["inventory_quantity"]) for vals in changed
                 ],
             )
+        return changed
 
     def _resolve_inventory_location(self):
         Location = self.env["stock.location"]
@@ -308,11 +315,10 @@ class ProductProductQuantity(models.Model):
     def _search_qty_free(self, operator, value):
         return self._get_domain_product_quantity(operator, value, "qty_free")
 
-    def _get_quantity_totals(self, field, location_domains=None) -> tuple:
-        location_domains = (
-            location_domains
-            or self.env["stock.location"]._get_domains_quantity_from_context()
-        )
+    def _get_quantity_totals(self, field) -> tuple:
+        location_domains = self.env[
+            "stock.location"
+        ]._get_domains_quantity_from_context()
         candidates = self._get_quantity_search_candidates(
             location_domains=location_domains, field=field
         )
@@ -434,8 +440,12 @@ class ProductProductQuantity(models.Model):
         if filters.owners is not None:
             owner_leaf = ("in", filters.owners) if filters.owners else ("=", False)
             quant &= Domain([("owner_id", *owner_leaf)])
-            move_in &= Domain([("move_line_ids.owner_id", *owner_leaf)])
-            move_out &= Domain([("move_line_ids.owner_id", *owner_leaf)])
+            owned_moves = Domain("move_line_ids.owner_id", *owner_leaf) | (
+                Domain("move_line_ids", "=", False)
+                & Domain("restrict_partner_id", *owner_leaf)
+            )
+            move_in &= owned_moves
+            move_out &= owned_moves
         if package_id is not None:
             quant &= Domain([("package_id", "=", package_id)])
             move_in &= Domain([("move_line_ids.result_package_id", "=", package_id)])

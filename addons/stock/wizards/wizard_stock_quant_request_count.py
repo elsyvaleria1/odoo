@@ -30,25 +30,18 @@ class WizardStockQuantRequestCount(models.TransientModel):
     )
 
     def _compute_show_expected_quantity(self) -> None:
-        show_quantity_count = (
-            self.env.registry.settings.get(
-                self.env, "stock.show_expected_quantity_count", "False"
-            )
-            == "True"
+        show_quantity_count = self.env.registry.settings.get_bool(
+            self.env, "stock.show_expected_quantity_count"
         )
         for record in self:
             record.show_expected_quantity = show_quantity_count
 
     def _inverse_show_expected_quantity(self) -> None:
         for record in self:
-            if record.show_expected_quantity:
-                self.env["ir.config_parameter"].sudo().set_param(
-                    "stock.show_expected_quantity_count", "True"
-                )
-            else:
-                self.env["ir.config_parameter"].sudo().set_param(
-                    "stock.show_expected_quantity_count", "False"
-                )
+            self.env["ir.config_parameter"].sudo().set_param(
+                "stock.show_expected_quantity_count",
+                str(bool(record.show_expected_quantity)),
+            )
 
     def action_request_count(self) -> None:
         for count_request in self:

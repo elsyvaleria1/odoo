@@ -338,11 +338,8 @@ class TestQuantActionDomain(TestStockCommon):
         action = self.env.ref("stock.stock_quant_action").sudo()
         action.domain = "[('quantity', '>', 0)]"
         self.env.flush_all()
-        built = (
-            self.env["stock.quant"]
-            .with_context(skip_quant_tasks=True)
-            ._prepare_action_quants()
-        )
+        self.env["ir.config_parameter"].sudo().set_param("stock.skip_quant_tasks", "1")
+        built = self.env["stock.quant"]._prepare_action_quants()
         conditions = [
             (condition.field_expr, condition.operator, condition.value)
             for condition in Domain(built["domain"]).iter_conditions()

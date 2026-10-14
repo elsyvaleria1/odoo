@@ -440,7 +440,11 @@ class ProductProduct(models.Model):
             context.update(default_product_id=self.id, single_product=True)
         else:
             context["product_tmpl_ids"] = self.product_tmpl_id.ids
-        action = self.env["stock.quant"].with_context(**context).action_view_quants()
+        action = (
+            self.env["stock.quant"]
+            .with_context(**context)
+            ._get_action_view_quants(products=self)
+        )
         if not self.env.context.get("is_stock_report"):
             action["domain"] = [("product_id", "in", self.ids)]
             action["name"] = self.env._("Update Quantity")

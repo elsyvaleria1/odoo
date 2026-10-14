@@ -869,23 +869,34 @@ class StockQuantReservation(models.Model):
         return False
 
     @_debug.perf.timed
-    def _run_maintenance_tasks(self) -> None:
-        _debug.lifecycle("maintenance_start", quants=self)
-        self._merge_quants()
-        self._sync_reserved_quantities()
-        self._remove_zero_quants()
+    def _run_maintenance_tasks(self, products=None, locations=None) -> None:
+        _debug.lifecycle(
+            "maintenance_start", quants=self, products=products, locations=locations
+        )
+        self._merge_quants(products=products, locations=locations)
+        self._sync_reserved_quantities(products=products, locations=locations)
+        self._remove_zero_quants(products=products, locations=locations)
         _debug.lifecycle("maintenance_done")
 
     @_debug.perf.timed
     @api.model
-    def _merge_quants(self) -> None:
-        params = []
+    def _merge_quants(self, products=None, locations=None) -> None:
+        if self._ids:
+            quants = self.exists()
+            products = quants.product_id
+            locations = quants.location_id
+        scope = SQL("TRUE")
+        if locations is not None:
+            scope = SQL("%s AND location_id = ANY(%s)", scope, list(locations.ids))
+        if products is not None:
+            scope = SQL("%s AND product_id = ANY(%s)", scope, list(products.ids))
         query = """WITH
                         dupes AS (
                             SELECT min(id) as to_update_quant_id,
                                 (array_agg(id ORDER BY id))[2:array_length(array_agg(id), 1)] as to_delete_quant_ids,
                                 GREATEST(0, SUM(reserved_quantity)) as reserved_quantity,
                                 SUM(inventory_quantity) as inventory_quantity,
+                                SUM(inventory_diff_quantity) as inventory_diff_quantity,
                                 SUM(quantity) as quantity,
                                 MIN(in_date) as in_date,
                                 bool_or(inventory_quantity_set) as inventory_quantity_set,
@@ -895,15 +906,7 @@ class StockQuantReservation(models.Model):
                                 MIN(user_id) as user_id,
                                 MIN(inventory_date) as inventory_date
                             FROM stock_quant
-        """
-        if self._ids:
-            query += """
-                            WHERE
-                                location_id = ANY(%s)
-                                AND product_id = ANY(%s)
-            """
-            params = [list(self.location_id.ids), list(self.product_id.ids)]
-        query += """
+                            WHERE %s
                             GROUP BY product_id, company_id, location_id, trace_id, package_id, owner_id
                             HAVING count(id) > 1
                         ),
@@ -914,6 +917,7 @@ class StockQuantReservation(models.Model):
                                 SET quantity = d.quantity,
                                     reserved_quantity = d.reserved_quantity,
                                     inventory_quantity = d.inventory_quantity,
+                                    inventory_diff_quantity = d.inventory_diff_quantity,
                                     inventory_quantity_set = d.inventory_quantity_set,
                                     user_id = d.user_id,
                                     inventory_date = d.inventory_date,
@@ -925,7 +929,7 @@ class StockQuantReservation(models.Model):
         """
         try:
             with self.env.cr.savepoint():
-                self.env.cr.execute(query, params)
+                self.env.cr.execute(SQL(query, scope))
                 _debug.lifecycle("quants_merged", rows=self.env.cr.rowcount)
                 self.env.invalidate_all()
         except Error as e:
@@ -1053,9 +1057,9 @@ class StockQuantReservation(models.Model):
         epsilon = Decimal(5) * Decimal(10) ** -(precision_digits + 1)
         query = SQL(
             """SELECT id FROM stock_quant
-                -- `round(x, n) = 0` is `|x| < 0.5 * 10 ** -n`, spelled as a range so
-                -- an index on the column stays usable. The columns are `numeric` and
-                -- the ORM rounds on write, so nothing but a raw writer can land here.
+                -- `round(x, n) = 0` is `|x| < 0.5 * 10 ** -n`. The columns are
+                -- `numeric` and the ORM rounds on write, so nothing but a raw writer
+                -- can land here.
                 WHERE quantity > %(low)s AND quantity < %(high)s
                   AND reserved_quantity > %(low)s AND reserved_quantity < %(high)s
                   AND (inventory_quantity IS NULL

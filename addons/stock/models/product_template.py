@@ -554,38 +554,28 @@ class ProductTemplate(models.Model):
     @_debug.perf.timed
     def _apply_zero_inventory(self) -> None:
         variant_ids = self.with_context(active_test=False).product_variant_ids.ids
-        move_line_domain = Domain(
-            [
-                ("product_id", "in", variant_ids),
-                ("state", "=", "done"),
-                "|",
-                ("location_usage", "in", ("internal", "transit")),
-                ("location_dest_usage", "in", ("internal", "transit")),
-            ],
+        stocked = ("internal", "transit")
+        done_lines = Domain("product_id", "in", variant_ids) & Domain(
+            "state", "=", "done"
         )
-        move_lines_to_match = self.env["stock.move.line"].search_fetch(
-            move_line_domain,
-            [
-                "product_id",
-                "location_id",
-                "location_dest_id",
-                "quantity_product_uom",
-            ],
-        )
+        MoveLine = self.env["stock.move.line"]
         inventory_ledger = defaultdict(float)
-        for move_line in move_lines_to_match:
-            if move_line.location_usage in ("internal", "transit"):
-                inventory_ledger[move_line.product_id, move_line.location_id] -= (
-                    move_line.quantity_product_uom
-                )
-            if move_line.location_dest_usage in ("internal", "transit"):
-                inventory_ledger[move_line.product_id, move_line.location_dest_id] += (
-                    move_line.quantity_product_uom
-                )
+        for product, location, quantity in MoveLine._read_group(
+            done_lines & Domain("location_usage", "in", stocked),
+            ["product_id", "location_id"],
+            ["quantity_product_uom:sum"],
+        ):
+            inventory_ledger[product, location] -= quantity
+        for product, location, quantity in MoveLine._read_group(
+            done_lines & Domain("location_dest_usage", "in", stocked),
+            ["product_id", "location_dest_id"],
+            ["quantity_product_uom:sum"],
+        ):
+            inventory_ledger[product, location] += quantity
         for product, location, on_hand in self.env["stock.quant"]._read_group(
             [
                 ("product_id", "in", variant_ids),
-                ("location_id.usage", "in", ("internal", "transit")),
+                ("location_id.usage", "in", stocked),
             ],
             ["product_id", "location_id"],
             ["quantity:sum"],
@@ -594,7 +584,6 @@ class ProductTemplate(models.Model):
         _debug.logic(
             "zero_inventory_applied",
             templates=self,
-            done_lines=len(move_lines_to_match),
             balances=len(inventory_ledger),
         )
         quants_to_reset = self.env["stock.quant"].create(

@@ -971,13 +971,20 @@ class TestQuantGatherAndReserve(TestStockCommon):
         self.assertEqual(self.Quant._get_removal_strategy(product, deep), "closest")
 
     def test_action_apply_all_without_active_domain(self):
-        product = self.products[0]
-        quant = self.Quant.create(
-            {"product_id": product.id, "location_id": self.loc.id, "quantity": 1.0}
+        counted, uncounted = self.Quant.create(
+            [
+                {"product_id": product.id, "location_id": self.loc.id, "quantity": 1.0}
+                for product in self.products[:2]
+            ]
         )
-        action = quant.action_apply_all()
+        counted.write({"inventory_quantity": 3.0, "inventory_quantity_set": True})
+        action = (counted | uncounted).action_apply_all()
         self.assertEqual(action["res_model"], "wizard.stock.quant.apply.inventory")
-        self.assertEqual(action["context"]["default_quant_ids"], quant.ids)
+        self.assertEqual(
+            action["context"]["default_quant_ids"],
+            counted.ids,
+            "only counted quants have anything to apply",
+        )
 
     def test_reservation_key(self):
         product = self.products[4]

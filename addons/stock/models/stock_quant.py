@@ -398,12 +398,17 @@ class StockQuant(models.Model):
         results = [self.env["stock.quant"]] * len(vals_list)
         plain_vals = []
         counted_by_quant = {}
+        auto_applied = {}
         for index, vals in enumerate(vals_list):
             if is_inventory_mode and any(
                 f in vals
                 for f in ["inventory_quantity", "inventory_quantity_auto_apply"]
             ):
-                quant, created = self._create_inventory_quant(vals, allowed_fields)
+                quant, created, auto_qty = self._create_inventory_quant(
+                    vals, allowed_fields
+                )
+                if auto_qty is not None:
+                    auto_applied[quant] = auto_qty
                 first = counted_by_quant.get(quant.id)
                 if first is not None:
                     raise UserError(
@@ -443,6 +448,9 @@ class StockQuant(models.Model):
                 results[index] = quant
             if is_inventory_mode:
                 plain_records.filtered("company_id")._check_company()
+        if auto_applied:
+            elevated = next(iter(auto_applied))
+            elevated.concat(*auto_applied)._apply_counted_quantities(auto_applied)
         return self.env["stock.quant"].concat(*results)
 
     @_debug.perf.timed
@@ -473,20 +481,6 @@ class StockQuant(models.Model):
 
     def copy(self, default=None):
         raise UserError(self.env._("You cannot duplicate stock quants."))
-
-    @api.ondelete(at_uninstall=False)
-    def _unlink_except_wrong_permission(self) -> None:
-        if not self.env.is_superuser():
-            if not self.env.user.has_group("stock.group_stock_manager"):
-                raise UserError(
-                    self.env._(
-                        "Quants are auto-deleted when appropriate. If you must manually delete them, please ask a stock manager to do it."
-                    )
-                )
-            _debug.lifecycle("manual_unlink", quants=self)
-            self = self.with_context(inventory_mode=True)
-            self.inventory_quantity = 0
-            self._apply_inventory()
 
     @api.model
     def name_create(self, name):
@@ -715,9 +709,13 @@ class StockQuant(models.Model):
 
     @api.model
     def action_view_quants(self):
+        return self._get_action_view_quants()
+
+    @api.model
+    def _get_action_view_quants(self, products=None):
         self = self.with_context(search_default_internal_loc=1)
         self = self._with_view_context()
-        return self._prepare_action_quants(extend=True)
+        return self._prepare_action_quants(products=products)
 
     @api.model
     def get_import_templates(self):

@@ -177,18 +177,22 @@ class StockQuantInventory(models.Model):
     def _inverse_inventory_quantity_auto_apply(self) -> None:
         if not self._is_inventory_mode():
             return
-        quant_to_inventory = self.env["stock.quant"]
-        for quant in self:
-            if (
-                quant.product_uom_id._compare_aggregate(
-                    quant.quantity, quant.inventory_quantity_auto_apply
-                )
-                == 0
-            ):
+        self._apply_counted_quantities(
+            {quant: quant.inventory_quantity_auto_apply for quant in self}
+        )
+
+    def _apply_counted_quantities(self, counted_by_quant) -> None:
+        quant_to_inventory = self.browse()
+        for quant, counted in counted_by_quant.items():
+            if quant.product_uom_id._compare_aggregate(quant.quantity, counted) == 0:
                 continue
-            quant.inventory_quantity = quant.inventory_quantity_auto_apply
+            quant.inventory_quantity = counted
             quant_to_inventory |= quant
-        _debug.pipeline("auto_apply_inventory", applied=quant_to_inventory, quants=self)
+        _debug.pipeline(
+            "auto_apply_inventory",
+            applied=quant_to_inventory,
+            counted=len(counted_by_quant),
+        )
         quant_to_inventory.action_apply_inventory()
 
     @api.onchange("inventory_quantity")
@@ -207,10 +211,7 @@ class StockQuantInventory(models.Model):
     @api.model
     def action_view_inventory(self) -> dict:
         self = self._with_view_context()
-        if not self.env.registry.settings.get(
-            self.env, "stock.skip_quant_tasks", False
-        ):
-            self._run_maintenance_tasks()
+        self._run_view_maintenance_tasks()
 
         ctx = dict(self.env.context or {})
         ctx["no_at_date"] = True
@@ -335,9 +336,8 @@ class StockQuantInventory(models.Model):
                 "target": "new",
                 "context": ctx,
             }
-        if not self.env.context.get("from_request_count"):
-            for quant in self:
-                quant.inventory_quantity = quant.quantity
+        for quant in self:
+            quant.inventory_quantity = quant.quantity
         self.user_id = self.env.user.id
         self.inventory_quantity_set = True
         return None
@@ -346,7 +346,11 @@ class StockQuantInventory(models.Model):
         active_domain = self.env.context.get("active_domain") or [
             ("id", "in", self.ids)
         ]
-        quant_ids = self.env["stock.quant"].search(active_domain).ids
+        quant_ids = (
+            self.env["stock.quant"]
+            .search(Domain(active_domain) & Domain("inventory_quantity_set", "=", True))
+            .ids
+        )
         ctx = dict(self.env.context or {}, default_quant_ids=quant_ids)
         view = self.env.ref("stock.stock_inventory_adjustment_name_form_view", False)
         return {
@@ -404,12 +408,6 @@ class StockQuantInventory(models.Model):
     @_debug.perf.timed
     def _apply_inventory(self, date=None) -> None:
         _debug.pipeline("apply_inventory_start", quants=self, date=date)
-        if self.env.context.get("from_inverse_qty") and not any(
-            quant.product_uom_id._compare_aggregate(quant.inventory_diff_quantity, 0)
-            for quant in self
-        ):
-            _debug.logic("apply_inventory_no_diff")
-            return
         self.inventory_quantity_set = True
         move_vals = []
         default_loss_locations = {}
@@ -442,12 +440,6 @@ class StockQuantInventory(models.Model):
                     loss_location_id
                 )
         for quant in self:
-            if quant.env.context.get(
-                "from_inverse_qty"
-            ) and quant.product_uom_id._is_zero_aggregate(
-                quant.inventory_diff_quantity
-            ):
-                continue
             inventory_location = loss_location_by_product_company[
                 quant.product_id.id, quant.company_id.id
             ] or default_loss_locations.get(quant.company_id.id)
@@ -725,12 +717,11 @@ class StockQuantInventory(models.Model):
             quant = self.sudo().create(vals)
             created = True
         if auto_apply:
-            quant.write({"inventory_quantity_auto_apply": inventory_quantity})
-        else:
-            quant.inventory_quantity = inventory_quantity
-            quant.user_id = vals.get("user_id", self.env.user.id)
-            quant.inventory_date = fields.Date.today()
-        return quant, created
+            return quant, created, inventory_quantity
+        quant.inventory_quantity = inventory_quantity
+        quant.user_id = vals.get("user_id", self.env.user.id)
+        quant.inventory_date = fields.Date.today()
+        return quant, created, None
 
     def move_quants(
         self,
@@ -899,11 +890,14 @@ class StockQuantInventory(models.Model):
         return self
 
     @api.model
-    def _prepare_action_quants(self, extend=False):
-        if not self.env.registry.settings.get(
-            self.env, "stock.skip_quant_tasks", False
-        ):
-            self._run_maintenance_tasks()
+    def _run_view_maintenance_tasks(self, products=None) -> None:
+        if self.env.registry.settings.get_bool(self.env, "stock.skip_quant_tasks"):
+            return
+        self._run_maintenance_tasks(products=products)
+
+    @api.model
+    def _prepare_action_quants(self, products=None):
+        self._run_view_maintenance_tasks(products=products)
         ctx = dict(self.env.context or {})
         ctx["inventory_report_mode"] = True
         ctx.pop("group_by", None)
@@ -929,24 +923,15 @@ class StockQuantInventory(models.Model):
             action["view_id"] = self.env.ref("stock.view_stock_quant_list").id
         action.update(
             {
+                "view_mode": "list,form,pivot,graph",
                 "views": [
                     (action["view_id"], "list"),
                     (form_view, "form"),
+                    (self.env.ref("stock.view_stock_quant_pivot").id, "pivot"),
+                    (self.env.ref("stock.stock_quant_view_graph").id, "graph"),
                 ],
                 "context": ctx,
             }
         )
-        if extend:
-            action.update(
-                {
-                    "view_mode": "list,form,pivot,graph",
-                    "views": [
-                        (action["view_id"], "list"),
-                        (form_view, "form"),
-                        (self.env.ref("stock.view_stock_quant_pivot").id, "pivot"),
-                        (self.env.ref("stock.stock_quant_view_graph").id, "graph"),
-                    ],
-                }
-            )
         action["path"] = "stock-locations"
         return action
