@@ -11,6 +11,8 @@ _logger = logging.getLogger(__name__)
 
 _debug = DebugLog(__name__)
 
+_CONVERSION_ROUNDING_HEADERS = "conversion_rounding_headers"
+
 
 class AccountBankReconciliationReportHandler(models.AbstractModel):
     _name = "account.bank.reconciliation.report.handler"
@@ -728,54 +730,75 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
         if not amount_expression:
             return result
 
-        carried_amounts = (progress or {}).get("amount_to_explain")
-        _debug.logic(
-            "conversion_rounding_header_source",
-            report=report,
-            line_dict_id=line_dict_id,
-            offset=offset,
-            source="progress" if carried_amounts else "computed",
-        )
-        amount_to_explain = carried_amounts or self._get_group_amounts(
-            report, options, line_dict_id, amount_expression
-        )
-        _journal, journal_currency, _company_currency = (
-            self._get_bank_journal_and_currencies(options)
-        )
         children = [
             line for line in result["lines"] if line.get("parent_id") == line_dict_id
         ]
-        amount_to_explain = {
-            column_group_key: self._get_conversion_rounding(
-                journal_currency,
-                amount,
-                [
+        headers_read_in_this_call = (unfold_all_batch_data or {}).get(
+            _CONVERSION_ROUNDING_HEADERS
+        )
+        if headers_read_in_this_call is not None:
+            headers_read_in_this_call.update(
+                (child["id"], self._get_amount_cells(options, child))
+                for child in children
+                if child.get("groupby")
+            )
+        if result["has_more"]:
+            return result
+
+        group_amounts = (headers_read_in_this_call or {}).get(line_dict_id)
+        _debug.logic(
+            "conversion_rounding_sources",
+            report=report,
+            line_dict_id=line_dict_id,
+            offset=offset,
+            header="this_call" if group_amounts is not None else "computed",
+            children="every_page" if offset else "this_page",
+        )
+        if group_amounts is None:
+            group_amounts = self._get_group_amounts(
+                report, options, line_dict_id, amount_expression
+            )
+        if offset:
+            child_amounts = self._get_child_amounts(
+                report, options, line_dict_id, groupby, amount_expression
+            )
+        else:
+            child_amounts = {
+                column_group_key: [
                     self._get_amount_cells(options, child).get(column_group_key)
                     for child in children
-                ],
-            )
-            for column_group_key, amount in amount_to_explain.items()
-        }
-        if result["has_more"]:
-            result["progress"] = {"amount_to_explain": amount_to_explain}
-        else:
-            result["lines"] = self._add_conversion_rounding_line(
-                report, options, line_dict_id, result["lines"], amount_to_explain
-            )
+                ]
+                for column_group_key in group_amounts
+            }
+        _journal, journal_currency, _company_currency = (
+            self._get_bank_journal_and_currencies(options)
+        )
+        result["lines"] = self._add_conversion_rounding_line(
+            report,
+            options,
+            line_dict_id,
+            result["lines"],
+            {
+                column_group_key: self._get_conversion_rounding(
+                    journal_currency, amount, child_amounts[column_group_key]
+                )
+                for column_group_key, amount in group_amounts.items()
+            },
+        )
         return result
 
-    def _custom_groupby_line_completer(
-        self, report, options, line_dict, current_groupby
+    def _custom_unfold_all_batch_data_generator(
+        self, report, options, lines_to_expand_by_function
     ):
-        super()._custom_groupby_line_completer(
-            report, options, line_dict, current_groupby
-        )
-        if line_dict["groupby"] and self._get_converted_amount_expression(
-            report, line_dict["id"]
-        ):
-            line_dict["progress"] = {
-                "amount_to_explain": self._get_amount_cells(options, line_dict)
-            }
+        return {
+            **(
+                super()._custom_unfold_all_batch_data_generator(
+                    report, options, lines_to_expand_by_function
+                )
+                or {}
+            ),
+            _CONVERSION_ROUNDING_HEADERS: {},
+        }
 
     def _get_converted_amount_expression(self, report, line_dict_id):
         report_line = self.env["report.formula.line"].browse(
@@ -810,18 +833,35 @@ class AccountBankReconciliationReportHandler(models.AbstractModel):
             if column["expression_label"] == "amount"
         }
 
+    def _get_group_options(self, report, options, line_dict_id) -> dict:
+        return {
+            **options,
+            "forced_domain": options.get("forced_domain", [])
+            + report._get_domain_audit_line_groupby(line_dict_id),
+        }
+
     def _get_group_amounts(self, report, options, line_dict_id, amount_expression):
         group_totals = report._compute_expression_totals_for_each_column_group(
-            amount_expression,
-            {
-                **options,
-                "forced_domain": options.get("forced_domain", [])
-                + report._get_domain_audit_line_groupby(line_dict_id),
-            },
+            amount_expression, self._get_group_options(report, options, line_dict_id)
         )
         return {
             column_group_key: totals[amount_expression]["value"] or 0.0
             for column_group_key, totals in group_totals.items()
+        }
+
+    def _get_child_amounts(
+        self, report, options, line_dict_id, groupby, amount_expression
+    ):
+        child_totals = report._compute_expression_totals_for_each_column_group(
+            amount_expression,
+            self._get_group_options(report, options, line_dict_id),
+            groupby_to_expand=groupby,
+        )
+        return {
+            column_group_key: [
+                amount for _grouping_key, amount in totals[amount_expression]["value"]
+            ]
+            for column_group_key, totals in child_totals.items()
         }
 
     def _get_conversion_rounding(self, currency, total, amounts):

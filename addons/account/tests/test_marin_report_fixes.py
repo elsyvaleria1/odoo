@@ -1528,6 +1528,94 @@ class TestMarinReportEngineFixes(TestAccountReportsCommon):
         self.assertEqual(item_amounts, [0.01] * 5)
         self.assertEqual(rounding_amount, 0.02)
 
+    def _expand(self, report, options, line, progress=None, offset=0):
+        return report.get_expanded_lines(
+            options,
+            line["id"],
+            line["groupby"],
+            line["expand_function"],
+            progress,
+            offset,
+            None,
+        )
+
+    def _drawn_progress(self, options, line):
+        return {
+            "amount_to_explain": {
+                column["column_group_key"]: cell.get("no_format")
+                for column, cell in zip(
+                    options["columns"], line["columns"], strict=True
+                )
+                if column["expression_label"] == "amount"
+            }
+        }
+
+    def test_bank_reconciliation_rounding_line_ignores_a_group_header_drawn_before_new_data(
+        self,
+    ):
+        bank_journal = self._bank_journal_with_receipts(0.01, 4, 1.4)
+        self._post_bank_receipts(bank_journal, 0.01, 4, self.partner_b)
+        self.env.ref("account.outstanding_receipts").user_groupby = "partner_id, id"
+        report, options = self._bank_reconciliation_report_and_options(bank_journal)
+        receipts, _children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        partner_a_line = self._expand(report, options, receipts)[0]
+        self.assertEqual(self._cells(options, partner_a_line, "amount"), (0.06,))
+
+        self._post_bank_receipts(bank_journal, 10.0, 1, self.partner_a)
+        items = self._expand(
+            report,
+            options,
+            partner_a_line,
+            progress=self._drawn_progress(options, partner_a_line),
+        )
+        *receipt_items, rounding = items
+        self.assertEqual(
+            sorted(self._cells(options, line, "amount")[0] for line in receipt_items),
+            [0.01] * 4 + [14.0],
+        )
+        self.assertEqual(
+            (rounding["name"], self._cells(options, rounding, "amount")[0]),
+            ("Conversion rounding", 0.02),
+        )
+
+    def test_bank_reconciliation_rounding_line_on_a_last_page_loaded_after_new_data(
+        self,
+    ):
+        bank_journal = self._bank_journal_with_receipts(0.01, 5, 1.4)
+        report, options = self._bank_reconciliation_report_and_options(bank_journal)
+        report.load_more_limit = 2
+        receipts, _children = self._bank_reconciliation_section(
+            report._get_lines(options), "(+) Outstanding Receipts"
+        )
+        *first_page, load_more = self._expand(report, options, receipts)
+        self.assertEqual(load_more["name"], "Load more...")
+
+        self._post_bank_receipts(bank_journal, 10.0, 1, self.partner_a)
+        later_pages = []
+        while load_more:
+            page = self._expand(
+                report,
+                options,
+                receipts,
+                progress=load_more["progress"],
+                offset=load_more["offset"],
+            )
+            load_more = next(
+                (row for row in page if row["name"] == "Load more..."), None
+            )
+            later_pages += [row for row in page if row["name"] != "Load more..."]
+        *receipt_items, rounding = first_page + later_pages
+        self.assertEqual(
+            sorted(self._cells(options, line, "amount")[0] for line in receipt_items),
+            [0.01] * 5 + [14.0],
+        )
+        self.assertEqual(
+            (rounding["name"], self._cells(options, rounding, "amount")[0]),
+            ("Conversion rounding", 0.02),
+        )
+
     def test_bank_reconciliation_unknown_partner_at_a_page_boundary(self):
         bank_journal = self._bank_journal_with_receipts(0.01, 1, 1.4)
         self._post_bank_receipts(bank_journal, 0.01, 1, self.partner_b)
