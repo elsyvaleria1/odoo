@@ -181,9 +181,9 @@ class ResCurrency(models.Model):
             return
 
         currencies = self.filtered(lambda c: not c.active)
-        if currencies and self.env["res.company"].search_count(
-            [("currency_id", "in", currencies.ids)], limit=1
-        ):
+        if currencies and self.env["res.company"].with_context(
+            active_test=False
+        ).search_count([("currency_id", "in", currencies.ids)], limit=1):
             _debug.logic("deactivation_refused", currencies=currencies.mapped("name"))
             raise UserError(
                 self.env._(

@@ -1,6 +1,7 @@
 from lxml import etree
 
 from odoo import Command
+from odoo.exceptions import UserError
 from odoo.tests.common import TransactionCase
 from odoo.tools import SQL
 
@@ -948,3 +949,16 @@ class TestResCurrencyViewsAndGuards(TransactionCase):
         )
         node = etree.fromstring(arch).find('.//field[@name="company_rate"]')
         self.assertTrue(node.get("string").startswith("Unit per "))
+
+    def test_a_currency_held_by_an_archived_company_cannot_be_deactivated(self):
+        chf = self.env.ref("base.CHF")
+        chf.action_unarchive()
+        company = self.env["res.company"].create(
+            {"name": "Dormant Co", "currency_id": chf.id}
+        )
+        company.action_archive()
+
+        with self.assertRaises(UserError):
+            chf.action_archive()
+        with self.assertRaises(UserError):
+            chf.with_context(active_test=False).action_archive()

@@ -1,14 +1,18 @@
+import functools
 import locale
 import logging
 import threading
+from pathlib import Path
 from typing import Any, Literal, Self
+
+from babel.core import get_global
 
 from odoo import _lt, api, fields, models, tools
 from odoo.api import ValuesType
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.debug_log import DebugLog
 from odoo.libs.locale import format_number, posix_to_ldml
-from odoo.tools import OrderedSet, reset_cached_properties
+from odoo.tools import OrderedSet, file_path, reset_cached_properties
 from odoo.tools.locale_utils import babel_locale_parse, get_locales, resetlocale
 from odoo.tools.misc import ReadonlyDict
 
@@ -16,6 +20,25 @@ _logger = logging.getLogger(__name__)
 _debug = DebugLog(__name__)
 
 _LOCALE_LOCK = threading.Lock()
+
+FLAG_DIRECTORY = "base/static/img/country_flags"
+
+
+@functools.cache
+def _get_flag_codes() -> frozenset[str]:
+    return frozenset(
+        path.stem for path in Path(file_path(FLAG_DIRECTORY)).glob("*.png")
+    )
+
+
+def _get_flag_code(lang_code: str) -> str | None:
+    language, _sep, territory = lang_code.partition("@")[0].lower().partition("_")
+    flag_codes = _get_flag_codes()
+    if territory in flag_codes:
+        return territory
+    likely = get_global("likely_subtags").get(language, "")
+    likely_territory = likely.rpartition("_")[2].lower()
+    return likely_territory if likely_territory in flag_codes else None
 
 
 class LangData(ReadonlyDict):
@@ -145,15 +168,10 @@ class ResLang(models.Model):
         for lang in self:
             if lang.id in has_flag:
                 lang.flag_image_url = f"/web/image/res.lang/{lang.id}/flag_image"
-            elif not lang.code:
-                lang.flag_image_url = False
+            elif flag_code := lang.code and _get_flag_code(lang.code):
+                lang.flag_image_url = f"/{FLAG_DIRECTORY}/{flag_code}.png"
             else:
-                country_code = lang.code.lower().rsplit("_")[-1]
-                if country_code.isdigit() or "_" not in lang.code:
-                    country_code = lang.code.lower().split("_")[0]
-                lang.flag_image_url = (
-                    f"/base/static/img/country_flags/{country_code}.png"
-                )
+                lang.flag_image_url = False
 
     flag_image = fields.Image(string="Image")
     flag_image_url = fields.Char(compute=_compute_flag_image_url)

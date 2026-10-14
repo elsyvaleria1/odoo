@@ -654,10 +654,11 @@ class ResPartner(models.Model):
     def write(self, vals: dict[str, Any]) -> bool:
         vals = dict(vals)
         stale = self._get_geolocation_stale(vals)
-        if stale == self:
+        if stale and stale != self:
+            unmoved = (self - stale).write(vals)
+            return stale.write(vals) and unmoved
+        if stale:
             vals.update(dict.fromkeys(POSITION_FIELDS, False))
-        elif stale:
-            stale.write(dict.fromkeys(POSITION_FIELDS, False))
         if "active" in vals and not vals["active"]:
             self._check_archive_allowed()
         if vals.get("website"):
@@ -1848,6 +1849,7 @@ class ResPartner(models.Model):
         new: bool,
         commercial_changed: bool,
         was_commercial: bool,
+        keep_coordinates: bool = False,
     ) -> None:
         if commercial_changed:
             self.sudo()._sync_commercial_fields_from_company(
@@ -1867,10 +1869,13 @@ class ResPartner(models.Model):
                 fields=list(address_values),
             )
             if address_values:
-                followers = children
+                children._update_address(
+                    address_values, keep_coordinates=new or keep_coordinates
+                )
                 if not new:
-                    followers |= children._get_contact_descendants(sharing_address=True)
-                followers._update_address(address_values)
+                    children._get_contact_descendants(
+                        sharing_address=True
+                    )._update_address(address_values)
 
     def _sync_to_parent(
         self, values: dict[str, Any], *, joined_with_own_values: bool
@@ -1930,7 +1935,7 @@ class ResPartner(models.Model):
                 "address_synced_to_children", partners=self.ids, contacts=len(contacts)
             )
             if contacts:
-                contacts._update_address(values)
+                contacts._update_address(values, keep_coordinates=new)
 
     @api.model
     def _synced_field_names(self) -> set[str]:
@@ -1947,6 +1952,7 @@ class ResPartner(models.Model):
         pre_values_list: list[dict[str, Any]],
     ) -> None:
         groups: dict[tuple[frozenset[str], bool, bool], ResPartner] = {}
+        keep_coordinates = all(fname in vals for fname in POSITION_FIELDS)
         for partner, pre_values in zip(self, pre_values_list, strict=True):
             changed = frozenset(
                 fname for fname in tracked_fields if partner[fname] != pre_values[fname]
@@ -1970,6 +1976,7 @@ class ResPartner(models.Model):
                 {fname: vals[fname] for fname in changed},
                 commercial_changed=commercial_changed,
                 was_commercial=was_commercial,
+                keep_coordinates=keep_coordinates,
             )
         _debug.pipeline(
             "write_fields_synced",
@@ -2021,10 +2028,22 @@ class ResPartner(models.Model):
             elif not partner.lang:
                 partner.lang = default_lang
 
-    def _update_address(self, vals: dict[str, Any]) -> None:
+    def _update_address(
+        self, vals: dict[str, Any], *, keep_coordinates: bool = False
+    ) -> None:
         addr_vals = {key: vals[key] for key in self._address_fields() if key in vals}
-        if addr_vals:
-            super().write(addr_vals)
+        if not addr_vals:
+            return
+        stale = (
+            self.browse()
+            if keep_coordinates
+            else self._get_geolocation_stale(addr_vals)
+        )
+        if stale and stale != self:
+            super(ResPartner, stale).write(dict.fromkeys(POSITION_FIELDS, False))
+        elif stale:
+            addr_vals.update(dict.fromkeys(POSITION_FIELDS, False))
+        super().write(addr_vals)
 
     def _sync_new_partners(self, vals_list: list[ValuesType]) -> None:
         synced = self._synced_field_names()
@@ -2067,6 +2086,7 @@ class ResPartner(models.Model):
         new: bool = False,
         commercial_changed: bool = False,
         was_commercial: bool = True,
+        keep_coordinates: bool = False,
     ) -> None:
         _debug.logic(
             "fields_sync",
@@ -2080,6 +2100,7 @@ class ResPartner(models.Model):
             new=new,
             commercial_changed=commercial_changed,
             was_commercial=was_commercial,
+            keep_coordinates=keep_coordinates,
         )
         for partner in self:
             partner._sync_to_parent(

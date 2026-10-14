@@ -3130,6 +3130,82 @@ class TestPartnerGeolocationInvalidation(TransactionCase):
         self.assertEqual(partner.partner_latitude, 7.0)
         self.assertEqual(partner.partner_longitude, 8.0)
 
+    def test_a_batch_clears_a_half_supplied_pair_like_a_single_write(self):
+        Partner = self.env["res.partner"]
+        alone, moving, staying = Partner.create(
+            [
+                {
+                    "name": name,
+                    "street": street,
+                    "partner_latitude": 5.0,
+                    "partner_longitude": 6.0,
+                }
+                for name, street in (
+                    ("Alone", "Old street"),
+                    ("Moving", "Old street"),
+                    ("Staying", "New street"),
+                )
+            ]
+        )
+
+        alone.write({"street": "New street", "partner_latitude": 7.0})
+        (moving | staying).write({"street": "New street", "partner_latitude": 7.0})
+
+        for partner in alone | moving:
+            with self.subTest(partner=partner.name):
+                self.assertEqual(partner.partner_latitude, 0.0)
+                self.assertEqual(partner.partner_longitude, 0.0)
+        self.assertEqual(staying.partner_latitude, 7.0)
+        self.assertEqual(staying.partner_longitude, 6.0)
+
+    def test_contacts_following_a_moved_company_lose_their_coordinates(self):
+        Partner = self.env["res.partner"]
+        company = Partner.create(
+            {
+                "name": "Moving HQ",
+                "is_company": True,
+                "street": "Old street",
+                "partner_latitude": 5.0,
+                "partner_longitude": 6.0,
+            }
+        )
+        contact = Partner.create(
+            {
+                "name": "Employee",
+                "parent_id": company.id,
+                "partner_latitude": 5.0,
+                "partner_longitude": 6.0,
+            }
+        )
+        self.assertEqual(contact.street, "Old street")
+        self.assertEqual(contact.partner_latitude, 5.0)
+
+        company.write({"street": "New street"})
+
+        self.assertEqual(contact.street, "New street")
+        self.assertEqual(contact.partner_latitude, 0.0)
+        self.assertEqual(contact.partner_longitude, 0.0)
+
+    def test_joining_a_company_replaces_the_address_and_its_coordinates(self):
+        Partner = self.env["res.partner"]
+        company = Partner.create(
+            {"name": "Joined HQ", "is_company": True, "street": "Company street"}
+        )
+        contact = Partner.create(
+            {
+                "name": "Newcomer",
+                "street": "Own street",
+                "partner_latitude": 5.0,
+                "partner_longitude": 6.0,
+            }
+        )
+
+        contact.write({"parent_id": company.id})
+
+        self.assertEqual(contact.street, "Company street")
+        self.assertEqual(contact.partner_latitude, 0.0)
+        self.assertEqual(contact.partner_longitude, 0.0)
+
     def test_a_write_supplying_one_coordinate_clears_both(self):
         partner = self.env["res.partner"].create(
             {

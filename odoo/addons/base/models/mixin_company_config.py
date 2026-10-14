@@ -142,6 +142,7 @@ class MixinCompanyConfig(models.AbstractModel):
                 "base.privilege_read_company_hierarchy",
                 reason="find the branches a root configuration's value reaches",
             )
+            .with_context(active_test=False)
             .search(
                 [
                     ("id", "child_of", roots.company_id.ids),

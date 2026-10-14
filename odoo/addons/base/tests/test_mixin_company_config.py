@@ -25,6 +25,26 @@ class TestCompanyConfigDelegation(TransactionCase):
             self.assertEqual(configs.paperformat_id, second)
             configs._check_delegated_fields_match_root()
 
+    def test_a_root_write_reaches_an_archived_branch(self):
+        Config = self.env["report.config"]
+        first, second = self.env["report.paperformat"].search([], limit=2)
+        with patch.object(
+            type(Config),
+            "_get_field_names_delegated_to_root",
+            lambda self: ["paperformat_id"],
+        ):
+            Company = self.env["res.company"]
+            root = Company.create({"name": "Dormant Delegating Root"})
+            Config._for(root).paperformat_id = first
+            branch = Company.create(
+                {"name": "Dormant Delegating Branch", "parent_id": root.id}
+            )
+            branch.action_archive()
+
+            Config._for(root).write({"paperformat_id": second.id})
+
+            self.assertEqual(Config._for(branch).paperformat_id, second)
+
     def test_a_create_naming_no_company_writes_the_current_company_config(self):
         Config = self.env["report.config"]
         existing = Config._for(self.env.company)

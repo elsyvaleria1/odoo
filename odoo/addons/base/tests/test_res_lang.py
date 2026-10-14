@@ -1,12 +1,13 @@
 import contextlib
 import locale
+from pathlib import Path
 from unittest.mock import patch
 
 from odoo.exceptions import UserError, ValidationError
 from odoo.libs.locale import format_number
 from odoo.orm.fields.binary import Binary
 from odoo.tests.common import BaseCase, TransactionCase
-from odoo.tools import mute_logger
+from odoo.tools import file_path, mute_logger
 from odoo.tools.locale_utils import get_locales, resetlocale
 
 from odoo.addons.base.models.res_lang import LangData
@@ -329,6 +330,30 @@ class TestResLangUnsavedRecord(TransactionCase):
     def test_flag_image_url_still_derived_from_code(self):
         lang = self.env["res.lang"].new({"code": "fr_BE"})
         self.assertEqual(lang.flag_image_url, "/base/static/img/country_flags/be.png")
+
+    def test_every_shipped_language_points_at_a_flag_of_its_own_territory(self):
+        Lang = self.env["res.lang"]
+        expected = {
+            "ar_001": "eg",
+            "es_419": "419",
+            "sr@latin": "rs",
+            "sr@Cyrl": "rs",
+            "sw": "tz",
+            "en_US": "us",
+        }
+        for code, territory in expected.items():
+            with self.subTest(code=code):
+                self.assertEqual(
+                    Lang.new({"code": code}).flag_image_url,
+                    f"/base/static/img/country_flags/{territory}.png",
+                )
+        for lang in Lang.with_context(active_test=False).search([]):
+            url = lang.flag_image_url
+            if url.startswith("/web/image/"):
+                continue
+            with self.subTest(code=lang.code):
+                path = file_path(url.lstrip("/"), check_exists=False)
+                self.assertTrue(Path(path).is_file(), url)
 
 
 class TestFlagImageUrlDoesNotLoadImages(TransactionCase):
