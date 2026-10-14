@@ -96,6 +96,23 @@ class MixinOrderLineInvoice(models.AbstractModel):
         store=True,
     )
 
+    def _allows_taxes(self) -> bool:
+        self.check_singleton()
+        order = self.order_id
+        return not order or order._get_invoice_journal().tax_policy != "forbidden"
+
+    def _get_tax_policy_depends(self) -> list[str]:
+        return ["order_id.journal_id"]
+
+    def _is_tax_policy_subject(self) -> bool:
+        self.check_singleton()
+        return bool(
+            self.product_id
+            and not self.display_type
+            and not self.is_downpayment
+            and self._is_product_taxable(self)
+        )
+
     def _get_invoice_move_types(self):
         return direction_of(self).move_types
 

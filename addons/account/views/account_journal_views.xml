@@ -285,6 +285,9 @@
                                     <field
                                         name="is_self_billing"
                                         invisible="type != 'purchase'" />
+                                    <field
+                                        name="tax_policy"
+                                        invisible="type not in ['sale', 'purchase']" />
                                 </group>
                                 <group
                                     name="group_email_alias"

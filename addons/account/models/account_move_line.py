@@ -59,7 +59,7 @@ _NON_ACCOUNTABLE_SQL_TUPLE = "({})".format(
 
 class AccountMoveLine(models.Model):
     _name = "account.move.line"
-    _inherit = ["mixin.analytic", "mixin.default.read.fields"]
+    _inherit = ["mixin.analytic", "mixin.default.read.fields", "mixin.tax.auto"]
     _description = "Journal Item"
     _order = "date desc, move_name desc, id"
     _check_company_auto = True
@@ -1274,28 +1274,40 @@ class AccountMoveLine(models.Model):
                 product_uom_id=line.product_uom_id,
             )
 
-    @api.depends("product_id", "product_uom_id", "move_id.closing_return_id")
+    @api.depends(
+        "product_id",
+        "product_uom_id",
+        "move_id.closing_return_id",
+        "move_id.journal_id",
+    )
     def _compute_tax_ids(self) -> None:
         closing_lines = self.filtered(lambda line: line.move_id.closing_return_id)
         closing_lines.tax_ids = False
         for line in self - closing_lines:
             if (
                 line.display_type
-                in (*NON_ACCOUNTABLE_DISPLAY_TYPES, "payment_term", "cogs")
+                in (*NON_ACCOUNTABLE_DISPLAY_TYPES, "payment_term", "cogs", "discount")
                 or line.is_imported
             ):
                 continue
-            account_taxes = line.account_id.sudo().tax_ids
-            if line.product_id or (
-                line.display_type != "discount" and (account_taxes or not line.tax_ids)
-            ):
+            if line.display_type == "product":
+                line._apply_auto_taxes(line._auto_taxes())
+            elif not line.tax_ids:
                 line.tax_ids = line._get_computed_taxes()
+
+    def _auto_taxes(self):
+        self.check_singleton()
+        if self.display_type != "product":
+            return self.tax_ids
+        return self._get_computed_taxes() or self.env["account.tax"]
 
     @_debug.perf.timed
     def _get_computed_taxes(self):
         if self.move_id.deferred_original_move_ids:
             return self.tax_ids
         self.check_singleton()
+        if self.move_id.journal_id.tax_policy == "forbidden":
+            return self.env["account.tax"]
 
         company_domain = self.env["account.tax"]._get_domain_company_compatible(
             self.move_id.company_id

@@ -198,3 +198,4 @@ from . import test_unreconcile_entry_policy
 from . import test_report_send_and_export
 from . import test_flow_batching
 from . import test_marin_fold_characterization
+from . import test_journal_tax_policy

@@ -33,3 +33,4 @@ from . import test_purchase_discount
 from . import test_purchase_order_loss
 from . import test_purchase_order_template
 from . import test_access_matrix
+from . import test_purchase_tax_policy

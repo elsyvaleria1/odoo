@@ -60,9 +60,6 @@ declare_authority_keys(
 
 _logger = logging.getLogger(__name__)
 _lt = LazyTranslate(__name__)
-DEFAULT_JOURNALS = TransactionMemo(
-    "account.move.default_journals", invalidated_by=("account.journal",)
-)
 INVOICE_TEMPLATE_REPORTS = TransactionMemo(
     "account.move.invoice_template_reports", invalidated_by=("ir.actions.report",)
 )
@@ -1438,30 +1435,14 @@ class AccountMove(models.Model):
 
         journal_types = self._get_valid_journal_types()
         company = self.company_id or self.env.company
-        domain = [
-            *self.env["account.journal"]._get_domain_company_compatible(company),
-            ("type", "in", journal_types),
-        ]
-
         currency_id = None
         if self.env.cache.contains(self, self._fields["currency_id"]):
             currency_id = self.currency_id.id or self.env.context.get(
                 "default_currency_id"
             )
-            if currency_id == company.currency_id.id:
-                currency_id = None
-        memo = DEFAULT_JOURNALS(self.env)
-        key = (self.env.uid, self.env.su, Domain(domain), currency_id)
-        if key in memo:
-            journal = self.env["account.journal"].browse(memo[key])
-        else:
-            journal = None
-            if currency_id:
-                currency_domain = domain + [("currency_id", "=", currency_id)]
-                journal = self.env["account.journal"].search(currency_domain, limit=1)
-            if not journal:
-                journal = self.env["account.journal"].search(domain, limit=1)
-            memo[key] = journal.id
+        journal = self.env["account.journal"]._search_default_journal(
+            company, journal_types, currency_id
+        )
         _debug.logic(
             "_search_default_journal",
             types=journal_types,
@@ -6248,6 +6229,59 @@ class AccountMove(models.Model):
         if not self.env.su:
             self.check_access("post")
 
+    def _check_posting_tax_policy(self) -> None:
+        taxed_lines = self._get_tax_policy_lines("forbidden").filtered("tax_ids")
+        if taxed_lines:
+            raise UserError(
+                self.env._(
+                    "The journal of these lines forbids taxes. Remove them from:\n%s",
+                    self._format_tax_policy_lines(taxed_lines),
+                )
+            )
+        untaxed_lines = self._get_tax_policy_lines("required").filtered(
+            lambda line: not line.tax_ids
+        )
+        untaxed_lines -= self._get_lines_untaxed_in_reversed_entry(untaxed_lines)
+        if untaxed_lines:
+            raise UserError(
+                self.env._(
+                    "The journal of these lines requires a tax on each of them. Add "
+                    "one, an exempt or 0%% tax if none applies:\n%s",
+                    self._format_tax_policy_lines(untaxed_lines),
+                )
+            )
+
+    def _get_tax_policy_lines(self, policy):
+        moves = self.filtered(
+            lambda move: (
+                move.journal_id.tax_policy == policy
+                and move.is_invoice(include_receipts=True)
+            )
+        )
+        return moves.line_ids.filtered(lambda line: line.display_type == "product")
+
+    def _get_lines_untaxed_in_reversed_entry(self, lines):
+        exempt = self.env["account.move.line"]
+        for move, move_lines in lines.grouped("move_id").items():
+            original = move.reversed_entry_id
+            if original.state != "posted":
+                continue
+            untaxed_products = original.line_ids.filtered(
+                lambda line: line.display_type == "product" and not line.tax_ids
+            ).product_id
+            exempt |= move_lines.filtered_domain(
+                [("product_id", "in", untaxed_products.ids)]
+            )
+        return exempt
+
+    @api.model
+    def _format_tax_policy_lines(self, lines) -> str:
+        return "\n".join(
+            f"· {line.move_id.display_name}: "
+            f"{line.name or line.product_id.display_name or ''}"
+            for line in lines
+        )
+
     def _check_posting_integrity(self) -> None:
         _debug.logic("posting_integrity_held", moves=self)
 
@@ -6547,6 +6581,7 @@ class AccountMove(models.Model):
                 )
             )
 
+        self._check_posting_tax_policy()
         self._check_posting_integrity()
 
     @_debug.perf.timed
@@ -7116,6 +7151,7 @@ class AccountMove(models.Model):
             self.env.add_to_compute(
                 lines_to_recompute._fields["price_unit"], lines_to_recompute
             )
+            self.invoice_line_ids.tax_ids_auto_key = False
             self.env.add_to_compute(
                 self.invoice_line_ids._fields["tax_ids"], self.invoice_line_ids
             )

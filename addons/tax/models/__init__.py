@@ -1,4 +1,5 @@
 from . import tax_config
+from . import mixin_tax_auto
 from . import res_company
 from . import res_partner
 from . import account_tax

@@ -93,6 +93,57 @@ class MixinOrderInvoice(models.AbstractModel):
 
     partner_credit_warning = fields.Text(compute="_compute_partner_credit_warning")
 
+    def _get_invoice_journal(self):
+        self.check_singleton()
+        return self.journal_id or self.env["account.journal"]._search_default_journal(
+            self.company_id or self.env.company,
+            [direction_of(self).key],
+            self.currency_id.id,
+        )
+
+    def _get_confirm_validation_methods(self):
+        return [*super()._get_confirm_validation_methods(), "_check_confirm_tax_policy"]
+
+    def _check_confirm_tax_policy(self) -> None:
+        taxed_lines = untaxed_lines = self.line_ids.browse()
+        for order in self:
+            policy = order._get_invoice_journal().tax_policy
+            if policy not in ("forbidden", "required"):
+                continue
+            lines = order.line_ids.filtered(lambda line: line._is_tax_policy_subject())
+            if policy == "forbidden":
+                taxed_lines |= lines.filtered("tax_ids")
+            else:
+                untaxed_lines |= lines.filtered(lambda line: not line.tax_ids)
+        if taxed_lines:
+            _debug.logic("confirm_refused", lines=taxed_lines, reason="taxes_forbidden")
+            raise UserError(
+                self.env._(
+                    "The invoicing journal of these lines forbids taxes. Remove them "
+                    "from:\n%s",
+                    self._format_tax_policy_lines(taxed_lines),
+                )
+            )
+        if untaxed_lines:
+            _debug.logic(
+                "confirm_refused", lines=untaxed_lines, reason="taxes_required"
+            )
+            raise UserError(
+                self.env._(
+                    "The invoicing journal of these lines requires a tax on each of "
+                    "them. Add one, an exempt or 0%% tax if none applies:\n%s",
+                    self._format_tax_policy_lines(untaxed_lines),
+                )
+            )
+
+    @api.model
+    def _format_tax_policy_lines(self, lines) -> str:
+        return "\n".join(
+            f"· {line.order_id.display_name}: "
+            f"{line.name or line.product_id.display_name or ''}"
+            for line in lines
+        )
+
     def _get_invoice_move_types(self):
         return direction_of(self).move_types
 

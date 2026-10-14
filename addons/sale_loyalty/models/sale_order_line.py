@@ -53,6 +53,9 @@ class SaleOrderLine(models.Model):
         reward_lines = self.filtered("is_reward_line")
         super(SaleOrderLine, self - reward_lines)._compute_tax_ids()
         for line in reward_lines:
+            if not line._allows_taxes():
+                line.tax_ids = False
+                continue
             line = line.with_company(line.company_id)
             fpos = (
                 line.order_id.fiscal_position_id

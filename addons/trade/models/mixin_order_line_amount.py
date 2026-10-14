@@ -11,6 +11,7 @@ _debug = DebugLog(__name__)
 
 class MixinOrderLineAmount(models.AbstractModel):
     _name = "mixin.order.line.amount"
+    _inherit = ["mixin.tax.auto"]
     _description = "Order Line Amount Computation"
     _direction: TradeDirection | None = None
 
@@ -50,12 +51,6 @@ class MixinOrderLineAmount(models.AbstractModel):
         copy=True,
         help="Price from the pricelist/seller. Compared with price_unit to "
         "detect manual overrides.",
-    )
-    tax_ids_auto_key = fields.Char(
-        string="Automatic Taxes Key",
-        copy=True,
-        help="The taxes the product and fiscal position would give, as a sorted "
-        "key. Compared with tax_ids to detect manual overrides.",
     )
     discount = fields.Float(
         string="Discount (%)",
@@ -434,7 +429,14 @@ class MixinOrderLineAmount(models.AbstractModel):
     def _get_custom_compute_tax_cache_key(self) -> tuple:
         return ()
 
-    @api.depends("company_id", "product_id", "order_id.fiscal_position_id")
+    @api.depends(
+        lambda self: [
+            "company_id",
+            "product_id",
+            "order_id.fiscal_position_id",
+            *self._get_tax_policy_depends(),
+        ]
+    )
     def _compute_tax_ids(self) -> None:
         lines_by_company = defaultdict(lambda: self.env[self._name])
         cached_taxes = {}
@@ -444,7 +446,7 @@ class MixinOrderLineAmount(models.AbstractModel):
                 if line._origin.product_id:
                     line._apply_auto_taxes(self.env["account.tax"])
                 continue
-            if not line._is_product_taxable(line):
+            if not line._is_product_taxable(line) or not line._allows_taxes():
                 line._apply_auto_taxes(self.env["account.tax"])
                 continue
             lines_by_company[line.company_id] += line
@@ -481,7 +483,7 @@ class MixinOrderLineAmount(models.AbstractModel):
         empty = self.env["account.tax"]
         if self.display_type or not self.product_id:
             return empty
-        if not self._is_product_taxable(self):
+        if not self._is_product_taxable(self) or not self._allows_taxes():
             return empty
         company = self.company_id
         line = self.with_company(company)
@@ -492,41 +494,14 @@ class MixinOrderLineAmount(models.AbstractModel):
             return empty
         return line.order_id.fiscal_position_id.map_tax(taxes)
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        lines = super().create(vals_list)
-        for line, vals in zip(lines, vals_list, strict=False):
-            if "tax_ids" in vals and not line.tax_ids_auto_key:
-                line.tax_ids_auto_key = line._tax_key(line._auto_taxes())
-        return lines
-
-    _NO_TAXES_KEY = "-"
-
-    @classmethod
-    def _tax_key(cls, taxes):
-        return (
-            ",".join(str(tax_id) for tax_id in sorted(taxes.ids)) or cls._NO_TAXES_KEY
-        )
-
-    def _apply_auto_taxes(self, auto_taxes) -> None:
-        self.check_singleton()
-        old_key = self.tax_ids_auto_key
-        auto_key = self._tax_key(auto_taxes)
-        if old_key and self._tax_key(self.tax_ids) != old_key:
-            self.tax_ids_auto_key = auto_key
-            _debug.logic(
-                "taxes_kept_manual",
-                line=self,
-                manual=self.tax_ids,
-                was_auto_key=old_key,
-                now_auto=auto_taxes,
-            )
-            return
-        self.tax_ids = auto_taxes
-        self.tax_ids_auto_key = auto_key
-
     def _is_product_taxable(self, line) -> bool:
         return True
+
+    def _allows_taxes(self) -> bool:
+        return True
+
+    def _get_tax_policy_depends(self) -> list[str]:
+        return []
 
     @api.depends(
         "company_id",

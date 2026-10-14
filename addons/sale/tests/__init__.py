@@ -49,3 +49,4 @@ from . import test_sale_order_loss
 from . import test_access_matrix
 from . import test_message_post_hooks
 from . import test_invoice_paid_note
+from . import test_sale_tax_policy

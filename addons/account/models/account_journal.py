@@ -10,8 +10,10 @@ from odoo.libs.debug_log import DebugLog
 from odoo.libs.web import urls
 from odoo.tools import (
     SQL,
+    TransactionMemo,
     email_normalize,
     email_normalize_all,
+    format_list,
     frozendict,
     groupby,
     is_encodable,
@@ -22,6 +24,10 @@ from odoo.tools.translate import LazyTranslate
 from odoo.addons.account.tools.display_types import NON_ACCOUNTABLE_DISPLAY_TYPES
 
 _debug = DebugLog(__name__)
+
+DEFAULT_JOURNALS = TransactionMemo(
+    "account.journal.default_journals", invalidated_by=("account.journal",)
+)
 
 _lt = LazyTranslate(__name__)
 
@@ -218,6 +224,18 @@ class AccountJournal(models.Model):
         string="Self Billing",
         help="This journal is for self-billing invoices. "
         "Invoices will be created using a different sequence per partner.",
+    )
+    tax_policy = fields.Selection(
+        selection=[
+            ("optional", "Optional"),
+            ("required", "Required"),
+            ("forbidden", "Forbidden"),
+        ],
+        default="optional",
+        required=True,
+        help="Whether the product lines of this journal's invoices and of the orders "
+        "invoiced into it may, must, or must not carry taxes. An exempt or 0% tax "
+        "counts as a tax.",
     )
     default_account_id = fields.Many2one(
         comodel_name="account.account",
@@ -1104,6 +1122,22 @@ class AccountJournal(models.Model):
                     )
                 )
 
+    @api.constrains("type", "tax_policy")
+    def _check_tax_policy_type(self) -> None:
+        invalid = self.filtered(
+            lambda journal: (
+                journal.tax_policy != "optional"
+                and journal.type not in ("sale", "purchase")
+            )
+        )
+        if invalid:
+            raise ValidationError(
+                self.env._(
+                    "Only sales and purchase journals can require or forbid taxes: %s",
+                    format_list(self.env, invalid.mapped("display_name")),
+                )
+            )
+
     @api.constrains("inbound_payment_channel_ids", "outbound_payment_channel_ids")
     @_debug.perf.timed
     def _check_payment_channel_ids_multiplicity(self) -> None:
@@ -1956,6 +1990,25 @@ class AccountJournal(models.Model):
             .with_context(default_linked_journal_id=self.id)
             .setting_init_bank_account_action()
         )
+
+    @api.model
+    def _search_default_journal(self, company, journal_types, currency_id=None):
+        domain = [
+            *self._get_domain_company_compatible(company),
+            ("type", "in", journal_types),
+        ]
+        if currency_id == company.currency_id.id:
+            currency_id = None
+        memo = DEFAULT_JOURNALS(self.env)
+        key = (self.env.uid, self.env.su, Domain(domain), currency_id)
+        if key not in memo:
+            journal = self.browse()
+            if currency_id:
+                journal = self.search(
+                    [*domain, ("currency_id", "=", currency_id)], limit=1
+                )
+            memo[key] = (journal or self.search(domain, limit=1)).id
+        return self.browse(memo[key])
 
     @api.model
     @_debug.perf.timed
