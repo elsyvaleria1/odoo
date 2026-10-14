@@ -5,7 +5,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 ## Quick Reference
 
 ```bash
-# All base tests (5837 methods, 1100 classes, 212 files)
+# All base tests (5839 methods, 1101 classes, 212 files)
 --test-tags '/base' -u base
 
 # Only post_install tests
@@ -102,7 +102,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 
 ## Test File Reference
 
-### Tagged Files (139 files, 735 classes)
+### Tagged Files (139 files, 736 classes)
 
 | File | Tags | Classes | Tests | Base Class |
 |------|------|---------|-------|------------|
@@ -170,7 +170,7 @@ Test organization, tagging strategy, and execution reference for `odoo/addons/ba
 | `test_ir_ui_view_authoring.py` | `post_install`, `-at_install` | 2 | 38 | TransactionCase |
 | `test_legacy_field_names.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
 | `test_login_cooldown_rpc.py` | `post_install`, `-at_install` | 2 | 18 | TransactionCase |
-| `test_method_name_migration.py` | `post_install`, `-at_install` | 2 | 28 | BaseCase, TransactionCase |
+| `test_method_name_migration.py` | `post_install`, `-at_install` | 3 | 30 | BaseCase, TransactionCase, TestMethodNameMigrationDatabase |
 | `test_mixin_merge.py` | `post_install`, `-at_install` | 2 | 9 | TransactionCase |
 | `test_mixin_recurrence_rule.py` | `post_install`, `-at_install` | 1 | 2 | TransactionCase |
 | `test_model_metadata_authority.py` | `post_install`, `-at_install` | 1 | 6 | TransactionCase |
@@ -329,18 +329,19 @@ These run in **both** at_install and post_install phases by default.
 | Metric | Value |
 |--------|-------|
 | Total test files | 212 |
-| Total test classes | 1100 |
-| Total test methods | 5837 |
+| Total test classes | 1101 |
+| Total test methods | 5839 |
 | Files with @tagged | 139 (66%) |
 | Files without @tagged | 73 (34%) |
-| Classes using post_install | 443 |
+| Classes using post_install | 444 |
 | Unique tags | 29 |
 | Largest test file | test_db_cursor.py (125 classes, 406 tests) |
 
-Counted as unittest collects them: a method whose name starts with `test`, not
-`test_` — a `testCamelCase` method would run too, so it is counted. A class with
-no test method is a shared base and is not counted. `factcheck.sh --update`
-regenerates every figure above and the header line under Quick Reference.
+These are source declarations: methods whose names start with `test`, not
+`test_`, and classes that declare at least one such method. Inherited test
+executions and classes that only inherit tests are not counted; the figures
+are not a count of runnable cases. `factcheck.sh --update` regenerates every
+figure above and the header line under Quick Reference.
 
 ## Running Focused Tests
 

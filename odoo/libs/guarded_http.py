@@ -264,7 +264,7 @@ class GuardedAdapter(HTTPAdapter):
         deadline = None if limit is None else started + limit
         addresses = request.__dict__.pop("netguard_addresses", None)
         if addresses is None:
-            addresses = self._check(request, deadline)
+            addresses = self._get_permitted_addresses_within_deadline(request, deadline)
         del proxies
         request.headers.pop("Proxy-Authorization", None)
         if deadline is not None:
@@ -284,21 +284,21 @@ class GuardedAdapter(HTTPAdapter):
             raise
         return self._capped(response, limit, deadline)
 
-    def _check(
+    def _get_permitted_addresses_within_deadline(
         self, request: PreparedRequest, deadline: float | None = None
     ) -> tuple[IPAddress, ...]:
         if deadline is None:
-            return self._check_now(request)
+            return self._get_permitted_addresses(request)
         resolved: dict[str, typing.Any] = {}
 
-        def resolve() -> None:
+        def set_resolution_result() -> None:
             try:
-                resolved["addresses"] = self._check_now(request)
+                resolved["addresses"] = self._get_permitted_addresses(request)
             except BaseException as error:
                 resolved["error"] = error
 
         resolver = threading.Thread(
-            target=resolve, name="guarded_http-resolve", daemon=True
+            target=set_resolution_result, name="guarded_http-resolve", daemon=True
         )
         started = time.monotonic()
         resolver.start()
@@ -313,9 +313,11 @@ class GuardedAdapter(HTTPAdapter):
         addresses: tuple[IPAddress, ...] = resolved["addresses"]
         return addresses
 
-    def _check_now(self, request: PreparedRequest) -> tuple[IPAddress, ...]:
+    def _get_permitted_addresses(
+        self, request: PreparedRequest
+    ) -> tuple[IPAddress, ...]:
         try:
-            return netguard.check_url(
+            return netguard.get_permitted_url_destination(
                 request.url or "",
                 policy=self.policy,
                 resolver=self.resolver,
@@ -351,7 +353,7 @@ class GuardedAdapter(HTTPAdapter):
                         or timeouts > netguard.TIMEOUTS_PASSED_OVER
                     ):
                         raise
-            raise AssertionError("check_host returns at least one address")
+            raise AssertionError("a permitted destination has at least one address")
         finally:
             _passing_over.active = False
             del request.netguard_address
@@ -846,8 +848,10 @@ class GuardedSession(requests.Session):  # noqa: E8518 -- the guard itself: it m
         if isinstance(adapter, GuardedAdapter):
             started = time.monotonic() if chain_started is None else chain_started
             limit = adapter.get_max_seconds(kwargs.get("timeout"))
-            request.netguard_addresses = adapter._check(
-                request, None if limit is None else started + limit
+            request.netguard_addresses = (
+                adapter._get_permitted_addresses_within_deadline(
+                    request, None if limit is None else started + limit
+                )
             )
             kwargs["chain_started"] = started
         return super().send(request, **kwargs)

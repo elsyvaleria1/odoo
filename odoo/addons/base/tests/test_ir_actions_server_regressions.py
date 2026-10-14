@@ -364,15 +364,17 @@ class TestWebhookGuardHoldsAtSendTime(ServerActionCase):
             DestinationRefused,
             msg="an address the guard cannot judge is not one it may allow",
         ):
-            self.env["ir.egress"].check_url("http://nx.invalid/hook")
+            self.env["ir.egress"].get_permitted_url_destination(
+                "http://nx.invalid/hook"
+            )
 
     def test_a_public_host_is_still_allowed(self):
-        self.env["ir.egress"].check_url("https://1.1.1.1/hook")
+        self.env["ir.egress"].get_permitted_url_destination("https://1.1.1.1/hook")
 
     def test_multicast_and_reserved_are_still_blocked(self):
         for host in ("224.0.0.1", "[ff02::1]", "[64:ff9b::7f00:1]"):
             with self.subTest(host=host), self.assertRaises(DestinationRefused):
-                self.env["ir.egress"].check_url(f"http://{host}/h")
+                self.env["ir.egress"].get_permitted_url_destination(f"http://{host}/h")
 
     def test_one_policy_decides_at_the_action_and_at_delivery(self):
         self.env["ir.config_parameter"].set_param(

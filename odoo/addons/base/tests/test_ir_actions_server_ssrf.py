@@ -7,7 +7,7 @@ from odoo.tests.common import TransactionCase
 class TestWebhookSsrfGuard(TransactionCase):
     def assertRefused(self, url):
         with self.assertRaises(DestinationRefused):
-            self.env["ir.egress"].check_url(url)
+            self.env["ir.egress"].get_permitted_url_destination(url)
 
     def test_non_global_literals_are_blocked(self):
         for host in (
@@ -44,7 +44,9 @@ class TestWebhookSsrfGuard(TransactionCase):
             "[64:ff9b::808:808]",
         ):
             with self.subTest(host=host):
-                self.env["ir.egress"].check_url(f"https://{host}/hook")
+                self.env["ir.egress"].get_permitted_url_destination(
+                    f"https://{host}/hook"
+                )
 
     def test_non_http_schemes_and_malformed_urls_are_blocked(self):
         for url in (
@@ -60,8 +62,8 @@ class TestWebhookSsrfGuard(TransactionCase):
         self.env["ir.config_parameter"].set_param(
             "base.egress_allowed_networks", "10.20.0.0/16, fd12::/16"
         )
-        self.env["ir.egress"].check_url("http://10.20.1.2/hook")
-        self.env["ir.egress"].check_url("http://[fd12::5]/hook")
+        self.env["ir.egress"].get_permitted_url_destination("http://10.20.1.2/hook")
+        self.env["ir.egress"].get_permitted_url_destination("http://[fd12::5]/hook")
         self.assertRefused("http://10.21.1.2/hook")
         self.assertRefused("http://127.0.0.1/hook")
 

@@ -238,7 +238,7 @@ class TestIncomingMailTransport(TransactionCase):
                     ) as closed,
                     patch.object(
                         type(self.env["ir.egress"]),
-                        "check_host",
+                        "get_permitted_host_addresses",
                         return_value=_LOOPBACK,
                     ),
                     self.assertRaises(error),
@@ -1549,7 +1549,7 @@ class TestFetchmailPoisonMessages(FetchmailCommon):
                         self.registry.cursor() as cr,
                         patch.object(
                             type(self.env["ir.egress"]),
-                            "check_host",
+                            "get_permitted_host_addresses",
                             return_value=_LOOPBACK,
                         ),
                         patch.object(

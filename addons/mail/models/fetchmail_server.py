@@ -602,7 +602,7 @@ stays in the MTA's queue. Only an address no alias routes is bounced.
             port=self.port,
             encryption=self.encryption,
         ):
-            addresses = self.env["ir.egress"].check_host(
+            addresses = self.env["ir.egress"].get_permitted_host_addresses(
                 self.server, self.port, policy="private"
             )
             connection = connect(

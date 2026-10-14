@@ -371,7 +371,7 @@ class IrActionsServer(models.Model):
             if action.state != "webhook" or not action.webhook_url:
                 continue
             try:
-                netguard.check_url_syntax(
+                netguard.parse_url_endpoint(
                     action.webhook_url, schemes=guarded_http.SCHEMES
                 )
             except netguard.DestinationRefused as refusal:
@@ -922,9 +922,11 @@ class IrActionsServer(models.Model):
             )
         try:
             if self.webhook_delivery == "queued":
-                netguard.check_url_syntax(url, schemes=guarded_http.SCHEMES)
+                netguard.parse_url_endpoint(url, schemes=guarded_http.SCHEMES)
             else:
-                self.env["ir.egress"].check_url(url, schemes=guarded_http.SCHEMES)
+                self.env["ir.egress"].get_permitted_url_destination(
+                    url, schemes=guarded_http.SCHEMES
+                )
             refusal = None
         except netguard.DestinationRefused as error:
             refusal = error
@@ -1007,7 +1009,9 @@ class IrActionsServer(models.Model):
     ) -> None:
         self.check_singleton()
         try:
-            self.env["ir.egress"].check_url(url, schemes=guarded_http.SCHEMES)
+            self.env["ir.egress"].get_permitted_url_destination(
+                url, schemes=guarded_http.SCHEMES
+            )
             status = self._send_webhook_request(
                 url, timeout, payload, idempotency_key, options
             )

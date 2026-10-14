@@ -255,7 +255,7 @@ that). It skips tests and nothing else: `integration` builds its sessions on
 `odoo/libs/guarded_http.py`, outside every addon. It reached zero on 2026-09-13 and
 stayed there when the dial targets were added: an XML-RPC peer goes through
 `ir.egress.xmlrpc_proxy`; a dial the pipeline cannot carry checks its host through
-`ir.egress.check_host` (or `check_url`, which knows `ws`, `mqtt`, `modbus`, `sftp`
+`ir.egress.get_permitted_host_addresses` (or `get_permitted_url_destination`, which knows `ws`, `mqtt`, `modbus`, `sftp`
 and the mail schemes), then either connects to the checked addresses through
 `netguard.dial` -- SMTP, IMAP and POP, whose TLS still names the host -- or, for a
 library that dials by name itself, carries `# noqa: E8518 - <checked how, and why it

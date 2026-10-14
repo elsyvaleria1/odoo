@@ -6,10 +6,14 @@ from uuid import uuid4
 
 from odoo.tests.common import BaseCase, TransactionCase, tagged
 from odoo.tools import SQL
+from odoo.tools.method_data import (
+    rename_stored_model_methods,
+    rewrite_model_method_references,
+)
 
 
-def _load_method_name_migration():
-    path = Path(__file__).parents[1] / "migrations/1.157/pre-method-names.py"
+def _load_method_name_migration(version="1.157"):
+    path = Path(__file__).parents[1] / f"migrations/{version}/pre-method-names.py"
     spec = importlib.util.spec_from_file_location("method_name_migration", path)
     migration = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(migration)
@@ -476,6 +480,40 @@ class TestMethodNameMigration(BaseCase):
 
 
 @tagged("post_install", "-at_install")
+class TestSharedMethodReferenceRewrite(TestMethodNameMigration):
+    allow_inherited_tests_method = True
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        migration = cls.migration
+
+        def rewrite(
+            code,
+            model,
+            relations,
+            unresolved=None,
+            *,
+            context_models=None,
+            model_parents=None,
+        ):
+            result = rewrite_model_method_references(
+                code,
+                model,
+                relations,
+                model_method_renames=migration.MODEL_METHOD_RENAMES,
+                shared_method_renames=migration.SHARED_MODEL_METHOD_RENAMES,
+                context_models=context_models,
+                model_parents=model_parents,
+            )
+            if unresolved is not None:
+                unresolved.update(result.unresolved)
+            return result.code
+
+        migration._rewrite_generic_method_bindings = rewrite
+
+
+@tagged("post_install", "-at_install")
 class TestMethodNameMigrationDatabase(TransactionCase):
     @classmethod
     def setUpClass(cls):
@@ -627,3 +665,96 @@ class TestMethodNameMigrationDatabase(TransactionCase):
                     self.migration.migrate(cr, "1.152")
                 cr.execute("SELECT code FROM ir_act_server WHERE id = 1")
                 self.assertEqual(cr.fetchone()[0], code)
+
+
+@tagged("post_install", "-at_install")
+class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
+    allow_inherited_tests_method = True
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        migration = cls.migration
+
+        def migrate(cr, version):
+            if version:
+                rename_stored_model_methods(
+                    cr,
+                    model_method_renames=migration.MODEL_METHOD_RENAMES,
+                    shared_method_renames=migration.SHARED_MODEL_METHOD_RENAMES,
+                )
+
+        migration.migrate = migrate
+
+    def test_egress_methods_upgrade_with_source_and_unrelated_owners_preserved(self):
+        migration = _load_method_name_migration("1.162")
+        with self._use_migration_schema() as cr:
+            cr.execute(
+                "INSERT INTO ir_model VALUES (4, 'ir.egress'), (5, 'custom.egress')"
+            )
+            code = (
+                "# café: keep check_url in comments\n"
+                'text = "check_host"\n'
+                'guard = env["ir.egress"].sudo()\n'
+                'destination = guard.check_url("https://1.1.1.1")\n'
+                'addresses = getattr(guard, "check_host")("1.1.1.1", 443)\n'
+            )
+            cr.execute(
+                "INSERT INTO ir_act_server VALUES (1, 2, %s), (2, 5, 'records.check_url()')",
+                [code],
+            )
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 1, %s)", [code]
+            )
+            cr.execute(
+                "INSERT INTO ir_model_fields VALUES (1, 2, 'egress_id', 'ir.egress', 'self.egress_id.check_host()')"
+            )
+            edge_sources = (
+                ("records.ｃｈｅｃｋ_host()", "records.get_permitted_host_addresses()"),
+                (
+                    r'getattr(records, "\x63heck_host")()',
+                    "getattr(records, 'get_permitted_host_addresses')()",
+                ),
+            )
+            for row_id, (source, _) in enumerate(edge_sources, 3):
+                cr.execute(
+                    "INSERT INTO ir_act_server VALUES (%s, 4, %s)", [row_id, source]
+                )
+            migration.migrate(cr, "1.160")
+            expected = code.replace(
+                "guard.check_url", "guard.get_permitted_url_destination"
+            ).replace('"check_host")', "'get_permitted_host_addresses')")
+            for table in ("ir_act_server", "ir_actions_server_history"):
+                cr.execute(
+                    SQL("SELECT code FROM %s WHERE id = 1", SQL.identifier(table))
+                )
+                self.assertEqual(cr.fetchone()[0], expected)
+            cr.execute("SELECT code FROM ir_act_server WHERE id = 2")
+            self.assertEqual(cr.fetchone()[0], "records.check_url()")
+            cr.execute("SELECT compute FROM ir_model_fields WHERE id = 1")
+            self.assertEqual(
+                cr.fetchone()[0], "self.egress_id.get_permitted_host_addresses()"
+            )
+            cr.execute("SELECT code FROM ir_act_server WHERE id >= 3 ORDER BY id")
+            self.assertEqual(
+                cr.fetchall(), [(expected,) for _, expected in edge_sources]
+            )
+            migration.migrate(cr, "1.160")
+            cr.execute("SELECT code FROM ir_actions_server_history WHERE id = 1")
+            self.assertEqual(cr.fetchone()[0], expected)
+
+    def test_unresolved_egress_owner_rolls_back_the_upgrade(self):
+        migration = _load_method_name_migration("1.162")
+        with self._use_migration_schema() as cr:
+            cr.execute("INSERT INTO ir_model VALUES (4, 'ir.egress')")
+            cr.execute("INSERT INTO ir_act_server VALUES (1, 4, 'records.check_url()')")
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 1, 'unknown.check_host()')"
+            )
+            with (
+                self.assertRaisesRegex(ValueError, "Cannot resolve method owners"),
+                cr.savepoint(flush=False),
+            ):
+                migration.migrate(cr, "1.160")
+            cr.execute("SELECT code FROM ir_act_server WHERE id = 1")
+            self.assertEqual(cr.fetchone()[0], "records.check_url()")

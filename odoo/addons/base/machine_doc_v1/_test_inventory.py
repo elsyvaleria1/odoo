@@ -158,10 +158,11 @@ def render_statistics(facts: list[FileFacts]) -> str:
     lines += [f"| {k} | {v} |" for k, v in rows]
     lines += [
         "",
-        "Counted as unittest collects them: a method whose name starts with `test`, not",
-        "`test_` — a `testCamelCase` method would run too, so it is counted. A class with",
-        "no test method is a shared base and is not counted. `factcheck.sh --update`",
-        "regenerates every figure above and the header line under Quick Reference.",
+        "These are source declarations: methods whose names start with `test`, not",
+        "`test_`, and classes that declare at least one such method. Inherited test",
+        "executions and classes that only inherit tests are not counted; the figures",
+        "are not a count of runnable cases. `factcheck.sh --update` regenerates every",
+        "figure above and the header line under Quick Reference.",
     ]
     return "\n".join(lines)
 

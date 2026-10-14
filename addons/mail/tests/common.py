@@ -82,7 +82,11 @@ def rebinding(name, checked, rebound):
 class FakedDialCase:
     def setUp(self):
         super().setUp()
-        self.patch(type(self.env["ir.egress"]), "check_host", lambda *a, **k: ())
+        self.patch(
+            type(self.env["ir.egress"]),
+            "get_permitted_host_addresses",
+            lambda *a, **k: (),
+        )
 
 
 class MockSmtplibCase:
@@ -151,7 +155,9 @@ class MockSmtplibCase:
                 side_effect=lambda *args, **kwargs: self.testing_smtp_session,
             ),
             patch.object(
-                type(self.env["ir.egress"]), "check_host", lambda *args, **kwargs: ()
+                type(self.env["ir.egress"]),
+                "get_permitted_host_addresses",
+                lambda *args, **kwargs: (),
             ),
             patch.object(type(IrMailServer), "_disable_send", lambda _: False),
             patch.object(

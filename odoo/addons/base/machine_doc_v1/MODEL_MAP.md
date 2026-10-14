@@ -1370,7 +1370,8 @@ pinned to the checked address, every redirect hop is checked again, and response
 are capped in bytes and seconds by `odoo/libs/guarded_http.py`.
 
 **Key Methods:**
-- `check_url(url, policy)` — Resolve and check a URL, raising `DestinationRefused`
+- `get_permitted_url_destination(url, policy)` — The parsed destination and permitted addresses, raising `DestinationRefused` on rejection
+- `get_permitted_host_addresses(host, port, policy)` — All resolved addresses, permitted together or rejected together
 - `session(purpose, policy, timeout, max_bytes, max_seconds, max_redirects)` — A guarded `requests.Session`
 - `request(method, url, purpose, policy, ...)` — One request through a guarded session
 - `_prepare_session(session, purpose, policy)` — Extension hook for addons that add logging, credentials or rate limits

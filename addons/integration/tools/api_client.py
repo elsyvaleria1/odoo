@@ -134,7 +134,7 @@ def is_private_host(host) -> bool:
         return False
     host = host.strip("[]").lower()
     try:
-        addresses = netguard.resolve(host)
+        addresses = netguard.get_host_addresses(host)
     except netguard.UnresolvableDestination:
         return host == "localhost" or host.endswith(_PRIVATE_SUFFIXES)
     return all(netguard.classify(address) in _PRIVATE_SCOPES for address in addresses)

@@ -310,7 +310,9 @@ class IntegrationStream(models.Model):
     def _resolve_addresses(self):
         if not urlsplit(self.url).hostname:
             return ()
-        destination = self.env["ir.egress"].check_url(self.url, policy="private")
+        destination = self.env["ir.egress"].get_permitted_url_destination(
+            self.url, policy="private"
+        )
         return tuple(str(address) for address in destination.addresses)
 
     def _open(self, db_name):

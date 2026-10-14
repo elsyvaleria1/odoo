@@ -876,7 +876,7 @@ class SurveySurvey(models.Model):
     @api.model
     def _webhook_url_problem(self, url: str) -> str | None:
         try:
-            self.env["ir.egress"].check_url(
+            self.env["ir.egress"].get_permitted_url_destination(
                 (url or "").strip(), schemes=guarded_http.SCHEMES
             )
         except DestinationRefused as refusal:

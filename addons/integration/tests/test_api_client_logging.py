@@ -894,13 +894,15 @@ class TestCredentialChangesDropCachedSessions(TransactionCase):
         parameters.set_param(ALLOWED_NETWORKS_PARAM, "198.51.100.0/24")
         allowed = self.service._get_api_client()._get_or_create_session()
         self.assertTrue(
-            allowed.get_adapter("https://").policy.permits("198.51.100.7"),
+            allowed.get_adapter("https://").policy.is_address_permitted("198.51.100.7"),
             "precondition: the cached session reaches the listed network",
         )
         parameters.set_param(ALLOWED_NETWORKS_PARAM, "")
         session = self.service._get_api_client()._get_or_create_session()
         self.assertIsNot(session, allowed)
-        self.assertFalse(session.get_adapter("https://").policy.permits("198.51.100.7"))
+        self.assertFalse(
+            session.get_adapter("https://").policy.is_address_permitted("198.51.100.7")
+        )
 
     def test_rotating_the_secret_drops_the_services_cached_sessions(self):
         self.service._get_api_client()._get_or_create_session()

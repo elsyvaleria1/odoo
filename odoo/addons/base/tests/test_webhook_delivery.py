@@ -157,7 +157,7 @@ class TestWebhookDelivery(TransactionCase):
     def test_dns_outage_at_enqueue_retains_delivery_intent(self):
         with patch.object(
             type(self.env["ir.egress"]),
-            "check_url",
+            "get_permitted_url_destination",
             side_effect=UnresolvableDestination("Temporary DNS outage"),
         ):
             job = self._enqueue()
@@ -174,7 +174,7 @@ class TestWebhookDelivery(TransactionCase):
         with (
             patch.object(
                 type(self.env["ir.egress"]),
-                "check_url",
+                "get_permitted_url_destination",
                 side_effect=UnresolvableDestination("Temporary DNS outage"),
             ),
             self.assertRaises(UserError),

@@ -152,7 +152,7 @@ class _EndpointDelivery:
             self.endpoint_code,
         )
         try:
-            netguard.check_url(
+            netguard.get_permitted_url_destination(
                 self.url, policy=self.policy, schemes=guarded_http.SCHEMES
             )
         except netguard.DestinationRefused as refusal:

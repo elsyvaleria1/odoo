@@ -926,7 +926,7 @@ class IrMail_Server(models.Model):
         self, transport: _SmtpTransport
     ) -> smtplib.SMTP | smtplib.SMTP_SSL:
         local_hostname = self._get_smtp_local_hostname()
-        addresses = self.env["ir.egress"].check_host(
+        addresses = self.env["ir.egress"].get_permitted_host_addresses(
             transport.server, transport.port, policy="private"
         )
         if transport.encryption in IMPLICIT_TLS_ENCRYPTIONS:

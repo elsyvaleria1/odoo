@@ -60,14 +60,14 @@ class IrEgress(models.AbstractModel):
 
     @api.private
     @api.model
-    def check_url(
+    def get_permitted_url_destination(
         self,
         url: str,
         *,
         policy: PolicyName = "public",
         schemes: Iterable[str] | None = None,
     ) -> netguard.Destination:
-        destination = netguard.check_url(
+        destination = netguard.get_permitted_url_destination(
             url, policy=self._get_policy(policy), schemes=schemes
         )
         _debug.logic("egress_url_allowed", policy=policy, host=urlsplit(url).hostname)
@@ -75,10 +75,12 @@ class IrEgress(models.AbstractModel):
 
     @api.private
     @api.model
-    def check_host(
+    def get_permitted_host_addresses(
         self, host: str, port: int, *, policy: PolicyName = "public"
     ) -> tuple[ipaddress.IPv4Address | ipaddress.IPv6Address, ...]:
-        addresses = netguard.check_host(host, port, policy=self._get_policy(policy))
+        addresses = netguard.get_permitted_host_addresses(
+            host, port, policy=self._get_policy(policy)
+        )
         _debug.logic("egress_host_allowed", policy=policy, host=host, port=port)
         return addresses
 

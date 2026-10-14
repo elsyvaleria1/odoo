@@ -30,13 +30,14 @@ __all__ = [
     "RefusalKind",
     "Scope",
     "UnresolvableDestination",
-    "check_host",
-    "check_url",
-    "check_url_syntax",
+    "UrlEndpoint",
     "classify",
     "classify_peer",
     "dial",
-    "resolve",
+    "get_host_addresses",
+    "get_permitted_host_addresses",
+    "get_permitted_url_destination",
+    "parse_url_endpoint",
 ]
 
 
@@ -100,13 +101,13 @@ _METADATA_ADDRESSES = frozenset(
 )
 
 
-def _as_address(address: str | IPAddress) -> IPAddress:
+def _parse_address(address: str | IPAddress) -> IPAddress:
     if isinstance(address, str):
         return ipaddress.ip_address(address.strip("[]"))
     return address
 
 
-def _unwrap(address: IPAddress) -> IPAddress:
+def _get_effective_address(address: IPAddress) -> IPAddress:
     if isinstance(address, ipaddress.IPv4Address):
         return address
     if address.scope_id is not None:
@@ -123,7 +124,7 @@ def _unwrap(address: IPAddress) -> IPAddress:
 
 
 def classify(address: str | IPAddress) -> Scope:
-    return _classify_ip(_unwrap(_as_address(address)))
+    return _classify_ip(_get_effective_address(_parse_address(address)))
 
 
 LOCAL_SCOPES = frozenset(
@@ -135,7 +136,7 @@ def classify_peer(address: str | IPAddress | None) -> Scope | None:
     if not address:
         return None
     try:
-        ip = _as_address(address)
+        ip = _parse_address(address)
     except ValueError:
         return None
     if isinstance(ip, ipaddress.IPv6Address):
@@ -179,11 +180,11 @@ class Policy:
     scopes: frozenset[Scope]
     networks: tuple[IPNetwork, ...] = ()
 
-    def permits(self, address: str | IPAddress) -> bool:
-        ip = _as_address(address)
+    def is_address_permitted(self, address: str | IPAddress) -> bool:
+        ip = _parse_address(address)
         if classify(ip) in self.scopes:
             return True
-        unwrapped = _unwrap(ip)
+        unwrapped = _get_effective_address(ip)
         return any(
             candidate.version == network.version and candidate in network
             for network in self.networks
@@ -218,17 +219,16 @@ class Destination:
     addresses: tuple[IPAddress, ...]
 
 
-def _check_address(address: str | IPAddress, *, policy: Policy) -> IPAddress:
-    ip = _as_address(address)
-    if not policy.permits(ip):
+def _check_address_permitted(address: str | IPAddress, *, policy: Policy) -> None:
+    ip = _parse_address(address)
+    if not policy.is_address_permitted(ip):
         raise DestinationRefused(
             f"{ip} is a {classify(ip).value} address, "
             f"which the {policy.name} policy refuses"
         )
-    return ip
 
 
-def _literal(host: str) -> IPAddress | None:
+def _resolve_literal_address(host: str) -> IPAddress | None:
     try:
         return ipaddress.ip_address(host)
     except ValueError:
@@ -239,7 +239,9 @@ def _is_localhost_name(host: str) -> bool:
     return host == "localhost" or host.endswith(".localhost")
 
 
-def _resolve(host: str, port: int, resolver: Resolver | None) -> Iterable[IPAddress]:
+def _get_dns_addresses(
+    host: str, port: int, resolver: Resolver | None
+) -> Iterable[IPAddress]:
     try:
         infos = (resolver or socket.getaddrinfo)(host, port, type=socket.SOCK_STREAM)
     except (OSError, UnicodeError) as error:
@@ -249,40 +251,40 @@ def _resolve(host: str, port: int, resolver: Resolver | None) -> Iterable[IPAddr
     return (ipaddress.ip_address(info[4][0]) for info in infos)
 
 
-def _normalize(host: str) -> str:
+def _normalize_host(host: str) -> str:
     return host.strip("[]").rstrip(".").lower()
 
 
-def resolve(
+def get_host_addresses(
     host: str, port: int = 0, *, resolver: Resolver | None = None
 ) -> tuple[IPAddress, ...]:
-    name = _normalize(host)
+    name = _normalize_host(host)
     if not name:
         raise UnresolvableDestination("the destination has no host")
-    literal = _literal(name)
+    literal = _resolve_literal_address(name)
     if literal is not None:
         return (literal,)
-    return tuple(dict.fromkeys(_resolve(name, port, resolver)))
+    return tuple(dict.fromkeys(_get_dns_addresses(name, port, resolver)))
 
 
-def check_host(
+def get_permitted_host_addresses(
     host: str,
     port: int,
     *,
     policy: Policy,
     resolver: Resolver | None = None,
 ) -> tuple[IPAddress, ...]:
-    name = _normalize(host)
+    name = _normalize_host(host)
     if not name:
         raise DestinationRefused("the destination has no host", kind="syntax")
-    if _literal(name) is None and _is_localhost_name(name):
-        _check_address("127.0.0.1", policy=policy)
-    addresses = resolve(name, port, resolver=resolver)
+    if _resolve_literal_address(name) is None and _is_localhost_name(name):
+        _check_address_permitted("127.0.0.1", policy=policy)
+    addresses = get_host_addresses(name, port, resolver=resolver)
     for address in addresses:
         try:
-            _check_address(address, policy=policy)
+            _check_address_permitted(address, policy=policy)
         except DestinationRefused as error:
-            if _literal(name) is not None:
+            if _resolve_literal_address(name) is not None:
                 raise
             raise DestinationRefused(f"{host} resolves to {error}") from None
     return addresses
@@ -342,21 +344,29 @@ _AUTHORITY = re.compile(r"[A-Za-z][A-Za-z0-9+.-]*://([^/?#]*)")
 _AMBIGUOUS_IN_AUTHORITY = re.compile(r"[\\\s]")
 
 
-def check_url(
+class UrlEndpoint(typing.NamedTuple):
+    scheme: str
+    host: str
+    port: int
+
+
+def get_permitted_url_destination(
     url: str,
     *,
     policy: Policy,
     resolver: Resolver | None = None,
     schemes: Iterable[str] | None = None,
 ) -> Destination:
-    scheme, host, port = check_url_syntax(url, schemes=schemes)
-    addresses = check_host(host, port, policy=policy, resolver=resolver)
+    scheme, host, port = parse_url_endpoint(url, schemes=schemes)
+    addresses = get_permitted_host_addresses(
+        host, port, policy=policy, resolver=resolver
+    )
     return Destination(scheme, host, port, addresses)
 
 
-def check_url_syntax(
+def parse_url_endpoint(
     url: str, *, schemes: Iterable[str] | None = None
-) -> tuple[str, str, int]:
+) -> UrlEndpoint:
     shown = repr(mask_url(url))
     authority = _AUTHORITY.match(url)
     if _CONTROL.search(url) or (
@@ -381,7 +391,7 @@ def check_url_syntax(
             f"{', '.join(allowed)}",
             kind="syntax",
         )
-    host = _normalize(parts.host or "")
+    host = _normalize_host(parts.host or "")
     if not host:
         raise DestinationRefused(f"{shown} has no host", kind="syntax")
     if parts.port == 0:
@@ -389,4 +399,4 @@ def check_url_syntax(
             f"{shown} names port 0, which no connection reaches", kind="syntax"
         )
     port = _DEFAULT_PORTS[scheme] if parts.port is None else parts.port
-    return scheme, host, port
+    return UrlEndpoint(scheme, host, port)
