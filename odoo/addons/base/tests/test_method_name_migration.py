@@ -743,6 +743,85 @@ class TestSharedStoredMethodRename(TestMethodNameMigrationDatabase):
             cr.execute("SELECT code FROM ir_actions_server_history WHERE id = 1")
             self.assertEqual(cr.fetchone()[0], expected)
 
+    def test_shared_verb_methods_upgrade_every_stored_code_owner_and_column(self):
+        migration = _load_method_name_migration("1.163")
+        renames = migration.SHARED_MODEL_METHOD_RENAMES
+        code = "# café: keep _verb_checkpoint\ntext = '_check_verb_creations'\n"
+        expected = code
+        for old, new in renames.items():
+            code += f"records.{old}\ngetattr(records, {old!r})\n"
+            expected += f"records.{new}\ngetattr(records, {new!r})\n"
+        with self._use_migration_schema() as cr:
+            for row_id, model_id in enumerate((1, 2, 3), 1):
+                cr.execute(
+                    "INSERT INTO ir_act_server VALUES (%s, %s, %s)",
+                    [row_id, model_id, code],
+                )
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 2, %s)", [code]
+            )
+            cr.execute(
+                "INSERT INTO ir_model_fields VALUES (1, 2, 'computed', NULL, %s)",
+                [
+                    code.replace("records.", "self.").replace(
+                        "getattr(records,", "getattr(self,"
+                    )
+                ],
+            )
+            payroll_code = code.replace("records", 'env["res.partner"]')
+            cr.execute(
+                "INSERT INTO hr_salary_rule VALUES (1, %s, %s, %s, %s)",
+                [payroll_code] * 4,
+            )
+            cr.execute(
+                "INSERT INTO hr_payroll_dashboard_warning VALUES (1, %s)",
+                [payroll_code],
+            )
+            migration.migrate(cr, None)
+            cr.execute("SELECT code FROM ir_act_server ORDER BY id")
+            self.assertEqual(cr.fetchall(), [(code,)] * 3)
+            for _ in range(2):
+                migration.migrate(cr, "1.162")
+                cr.execute("SELECT code FROM ir_act_server ORDER BY id")
+                self.assertEqual(cr.fetchall(), [(expected,)] * 3)
+                cr.execute("SELECT code FROM ir_actions_server_history")
+                self.assertEqual(cr.fetchone()[0], expected)
+                cr.execute("SELECT compute FROM ir_model_fields")
+                self.assertEqual(
+                    cr.fetchone()[0],
+                    expected.replace("records.", "self.").replace(
+                        "getattr(records,", "getattr(self,"
+                    ),
+                )
+                cr.execute(
+                    "SELECT amount_python_compute, condition_python, amount_percentage_base, quantity FROM hr_salary_rule"
+                )
+                self.assertEqual(
+                    cr.fetchone(),
+                    (expected.replace("records", 'env["res.partner"]'),) * 4,
+                )
+                cr.execute("SELECT evaluation_code FROM hr_payroll_dashboard_warning")
+                self.assertEqual(
+                    cr.fetchone()[0], expected.replace("records", 'env["res.partner"]')
+                )
+
+    def test_unresolved_shared_verb_owner_rolls_back_the_upgrade(self):
+        migration = _load_method_name_migration("1.163")
+        with self._use_migration_schema() as cr:
+            cr.execute(
+                "INSERT INTO ir_act_server VALUES (1, 2, 'records._verb_checkpoint()')"
+            )
+            cr.execute(
+                "INSERT INTO ir_actions_server_history VALUES (1, 1, 'unknown._check_verb_creations()')"
+            )
+            with (
+                self.assertRaisesRegex(ValueError, "Cannot resolve method owners"),
+                cr.savepoint(flush=False),
+            ):
+                migration.migrate(cr, "1.162")
+            cr.execute("SELECT code FROM ir_act_server")
+            self.assertEqual(cr.fetchone()[0], "records._verb_checkpoint()")
+
     def test_unresolved_egress_owner_rolls_back_the_upgrade(self):
         migration = _load_method_name_migration("1.162")
         with self._use_migration_schema() as cr:

@@ -186,7 +186,7 @@ class WriteMixin(_ModelStubs):
         anchors_before = self._anchors_before_write(vals)
         moves = None
         if transitions := self.env.registry.verb_transitions.get(self._name):
-            moves = self._check_verb_transitions(vals, transitions)
+            moves = self._enforce_verb_transitions_and_get_moves(vals, transitions)
         prof.mark("acl")
         env = self.env
 
@@ -281,7 +281,7 @@ class WriteMixin(_ModelStubs):
             real_recs._check_anchor_moves(anchors_before)
 
         if moves:
-            self._land_verb_transitions(moves)
+            self._notify_verb_transitions_landed(moves)
 
         prof.stop("inverse")
         if prof.debug:

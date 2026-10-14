@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+from odoo import models
 from odoo.exceptions import AccessError, ValidationError
 from odoo.tests import TransactionCase, new_test_user
 from odoo.tools import mute_logger
@@ -152,6 +155,149 @@ class TestVerbs(TransactionCase):
             [("checkpoint", "post", document.ids)],
             "the state the checkpoint's own call writes is not asked again",
         )
+
+    def test_checkpoint_reads_and_enforcement_keep_partial_admission_separate(self):
+        calls = []
+        admitted, pending = (self._document() | self._document()).with_user(self.admin)
+        documents = (admitted | pending).with_context(verb_calls=calls)
+        transaction = self.env.transaction
+        with transaction.admitting(documents._name, "post", admitted._ids):
+            self.assertEqual(
+                documents._get_records_requiring_verb_checkpoint("post"), pending
+            )
+            self.assertEqual(calls, [])
+            self.assertEqual(
+                documents._enforce_verb_checkpoint_and_get_ids("post"), pending._ids
+            )
+            self.assertEqual(calls, [("checkpoint", "post", pending.ids)])
+            self.assertEqual(
+                transaction.admitted_ids(documents._name, "post"), set(admitted._ids)
+            )
+            calls.clear()
+            with self.assertQueryCount(0):
+                self.assertEqual(
+                    admitted.with_context(
+                        verb_calls=calls
+                    )._enforce_verb_checkpoint_and_get_ids("post"),
+                    (),
+                )
+                self.assertEqual(
+                    documents.browse()._enforce_verb_checkpoint_and_get_ids("post"), ()
+                )
+            self.assertEqual(calls, [])
+        self.assertEqual(
+            documents._get_records_requiring_verb_checkpoint("post"), documents
+        )
+
+    def test_transition_discovery_reads_without_enforcing_or_writing(self):
+        calls = []
+        changed = self._document()
+        unchanged = self._document(state="posted")
+        documents = (
+            (changed | unchanged).with_user(self.clerk).with_context(verb_calls=calls)
+        )
+        transitions = self.env.registry.verb_transitions[documents._name]
+        moves = list(
+            documents._get_verb_transition_moves({"state": "posted"}, transitions)
+        )
+        self.assertEqual(moves, [("post", changed._ids)])
+        self.assertEqual(moves[0].verb_name, "post")
+        self.assertEqual(moves[0].record_ids, changed._ids)
+        self.assertEqual(calls, [])
+        self.assertEqual(documents.mapped("state"), ["draft", "posted"])
+        with self.assertQueryCount(0):
+            self.assertEqual(
+                list(documents._get_verb_transition_moves({}, transitions)), []
+            )
+
+    def test_transition_enforcement_reads_later_fields_after_checkpoint_effects(self):
+        calls = []
+        document = self._document().with_user(self.admin).with_context(verb_calls=calls)
+        transitions = {
+            "state": (("post", models.Verb(transition=("state", "*", "posted"))),),
+            "audit": (("retire", models.Verb(transition=("audit", "*", "marked"))),),
+        }
+        policy_class = type(self.env.registry.access_policy)
+        checkpoint = policy_class.verb_checkpoint
+
+        def enforce_and_mark_audit(policy, env, records, verb):
+            checkpoint(policy, env, records, verb)
+            if verb == "post":
+                records.write({"audit": "marked"})
+
+        with patch.object(policy_class, "verb_checkpoint", enforce_and_mark_audit):
+            moves = document._enforce_verb_transitions_and_get_moves(
+                {"state": "posted", "audit": "marked"}, transitions
+            )
+        self.assertEqual(moves, [("post", document._ids)])
+        self.assertEqual(calls, [("checkpoint", "post", document.ids)])
+        self.assertEqual(document.audit, "marked")
+        self.assertEqual(document.state, "draft")
+
+    def test_creation_discovery_respects_defaults_batches_and_move_only_verbs(self):
+        calls = []
+        posted, retired, draft = self.Document.create(
+            [
+                {"name": "Posted", "state": "posted"},
+                {"name": "Retired", "state": "retired"},
+                {"name": "Draft"},
+            ]
+        )
+        documents = (posted | retired | draft).with_context(verb_calls=calls)
+        transitions = self.env.registry.verb_transitions[documents._name]
+        self.assertEqual(
+            list(documents._get_verb_creation_moves(transitions)),
+            [("post", posted._ids)],
+        )
+        self.assertEqual(calls, [])
+        documents._enforce_verb_creations(transitions)
+        self.assertEqual(calls, [("checkpoint", "post", posted.ids)])
+
+    def test_creation_enforcement_reads_later_fields_after_checkpoint_effects(self):
+        calls = []
+        document = self._document(state="posted", audit="unmarked").with_context(
+            verb_calls=calls
+        )
+        transitions = {
+            "state": (("post", models.Verb(transition=("state", "*", "posted"))),),
+            "audit": (("retire", models.Verb(transition=("audit", "*", "marked"))),),
+        }
+        policy_class = type(self.env.registry.access_policy)
+        checkpoint = policy_class.verb_checkpoint
+
+        def enforce_and_mark_audit(policy, env, records, verb):
+            checkpoint(policy, env, records, verb)
+            if verb == "post":
+                records.write({"audit": "marked"})
+
+        with patch.object(policy_class, "verb_checkpoint", enforce_and_mark_audit):
+            document._enforce_verb_creations(transitions)
+        self.assertEqual(
+            calls,
+            [
+                ("checkpoint", "post", document.ids),
+                ("checkpoint", "retire", document.ids),
+            ],
+        )
+
+    def test_checkpoint_failure_propagates_before_write_or_landing(self):
+        landings = []
+        document = self._document().with_context(verb_landings=landings)
+        with patch.object(
+            type(self.env.registry.access_policy),
+            "verb_checkpoint",
+            side_effect=RuntimeError("checkpoint failed"),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "checkpoint failed"):
+                document.write({"state": "posted"})
+        self.assertEqual(document.state, "draft")
+        self.assertEqual(landings, [])
+
+    def test_landing_notification_accepts_existing_tuple_plans(self):
+        landings = []
+        document = self._document().with_context(verb_landings=landings)
+        document._notify_verb_transitions_landed([("post", document._ids)])
+        self.assertEqual(landings, [("post", document.ids, ["draft"])])
 
     def test_a_row_names_only_the_verbs_its_model_declares(self):
         with self.assertRaises(ValidationError):

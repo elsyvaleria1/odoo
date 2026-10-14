@@ -4,8 +4,8 @@
 AgroMarin Coding Guidelines
 ===========================
 
-:Version: 7.98
-:Date: 2026-10-13
+:Version: 7.99
+:Date: 2026-10-14
 :Base: `Odoo 19.0 Coding Guidelines <https://www.odoo.com/documentation/19.0/contributing/development/coding_guidelines.html>`_
        + `OCA CONTRIBUTING.rst <https://github.com/OCA/odoo-community.org/blob/master/website/Contribution/CONTRIBUTING.rst>`_
 
@@ -2833,6 +2833,15 @@ shared boundary with concrete types or a narrow protocol, then check both
 callers and failure cases. Repeat the census after extraction; measure removed
 independent implementations, not only renamed definitions or shorter methods.
 
+**A checkpoint is a command when its obligations can write** ``[review]``.
+Split transition discovery from enforcement, but keep discovery lazy when a
+checkpoint can change a later field. Never collect all candidates before
+running the first checkpoint unless equivalence is proved. Test with an
+obligation that changes the later field, alongside denied and partially
+admitted batches. A command returning checked ids or enforced moves names both
+effects, such as ``_enforce_verb_transitions_and_get_moves``; it does not claim
+to admit ids when only its caller opens the admission scope.
+
 **A protocol namespace belongs only to names its dispatcher calls**
 ``[review]``. A model's private helper does not wear ``_load_pos_data_*``
 unless the loader dispatches it (``_load_pos_data_country_ids`` →
@@ -2843,7 +2852,7 @@ read the dispatcher.
 (§2.4.16).
 
 **``action_`` names a user command or workflow** ``[review]``. It may return
-an action dictionary, ``True`` or ``None``. A data RPC retains its operation
+an action dictionary or ``None`` (§2.4.23). A data RPC retains its operation
 name (``get_closing_control_data``); client invocation alone does not make it
 an action. An ``action_*`` nothing invokes is not
 an action, but check stored Python and ``noupdate`` data (§2.4.19) before
@@ -6406,6 +6415,11 @@ them by the scope in each row's first clause, not by date or position.
    * - Version
      - Date
      - Summary
+   * - 7.99
+     - 2026-10-14
+     - §2.4.21 distinguishes checkpoint enforcement from discovery, preserves
+       lazy reads across obligation effects, and tests changing later fields
+       and partial admission. Its action return rule agrees with §2.4.23.
    * - 7.98
      - 2026-10-13
      - §2.4.3 compares the cached/coalesced connection probe with its network

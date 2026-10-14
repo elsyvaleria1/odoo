@@ -394,7 +394,7 @@ class CreateMixin(_ModelStubs):
 
         records._access_inputs_written(field_names, created=True)
         if transitions := self.env.registry.verb_transitions.get(self._name):
-            records._check_verb_creations(transitions)
+            records._enforce_verb_creations(transitions)
 
         prof.stop("validate")
         prof.report(

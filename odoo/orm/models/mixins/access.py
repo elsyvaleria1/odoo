@@ -2,7 +2,7 @@ import functools
 import logging
 import typing
 from collections import defaultdict
-from collections.abc import Callable, Collection, Iterator
+from collections.abc import Callable, Collection, Iterable, Iterator
 from operator import itemgetter
 from typing import Self, override
 
@@ -22,6 +22,7 @@ from ...fields.base import call_hook
 from ...helpers import invalid_field_message, to_record_ids
 from ...primitives import LOG_ACCESS_COLUMNS, NO_ACCESS, PREFETCH_MAX, SUPERUSER_ID
 from ..field_classes import is_anonymous
+from ..verbs import VerbMove
 from ._model_stubs import _ModelStubs
 
 if typing.TYPE_CHECKING:
@@ -593,10 +594,13 @@ class AccessMixin(_ModelStubs):
         self.check_access(verb)
         return self.env.registry.access_policy.verb_door(self.env, self, verb, call)
 
-    def _verb_checkpoint(self, verb: str) -> tuple[int, ...]:
+    def _get_records_requiring_verb_checkpoint(self, verb: str) -> Self:
+        admitted = self.env.transaction.admitted_ids(self._name, verb)
+        return self.browse([id_ for id_ in self._ids if id_ not in admitted])
+
+    def _enforce_verb_checkpoint_and_get_ids(self, verb: str) -> tuple[int, ...]:
         env = self.env
-        admitted = env.transaction.admitted_ids(self._name, verb)
-        pending = self.browse([id_ for id_ in self._ids if id_ not in admitted])
+        pending = self._get_records_requiring_verb_checkpoint(verb)
         if not pending:
             return ()
         pending.check_access(verb)
@@ -604,10 +608,21 @@ class AccessMixin(_ModelStubs):
         return pending._ids
 
     @override
-    def _check_verb_transitions(
+    def _enforce_verb_transitions_and_get_moves(
         self, vals: dict[str, typing.Any], transitions: VerbTransitions
-    ) -> list[tuple[str, tuple[int, ...]]]:
-        moves: list[tuple[str, tuple[int, ...]]] = []
+    ) -> list[VerbMove]:
+        moves = []
+        # Checkpoints may change a later field: resume its reads only afterwards.
+        for move in self._get_verb_transition_moves(vals, transitions):
+            self.browse(move.record_ids)._enforce_verb_checkpoint_and_get_ids(
+                move.verb_name
+            )
+            moves.append(move)
+        return moves
+
+    def _get_verb_transition_moves(
+        self, vals: dict[str, typing.Any], transitions: VerbTransitions
+    ) -> Iterator[VerbMove]:
         for fname, verbs in transitions.items():
             if fname not in vals:
                 continue
@@ -622,9 +637,7 @@ class AccessMixin(_ModelStubs):
                     id_ for id_, value in before.items() if verb.moves(value, target)
                 )
                 if moved:
-                    self.browse(moved)._verb_checkpoint(name)
-                    moves.append((name, moved))
-        return moves
+                    yield VerbMove(name, moved)
 
     @override
     def _anchors_before_write(
@@ -698,13 +711,23 @@ class AccessMixin(_ModelStubs):
             raise policy.record_denied_error(env, "create", self.browse(refused))
 
     @override
-    def _land_verb_transitions(self, moves: list[tuple[str, tuple[int, ...]]]) -> None:
+    def _notify_verb_transitions_landed(
+        self, moves: Iterable[tuple[str, tuple[int, ...]]]
+    ) -> None:
         env = self.env
         for name, ids in moves:
             env.registry.access_policy.verb_landed(env, self.browse(ids), name)
 
     @override
-    def _check_verb_creations(self, transitions: VerbTransitions) -> None:
+    def _enforce_verb_creations(self, transitions: VerbTransitions) -> None:
+        for move in self._get_verb_creation_moves(transitions):
+            self.browse(move.record_ids)._enforce_verb_checkpoint_and_get_ids(
+                move.verb_name
+            )
+
+    def _get_verb_creation_moves(
+        self, transitions: VerbTransitions
+    ) -> Iterator[VerbMove]:
         for fname, verbs in transitions.items():
             field = self._fields[fname]
             initial = field.convert_to_cache(
@@ -719,11 +742,11 @@ class AccessMixin(_ModelStubs):
             for name, verb in verbs:
                 if not verb.at_create:
                     continue
-                created = [
+                created = tuple(
                     id_ for id_, value in after.items() if verb.moves(initial, value)
-                ]
+                )
                 if created:
-                    self.browse(created)._verb_checkpoint(name)
+                    yield VerbMove(name, created)
 
     @api.model
     def _access_guard(self, operation: str) -> Domain:

@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ...runtime import Environment, Registry
     from ..anchors import Anchor
     from ..table_objects import TableObject
-    from ..verbs import Verb
+    from ..verbs import Verb, VerbMove
     from ._hooks import OnchangeMethod, OndeleteMethod
 
     type VerbTransitions = Mapping[str, tuple[tuple[str, Verb], ...]]
@@ -169,11 +169,11 @@ class _ModelStubs:
         def _evict_x2many_scopes_reading_through(
             self, fnames: Collection[str] | None
         ) -> None: ...
-        def _check_verb_transitions(
+        def _enforce_verb_transitions_and_get_moves(
             self, vals: dict[str, typing.Any], transitions: VerbTransitions
-        ) -> list[tuple[str, tuple[int, ...]]]: ...
-        def _land_verb_transitions(
-            self, moves: list[tuple[str, tuple[int, ...]]]
+        ) -> list[VerbMove]: ...
+        def _notify_verb_transitions_landed(
+            self, moves: Iterable[tuple[str, tuple[int, ...]]]
         ) -> None: ...
         def _anchors_before_write(
             self, vals: dict[str, typing.Any]
@@ -181,7 +181,7 @@ class _ModelStubs:
         def _check_anchor_moves(
             self, before: dict[str, dict[int, typing.Any]]
         ) -> None: ...
-        def _check_verb_creations(self, transitions: VerbTransitions) -> None: ...
+        def _enforce_verb_creations(self, transitions: VerbTransitions) -> None: ...
         def _access_inputs_written(
             self, fnames: Collection[str] | None, *, created: bool = False
         ) -> None: ...

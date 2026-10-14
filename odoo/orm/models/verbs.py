@@ -13,6 +13,11 @@ ANY_STATE = "*"
 _Value = str | typing.Literal[False]
 
 
+class VerbMove(typing.NamedTuple):
+    verb_name: str
+    record_ids: tuple[int, ...]
+
+
 @dataclass(frozen=True, slots=True)
 class Verb:
     requires: str = "write"
@@ -128,7 +133,7 @@ def _checkpoint(
         records: BaseModel, *args: typing.Any, **kwargs: typing.Any
     ) -> typing.Any:
         defined = _defined(model_cls, method)
-        checked = records._verb_checkpoint(verb_name)
+        checked = records._enforce_verb_checkpoint_and_get_ids(verb_name)
         if not checked:
             return defined(records, *args, **kwargs)
         with records.env.transaction.admitting(
