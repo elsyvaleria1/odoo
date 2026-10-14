@@ -356,7 +356,6 @@ class StockMoveReservation(models.Model):
             self.move_line_ids.mapped("quantity_product_uom"),
         )
         taken_qty_total = 0.0
-        all_move_line_vals = []
         for (
             location_id,
             trace_id,
@@ -366,7 +365,7 @@ class StockMoveReservation(models.Model):
             need = target_qty - taken_qty_total
             if need <= 0 or self.product_uom_id._is_zero_stored(need, uom):
                 break
-            move_line_vals, taken_quantity = self._update_reserved_quantity_vals(
+            taken_qty_total += self._update_reserved_quantity(
                 min(quantity, need),
                 location_id,
                 trace_id,
@@ -374,14 +373,6 @@ class StockMoveReservation(models.Model):
                 owner_id,
                 strict=True,
             )
-            all_move_line_vals += move_line_vals
-            taken_qty_total += taken_quantity
-
-        ledger = self.env.context.get("reservation_ledger")
-        if ledger is not None:
-            ledger.add_move_line_vals(all_move_line_vals)
-        elif all_move_line_vals:
-            self.env["stock.move.line"].create(all_move_line_vals)
 
         _debug.logic(
             "reserved_from_origins",
@@ -435,24 +426,12 @@ class StockMoveReservation(models.Model):
             moves_to_unreserve.add(move.id)
         moves_to_unreserve = self.env["stock.move"].browse(moves_to_unreserve)
 
-        ml_to_unlink = OrderedSet()
-        moves_not_to_recompute = OrderedSet()
-        for ml in moves_to_unreserve.move_line_ids:
-            if ml.picked and not force:
-                moves_not_to_recompute.add(ml.move_id.id)
-                continue
-            ml_to_unlink.add(ml.id)
-        ml_to_unlink = self.env["stock.move.line"].browse(ml_to_unlink)
-        moves_not_to_recompute = self.env["stock.move"].browse(moves_not_to_recompute)
-
-        _debug.logic(
-            "unreserve",
-            moves=moves_to_unreserve,
-            unlink_lines=ml_to_unlink,
-            keep_picked=moves_not_to_recompute,
+        ml_to_unlink = moves_to_unreserve.move_line_ids.filtered(
+            lambda ml: force or not ml.picked
         )
+        _debug.logic("unreserve", moves=moves_to_unreserve, unlink_lines=ml_to_unlink)
         ml_to_unlink.unlink()
-        (moves_to_unreserve - moves_not_to_recompute)._recompute_state()
+        moves_to_unreserve._recompute_state()
         return True
 
     def _get_available_quantity(

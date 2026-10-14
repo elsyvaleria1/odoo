@@ -266,9 +266,9 @@ class StockQuantReservation(models.Model):
 
         from_cache = (
             quants_cache is not None
-            and not strategy.narrows_to_packages
+            and not (strategy.narrows_to_packages and qty)
             and cache_sort is not None
-            and quants_cache.is_covering(product_id, location_id, trace_id)
+            and quants_cache.is_covering(product_id, location_id, trace_id, strict)
             and not self._is_gather_domain_extended(
                 domain, product_id, location_id, trace_id, package_id, owner_id, strict
             )
@@ -771,6 +771,7 @@ class StockQuantReservation(models.Model):
                 quant.in_date
                 for quant in quants
                 if quant.in_date
+                and quant.trace_id == (trace_id or quant.trace_id.browse())
                 and quant.product_uom_id._compare_aggregate(quant.quantity, 0) > 0
             ]
         if in_date:
@@ -790,10 +791,9 @@ class StockQuantReservation(models.Model):
 
         vals_by_quant = {}
         if quant:
-            vals_by_quant[quant] = {
-                "in_date": in_date,
-                "quantity": quant.quantity + quantity,
-            }
+            vals_by_quant[quant] = {"quantity": quant.quantity + quantity}
+            if product_id.uom_id._compare_aggregate(quantity, 0) > 0:
+                vals_by_quant[quant]["in_date"] = in_date
         if reserved_quant:
             vals_by_quant.setdefault(reserved_quant, {})["reserved_quantity"] = max(
                 0, reserved_quant.reserved_quantity + reserved_quantity
@@ -826,6 +826,8 @@ class StockQuantReservation(models.Model):
                     **missing,
                 }
             )
+        if not quantity:
+            return 0.0, in_date
         avail_quants = gathered | new_quant._filtered_not_expired()
         return (
             self._get_available_quantity_from_quants(

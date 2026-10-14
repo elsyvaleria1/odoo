@@ -43,6 +43,27 @@ class TestLeastPackagesSearch(TransactionCase):
         taken = get_least_packages([(10, 2)], 5)
         self.assertEqual(taken, ((10, 2),))
 
+    def test_many_fractional_packages_stay_bounded(self):
+        packages = sorted(
+            ((index, 1 + index * 0.137 + (index % 7) * 0.011) for index in range(40)),
+            key=lambda package: package[1],
+            reverse=True,
+        )
+        total = sum(quantity for _package, quantity in packages)
+        for share in (0.3, 0.9):
+            with self.subTest(share=share):
+                taken = get_least_packages(
+                    packages, total * share, max_expansions=2_000
+                )
+                self.assertGreaterEqual(
+                    sum(quantity for _package, quantity in taken), total * share
+                )
+
+    def test_an_exhausted_budget_still_covers_the_request(self):
+        packages = [(index, 1.5 + index * 0.01) for index in range(30, 0, -1)]
+        taken = get_least_packages(packages, 20.123, max_expansions=1)
+        self.assertGreaterEqual(sum(quantity for _package, quantity in taken), 20.123)
+
     def test_priority_queue_never_compares_items_on_tie(self):
         class Explodes:
             def __lt__(self, other):
@@ -2020,6 +2041,17 @@ class TestQuantsCacheScope(TransactionCase):
     def test_an_unsaved_location_is_never_covered(self):
         cache = self._cache(["1/2/"])
         self.assertFalse(cache.is_covering(_Stub(7), _Stub(0, False)))
+
+    def test_a_lot_scoped_cache_covers_only_lotless_strict_gathers(self):
+        cache = QuantsCache(self.env["stock.quant"], (7,), ["1/2/"], lot_scope=[5])
+        location = _Stub(2, "1/2/")
+        self.assertTrue(cache.is_covering(_Stub(7), location, _Stub(5)))
+        self.assertFalse(cache.is_covering(_Stub(7), location, _Stub(6)))
+        self.assertTrue(cache.is_covering(_Stub(7), location, None, strict=True))
+        self.assertFalse(
+            cache.is_covering(_Stub(7), location, None, strict=False),
+            "a non-strict gather without a lot reads lots the cache never loaded",
+        )
 
     def test_a_cache_with_no_usable_root_covers_nothing(self):
         cache = self._cache([False, "", None])

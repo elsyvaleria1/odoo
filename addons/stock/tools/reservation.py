@@ -31,7 +31,12 @@ class LeastPackagesNode(typing.NamedTuple):
     next_index: int
 
 
-def get_least_packages(qty_by_package, qty):
+LEAST_PACKAGES_MAX_EXPANSIONS = 10_000
+
+
+def get_least_packages(
+    qty_by_package, qty, max_expansions=LEAST_PACKAGES_MAX_EXPANSIONS
+):
     size = len(qty_by_package)
 
     def heuristic(node):
@@ -42,15 +47,39 @@ def get_least_packages(qty_by_package, qty):
             )
         return len(node.taken_packages)
 
+    def is_better_leaf(node, best):
+        if best.count_remaining > 0:
+            return (
+                node.count_remaining <= 0 or node.count_remaining < best.count_remaining
+            )
+        if node.count_remaining > 0:
+            return False
+        return len(node.taken_packages) < len(best.taken_packages) or (
+            len(node.taken_packages) == len(best.taken_packages)
+            and node.count_remaining > best.count_remaining
+        )
+
     frontier = LeastPackagesPriorityQueue()
     frontier.put(LeastPackagesNode(qty, (), 0), 0)
     best_leaf = LeastPackagesNode(qty, (), 0)
+    expansions = 0
 
     while not frontier.is_empty():
         current = frontier.get()
 
         if current.count_remaining <= 0:
             return current.taken_packages
+        expansions += 1
+        if expansions > max_expansions:
+            _debug.logic(
+                "least_packages_budget_exhausted",
+                packages=size,
+                expansions=expansions,
+                covered=best_leaf.count_remaining <= 0,
+            )
+            if best_leaf.count_remaining <= 0:
+                return best_leaf.taken_packages
+            return _take_largest_until_covered(qty_by_package, qty)
 
         last_count = None
         i = current.next_index
@@ -65,26 +94,24 @@ def get_least_packages(qty_by_package, qty):
             taken = current.taken_packages + (pkg,)
             node = LeastPackagesNode(count, taken, i)
 
-            if count < 0:
-                if (
-                    best_leaf.count_remaining > 0
-                    or len(node.taken_packages) < len(best_leaf.taken_packages)
-                    or (
-                        len(node.taken_packages) == len(best_leaf.taken_packages)
-                        and node.count_remaining > best_leaf.count_remaining
-                    )
-                ):
-                    best_leaf = node
-                continue
-
-            if i >= size and count != 0:
-                if node.count_remaining < best_leaf.count_remaining:
+            if count < 0 or (i >= size and count != 0):
+                if is_better_leaf(node, best_leaf):
                     best_leaf = node
                 continue
 
             frontier.put(node, heuristic(node))
 
     return best_leaf.taken_packages
+
+
+def _take_largest_until_covered(qty_by_package, qty):
+    taken = []
+    for pkg in sorted(qty_by_package, key=lambda pkg: pkg[1], reverse=True):
+        if qty <= 0:
+            break
+        taken.append(pkg)
+        qty -= pkg[1]
+    return tuple(taken)
 
 
 class RemovalStrategy(typing.NamedTuple):
@@ -234,7 +261,7 @@ class QuantsCache:
         self, product_id, location_path, trace_id=None, package_id=None, owner_id=None
     ):
         paths = self._paths_by_location
-        result = self._empty
+        ids = []
         for key in self._by_product.get(product_id, ()):
             _product, location, lot, package, owner = key
             if not paths.get(location, "").startswith(location_path):
@@ -245,10 +272,10 @@ class QuantsCache:
                 continue
             if owner_id and owner != owner_id:
                 continue
-            result |= self._data[key]
-        return result
+            ids.extend(self._data[key]._ids)
+        return self._empty.browse(dict.fromkeys(ids))
 
-    def is_covering(self, product_id, location_id, trace_id=None) -> bool:
+    def is_covering(self, product_id, location_id, trace_id=None, strict=True) -> bool:
         if product_id.id not in self._product_ids:
             _debug.perf.count("quants_cache_miss_product", product=product_id.id)
             return False
@@ -256,4 +283,6 @@ class QuantsCache:
         if not any(path.startswith(root) for root in self._location_paths):
             _debug.perf.count("quants_cache_miss_location", location=location_id.id)
             return False
-        return self._lot_scope is None or not trace_id or trace_id.id in self._lot_scope
+        if self._lot_scope is None:
+            return True
+        return trace_id.id in self._lot_scope if trace_id else strict

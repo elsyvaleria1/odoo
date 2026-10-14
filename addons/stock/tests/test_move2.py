@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+from unittest.mock import patch
 
 from dateutil.relativedelta import relativedelta
 
@@ -369,6 +370,28 @@ class TestPickShip(TestStockCommon):
             picking_client.move_ids.quantity,
             8.0,
             "what the return left in Output stays reserved for the delivery",
+        )
+
+    def test_chained_reservation_goes_through_the_move_hook(self):
+        picking_pick, picking_client = self.create_pick_ship()
+        self.env["stock.quant"]._update_available_quantity(
+            self.productA, self.stock_location, 10.0
+        )
+        picking_pick.action_assign()
+        picking_pick.move_ids.picked = True
+        Move = type(self.env["stock.move"])
+        with patch.object(
+            Move,
+            "_update_reserved_quantity",
+            autospec=True,
+            side_effect=Move._update_reserved_quantity,
+        ) as hook:
+            picking_pick._action_done()
+        self.assertEqual(picking_client.move_ids.quantity, 10.0)
+        self.assertIn(
+            picking_client.move_ids,
+            [call.args[0] for call in hook.call_args_list],
+            "an override of the hook must see the reservation of a chained move",
         )
 
     def test_mto_moves_extra_qty(self):

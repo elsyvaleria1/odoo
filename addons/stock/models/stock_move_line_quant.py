@@ -9,7 +9,7 @@ from odoo.fields import Command, Domain
 from odoo.libs.debug_log import DebugLog
 from odoo.tools import OrderedSet
 
-from ..const import INVENTORY_REFERENCE_REVERTED
+from ..const import INVENTORY_REFERENCE_REVERTED, LOCKED_QUANTS_CACHE_KEY
 from .stock_move_line import (
     _KEEP,
     DEST_QUANT_FIELDS,
@@ -197,6 +197,17 @@ class StockMoveLineQuant(models.Model):
         return domain & Domain("picked", "=", False)
 
     def _update_quant_reservations(self, deltas) -> None:
+        if len(deltas) > 1 and self.env.context.get("quants_cache") is None:
+            quants_cache = self._get_quants_cache()
+            self = self.with_context(quants_cache=quants_cache)
+            keyed = self.env["stock.quant"].concat(
+                *(
+                    quants_cache[product.id, location.id, lot.id, package.id, owner.id]
+                    for product, location, lot, package, owner in deltas
+                )
+            )
+            held = self.env.cr.cache.setdefault(LOCKED_QUANTS_CACHE_KEY, set())
+            held.update(keyed.filtered(lambda q: q.id not in held)._try_lock().ids)
         for (product, location, lot, package, owner), quantity in deltas.items():
             if product.uom_id._is_zero_aggregate(quantity):
                 continue
