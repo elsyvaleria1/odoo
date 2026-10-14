@@ -58,7 +58,7 @@ class TestAccessGraphRaces(TransactionCase):
                 return work(env, attempts[-1])
             except Exception as exc:
                 if failures is not None:
-                    failures.append(type(exc))
+                    failures.append(exc)
                 raise
 
         with mute_logger("odoo.db.cursor", "odoo.service.model"):
@@ -410,8 +410,11 @@ class TestAccessGraphRaces(TransactionCase):
                         for thread in threads:
                             thread.join(30)
                             self.assertFalse(thread.is_alive())
-                    self.assertNotIn(psycopg.errors.DeadlockDetected, failures)
-                    self.assertIn(psycopg.errors.SerializationFailure, failures)
+                    self.assertTrue(failures, "the queued writes must conflict")
+                    for failure in failures:
+                        self.assertIsInstance(
+                            failure, psycopg.errors.SerializationFailure
+                        )
                     self.assertEqual(self.roles(*ids), ["edit", False, False])
                     self.assert_table_is_derived()
                 finally:
