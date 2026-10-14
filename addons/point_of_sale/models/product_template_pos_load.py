@@ -155,6 +155,9 @@ class ProductTemplatePosLoad(models.Model):
             self._update_rows_with_config_currency(rows, config)
         with _debug.perf("load_company_taxes", cr=self.env.cr):
             self._update_rows_with_company_taxes(rows, config)
+        if not config._allows_taxes():
+            for row in rows:
+                row["taxes_id"] = []
         with _debug.perf("load_archived_combinations", cr=self.env.cr):
             self._add_archived_combinations(rows)
         for row in rows:

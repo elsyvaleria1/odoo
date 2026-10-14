@@ -7,7 +7,7 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.http import request
 from odoo.libs.debug_log import DebugLog
 from odoo.service.common import exp_version
-from odoo.tools import SQL
+from odoo.tools import SQL, format_list
 from odoo.tools.authority_keys import declare_authority_keys
 
 from odoo.addons.point_of_sale.models.pos_printer import format_epson_certified_domain
@@ -1080,6 +1080,30 @@ class PosConfig(models.Model):
                         )
                     )
 
+    @api.constrains("journal_id", "invoice_journal_id")
+    def _check_journals_tax_policy(self) -> None:
+        disagreeing = self.filtered(
+            lambda config: (
+                config.journal_id
+                and config.invoice_journal_id
+                and config.journal_id.tax_policy != config.invoice_journal_id.tax_policy
+            )
+        )
+        if disagreeing:
+            raise ValidationError(
+                self.env._(
+                    "The journal and the invoice journal of a point of sale must "
+                    "agree on whether taxes are required, optional or forbidden: %s",
+                    format_list(self.env, disagreeing.mapped("display_name")),
+                )
+            )
+
+    def _allows_taxes(self) -> bool:
+        self.check_singleton()
+        return "forbidden" not in (self.journal_id | self.invoice_journal_id).mapped(
+            "tax_policy"
+        )
+
     @api.constrains("trusted_config_ids", "company_id", "journal_id")
     def _check_trusted_config_ids(self) -> None:
         configs = self.sudo().with_context(active_test=False)
@@ -1594,6 +1618,7 @@ class PosConfig(models.Model):
         self._check_currencies()
         self._check_profit_loss_cash_journal()
         self._check_payment_method_ids()
+        self._check_journals_tax_policy()
 
     @_debug.perf.timed
     def open_ui(self):

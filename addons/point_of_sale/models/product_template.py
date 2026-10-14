@@ -227,7 +227,11 @@ class ProductTemplate(models.Model):
         }
 
     def _get_pos_price_info(self, price, quantity, config, product) -> dict:
-        taxes = self._get_taxes_of_nearest_company(config.company_id)
+        taxes = (
+            self._get_taxes_of_nearest_company(config.company_id)
+            if config._allows_taxes()
+            else self.env["account.tax"]
+        )
         computed = taxes.sudo().compute_all(
             price, config.currency_id, quantity, product.sudo()
         )

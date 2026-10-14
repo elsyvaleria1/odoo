@@ -61,6 +61,7 @@
         "views/res_config_settings_views.xml",
         "views/customer_display_index.xml",
         "views/account_move_views.xml",
+        "views/account_journal_views.xml",
         "views/pos_session_sales_details.xml",
         "views/product_tag_views.xml",
         "views/stock_reference_views.xml",

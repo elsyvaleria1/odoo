@@ -473,11 +473,16 @@ class PosOrderLine(models.Model):
         if self.refunded_orderline_id:
             return self.tax_ids == self.refunded_orderline_id.tax_ids
         fiscal_position = self.order_id.fiscal_position_id
-        product_taxes = self.product_id.taxes_id.filtered_domain(
-            self.env["account.tax"]._get_domain_company_compatible(self.company_id)
-        )
         return fiscal_position.map_tax(self.tax_ids) == fiscal_position.map_tax(
-            product_taxes
+            self._get_product_taxes()
+        )
+
+    def _get_product_taxes(self):
+        self.check_singleton()
+        if not self.order_id.config_id._allows_taxes():
+            return self.env["account.tax"]
+        return self.product_id.taxes_id.filtered_domain(
+            self.env["account.tax"]._get_domain_company_compatible(self.company_id)
         )
 
     def _get_pricelist_prices(self) -> list[float]:
@@ -715,9 +720,7 @@ class PosOrderLine(models.Model):
             price = self.order_id.pricelist_id._get_product_price(
                 self.product_id, self.qty or 1.0, currency=self.currency_id
             )
-            self.tax_ids = self.product_id.taxes_id.filtered_domain(
-                self.env["account.tax"]._get_domain_company_compatible(self.company_id)
-            )
+            self.tax_ids = self._get_product_taxes()
             tax_ids_after_fiscal_position = self.order_id.fiscal_position_id.map_tax(
                 self.tax_ids
             )

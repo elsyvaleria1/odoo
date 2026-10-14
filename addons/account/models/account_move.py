@@ -6231,6 +6231,7 @@ class AccountMove(models.Model):
 
     def _check_posting_tax_policy(self) -> None:
         taxed_lines = self._get_tax_policy_lines("forbidden").filtered("tax_ids")
+        taxed_lines -= self._get_lines_mirroring_reversed_entry(taxed_lines)
         if taxed_lines:
             raise UserError(
                 self.env._(
@@ -6241,7 +6242,7 @@ class AccountMove(models.Model):
         untaxed_lines = self._get_tax_policy_lines("required").filtered(
             lambda line: not line.tax_ids
         )
-        untaxed_lines -= self._get_lines_untaxed_in_reversed_entry(untaxed_lines)
+        untaxed_lines -= self._get_lines_mirroring_reversed_entry(untaxed_lines)
         if untaxed_lines:
             raise UserError(
                 self.env._(
@@ -6260,19 +6261,21 @@ class AccountMove(models.Model):
         )
         return moves.line_ids.filtered(lambda line: line.display_type == "product")
 
-    def _get_lines_untaxed_in_reversed_entry(self, lines):
-        exempt = self.env["account.move.line"]
+    def _get_lines_mirroring_reversed_entry(self, lines):
+        mirroring = self.env["account.move.line"]
         for move, move_lines in lines.grouped("move_id").items():
             original = move.reversed_entry_id
             if original.state != "posted":
                 continue
-            untaxed_products = original.line_ids.filtered(
-                lambda line: line.display_type == "product" and not line.tax_ids
-            ).product_id
-            exempt |= move_lines.filtered_domain(
-                [("product_id", "in", untaxed_products.ids)]
+            original_keys = {
+                (line.product_id, line.tax_ids)
+                for line in original.line_ids
+                if line.display_type == "product" and line.product_id
+            }
+            mirroring |= move_lines.filtered(
+                lambda line, keys=original_keys: (line.product_id, line.tax_ids) in keys
             )
-        return exempt
+        return mirroring
 
     @api.model
     def _format_tax_policy_lines(self, lines) -> str:

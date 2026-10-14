@@ -80,3 +80,4 @@ from . import test_receipt_links
 from . import test_report_pos_order
 from . import test_report_session
 from . import test_res_config_settings
+from . import test_pos_tax_policy

@@ -115,6 +115,23 @@ class TestJournalTaxPolicy(AccountTestInvoicingCommon):
         credit_note.action_post()
         self.assertEqual(credit_note.state, "posted")
 
+    def test_cancelling_a_taxed_invoice_on_a_now_forbidden_journal(self):
+        invoice = self._invoice(self.optional_journal, products=self.product_a)
+        invoice.action_post()
+        self.optional_journal.tax_policy = "forbidden"
+        credit_note = invoice._reverse_moves(cancel=True)
+        self.assertEqual(credit_note.state, "posted")
+        self.assertEqual(credit_note.invoice_line_ids.tax_ids, self.tax_sale_a)
+
+    def test_a_reversal_line_its_original_does_not_mirror_is_refused(self):
+        invoice = self._invoice(self.optional_journal, products=self.product_a)
+        invoice.action_post()
+        self.optional_journal.tax_policy = "forbidden"
+        credit_note = invoice._reverse_moves()
+        credit_note.invoice_line_ids.tax_ids = self.tax_sale_b
+        with self.assertRaisesRegex(UserError, "forbids taxes"):
+            credit_note.action_post()
+
     def test_default_journal_search_is_shared(self):
         self.assertEqual(
             self.env["account.journal"]._search_default_journal(

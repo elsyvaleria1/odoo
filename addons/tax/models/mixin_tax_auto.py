@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from odoo import api, fields, models
 from odoo.libs.debug_log import DebugLog
 
@@ -20,9 +22,12 @@ class MixinTaxAuto(models.AbstractModel):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
+        lines_by_key = defaultdict(lines.browse)
         for line, vals in zip(lines, vals_list, strict=False):
             if "tax_ids" in vals and not line.tax_ids_auto_key:
-                line.tax_ids_auto_key = line._tax_key(line._auto_taxes())
+                lines_by_key[line._tax_key(line._auto_taxes())] |= line
+        for key, keyed_lines in lines_by_key.items():
+            keyed_lines.tax_ids_auto_key = key
         return lines
 
     @classmethod

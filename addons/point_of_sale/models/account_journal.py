@@ -30,6 +30,9 @@ class AccountJournal(models.Model):
                 )
             )
 
+    def _get_tax_policy_journal_types(self) -> tuple[str, ...]:
+        return (*super()._get_tax_policy_journal_types(), "general")
+
     def _check_no_active_payments(self) -> None:
         linked_payment_methods = (
             self.env["pos.payment.method"]

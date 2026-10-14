@@ -1127,16 +1127,19 @@ class AccountJournal(models.Model):
         invalid = self.filtered(
             lambda journal: (
                 journal.tax_policy != "optional"
-                and journal.type not in ("sale", "purchase")
+                and journal.type not in journal._get_tax_policy_journal_types()
             )
         )
         if invalid:
             raise ValidationError(
                 self.env._(
-                    "Only sales and purchase journals can require or forbid taxes: %s",
+                    "A journal of this type cannot require or forbid taxes: %s",
                     format_list(self.env, invalid.mapped("display_name")),
                 )
             )
+
+    def _get_tax_policy_journal_types(self) -> tuple[str, ...]:
+        return ("sale", "purchase")
 
     @api.constrains("inbound_payment_channel_ids", "outbound_payment_channel_ids")
     @_debug.perf.timed
